@@ -1,24 +1,55 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { Tabs } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, iconSize } from '../constants/theme';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
-
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
+export default function Layout() {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+      <Tabs
+          screenOptions={{
+            headerShown: false,
+            tabBarStyle: {
+              backgroundColor: colors.bg,
+              borderTopWidth: 1,
+              borderTopColor: colors.border,
+              height: 70,
+              paddingBottom: 10,
+              paddingTop: 10,
+            },
+            tabBarActiveTintColor: colors.accent,
+            tabBarInactiveTintColor: colors.secondaryMutedText,
+            tabBarLabelStyle: {
+              fontSize: 12,
+              fontWeight: '500',
+            },
+          }}
+      >
+        <Tabs.Screen
+            name="index"
+            options={{
+              title: 'Recipes',
+              tabBarIcon: ({ color, size }) => (
+                  <Ionicons name="book" size={size} color={color} />
+              ),
+            }}
+        />
+        <Tabs.Screen
+            name="notes"
+            options={{
+              title: 'Notes',
+              tabBarIcon: ({ color, size }) => (
+                  <Ionicons name="document-text" size={size} color={color} />
+              ),
+            }}
+        />
+        <Tabs.Screen
+            name="ingredients"
+            options={{
+              title: 'Ingredients',
+              tabBarIcon: ({ color, size }) => (
+                  <Ionicons name="nutrition" size={size} color={color} />
+              ),
+            }}
+        />
+      </Tabs>
   );
 }
