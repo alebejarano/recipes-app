@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, fontSize, fontWeight, iconSize } from '../constants/theme';
 import { router } from "expo-router";
 
-export default function RecipesScreen() {
+export default function IngredientsScreen() {
     const [searchQuery, setSearchQuery] = useState('');
 
     return (
@@ -21,7 +21,7 @@ export default function RecipesScreen() {
 
             {/* Header */}
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Recipes</Text>
+                <Text style={styles.headerTitle}>Ingredients</Text>
                 <TouchableOpacity style={styles.settingsButton}>
                     <Ionicons name="settings-outline" size={iconSize.lg} color={colors.textPrimary} />
                 </TouchableOpacity>
@@ -32,7 +32,7 @@ export default function RecipesScreen() {
                 <Ionicons name="search" size={iconSize.sm} color={colors.secondaryMutedText} />
                 <TextInput
                     style={styles.searchInput}
-                    placeholder="Search recipes..."
+                    placeholder="Search ingredients..."
                     placeholderTextColor={colors.secondaryMutedText}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
@@ -41,14 +41,14 @@ export default function RecipesScreen() {
 
             {/* Empty State */}
             <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>No recipes yet</Text>
+                <Text style={styles.emptyStateText}>No ingredients yet</Text>
 
                 <TouchableOpacity
                     style={styles.addRecipeButton}
                     onPress={() => router.push('/add')}
                 >
                     <Ionicons name="add" size={iconSize.md} color={colors.bg} />
-                    <Text style={styles.addRecipeButtonText}>Add recipe</Text>
+                    <Text style={styles.addRecipeButtonText}>Add ingredients</Text>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
