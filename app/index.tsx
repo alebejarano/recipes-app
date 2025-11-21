@@ -6,14 +6,36 @@ import {
     TextInput,
     TouchableOpacity,
     StatusBar,
+    FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { colors, spacing, borderRadius, fontSize, fontWeight, iconSize } from '../constants/theme';
-import { router } from "expo-router";
+import Card from '../components/Card';
 
 export default function RecipesScreen() {
     const [searchQuery, setSearchQuery] = useState('');
+
+    // Sample data - later replace with actual data from storage/database
+    const [recipes, setRecipes] = useState([
+        {
+            id: '1',
+            title: 'Chocolate Chip Cookies',
+            content: 'Delicious homemade cookies with chocolate chips. Perfect for a quick snack or dessert.',
+            tags: ['dessert', 'quick', 'easy'],
+        },
+        {
+            id: '2',
+            title: 'Spaghetti Carbonara',
+            content: 'Classic Italian pasta dish with eggs, cheese, and crispy bacon.',
+            tags: ['italian', 'pasta', 'dinner'],
+        },
+    ]);
+
+    const handleRecipePress = (id: string) => {
+        router.push(`/recipe/${id}`);
+    };
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
@@ -39,18 +61,35 @@ export default function RecipesScreen() {
                 />
             </View>
 
-            {/* Empty State */}
-            <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>No recipes yet</Text>
+            {/* Conditional: Empty State or Recipe List */}
+            {recipes.length === 0 ? (
+                <View style={styles.emptyState}>
+                    <Text style={styles.emptyStateText}>No recipes yet</Text>
 
-                <TouchableOpacity
-                    style={styles.addRecipeButton}
-                    onPress={() => router.push('/add')}
-                >
-                    <Ionicons name="add" size={iconSize.md} color={colors.bg} />
-                    <Text style={styles.addRecipeButtonText}>Add recipe</Text>
-                </TouchableOpacity>
-            </View>
+                    <TouchableOpacity
+                        style={styles.addRecipeButton}
+                        onPress={() => router.push('/add')}
+                    >
+                        <Ionicons name="add" size={iconSize.md} color={colors.bg} />
+                        <Text style={styles.addRecipeButtonText}>Add recipe</Text>
+                    </TouchableOpacity>
+                </View>
+            ) : (
+                <FlatList
+                    data={recipes}
+                    renderItem={({ item }) => (
+                        <Card
+                            title={item.title}
+                            content={item.content}
+                            tags={item.tags}
+                            onPress={() => handleRecipePress(item.id)}
+                        />
+                    )}
+                    keyExtractor={(item) => item.id}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
+                />
+            )}
         </SafeAreaView>
     );
 }
@@ -118,5 +157,8 @@ const styles = StyleSheet.create({
         fontSize: fontSize.lg,
         fontWeight: fontWeight.semibold,
         color: colors.bg,
+    },
+    listContent: {
+        padding: spacing.lg,
     },
 });

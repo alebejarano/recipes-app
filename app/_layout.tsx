@@ -72,6 +72,12 @@ export default function Layout() {
                     ),
                 }}
             />
+            <Tabs.Screen
+                name="recipe/[id]"
+                options={{
+                    href: null, // Hide from tab bar
+                }}
+            />
         </Tabs>
     );
 }
