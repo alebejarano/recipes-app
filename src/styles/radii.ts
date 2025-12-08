@@ -4,7 +4,7 @@ export const radii = {
     md: 12,
     lg: 16,
     xl: 24,   // cards / big buttons
-    pill: 999,
+    xxl: 999,
     full: 9999,
 } as const;
 
