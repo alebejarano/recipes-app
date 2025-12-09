@@ -7,10 +7,14 @@ import {
     ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialIcons, Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import {
+    MaterialIcons,
+    Ionicons,
+    MaterialCommunityIcons,
+    Feather,
+} from '@expo/vector-icons';
 import Button from '@/components/Button';
 import { createThemedStyles } from '@/styles/createStyles';
-import { theme } from '@/styles/theme';
 
 interface IdentityScreenProps {
     onContinue: (selected: string[]) => void;
@@ -20,36 +24,40 @@ const options = [
     {
         id: 'organize',
         label: 'I want all my recipes in one place.',
-        icon: (color: string) => (
-            <MaterialIcons name="folder-open" size={20} color={color} />
+        icon: (style: any) => (
+            <MaterialIcons name="folder-open" size={20} style={style} />
         ),
     },
     {
         id: 'screenshots',
         label: 'I want to stop losing screenshots and bookmarks.',
-        icon: (color: string) => (
-            <Ionicons name="image-outline" size={20} color={color} />
+        icon: (style: any) => (
+            <Ionicons name="image-outline" size={20} style={style} />
         ),
     },
     {
         id: 'healthy',
         label: 'I want to eat healthier with less decision fatigue.',
-        icon: (color: string) => (
-            <MaterialCommunityIcons name="food-variant" size={20} color={color} />
+        icon: (style: any) => (
+            <MaterialCommunityIcons
+                name="food-variant"
+                size={20}
+                style={style}
+            />
         ),
     },
     {
         id: 'planning',
         label: 'I want to plan my meals more easily.',
-        icon: (color: string) => (
-            <Feather name="calendar" size={20} color={color} />
+        icon: (style: any) => (
+            <Feather name="calendar" size={20} style={style} />
         ),
     },
     {
         id: 'inspiration',
         label: 'I want inspiration based on what I already have at home.',
-        icon: (color: string) => (
-            <Ionicons name="sparkles-outline" size={20} color={color} />
+        icon: (style: any) => (
+            <Ionicons name="sparkles-outline" size={20} style={style} />
         ),
     },
 ];
@@ -84,9 +92,9 @@ export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
                     >
                         {options.map(option => {
                             const isSelected = selected.includes(option.id);
-                            const iconColor = isSelected
-                                ? theme.colors.primaryForeground
-                                : theme.colors.mutedForeground;
+                            const iconStyle = isSelected
+                                ? styles.addIconColor
+                                : styles.mutedIconColor;
 
                             return (
                                 <TouchableOpacity
@@ -108,7 +116,7 @@ export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
                                                 : styles.optionIconWrapperUnselected,
                                         ]}
                                     >
-                                        {option.icon(iconColor)}
+                                        {option.icon(iconStyle)}
                                     </View>
 
                                     <Text style={styles.optionLabel}>
@@ -127,7 +135,7 @@ export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
                                             <Feather
                                                 name="check"
                                                 size={14}
-                                                color={theme.colors.primaryForeground}
+                                                style={styles.addIconColor}
                                             />
                                         )}
                                     </View>
@@ -165,6 +173,14 @@ const styles = createThemedStyles(theme => ({
     },
     content: {
         flex: 1,
+    },
+
+    /* icons */
+    addIconColor: {
+        color: theme.colors.primaryForeground,
+    },
+    mutedIconColor: {
+        color: theme.colors.mutedForeground,
     },
 
     header: {
