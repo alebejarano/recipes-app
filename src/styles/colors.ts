@@ -29,11 +29,14 @@ export const lightColors = {
 
     border: 'hsl(35 20% 88%)',
     input: 'hsl(35 20% 88%)',
+    inputBackground: 'hsl(35 25% 90%)',
     ring: 'hsl(142 25% 45%)',
 
     sage: 'hsl(142 25% 45%)',
     sageLight: 'hsl(142 20% 92%)',
     sageDark: 'hsl(142 30% 35%)',
+
+    primarySoft: 'hsl(142 20% 92%)',
 
     cream: 'hsl(45 30% 97%)',
     creamDark: 'hsl(35 25% 90%)',
@@ -84,11 +87,14 @@ export const darkColors = {
 
     border: 'hsl(30 15% 22%)',
     input: 'hsl(30 15% 22%)',
+    inputBackground: 'hsl(30 15% 18%)',
     ring: 'hsl(142 25% 55%)',
 
     sage: 'hsl(142 25% 55%)',
     sageLight: 'hsl(142 15% 20%)',
     sageDark: 'hsl(142 30% 65%)',
+
+    primarySoft: 'hsl(142 15% 20%)',
 
     cream: 'hsl(30 15% 10%)',
     creamDark: 'hsl(30 15% 15%)',
