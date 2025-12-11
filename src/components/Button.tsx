@@ -13,7 +13,7 @@ import { createThemedStyles } from '@/styles/createStyles';
 interface ButtonProps {
     children: React.ReactNode;
     onPress: () => void;
-    variant?: 'primary' | 'secondary' | 'soft' | 'accent' | 'ghost';
+    variant?: 'primary' | 'secondary' | 'soft' | 'accent' | 'ghost' | 'premium' ;
     size?: 'md' | 'lg' | 'xl';
     style?: StyleProp<ViewStyle>;
     textStyle?: StyleProp<TextStyle>;
@@ -41,7 +41,7 @@ export default function Button({
                 styles[`size_${size}`],
                 styles[variant],
                 disabled && styles.disabled,
-                disabled && styles[`disabled_${variant}`],
+                disabled && variant === 'primary' && styles.disabled_primary,
                 style,
             ]}
         >
@@ -106,6 +106,13 @@ const styles = createThemedStyles(theme => ({
     ghost: {
         backgroundColor: 'transparent',
     },
+    premium: {
+        backgroundColor: theme.colors.terracotta,
+        shadowColor: '#000',
+        shadowOpacity: 0.06,
+        shadowRadius: 12,
+        elevation: 3,
+    },
 
     /* ===== Disabled tweaks ===== */
     disabled: {
@@ -141,8 +148,11 @@ const styles = createThemedStyles(theme => ({
     text_ghost: {
         color: theme.colors.mutedForeground,
     },
+    text_premium: {
+        // terracotta button uses light foreground
+        color: theme.colors.accentForeground,
+    },
     textDisabled: {
-        // keep color but slightly softer; combined with container opacity
         opacity: 0.9,
     },
 
