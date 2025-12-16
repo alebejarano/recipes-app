@@ -34,3 +34,26 @@ export const fontWeight = {
     semibold: '600',
     bold: '700',
 } as const;
+
+export const textVariants = {
+    title: {
+        fontFamily: fontFamily.semibold,
+        fontSize: fontSize.xxl,
+        lineHeight: lineHeight.xxl,
+    },
+    subtitle: {
+        fontFamily: fontFamily.medium,
+        fontSize: fontSize.lg,
+        lineHeight: lineHeight.xl,
+    },
+    body: {
+        fontFamily: fontFamily.regular,
+        fontSize: fontSize.base,
+        lineHeight: lineHeight.base,
+    },
+    caption: {
+        fontFamily: fontFamily.medium,
+        fontSize: fontSize.sm,
+        lineHeight: lineHeight.sm,
+    },
+} as const;
