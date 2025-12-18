@@ -1,20 +1,20 @@
 // src/features/onboarding/screens/IdentityScreen.tsx
-import React, { useState } from 'react';
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    ScrollView,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-    MaterialIcons,
-    Ionicons,
-    MaterialCommunityIcons,
-    Feather,
-} from '@expo/vector-icons';
 import Button from '@/components/Button';
 import { createThemedStyles } from '@/styles/createStyles';
+import {
+    Feather,
+    Ionicons,
+    MaterialCommunityIcons,
+    MaterialIcons,
+} from '@expo/vector-icons';
+import React, { useState } from 'react';
+import {
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface IdentityScreenProps {
     onContinue: (selected: string[]) => void;
@@ -32,7 +32,7 @@ const options = [
         id: 'screenshots',
         label: 'I want to stop losing screenshots and bookmarks.',
         icon: (style: any) => (
-            <Ionicons name="image-outline" size={20} style={style} />
+            <Feather name="camera" size={20} style={style} />
         ),
     },
     {
@@ -40,8 +40,8 @@ const options = [
         label: 'I want to eat healthier with less decision fatigue.',
         icon: (style: any) => (
             <MaterialCommunityIcons
-                name="food-variant"
-                size={20}
+                name="food-apple-outline"
+                size={22}
                 style={style}
             />
         ),

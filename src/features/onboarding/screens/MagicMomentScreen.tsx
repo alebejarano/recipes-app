@@ -1,8 +1,8 @@
 // src/features/onboarding/screens/MagicMomentScreen.tsx
-import React from 'react';
-import { View, Text } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import React from 'react';
+import { Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Button from '@/components/Button';
 import { createThemedStyles } from '@/styles/createStyles';
@@ -17,6 +17,7 @@ export default function MagicMomentScreen({
                                               onGoHome,
                                           }: MagicMomentScreenProps) {
     return (
+
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
                 <View style={styles.content}>
@@ -118,13 +119,6 @@ export default function MagicMomentScreen({
                                 </View>
                             </View>
 
-                            {/* Auto-organization highlight */}
-                            <View style={styles.autoRow}>
-                                <View style={styles.autoDot} />
-                                <Text style={styles.autoText}>
-                                    Auto-organized into &quot;Salads&quot; folder
-                                </Text>
-                            </View>
                         </View>
                     </View>
                 </View>
@@ -152,6 +146,7 @@ export default function MagicMomentScreen({
                 </View>
             </View>
         </SafeAreaView>
+      
     );
 }
 
@@ -162,8 +157,8 @@ const styles = createThemedStyles(theme => ({
     },
     container: {
         flex: 1,
-        paddingHorizontal: theme.spacing.lg,
-        paddingVertical: theme.spacing.xl,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.xxs,
     },
     content: {
         flex: 1,
@@ -180,7 +175,7 @@ const styles = createThemedStyles(theme => ({
         fontSize: theme.fontSize.display,
         lineHeight: theme.lineHeight.display,
         color: theme.colors.foreground,
-        marginBottom: theme.spacing.xs,
+        marginBottom: theme.spacing.lg,
     },
     subtitle: {
         textAlign: 'center',
@@ -193,14 +188,12 @@ const styles = createThemedStyles(theme => ({
     /* Card */
     card: {
         backgroundColor: theme.colors.card,
-        borderRadius: theme.radii.xxl,
+        borderRadius: theme.radii.md,
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: theme.colors.border,
-        shadowColor: '#000',
-        shadowOpacity: 0.08,
-        shadowRadius: 16,
-        elevation: 3,
+        shadow: theme.shadows.soft,
+        elevation: 2,
     },
     cardHero: {
         height: 180,
@@ -329,38 +322,19 @@ const styles = createThemedStyles(theme => ({
         color: theme.colors.foreground,
     },
 
-    /* Auto-organized line */
-    autoRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: theme.spacing.xs,
-    },
-    autoDot: {
-        width: 6,
-        height: 6,
-        borderRadius: theme.radii.full,
-        backgroundColor: theme.colors.primary,
-        marginRight: theme.spacing.xs,
-    },
-    autoText: {
-        fontFamily: theme.fontFamily.regular,
-        fontSize: theme.fontSize.sm,
-        color: theme.colors.primary,
-    },
-
     /* Actions */
     actions: {
-        marginTop: theme.spacing.xl,
+        marginTop: theme.spacing['4xl'],
     },
     addIcon: {
         color: theme.colors.primaryForeground,
     },
     goHomeButton: {
-        marginTop: theme.spacing.sm,
+        marginTop: theme.spacing.lg,
     },
     goHomeText: {
         fontFamily: theme.fontFamily.medium,
-        fontSize: theme.fontSize.base,
+        fontSize: theme.fontSize.lg,
         color: theme.colors.mutedForeground,
     },
 }));

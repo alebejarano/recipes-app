@@ -1,8 +1,8 @@
 // src/features/onboarding/screens/ImportSourcesScreen.tsx
+import { Feather, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, Feather, FontAwesome5 } from '@expo/vector-icons';
 
 import Button from '@/components/Button';
 import { createThemedStyles } from '@/styles/createStyles';
@@ -53,6 +53,7 @@ const sources: Source[] = [
     },
 ];
 
+
 export default function ImportSourcesScreen({
                                                 onContinue,
                                             }: ImportSourcesScreenProps) {
@@ -66,7 +67,8 @@ export default function ImportSourcesScreen({
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+
+    <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
                 <View style={styles.content}>
                     {/* Header */}
@@ -117,6 +119,7 @@ export default function ImportSourcesScreen({
                 </View>
             </View>
         </SafeAreaView>
+    
     );
 }
 
@@ -168,24 +171,24 @@ const styles = createThemedStyles(theme => ({
     iconCircleBase: {
         width: 40,
         height: 40,
-        borderRadius: theme.radii.full,
+        borderRadius: theme.radii.md,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: theme.spacing.md,
     },
     iconColor: {
-        color: theme.colors.cardForeground,
+        color: theme.colors.secondary,
     },
 
     // Circle background colors (approximate your design)
     iconCircleInstagram: {
-        backgroundColor: '#C942E0', // pseudo gradient mid-tone
+        backgroundColor: '#bb51dd', // pseudo gradient mid-tone
     },
     iconCircleWeb: {
         backgroundColor: theme.colors.primary,
     },
     iconCircleYoutube: {
-        backgroundColor: '#EA4335',
+        backgroundColor: '#ff0034',
     },
     iconCircleScreenshots: {
         backgroundColor: theme.colors.terracotta,

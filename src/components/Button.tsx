@@ -1,14 +1,14 @@
 // src/components/Button.tsx
+import { createThemedStyles } from '@/styles/createStyles';
 import React from 'react';
 import {
+    StyleProp,
     Text,
+    TextStyle,
     TouchableOpacity,
     View,
-    StyleProp,
     ViewStyle,
-    TextStyle,
 } from 'react-native';
-import { createThemedStyles } from '@/styles/createStyles';
 
 interface ButtonProps {
     children: React.ReactNode;
@@ -116,7 +116,7 @@ const styles = createThemedStyles(theme => ({
 
     /* ===== Disabled tweaks ===== */
     disabled: {
-        opacity: 0.9,
+        opacity: 0.7,
     },
     disabled_primary: {
         backgroundColor: theme.colors.sageLight, // softer green from your palette

@@ -1,22 +1,23 @@
 // src/features/auth/screens/AuthScreen.tsx
 
-import React, { useState } from 'react';
-import {
-    View,
-    Text,
-    ScrollView,
-    TextInput,
-    TouchableOpacity,
-    KeyboardAvoidingView,
-    Platform,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Button from '@/components/Button';
-import { createThemedStyles } from '@/styles/createStyles';
 import OAuthButtons from '@/features/auth/components/OAuthButtons';
+import { useAuth } from '@/features/auth/context/AuthContext';
+import { createThemedStyles } from '@/styles/createStyles';
 
 export type AuthMode = 'login' | 'register';
 
@@ -26,6 +27,8 @@ type AuthScreenProps = {
 
 export default function AuthScreen({ initialMode }: AuthScreenProps) {
     const router = useRouter();
+    const { login, register } = useAuth();
+
 
     const [mode, setMode] = useState<AuthMode>(initialMode);
     const [showPassword, setShowPassword] = useState(false);
@@ -37,25 +40,26 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
-    const handleSubmit = () => {
-        if (!email || !password || (!isLogin && !confirmPassword)) {
-            console.warn('Missing fields');
-            return;
+    const handleSubmit = async () => {
+    if (!email || !password || (!isLogin && !confirmPassword)) return;
+
+    if (!isLogin && password !== confirmPassword) return;
+
+    setLoading(true);
+
+    try {
+        if (isLogin) {
+        await login(email, password);
+        } else {
+        await register(email, password);
         }
 
-        if (!isLogin && password !== confirmPassword) {
-            console.warn('Passwords do not match');
-            return;
-        }
-
-        setLoading(true);
-
-        // TODO: replace with real auth call
-        setTimeout(() => {
-            setLoading(false);
-            // router.replace('/(auth)/(tabs)');
-        }, 1200);
+        router.replace('/(auth)/(tabs)');
+    } finally {
+        setLoading(false);
+    }
     };
+
 
     const handleForgotPassword = () => {
         router.push('/forgot-password');
@@ -83,7 +87,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
                 >
                     {/* Back */}
                     <TouchableOpacity
-                        onPress={() => router.back()}
+                        onPress={() => router.push('/onboarding/test')}
                         style={styles.backRow}
                     >
                         <Feather name="arrow-left" size={18} style={styles.backIcon} />

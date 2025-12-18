@@ -1,25 +1,28 @@
 // app/onboarding/WelcomeScreen.tsx
-import React from 'react';
-import { Image, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import welcomeIllustration from '@assets/illustrations/welcome-illustration.png';
-import { createThemedStyles } from '@/styles/createStyles';
 import Button from '@/components/Button';
+import IllustrationHero from '@/components/IllustrationHero';
+import { createThemedStyles } from '@/styles/createStyles';
+import welcomeIllustration from '@assets/illustrations/welcome-illustration.png';
+import React from 'react';
+import { Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface WelcomeScreenProps {
     onContinue: () => void;
 }
 
 export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
+    
     return (
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
                 {/* Illustration */}
-                <View style={styles.illustrationWrapper}>
-                    <Image
+                <View style={styles.heroBlock}>
+                    <IllustrationHero
                         source={welcomeIllustration}
-                        style={styles.illustration}
-                        resizeMode="cover"
+                        maxWidth={360}
+                        maxHeight={320}
+                        aspectRatio={4 / 3}
                     />
                 </View>
 
@@ -61,17 +64,8 @@ const styles = createThemedStyles(theme => ({
         alignItems: 'center',
         justifyContent: 'space-between',
     },
-    illustrationWrapper: {
-        width: '100%',
-        maxWidth: 360,
-        borderRadius: theme.radii.xxl,
-        overflow: 'hidden',
+    heroBlock: {
         marginTop: theme.spacing.lg,
-    },
-    illustration: {
-        width: '100%',
-        aspectRatio: 4 / 3,
-        borderRadius: theme.radii.xxl,
     },
     textBlock: {
         alignItems: 'center',

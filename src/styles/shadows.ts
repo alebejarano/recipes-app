@@ -1,10 +1,10 @@
 export const shadows = {
     soft: {
-        shadowColor: 'rgba(63, 50, 40, 0.08)',
+        shadowColor: 'rgba(178, 178, 178, 0.05)',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 1,
-        shadowRadius: 10, // ~20px blur
-        elevation: 4,
+        shadowRadius: 5, // ~20px blur
+        elevation: 2,
     },
     medium: {
         shadowColor: 'rgba(63, 50, 40, 0.12)',
