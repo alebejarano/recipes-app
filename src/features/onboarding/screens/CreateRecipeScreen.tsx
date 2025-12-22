@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons';
 
 import Button from '@/components/Button';
+import TagChip from "@/components/TagChip";
 import { createThemedStyles } from '@/styles/createStyles';
 
 interface CreateRecipeScreenProps {
@@ -61,228 +62,199 @@ export default function CreateRecipeScreen({
     /* ========= COMPLETE STATE ========= */
     if (isComplete) {
         return (
-            <SafeAreaView style={styles.safeArea}>
-                <View style={styles.centeredContainer}>
-                    <View style={styles.completeCheckCircle}>
-                        <Feather
-                            name="check"
-                            size={40}
-                            style={styles.completeCheckIcon}
-                        />
-                    </View>
-
-                    <View style={styles.completeTextBlock}>
-                        <Text style={styles.completeTitle}>Recipe saved!</Text>
-                        <Text style={styles.completeSubtitle}>
-                            Settling into your collection...
-                        </Text>
-                    </View>
-
-                    <View style={styles.previewCard}>
-                        <View style={styles.previewEmojiWrapper}>
-                            <Text style={styles.previewEmoji}>📝</Text>
+                <SafeAreaView style={styles.safeArea}>
+                    <View style={styles.centeredContainer}>
+                        <View style={styles.completeCheckCircle}>
+                            <Feather
+                                name="check"
+                                size={40}
+                                style={styles.completeCheckIcon}
+                            />
                         </View>
-                        <View style={styles.previewTextWrapper}>
-                            <Text style={styles.previewTitle} numberOfLines={1}>
-                                {title}
+
+                        <View style={styles.completeTextBlock}>
+                            <Text style={styles.completeTitle}>Recipe saved!</Text>
+                            <Text style={styles.completeSubtitle}>
+                                Settling into your collection...
                             </Text>
-                            <Text style={styles.previewMeta}>Added just now</Text>
                         </View>
-                        <Ionicons
-                            name="sparkles-outline"
-                            size={16}
-                            style={styles.previewSparkles}
-                        />
+
+                        <View style={styles.previewCard}>
+                            <View style={styles.previewEmojiWrapper}>
+                                <Text style={styles.previewEmoji}>📝</Text>
+                            </View>
+                            <View style={styles.previewTextWrapper}>
+                                <Text style={styles.previewTitle} numberOfLines={1}>
+                                    {title}
+                                </Text>
+                                <Text style={styles.previewMeta}>Added just now</Text>
+                            </View>
+                            <Ionicons
+                                name="sparkles-outline"
+                                size={16}
+                                style={styles.previewSparkles}
+                            />
+                        </View>
                     </View>
-                </View>
-            </SafeAreaView>
+                </SafeAreaView>
         );
     }
 
     /* ========= SAVING STATE ========= */
     if (isSaving) {
         return (
-            <SafeAreaView style={styles.safeArea}>
-                <View style={styles.centeredContainer}>
-                    <View style={styles.savingCircleWrapper}>
-                        <ActivityIndicator
-                            size="large"
-                            color={styles.savingSpinner.color}
-                        />
-                        <Ionicons
-                            name="sparkles-outline"
-                            size={32}
-                            style={styles.savingSparkles}
-                        />
+                <SafeAreaView style={styles.safeArea}>
+                    <View style={styles.centeredContainer}>
+                        <View style={styles.savingCircleWrapper}>
+                            <ActivityIndicator
+                                size="large"
+                                color={styles.savingSpinner.color}
+                            />
+                            <Ionicons
+                                name="sparkles-outline"
+                                size={32}
+                                style={styles.savingSparkles}
+                            />
+                        </View>
+                        <Text style={styles.savingTitle}>Saving your recipe...</Text>
+                        <Text style={styles.savingSubtitle}>
+                            Organizing everything beautifully
+                        </Text>
                     </View>
-                    <Text style={styles.savingTitle}>Saving your recipe...</Text>
-                    <Text style={styles.savingSubtitle}>
-                        Organizing everything beautifully
-                    </Text>
-                </View>
-            </SafeAreaView>
+                </SafeAreaView>
         );
     }
 
     /* ========= FORM STATE ========= */
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <View style={styles.container}>
-                <View style={styles.content}>
-                    {onBack && (
-                        <View style={styles.backWrapper}>
-                            <Button
-                                variant="ghost"
-                                size="md"
-                                onPress={onBack}
-                                style={styles.backButton}
-                                textStyle={styles.backText}
-                                icon={
-                                    <Feather
-                                        name="arrow-left"
-                                        size={16}
-                                        style={styles.backIcon}
+            <SafeAreaView style={styles.safeArea}>
+                <View style={styles.container}>
+                    <View style={styles.content}>
+                        {onBack && (
+                            <View style={styles.backWrapper}>
+                                <Button
+                                    variant="ghost"
+                                    size="md"
+                                    onPress={onBack}
+                                    style={styles.backButton}
+                                    textStyle={styles.backText}
+                                    icon={
+                                        <Feather
+                                            name="arrow-left"
+                                            size={16}
+                                            style={styles.backIcon}
+                                        />
+                                    }
+                                >
+                                    Back
+                                </Button>
+                            </View>
+                        )}
+
+                        <ScrollView
+                            contentContainerStyle={styles.scrollContent}
+                            keyboardShouldPersistTaps="handled"
+                            showsVerticalScrollIndicator={false}
+                        >
+                            {/* Header */}
+                            <View style={styles.header}>
+                                <Text style={styles.title}>Create your recipe</Text>
+                                <Text style={styles.subtitle}>
+                                    Add the basics—you can always edit later.
+                                </Text>
+                            </View>
+
+                            {/* Recipe Title */}
+                            <View style={styles.fieldGroup}>
+                                <Text style={styles.fieldLabel}>Recipe Title</Text>
+                                <View
+                                    style={[
+                                        styles.inputWrapper,
+                                        titleFocused && styles.inputWrapperFocused,
+                                    ]}
+                                >
+                                    <TextInput
+                                        value={title}
+                                        onChangeText={setTitle}
+                                        placeholder="e.g., Grandma's Pasta"
+                                        placeholderTextColor={
+                                            styles.inputPlaceholder.color
+                                        }
+                                        onFocus={() => setTitleFocused(true)}
+                                        onBlur={() => setTitleFocused(false)}
+                                        style={styles.input}
                                     />
-                                }
-                            >
-                                Back
-                            </Button>
-                        </View>
-                    )}
+                                </View>
+                            </View>
 
-                    <ScrollView
-                        contentContainerStyle={styles.scrollContent}
-                        keyboardShouldPersistTaps="handled"
-                        showsVerticalScrollIndicator={false}
-                    >
-                        {/* Header */}
-                        <View style={styles.header}>
-                            <Text style={styles.title}>Create your recipe</Text>
-                            <Text style={styles.subtitle}>
-                                Add the basics—you can always edit later.
-                            </Text>
-                        </View>
+                            {/* Instructions */}
+                            <View style={styles.fieldGroup}>
+                                <Text style={styles.fieldLabel}>
+                                    Instructions or Notes
+                                </Text>
+                                <View
+                                    style={[
+                                        styles.textAreaWrapper,
+                                        contentFocused && styles.inputWrapperFocused,
+                                    ]}
+                                >
+                                    <TextInput
+                                        value={content}
+                                        onChangeText={setContent}
+                                        placeholder="Paste your recipe here, or jot down the steps..."
+                                        placeholderTextColor={
+                                            styles.inputPlaceholder.color
+                                        }
+                                        multiline
+                                        textAlignVertical="top"
+                                        onFocus={() => setContentFocused(true)}
+                                        onBlur={() => setContentFocused(false)}
+                                        style={styles.textArea}
+                                    />
+                                </View>
+                            </View>
 
-                        {/* Recipe Title */}
-                        <View style={styles.fieldGroup}>
-                            <Text style={styles.fieldLabel}>Recipe Title</Text>
-                            <View
-                                style={[
-                                    styles.inputWrapper,
-                                    titleFocused && styles.inputWrapperFocused,
-                                ]}
-                            >
-                                <TextInput
-                                    value={title}
-                                    onChangeText={setTitle}
-                                    placeholder="e.g., Grandma's Pasta"
-                                    placeholderTextColor={
-                                        styles.inputPlaceholder.color
-                                    }
-                                    onFocus={() => setTitleFocused(true)}
-                                    onBlur={() => setTitleFocused(false)}
-                                    style={styles.input}
+                            {/* Tags */}
+                            <View style={styles.fieldGroup}>
+                                <Text style={styles.fieldLabel}>
+                                    Tags (optional)
+                                </Text>
+
+                                <View style={styles.tagsContainer}>
+                                    {suggestedTags.map(tag => (
+                                        <TagChip
+                                            key={tag}
+                                            label={tag}
+                                            selected={tags.includes(tag)}
+                                            onPress={() => toggleTag(tag)}
+                                        />
+                                    ))}
+                                </View>
+
+                            </View>
+                        </ScrollView>
+                    </View>
+
+                    {/* Footer button */}
+                    <View style={styles.footer}>
+                        <Button
+                            onPress={handleSave}
+                            size="xl"
+                            variant="primary"
+                            disabled={!isValid}
+                            icon={
+                                <Feather
+                                    name="plus"
+                                    size={20}
+                                    style={styles.addIcon}
                                 />
-                            </View>
-                        </View>
-
-                        {/* Instructions */}
-                        <View style={styles.fieldGroup}>
-                            <Text style={styles.fieldLabel}>
-                                Instructions or Notes
-                            </Text>
-                            <View
-                                style={[
-                                    styles.textAreaWrapper,
-                                    contentFocused && styles.inputWrapperFocused,
-                                ]}
-                            >
-                                <TextInput
-                                    value={content}
-                                    onChangeText={setContent}
-                                    placeholder="Paste your recipe here, or jot down the steps..."
-                                    placeholderTextColor={
-                                        styles.inputPlaceholder.color
-                                    }
-                                    multiline
-                                    textAlignVertical="top"
-                                    onFocus={() => setContentFocused(true)}
-                                    onBlur={() => setContentFocused(false)}
-                                    style={styles.textArea}
-                                />
-                            </View>
-                        </View>
-
-                        {/* Tags */}
-                        <View style={styles.fieldGroup}>
-                            <Text style={styles.fieldLabel}>
-                                Tags (optional)
-                            </Text>
-                            <View style={styles.tagsContainer}>
-                                {suggestedTags.map(tag => {
-                                    const isSelected = tags.includes(tag);
-                                    return (
-                                        <View key={tag} style={styles.tagWrapper}>
-                                            <Button
-                                                onPress={() => toggleTag(tag)}
-                                                variant={
-                                                    isSelected
-                                                        ? 'primary'
-                                                        : 'soft'
-                                                }
-                                                size="md"
-                                                style={[
-                                                    styles.tagButton,
-                                                    isSelected &&
-                                                    styles.tagButtonSelected,
-                                                ]}
-                                                textStyle={[
-                                                    styles.tagText,
-                                                    isSelected &&
-                                                    styles.tagTextSelected,
-                                                ]}
-                                                icon={
-                                                    isSelected ? (
-                                                        <Feather
-                                                            name="x"
-                                                            size={12}
-                                                            style={
-                                                                styles.tagIconSelected
-                                                            }
-                                                        />
-                                                    ) : undefined
-                                                }
-                                            >
-                                                {tag}
-                                            </Button>
-                                        </View>
-                                    );
-                                })}
-                            </View>
-                        </View>
-                    </ScrollView>
+                            }
+                        >
+                            Add Recipe
+                        </Button>
+                    </View>
                 </View>
-
-                {/* Footer button */}
-                <View style={styles.footer}>
-                    <Button
-                        onPress={handleSave}
-                        size="xl"
-                        variant="primary"
-                        disabled={!isValid}
-                        icon={
-                            <Feather
-                                name="plus"
-                                size={20}
-                                style={styles.addIcon}
-                            />
-                        }
-                    >
-                        Add Recipe
-                    </Button>
-                </View>
-            </View>
-        </SafeAreaView>
+            </SafeAreaView>
     );
 }
 
@@ -353,7 +325,7 @@ const styles = createThemedStyles(theme => ({
     inputWrapper: {
         borderWidth: 2,
         borderColor: theme.colors.border,
-        borderRadius: theme.radii.xxl,
+        borderRadius: theme.radii.xl,
         backgroundColor: theme.colors.card,
         paddingHorizontal: theme.spacing.md,
         paddingVertical: theme.spacing.sm,
@@ -361,7 +333,7 @@ const styles = createThemedStyles(theme => ({
     textAreaWrapper: {
         borderWidth: 2,
         borderColor: theme.colors.border,
-        borderRadius: theme.radii.xxl,
+        borderRadius: theme.radii.xl,
         backgroundColor: theme.colors.card,
         paddingHorizontal: theme.spacing.md,
         paddingVertical: theme.spacing.sm,
@@ -393,28 +365,6 @@ const styles = createThemedStyles(theme => ({
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: theme.spacing.sm,
-    },
-    tagWrapper: {
-        marginBottom: theme.spacing.xs,
-    },
-    tagButton: {
-        borderRadius: 999,
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.xs,
-    },
-    tagButtonSelected: {
-        backgroundColor: theme.colors.primary,
-    },
-    tagText: {
-        fontFamily: theme.fontFamily.medium,
-        fontSize: theme.fontSize.sm,
-        color: theme.colors.mutedForeground,
-    },
-    tagTextSelected: {
-        color: theme.colors.primaryForeground,
-    },
-    tagIconSelected: {
-        color: theme.colors.primaryForeground,
     },
 
     /* Footer */

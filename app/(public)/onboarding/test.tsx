@@ -1,154 +1,266 @@
-// src/features/onboarding/screens/MagicMomentScreen.tsx
-import { Feather } from '@expo/vector-icons';
-import React from 'react';
-import { Text, View } from 'react-native';
+// src/features/onboarding/screens/CreateRecipeScreen.tsx
+import React, { useState } from 'react';
+import {
+    View,
+    Text,
+    TextInput,
+    ScrollView,
+    ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather, Ionicons } from '@expo/vector-icons';
 
 import Button from '@/components/Button';
-import OnboardingLayout from '@/features/onboarding/components/OnboardingLayout';
+import TagChip from "@/components/TagChip";
 import { createThemedStyles } from '@/styles/createStyles';
+import OnboardingLayout from '@/features/onboarding/components/OnboardingLayout';
 
-interface MagicMomentScreenProps {
-    onAddRecipe: () => void;
-    onGoHome: () => void;
+interface CreateRecipeScreenProps {
+    onSave: () => void;
+    onBack?: () => void;
 }
 
-export default function MagicMomentScreen({
-                                              onAddRecipe,
-                                              onGoHome,
-                                          }: MagicMomentScreenProps) {
-    return (
+const suggestedTags = [
+    'Dinner',
+    'Quick',
+    'Healthy',
+    'Comfort Food',
+    'Vegetarian',
+    'Dessert',
+];
 
-        <OnboardingLayout step={2} totalSteps={3}>
+export default function CreateRecipeScreen({
+                                               onSave,
+                                               onBack,
+                                           }: CreateRecipeScreenProps) {
+    const [title, setTitle] = useState('');
+    const [content, setContent] = useState('');
+    const [tags, setTags] = useState<string[]>([]);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isComplete, setIsComplete] = useState(false);
+
+    const [titleFocused, setTitleFocused] = useState(false);
+    const [contentFocused, setContentFocused] = useState(false);
+
+    const toggleTag = (tag: string) => {
+        setTags(prev =>
+            prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag],
+        );
+    };
+
+    const handleSave = () => {
+        if (!title.trim()) return;
+        setIsSaving(true);
+        setTimeout(() => {
+            setIsSaving(false);
+            setIsComplete(true);
+            setTimeout(onSave, 1500);
+        }, 1500);
+    };
+
+    const isValid = title.trim().length > 0;
+
+    /* ========= COMPLETE STATE ========= */
+    if (isComplete) {
+        return (
+            <OnboardingLayout step={1} totalSteps={3}>
             <SafeAreaView style={styles.safeArea}>
-                        <View style={styles.container}>
-                            <View style={styles.content}>
-                                {/* Header */}
-                                <View style={styles.header}>
-                                    <Text style={styles.title}>
-                                        This is how your recipes{'\n'}will look
-                                    </Text>
-                                    <Text style={styles.subtitle}>
-                                        Clean, searchable, always with you.
-                                    </Text>
-                                </View>
-            
-                                {/* Sample recipe card */}
-                                <View style={styles.card}>
-                                    {/* Top image / hero */}
-                                    <View style={styles.cardHero}>
-                                        <View style={styles.emojiWrapper}>
-                                            <Text style={styles.emoji}>🥗</Text>
-                                        </View>
-            
-                                        <View style={styles.badgeRow}>
-                                            <View style={styles.badgePill}>
-                                                <Text style={styles.badgeText}>Healthy</Text>
-                                            </View>
-                                            <View style={styles.badgePill}>
-                                                <Text style={styles.badgeText}>Quick</Text>
-                                            </View>
-                                        </View>
-            
-                                        <View style={styles.bookmarkButton}>
-                                            <Feather
-                                                name="bookmark"
-                                                size={20}
-                                                style={styles.bookmarkIcon}
-                                            />
-                                        </View>
-                                    </View>
-            
-                                    {/* Card body */}
-                                    <View style={styles.cardBody}>
-                                        <Text style={styles.recipeTitle}>
-                                            Mediterranean Quinoa Bowl
-                                        </Text>
-                                        <Text style={styles.recipeDescription}>
-                                            A fresh, protein-packed bowl with crisp vegetables
-                                            and tangy feta.
-                                        </Text>
-            
-                                        <View style={styles.metaRow}>
-                                            <View style={styles.metaItem}>
-                                                <Feather
-                                                    name="clock"
-                                                    size={14}
-                                                    style={styles.metaIcon}
-                                                />
-                                                <Text style={styles.metaText}>25 min</Text>
-                                            </View>
-                                            <View style={styles.metaItem}>
-                                                <Feather
-                                                    name="users"
-                                                    size={14}
-                                                    style={styles.metaIcon}
-                                                />
-                                                <Text style={styles.metaText}>2 servings</Text>
-                                            </View>
-                                        </View>
-            
-                                        {/* Ingredients preview */}
-                                        <View style={styles.ingredientsCard}>
-                                            <View style={styles.ingredientsHeader}>
-                                                <Feather
-                                                    name="tag"
-                                                    size={12}
-                                                    style={styles.ingredientsIcon}
-                                                />
-                                                <Text style={styles.ingredientsLabel}>
-                                                    INGREDIENTS
-                                                </Text>
-                                            </View>
-            
-                                            <View style={styles.ingredientsChipsRow}>
-                                                {[
-                                                    'Quinoa',
-                                                    'Cucumber',
-                                                    'Cherry tomatoes',
-                                                    'Feta',
-                                                    '+4 more',
-                                                ].map((ingredient, index) => (
-                                                    <View
-                                                        key={index}
-                                                        style={styles.ingredientChip}
-                                                    >
-                                                        <Text style={styles.ingredientChipText}>
-                                                            {ingredient}
-                                                        </Text>
-                                                    </View>
-                                                ))}
-                                            </View>
-                                        </View>
-        
-                                    </View>
-                                </View>
-                            </View>
-            
-                            {/* Actions */}
-                            <View style={styles.actions}>
-                                <Button
-                                    onPress={onAddRecipe}
-                                    size="xl"
-                                    variant="primary"
-                                    icon={<Feather name="plus" size={20} style={styles.addIcon} />}
-                                >
-                                    Add Your First Recipe
-                                </Button>
-            
-                                <Button
-                                    onPress={onGoHome}
-                                    size="lg"
-                                    variant="ghost"
-                                    textStyle={styles.goHomeText}
-                                    style={styles.goHomeButton}
-                                >
-                                    Go to Home
-                                </Button>
+                <View style={styles.centeredContainer}>
+                    <View style={styles.completeCheckCircle}>
+                        <Feather
+                            name="check"
+                            size={40}
+                            style={styles.completeCheckIcon}
+                        />
+                    </View>
+
+                    <View style={styles.completeTextBlock}>
+                        <Text style={styles.completeTitle}>Recipe saved!</Text>
+                        <Text style={styles.completeSubtitle}>
+                            Settling into your collection...
+                        </Text>
+                    </View>
+
+                    <View style={styles.previewCard}>
+                        <View style={styles.previewEmojiWrapper}>
+                            <Text style={styles.previewEmoji}>📝</Text>
+                        </View>
+                        <View style={styles.previewTextWrapper}>
+                            <Text style={styles.previewTitle} numberOfLines={1}>
+                                {title}
+                            </Text>
+                            <Text style={styles.previewMeta}>Added just now</Text>
+                        </View>
+                        <Ionicons
+                            name="sparkles-outline"
+                            size={16}
+                            style={styles.previewSparkles}
+                        />
+                    </View>
+                </View>
+            </SafeAreaView>
+            </OnboardingLayout>
+        );
+    }
+
+    /* ========= SAVING STATE ========= */
+    if (isSaving) {
+        return (
+                <OnboardingLayout step={1} totalSteps={3}>
+            <SafeAreaView style={styles.safeArea}>
+                <View style={styles.centeredContainer}>
+                    <View style={styles.savingCircleWrapper}>
+                        <ActivityIndicator
+                            size="large"
+                            color={styles.savingSpinner.color}
+                        />
+                        <Ionicons
+                            name="sparkles-outline"
+                            size={32}
+                            style={styles.savingSparkles}
+                        />
+                    </View>
+                    <Text style={styles.savingTitle}>Saving your recipe...</Text>
+                    <Text style={styles.savingSubtitle}>
+                        Organizing everything beautifully
+                    </Text>
+                </View>
+            </SafeAreaView>
+            </OnboardingLayout>
+        );
+    }
+
+    /* ========= FORM STATE ========= */
+    return (
+        <OnboardingLayout step={1} totalSteps={3}>
+        <SafeAreaView style={styles.safeArea}>
+            <View style={styles.container}>
+                <View style={styles.content}>
+                    {onBack && (
+                        <View style={styles.backWrapper}>
+                            <Button
+                                variant="ghost"
+                                size="md"
+                                onPress={onBack}
+                                style={styles.backButton}
+                                textStyle={styles.backText}
+                                icon={
+                                    <Feather
+                                        name="arrow-left"
+                                        size={16}
+                                        style={styles.backIcon}
+                                    />
+                                }
+                            >
+                                Back
+                            </Button>
+                        </View>
+                    )}
+
+                    <ScrollView
+                        contentContainerStyle={styles.scrollContent}
+                        keyboardShouldPersistTaps="handled"
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {/* Header */}
+                        <View style={styles.header}>
+                            <Text style={styles.title}>Create your recipe</Text>
+                            <Text style={styles.subtitle}>
+                                Add the basics—you can always edit later.
+                            </Text>
+                        </View>
+
+                        {/* Recipe Title */}
+                        <View style={styles.fieldGroup}>
+                            <Text style={styles.fieldLabel}>Recipe Title</Text>
+                            <View
+                                style={[
+                                    styles.inputWrapper,
+                                    titleFocused && styles.inputWrapperFocused,
+                                ]}
+                            >
+                                <TextInput
+                                    value={title}
+                                    onChangeText={setTitle}
+                                    placeholder="e.g., Grandma's Pasta"
+                                    placeholderTextColor={
+                                        styles.inputPlaceholder.color
+                                    }
+                                    onFocus={() => setTitleFocused(true)}
+                                    onBlur={() => setTitleFocused(false)}
+                                    style={styles.input}
+                                />
                             </View>
                         </View>
-                    </SafeAreaView>
-      
+
+                        {/* Instructions */}
+                        <View style={styles.fieldGroup}>
+                            <Text style={styles.fieldLabel}>
+                                Instructions or Notes
+                            </Text>
+                            <View
+                                style={[
+                                    styles.textAreaWrapper,
+                                    contentFocused && styles.inputWrapperFocused,
+                                ]}
+                            >
+                                <TextInput
+                                    value={content}
+                                    onChangeText={setContent}
+                                    placeholder="Paste your recipe here, or jot down the steps..."
+                                    placeholderTextColor={
+                                        styles.inputPlaceholder.color
+                                    }
+                                    multiline
+                                    textAlignVertical="top"
+                                    onFocus={() => setContentFocused(true)}
+                                    onBlur={() => setContentFocused(false)}
+                                    style={styles.textArea}
+                                />
+                            </View>
+                        </View>
+
+                        {/* Tags */}
+                        <View style={styles.fieldGroup}>
+                            <Text style={styles.fieldLabel}>
+                                Tags (optional)
+                            </Text>
+
+                            <View style={styles.tagsContainer}>
+                                {suggestedTags.map(tag => (
+                                    <TagChip
+                                        key={tag}
+                                        label={tag}
+                                        selected={tags.includes(tag)}
+                                        onPress={() => toggleTag(tag)}
+                                    />
+                                ))}
+                            </View>
+
+                        </View>
+                    </ScrollView>
+                </View>
+
+                {/* Footer button */}
+                <View style={styles.footer}>
+                    <Button
+                        onPress={handleSave}
+                        size="xl"
+                        variant="primary"
+                        disabled={!isValid}
+                        icon={
+                            <Feather
+                                name="plus"
+                                size={20}
+                                style={styles.addIcon}
+                            />
+                        }
+                    >
+                        Add Recipe
+                    </Button>
+                </View>
+            </View>
+        </SafeAreaView>
         </OnboardingLayout>
     );
 }
@@ -160,184 +272,223 @@ const styles = createThemedStyles(theme => ({
     },
     container: {
         flex: 1,
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.xxs,
+        paddingHorizontal: theme.spacing.lg,
+        paddingVertical: theme.spacing.lg,
     },
     content: {
         flex: 1,
     },
 
+    scrollContent: {
+        paddingBottom: theme.spacing.xl,
+    },
+
+    /* Back */
+    backWrapper: {
+        marginBottom: theme.spacing.md,
+    },
+    backButton: {
+        paddingHorizontal: 0,
+        alignSelf: 'flex-start',
+    },
+    backText: {
+        fontFamily: theme.fontFamily.medium,
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.mutedForeground,
+    },
+    backIcon: {
+        color: theme.colors.mutedForeground,
+    },
+
     /* Header */
     header: {
-        alignItems: 'center',
         marginBottom: theme.spacing.lg,
     },
     title: {
-        textAlign: 'center',
         fontFamily: theme.fontFamily.semibold,
         fontSize: theme.fontSize.display,
         lineHeight: theme.lineHeight.display,
         color: theme.colors.foreground,
-        marginBottom: theme.spacing.lg,
+        marginBottom: theme.spacing.xs,
     },
     subtitle: {
-        textAlign: 'center',
         fontFamily: theme.fontFamily.regular,
         fontSize: theme.fontSize.base,
         lineHeight: theme.lineHeight.base,
         color: theme.colors.mutedForeground,
     },
 
-    /* Card */
-    card: {
-        backgroundColor: theme.colors.card,
-        borderRadius: theme.radii.md,
-        overflow: 'hidden',
-        borderWidth: 1,
+    /* Fields */
+    fieldGroup: {
+        marginBottom: theme.spacing.lg,
+    },
+    fieldLabel: {
+        fontFamily: theme.fontFamily.medium,
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.foreground,
+        marginBottom: theme.spacing.sm,
+    },
+
+    inputWrapper: {
+        borderWidth: 2,
         borderColor: theme.colors.border,
-        shadow: theme.shadows.soft,
-        elevation: 2,
-    },
-    cardHero: {
-        height: 180,
-        backgroundColor: theme.colors.peach,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.md,
-    },
-    emojiWrapper: {
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    emoji: {
-        fontSize: 48,
-    },
-    badgeRow: {
-        position: 'absolute',
-        top: theme.spacing.md,
-        right: theme.spacing.md,
-        flexDirection: 'row',
-        gap: theme.spacing.xs,
-    },
-    badgePill: {
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.xs,
-        borderRadius: theme.radii.full,
-        backgroundColor: theme.colors.card,
-        opacity: 0.9,
-    },
-    badgeText: {
-        fontFamily: theme.fontFamily.medium,
-        fontSize: theme.fontSize.xs,
-        color: theme.colors.foreground,
-    },
-    bookmarkButton: {
-        position: 'absolute',
-        right: theme.spacing.md,
-        bottom: theme.spacing.md,
-        width: 40,
-        height: 40,
-        borderRadius: theme.radii.full,
-        backgroundColor: theme.colors.card,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    bookmarkIcon: {
-        color: theme.colors.primary,
-    },
-
-    cardBody: {
-        paddingHorizontal: theme.spacing.lg,
-        paddingVertical: theme.spacing.md,
-    },
-    recipeTitle: {
-        fontFamily: theme.fontFamily.semibold,
-        fontSize: theme.fontSize.xl,
-        lineHeight: theme.lineHeight.xl,
-        color: theme.colors.foreground,
-        marginBottom: theme.spacing.xs,
-    },
-    recipeDescription: {
-        fontFamily: theme.fontFamily.regular,
-        fontSize: theme.fontSize.sm,
-        lineHeight: theme.lineHeight.base,
-        color: theme.colors.mutedForeground,
-        marginBottom: theme.spacing.md,
-    },
-
-    metaRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: theme.spacing.lg,
-        marginBottom: theme.spacing.md,
-    },
-    metaItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: theme.spacing.xs,
-    },
-    metaIcon: {
-        color: theme.colors.mutedForeground,
-    },
-    metaText: {
-        fontFamily: theme.fontFamily.regular,
-        fontSize: theme.fontSize.sm,
-        color: theme.colors.mutedForeground,
-    },
-
-    /* Ingredients */
-    ingredientsCard: {
-        backgroundColor: theme.colors.secondary,
         borderRadius: theme.radii.xl,
+        backgroundColor: theme.colors.card,
         paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.md,
-        marginBottom: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
     },
-    ingredientsHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: theme.spacing.xs,
-        marginBottom: theme.spacing.xs,
+    textAreaWrapper: {
+        borderWidth: 2,
+        borderColor: theme.colors.border,
+        borderRadius: theme.radii.xl,
+        backgroundColor: theme.colors.card,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        minHeight: 140,
     },
-    ingredientsIcon: {
+    inputWrapperFocused: {
+        borderColor: theme.colors.primary,
+    },
+
+    input: {
+        fontFamily: theme.fontFamily.regular,
+        fontSize: theme.fontSize.base,
+        lineHeight: theme.lineHeight.base,
+        color: theme.colors.foreground,
+    },
+    textArea: {
+        flex: 1,
+        fontFamily: theme.fontFamily.regular,
+        fontSize: theme.fontSize.base,
+        lineHeight: theme.lineHeight.base,
+        color: theme.colors.foreground,
+    },
+    inputPlaceholder: {
         color: theme.colors.mutedForeground,
     },
-    ingredientsLabel: {
-        fontFamily: theme.fontFamily.medium,
-        fontSize: theme.fontSize.xs,
-        color: theme.colors.mutedForeground,
-    },
-    ingredientsChipsRow: {
+
+    /* Tags */
+    tagsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: theme.spacing.xs,
-    },
-    ingredientChip: {
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.xs,
-        borderRadius: theme.radii.lg,
-        backgroundColor: theme.colors.card,
-    },
-    ingredientChipText: {
-        fontFamily: theme.fontFamily.regular,
-        fontSize: theme.fontSize.xs,
-        color: theme.colors.foreground,
+        gap: theme.spacing.sm,
     },
 
-    /* Actions */
-    actions: {
-        marginTop: theme.spacing['4xl'],
+    /* Footer */
+    footer: {
+        marginTop: theme.spacing.md,
     },
     addIcon: {
         color: theme.colors.primaryForeground,
     },
-    goHomeButton: {
-        marginTop: theme.spacing.lg,
+
+    /* Complete state */
+    centeredContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: theme.spacing.lg,
     },
-    goHomeText: {
+    completeCheckCircle: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: theme.colors.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: theme.spacing.lg,
+    },
+    completeCheckIcon: {
+        color: theme.colors.primaryForeground,
+    },
+    completeTextBlock: {
+        alignItems: 'center',
+        marginBottom: theme.spacing.lg,
+    },
+    completeTitle: {
+        fontFamily: theme.fontFamily.semibold,
+        fontSize: theme.fontSize.xl,
+        color: theme.colors.foreground,
+        marginBottom: theme.spacing.xs,
+    },
+    completeSubtitle: {
+        fontFamily: theme.fontFamily.regular,
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.mutedForeground,
+    },
+    previewCard: {
+        width: '100%',
+        maxWidth: 320,
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: theme.spacing.md,
+        borderRadius: theme.radii.xl,
+        backgroundColor: theme.colors.card,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        shadowColor: '#000',
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 2,
+    },
+    previewEmojiWrapper: {
+        width: 48,
+        height: 48,
+        borderRadius: theme.radii.lg,
+        backgroundColor: theme.colors.sageLight,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: theme.spacing.md,
+    },
+    previewEmoji: {
+        fontSize: 24,
+    },
+    previewTextWrapper: {
+        flex: 1,
+    },
+    previewTitle: {
         fontFamily: theme.fontFamily.medium,
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.foreground,
+        marginBottom: 2,
+    },
+    previewMeta: {
+        fontFamily: theme.fontFamily.regular,
+        fontSize: theme.fontSize.xs,
+        color: theme.colors.mutedForeground,
+    },
+    previewSparkles: {
+        color: theme.colors.primary,
+        marginLeft: theme.spacing.sm,
+    },
+
+    /* Saving state */
+    savingCircleWrapper: {
+        width: 96,
+        height: 96,
+        borderRadius: 48,
+        borderWidth: 4,
+        borderColor: theme.colors.sageLight,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: theme.spacing.lg,
+    },
+    savingSpinner: {
+        color: theme.colors.primary,
+    },
+    savingSparkles: {
+        position: 'absolute',
+        color: theme.colors.primary,
+    },
+    savingTitle: {
+        fontFamily: theme.fontFamily.semibold,
         fontSize: theme.fontSize.lg,
+        color: theme.colors.foreground,
+        marginBottom: theme.spacing.xs,
+    },
+    savingSubtitle: {
+        fontFamily: theme.fontFamily.regular,
+        fontSize: theme.fontSize.sm,
         color: theme.colors.mutedForeground,
     },
 }));

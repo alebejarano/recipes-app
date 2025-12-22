@@ -10,14 +10,17 @@ import {
     ViewStyle,
 } from 'react-native';
 
+type ButtonVariant = 'primary' | 'secondary' | 'soft' | 'accent' | 'ghost' | 'premium';
+type ButtonSize = 'md' | 'lg' | 'xl';
+
 interface ButtonProps {
     children: React.ReactNode;
     onPress: () => void;
-    variant?: 'primary' | 'secondary' | 'soft' | 'accent' | 'ghost' | 'premium' ;
-    size?: 'md' | 'lg' | 'xl';
+    variant?: ButtonVariant;
+    size?: ButtonSize;
     style?: StyleProp<ViewStyle>;
     textStyle?: StyleProp<TextStyle>;
-    icon?: React.ReactNode; // For Apple / Google icons
+    icon?: React.ReactNode;
     disabled?: boolean;
 }
 
@@ -34,23 +37,27 @@ export default function Button({
     return (
         <TouchableOpacity
             onPress={disabled ? undefined : onPress}
-            activeOpacity={disabled ? 1 : 0.8}
+            activeOpacity={disabled ? 1 : 0.85}
             disabled={disabled}
             style={[
                 styles.base,
                 styles[`size_${size}`],
-                styles[variant],
-                disabled && styles.disabled,
-                disabled && variant === 'primary' && styles.disabled_primary,
+
+                // normal variant
+                !disabled && styles[variant],
+
+                // disabled variant (solid, no fading)
+                disabled && styles[`disabled_${variant}`],
+
                 style,
             ]}
         >
             {icon && <View style={styles.icon}>{icon}</View>}
+
             <Text
                 style={[
                     styles.textBase,
-                    styles[`text_${variant}`],
-                    disabled && styles.textDisabled,
+                    !disabled ? styles[`text_${variant}`] : styles[`textDisabled_${variant}`],
                     textStyle,
                 ]}
             >
@@ -114,47 +121,55 @@ const styles = createThemedStyles(theme => ({
         elevation: 3,
     },
 
-    /* ===== Disabled tweaks ===== */
-    disabled: {
-        opacity: 0.7,
-    },
+    /* ===== Disabled (solid, not transparent) ===== */
     disabled_primary: {
-        backgroundColor: theme.colors.sageLight, // softer green from your palette
+        backgroundColor: theme.colors.primary,
+        opacity: 0.5,
         shadowOpacity: 0,
         elevation: 0,
     },
-    disabled_secondary: {},
-    disabled_soft: {},
-    disabled_accent: {},
-    disabled_ghost: {},
+    disabled_secondary: {
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        opacity: 0.7, // optional: only affects border, still looks OK
+    },
+    disabled_soft: {
+        backgroundColor: theme.colors.muted,
+    },
+    disabled_accent: {
+        backgroundColor: theme.colors.accent,
+        opacity: 0.85, // optional
+    },
+    disabled_ghost: {
+        backgroundColor: 'transparent',
+    },
+    disabled_premium: {
+        backgroundColor: theme.colors.terracotta, // keep solid
+        shadowOpacity: 0,
+        elevation: 0,
+        opacity: 0.85, // optional
+    },
 
-    /* ======= Text ======= */
+    /* ===== Text ===== */
     textBase: {
         fontFamily: theme.fontFamily.medium,
         fontSize: theme.fontSize.lg,
     },
-    text_primary: {
-        color: theme.colors.primaryForeground,
-    },
-    text_secondary: {
-        color: theme.colors.foreground,
-    },
-    text_soft: {
-        color: theme.colors.foreground,
-    },
-    text_accent: {
-        color: theme.colors.accentForeground,
-    },
-    text_ghost: {
-        color: theme.colors.mutedForeground,
-    },
-    text_premium: {
-        // terracotta button uses light foreground
-        color: theme.colors.accentForeground,
-    },
-    textDisabled: {
-        opacity: 0.9,
-    },
+    text_primary: { color: theme.colors.primaryForeground },
+    text_secondary: { color: theme.colors.foreground },
+    text_soft: { color: theme.colors.foreground },
+    text_accent: { color: theme.colors.accentForeground },
+    text_ghost: { color: theme.colors.mutedForeground },
+    text_premium: { color: theme.colors.accentForeground },
+
+    // Disabled text per variant (no global opacity wash-out)
+    textDisabled_primary: { color: theme.colors.primaryForeground },
+    textDisabled_secondary: { color: theme.colors.mutedForeground },
+    textDisabled_soft: { color: theme.colors.mutedForeground },
+    textDisabled_accent: { color: theme.colors.accentForeground },
+    textDisabled_ghost: { color: theme.colors.mutedForeground },
+    textDisabled_premium: { color: theme.colors.accentForeground },
 
     /* ===== Icon Wrapper ===== */
     icon: {
