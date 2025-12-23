@@ -2,13 +2,13 @@
 import { createThemedStyles } from '@/styles/createStyles';
 import React from 'react';
 import {
-    Image,
-    ImageResizeMode,
-    ImageSourcePropType,
-    StyleProp,
-    useWindowDimensions,
-    View,
-    ViewStyle,
+  Image,
+  ImageResizeMode,
+  ImageSourcePropType,
+  StyleProp,
+  useWindowDimensions,
+  View,
+  ViewStyle,
 } from 'react-native';
 
 type IllustrationHeroProps = {

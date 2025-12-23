@@ -29,7 +29,7 @@ export default function SpaceReadyScreen({
                     maxWidth={360}
                     maxHeight={320}
                     aspectRatio={4 / 3}
-                    resizeMode="contain"  // IMPORTANT: prevents cropping
+                    resizeMode="contain"  
                     style={styles.hero}
                 />
 

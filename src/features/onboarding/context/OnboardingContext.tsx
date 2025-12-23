@@ -102,11 +102,13 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   };
 
   const resetOnboarding = async () => {
-    await persist({
-      ...DEFAULT_STATE,
-      updatedAt: Date.now(),
-    });
-  };
+  // Reset in-memory state immediately (fast UI feedback)
+  setState({ ...DEFAULT_STATE, updatedAt: Date.now() });
+
+  // Remove persisted state so next cold start behaves like first run
+  await AsyncStorage.removeItem(STORAGE_KEY);
+};
+
 
   const value = useMemo<OnboardingContextValue>(() => {
     const hasCompletedOnboarding = state.completed;

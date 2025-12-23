@@ -23,6 +23,7 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
                         maxWidth={360}
                         maxHeight={320}
                         aspectRatio={4 / 3}
+                        resizeMode="contain"  
                     />
                 </View>
 
@@ -66,6 +67,8 @@ const styles = createThemedStyles(theme => ({
     },
     heroBlock: {
         marginTop: theme.spacing.lg,
+        width: '100%',
+        alignItems: 'center',
     },
     textBlock: {
         alignItems: 'center',
@@ -75,7 +78,7 @@ const styles = createThemedStyles(theme => ({
     title: {
         textAlign: 'center',
         fontFamily: theme.fontFamily.semibold,
-        fontSize: theme.fontSize.xxl,
+        fontSize: theme.fontSize.hero,
         lineHeight: theme.lineHeight.xxl,
         color: theme.colors.foreground,
     },
@@ -84,10 +87,11 @@ const styles = createThemedStyles(theme => ({
         fontFamily: theme.fontFamily.semibold,
     },
     subtitle: {
-        marginTop: theme.spacing.md,
+        marginTop: theme.spacing.xl,
+        marginBottom: theme.spacing.xl,
         textAlign: 'center',
         fontFamily: theme.fontFamily.regular,
-        fontSize: theme.fontSize.base,
+        fontSize: theme.fontSize.lg,
         lineHeight: theme.lineHeight.base,
         color: theme.colors.mutedForeground,
         maxWidth: 320,

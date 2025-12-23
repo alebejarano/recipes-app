@@ -9,12 +9,12 @@ import { createThemedStyles } from '@/styles/createStyles';
 
 interface MagicMomentScreenProps {
     onAddRecipe: () => void;
-    onGoHome: () => void;
+    onGoGetStarted: () => void;
 }
 
 export default function MagicMomentScreen({
                                               onAddRecipe,
-                                              onGoHome,
+                                              onGoGetStarted,
                                           }: MagicMomentScreenProps) {
     return (
 
@@ -135,13 +135,13 @@ export default function MagicMomentScreen({
                     </Button>
 
                     <Button
-                        onPress={onGoHome}
+                        onPress={onGoGetStarted}
                         size="lg"
                         variant="ghost"
                         textStyle={styles.goHomeText}
                         style={styles.goHomeButton}
                     >
-                        Go to Home
+                        Not Now
                     </Button>
                 </View>
             </View>
