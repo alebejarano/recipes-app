@@ -1,14 +1,13 @@
 // src/features/onboarding/components/OnboardingLayout.tsx
-
+import { Feather } from '@expo/vector-icons';
 import React, { ReactNode } from 'react';
 import {
-    View,
-    Text,
     ScrollView,
+    Text,
     TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
 
 import { createThemedStyles } from '@/styles/createStyles';
 
@@ -27,7 +26,7 @@ export default function OnboardingLayout({
                                              showBackButton = false,
                                              onBackPress,
                                          }: OnboardingLayoutProps) {
-    const showProgress = totalSteps > 0 && step > 0 && step <= totalSteps;
+    const showProgress = totalSteps > 0 && step >= 1 && step <= totalSteps;
     const progress =
         showProgress && totalSteps > 0 ? step / totalSteps : 0;
 

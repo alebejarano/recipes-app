@@ -1,7 +1,6 @@
 // app/onboarding/WelcomeScreen.tsx
 import Button from '@/components/Button';
 import IllustrationHero from '@/components/IllustrationHero';
-import OnboardingLayout from '@/features/onboarding/components/OnboardingLayout';
 import { createThemedStyles } from '@/styles/createStyles';
 import welcomeIllustration from '@assets/illustrations/welcome-illustration.png';
 import React from 'react';
@@ -15,7 +14,6 @@ interface WelcomeScreenProps {
 export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
     
     return (
-        <OnboardingLayout step={1} totalSteps={3}>
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
                 {/* Illustration */}
@@ -52,7 +50,6 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
                 </View>
             </View>
         </SafeAreaView>
-        </OnboardingLayout>
     );
 }
 

@@ -6,7 +6,6 @@ import spaceReadyIllustration from '@assets/illustrations/space-ready-illustrati
 import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import { Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface SpaceReadyScreenProps {
   onAddRecipe: () => void;
@@ -20,7 +19,6 @@ export default function SpaceReadyScreen({
                                          }: SpaceReadyScreenProps) {
     return (
 
-    <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
             {/* TOP: illustration + text (keeps a tight, controlled spacing) */}
             <View style={styles.topBlock}>
@@ -71,15 +69,10 @@ export default function SpaceReadyScreen({
             </Button>
             </View>
         </View>
-    </SafeAreaView>
     );
 }
 
 const styles = createThemedStyles(theme => ({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
   container: {
     flex: 1,
     paddingHorizontal: theme.spacing.lg,
