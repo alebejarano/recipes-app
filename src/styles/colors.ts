@@ -3,7 +3,7 @@
 export type ColorMode = 'light' | 'dark';
 
 export const lightColors = {
-    background: 'hsl(45 30% 97%)',
+    background: 'hsla(37, 50%, 94%, 1.00)',
     foreground: 'hsl(30 15% 20%)',
 
     card: 'hsl(45 25% 99%)',
@@ -37,8 +37,9 @@ export const lightColors = {
     sageDark: 'hsl(142 30% 35%)',
 
     primarySoft: 'hsl(142 20% 92%)',
+    primaryDark: 'hsl(143, 39%, 25%)',
 
-    cream: 'hsl(45 30% 97%)',
+    cream: 'hsla(37, 50%, 94%, 1.00)',
     creamDark: 'hsl(35 25% 90%)',
 
     terracotta: 'hsl(18 50% 65%)',

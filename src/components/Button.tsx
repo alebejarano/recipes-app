@@ -70,7 +70,7 @@ export default function Button({
 const styles = createThemedStyles(theme => ({
     base: {
         width: '100%',
-        borderRadius: 999,
+        borderRadius: theme.radii.xl,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -105,7 +105,7 @@ const styles = createThemedStyles(theme => ({
         borderColor: theme.colors.border,
     },
     soft: {
-        backgroundColor: theme.colors.muted,
+        backgroundColor: theme.colors.creamDark,
     },
     accent: {
         backgroundColor: theme.colors.accent,

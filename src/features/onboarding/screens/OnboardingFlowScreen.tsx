@@ -5,12 +5,12 @@ import { View } from 'react-native';
 
 import OnboardingLayout from '@/features/onboarding/components/OnboardingLayout';
 import AddRecipeScreen from '@/features/onboarding/screens/AddRecipeScreen';
-import CreateRecipeScreen from '@/features/onboarding/screens/CreateRecipeScreen';
 import IdentityScreen from '@/features/onboarding/screens/IdentityScreen';
 import ImportSourcesScreen from '@/features/onboarding/screens/ImportSourcesScreen';
 import MagicMomentScreen from '@/features/onboarding/screens/MagicMomentScreen';
 import SpaceReadyScreen from '@/features/onboarding/screens/SpaceReadyScreen';
 import WelcomeScreen from '@/features/onboarding/screens/WelcomeScreen';
+import CreateRecipeScreen from '@/features/recipes/screens/CreateRecipeScreen';
 
 import {
   useOnboarding,
@@ -59,10 +59,10 @@ export default function OnboardingFlowScreen() {
       return;
     }
 
-    // if (state.completed) {
-    //   router.replace('/login');
-    //   return;
-    // }
+    if (state.completed) {
+      router.replace('/login');
+      return;
+    }
 
     setStepLocal(state.step ?? 0);
     setPathLocal(state.path ?? null);
@@ -124,7 +124,13 @@ export default function OnboardingFlowScreen() {
         case 3:
           return <AddRecipeScreen onSelectManual={() => setStep(4)} />;
         case 4:
-          return <CreateRecipeScreen onSave={handleRecipeSaved} onBack={() => setStep(3)} />;
+          return (
+            <CreateRecipeScreen
+              variant="onboarding"
+              onSaved={() => handleRecipeSaved()}
+              onBack={() => setStep(3)}
+            />
+          );
         default:
           return <WelcomeScreen onContinue={() => setStep(1)} />;
       }
@@ -137,7 +143,13 @@ export default function OnboardingFlowScreen() {
         case 4:
           return <MagicMomentScreen onAddRecipe={() => setStep(5)} onGoGetStarted={goToGetStarted} />;
         case 5:
-          return <CreateRecipeScreen onSave={handleRecipeSaved} />;
+          return (
+            <CreateRecipeScreen
+              variant="onboarding"
+              onSaved={() => handleRecipeSaved()}
+            />
+          );
+
         default:
           return <WelcomeScreen onContinue={() => setStep(1)} />;
       }

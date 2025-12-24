@@ -85,14 +85,6 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
                     contentContainerStyle={styles.content}
                     keyboardShouldPersistTaps="handled"
                 >
-                    {/* Back */}
-                    <TouchableOpacity
-                        onPress={() => router.push('/onboarding/test')}
-                        style={styles.backRow}
-                    >
-                        <Feather name="arrow-left" size={18} style={styles.backIcon} />
-                        <Text style={styles.backText}>Back</Text>
-                    </TouchableOpacity>
 
                     {/* Header */}
                     <View style={styles.header}>
@@ -220,6 +212,17 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
                         onApplePress={handleAppleAuth}
                         onGooglePress={handleGoogleAuth}
                     />
+
+                    <TouchableOpacity
+                        onPress={() => router.replace('/get-started')}
+                        style={styles.notNowLink}
+                    >
+                    <Text
+                        style={styles.notNowText}>
+                        Not now
+                    </Text>
+                    </TouchableOpacity>
+
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
@@ -238,22 +241,6 @@ const styles = createThemedStyles(theme => ({
         flexGrow: 1,
         paddingHorizontal: theme.spacing.lg,
         paddingVertical: theme.spacing.xl,
-    },
-
-    /* Back */
-    backRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: theme.spacing.xl,
-    },
-    backIcon: {
-        color: theme.colors.warmGray,
-        marginRight: theme.spacing.xs,
-    },
-    backText: {
-        fontFamily: theme.fontFamily.medium,
-        fontSize: theme.fontSize.sm,
-        color: theme.colors.warmGray,
     },
 
     /* Header */
@@ -365,6 +352,17 @@ const styles = createThemedStyles(theme => ({
         fontFamily: theme.fontFamily.medium,
         fontSize: theme.fontSize.sm,
         color: theme.colors.sage,
+    },
+
+    /* not now text*/
+    notNowLink: {
+        marginTop: 24, 
+        alignSelf: 'center',
+    },
+    notNowText: {
+        fontFamily: theme.fontFamily.medium,
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.mutedForeground,
     },
 }));
 
