@@ -123,7 +123,7 @@ export default function CollectionsScreen() {
             count={item.count}
             kind={item.kind}
             onPress={() =>
-              router.push('/(dev)/(tabs)/add-recipe')
+              router.push(`/(dev)/collections/${encodeURIComponent(item.key)}`)
             }
           />
         )}

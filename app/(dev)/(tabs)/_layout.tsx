@@ -7,7 +7,7 @@ import { createThemedStyles } from '@/styles/createStyles';
 import { theme } from '@/styles/theme';
 
 const ICON_SIZE = 22;
-const ADD_ICON_SIZE = 24;
+const ADD_ICON_SIZE = 28;
 
 const styles = createThemedStyles((theme) => ({
   tabBar: {
@@ -25,8 +25,8 @@ const styles = createThemedStyles((theme) => ({
   },
 
   centerButtonWrap: {
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
@@ -113,9 +113,9 @@ export default function TabsLayout() {
       />
 
       <Tabs.Screen
-        name="notes"
+        name="search"
         options={{
-          title: 'Notes',
+          title: 'Search',
           tabBarIcon: ({ color }) => (
             <Feather name="file-text" size={ICON_SIZE} color={color} />
           ),
@@ -123,9 +123,9 @@ export default function TabsLayout() {
       />
 
       <Tabs.Screen
-        name="settings"
+        name="profile"
         options={{
-          title: 'Settings',
+          title: 'Profile',
           tabBarIcon: ({ color }) => (
             <Feather name="settings" size={ICON_SIZE} color={color} />
           ),
