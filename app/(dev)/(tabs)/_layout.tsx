@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { createThemedStyles } from '@/styles/createStyles';
 import { theme } from '@/styles/theme';
@@ -9,37 +10,69 @@ import { theme } from '@/styles/theme';
 const ICON_SIZE = 22;
 const ADD_ICON_SIZE = 28;
 
-const styles = createThemedStyles((theme) => ({
+// Make the add button size explicit (bigger than 40 looks like your screenshot)
+const ADD_BUTTON_SIZE = 58;
+
+const styles = createThemedStyles((t) => ({
   tabBar: {
-    backgroundColor: theme.colors.background,
-    borderTopColor: theme.colors.border,
+    backgroundColor: t.colors.background,
+    borderTopColor: t.colors.border,
     borderTopWidth: 1,
-    height: Platform.select({ ios: 84, android: 74 }),
+
+    // important on Android to avoid weird "floating" / overlap behavior
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+
     paddingTop: 10,
-    paddingBottom: Platform.select({ ios: 22, android: 12 }),
   },
 
   tabBarLabel: {
-    fontSize: theme.fontSize.xs,
-    fontFamily: theme.fontFamily.medium,
+    fontSize: t.fontSize.xs,
+    fontFamily: t.fontFamily.medium,
+    marginTop: 2,
   },
 
-  centerButtonWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.sage
+  /**
+   * This is the critical fix:
+   * The center tab must occupy the SAME flex slot as other tabs,
+   * otherwise it will never be perfectly centered.
+   */
+  centerSlot: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   centerButton: {
-    alignItems: "center",
-    justifyContent: "center",
+    width: ADD_BUTTON_SIZE,
+    height: ADD_BUTTON_SIZE,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: t.colors.sage,
+
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
   },
 }));
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+
+  // Base tab bar height without safe-area.
+  const baseHeight = Platform.select({ ios: 64, android: 62 }) ?? 62;
+
+  // Final height includes safe-area bottom so it never overlaps the system UI.
+  const tabBarHeight = baseHeight + insets.bottom;
+
+  // Lift the add button above the bar.
+  const lift = insets.bottom > 0 ? 22 : 18;
+
   return (
     <Tabs
       screenOptions={{
@@ -47,7 +80,14 @@ export default function TabsLayout() {
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.mutedForeground,
         tabBarLabelStyle: styles.tabBarLabel,
-        tabBarStyle: styles.tabBar,
+        tabBarHideOnKeyboard: true,
+        tabBarStyle: [
+          styles.tabBar,
+          {
+            height: tabBarHeight,
+            paddingBottom: insets.bottom,
+          },
+        ],
       }}
     >
       <Tabs.Screen
@@ -89,12 +129,11 @@ export default function TabsLayout() {
               accessibilityState,
               accessibilityRole,
               testID,
-              style,
               children,
             } = props;
 
             return (
-              <View style={styles.centerButtonWrap} pointerEvents="box-none">
+              <View style={styles.centerSlot} pointerEvents="box-none">
                 <TouchableOpacity
                   activeOpacity={0.9}
                   onPress={onPress ?? undefined}
@@ -102,7 +141,7 @@ export default function TabsLayout() {
                   accessibilityState={accessibilityState}
                   accessibilityRole={accessibilityRole}
                   testID={testID}
-                  style={[styles.centerButton, style]}
+                  style={[styles.centerButton, { transform: [{ translateY: -lift }] }]}
                 >
                   {children}
                 </TouchableOpacity>
@@ -117,7 +156,7 @@ export default function TabsLayout() {
         options={{
           title: 'Search',
           tabBarIcon: ({ color }) => (
-            <Feather name="file-text" size={ICON_SIZE} color={color} />
+            <Feather name="search" size={ICON_SIZE} color={color} />
           ),
         }}
       />
@@ -127,7 +166,7 @@ export default function TabsLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color }) => (
-            <Feather name="settings" size={ICON_SIZE} color={color} />
+            <Feather name="user" size={ICON_SIZE} color={color} />
           ),
         }}
       />

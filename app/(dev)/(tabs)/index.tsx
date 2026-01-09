@@ -1,467 +1,932 @@
-// app/(auth)/(tabs)/index.tsx
-import { Feather } from '@expo/vector-icons';
-import React from 'react';
+// app/(dev)/(tabs)/index.tsx
+
+import { getTransitionalHomeMocks, type HomeMocks } from '@/__mocks__/home'
+import { createThemedStyles } from '@/styles/createStyles'
+import { theme } from '@/styles/theme'
+import { Feather } from '@expo/vector-icons'
+import { router } from 'expo-router'
+import React, { useMemo, useState } from 'react'
 import {
-    Pressable,
-    ScrollView,
-    Text,
-    TextInput,
-    View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native'
 
-import Button from '@/components/Button';
-import { createThemedStyles } from '@/styles/createStyles';
+type MealTime = 'breakfast' | 'lunch' | 'snack' | 'dinner'
 
-type GettingStartedKey =
-  | 'create_space'
-  | 'import_first_recipe'
-  | 'add_3_recipes'
-  | 'explore_folders';
+type HomeProps = {
+  showAccountSuccessBanner?: boolean // true only right after account creation
+}
 
-type Props = {
-  showAccountSuccessBanner?: boolean; // true only right after account creation
-  onAddRecipe: () => void;
-  onOpenFolders: () => void;
-  onSeeAllRecent?: () => void;
-  onSearchPress?: () => void;
-};
+function getMealTime(now: Date): MealTime {
+  const h = now.getHours()
+  if (h >= 5 && h < 11) return 'breakfast'
+  if (h >= 11 && h < 15) return 'lunch'
+  if (h >= 15 && h < 19) return 'snack'
+  return 'dinner'
+}
 
-export default function HomeScreen({
-  showAccountSuccessBanner = true,
-  onAddRecipe,
-  onOpenFolders,
-  onSeeAllRecent,
-  onSearchPress,
-}: Props) {
-  // Mock “Getting Started” state (wire this to your real onboarding state)
-  const gettingStarted = {
-    total: 4,
-    completed: 2,
-    items: [
-      { key: 'create_space' as const, label: 'Create your space', done: true },
-      {
-        key: 'import_first_recipe' as const,
-        label: 'Import first recipe',
-        done: true,
-      },
-      { key: 'add_3_recipes' as const, label: 'Add 3 recipes', done: false },
-      {
-        key: 'explore_folders' as const,
-        label: 'Explore folders',
-        done: false,
-      },
-    ],
-  };
+function getPickLabel(meal: MealTime) {
+  switch (meal) {
+    case 'breakfast':
+      return 'Breakfast pick'
+    case 'lunch':
+      return 'Lunch pick'
+    case 'snack':
+      return 'Snack pick'
+    case 'dinner':
+      return 'Dinner pick'
+  }
+}
 
-  // Mock “recently added” state (wire to your recipes)
-  const recent = {
-    hasAny: true,
-    first: {
-      title: 'Creamy Tuscan P...',
-      meta: 'Pasta • 30 min',
-      badge: 'New',
-    },
-  };
+function formatRelativeDay(iso?: string) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const now = new Date()
+  const diffDays = Math.floor((+now - +d) / (1000 * 60 * 60 * 24))
+  if (diffDays <= 0) return 'Today'
+  if (diffDays === 1) return 'Yesterday'
+  return `${diffDays} days ago`
+}
+
+function sortMostRecent<T extends { updatedAt?: string; createdAt?: string }>(
+  items: T[]
+) {
+  return [...items].sort((a, b) => {
+    const at = new Date(a.updatedAt ?? a.createdAt ?? 0).getTime()
+    const bt = new Date(b.updatedAt ?? b.createdAt ?? 0).getTime()
+    return bt - at
+  })
+}
+
+/**
+ * Replace with your store/query.
+ * Keep the shapes; the UI is designed around them.
+ */
+function useHomeDataMock(): HomeMocks {
+  return getTransitionalHomeMocks()
+}
+
+export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
+  const { width: screenWidth } = useWindowDimensions()
+
+  // Card peek math (tablet-safe)
+  const PAGE_PADDING = theme.spacing.xl // must match styles.content.paddingHorizontal
+  const CARD_GAP = theme.spacing.md
+  const PEEK = 16
+
+  const MIN_CARD_WIDTH = 150
+  const MAX_CARD_WIDTH = 340
+
+  const recipeCardWidth = useMemo(() => {
+    const availableWidth = screenWidth - 2 * PAGE_PADDING
+    const ideal = availableWidth - CARD_GAP - PEEK
+    const clamped = Math.min(Math.max(ideal, MIN_CARD_WIDTH), MAX_CARD_WIDTH)
+    return Math.floor(clamped)
+  }, [screenWidth])
+
+  const { recipes, notes, lastViewedRecipe, shoppingList } = useHomeDataMock()
+  const [bannerDismissed, setBannerDismissed] = useState(false)
+
+  const totalItems = recipes.length + notes.length
+  const isEmpty = totalItems <= 1
+  const isTransitional = totalItems >= 2 && totalItems <= 4
+  const isMature = totalItems >= 5
+
+  // Shopping list visibility (data-driven)
+  const shoppingListVisible = (shoppingList?.totalCount ?? 0) > 0
+
+  // ✅ Fix: narrow once, then only reference the narrowed variable in render
+  const activeShoppingList = shoppingListVisible ? shoppingList : null
+
+  // Hard rule: If Shopping List is visible, “Dinner tonight” becomes hidden.
+  const dinnerTonightVisible = !shoppingListVisible && !isEmpty
+
+  // Time-based pick card: only when enough recipes
+  const PICK_MIN_RECIPES = 5
+  const pick = useMemo(() => {
+    if (isEmpty) return null
+    if (recipes.length < PICK_MIN_RECIPES) return null
+
+    const meal = getMealTime(new Date())
+    const candidates = recipes.filter((r) => (r.mealTimes ?? []).includes(meal))
+    const pool = candidates.length ? candidates : recipes
+    const recipe = sortMostRecent(pool)[0] ?? null
+
+    return recipe
+      ? {
+          recipe,
+          label: getPickLabel(meal),
+        }
+      : null
+  }, [isEmpty, recipes])
+
+  const recentRecipes = useMemo(
+    () => sortMostRecent(recipes).slice(0, isTransitional ? 2 : 6),
+    [recipes, isTransitional]
+  )
+  const recentNotes = useMemo(() => sortMostRecent(notes).slice(0, 1), [notes])
+  const firstRecentNote = recentNotes[0]
+
+  const greeting = useMemo(() => {
+    const meal = getMealTime(new Date())
+    if (meal === 'breakfast') return 'Good morning'
+    if (meal === 'lunch') return 'Good afternoon'
+    if (meal === 'snack') return 'Good afternoon'
+    return 'Good evening'
+  }, [])
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <View style={styles.screen}>
       <ScrollView
-        style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Success banner (conditional) */}
-        {showAccountSuccessBanner && (
-          <View style={styles.successBanner}>
-            <Text style={styles.successBannerText}>
-              🎉 You&apos;re all set! Start adding your favorite recipes.
+        {/* Success banner */}
+        {showAccountSuccessBanner && !bannerDismissed ? (
+          <View style={styles.banner}>
+            <Text style={styles.bannerSparkle}>✨</Text>
+            <Text style={styles.bannerText}>
+              You're all set! Your recipes are safe.
             </Text>
+
+            <Pressable
+              onPress={() => setBannerDismissed(true)}
+              style={styles.bannerClose}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss"
+              hitSlop={12}
+            >
+              <Feather
+                name="x"
+                size={18}
+                color={theme.colors.mutedForeground}
+              />
+            </Pressable>
           </View>
-        )}
+        ) : null}
 
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Your Recipes</Text>
-          <Text style={styles.subtitle}>
-            ✨ Your recipe library is growing beautifully.
-          </Text>
-        </View>
+        <View style={styles.headerBlock}>
+          <Text style={styles.greeting}>{greeting}</Text>
 
-        {/* Search */}
-        <Pressable
-          onPress={onSearchPress}
-          style={styles.searchWrapper}
-          accessibilityRole="button"
-        >
-          <Feather name="search" size={18} style={styles.searchIcon} />
-          <TextInput
-            placeholder="Search recipes..."
-            placeholderTextColor={styles.searchPlaceholder.color}
-            style={styles.searchInput}
-            editable={false} // tap triggers onSearchPress
-          />
-        </Pressable>
-
-        {/* Getting Started card */}
-        <View style={styles.card}>
-          <View style={styles.cardHeaderRow}>
-            <Text style={styles.cardTitle}>Getting Started</Text>
-            <Text style={styles.cardProgress}>
-              {gettingStarted.completed}/{gettingStarted.total}
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>
+              What's cooking? <Text style={styles.wave}>👋</Text>
             </Text>
+
+            <Pressable
+              onPress={() => router.push('/(dev)/(tabs)/add-recipe')}
+              style={styles.fab}
+              accessibilityRole="button"
+              accessibilityLabel="Add recipe"
+            >
+              <Feather
+                name="plus"
+                size={26}
+                color={theme.colors.primaryForeground}
+              />
+            </Pressable>
           </View>
-
-          <View style={styles.checklist}>
-            {gettingStarted.items.map((item) => (
-              <GettingStartedRow key={item.key} label={item.label} done={item.done} />
-            ))}
-          </View>
         </View>
 
-        {/* Primary actions */}
-        <View style={styles.actions}>
-          <Button
-            variant="primary"
-            size="xl"
-            onPress={onAddRecipe}
-            icon={<Feather name="plus" size={20} color={styles.primaryIcon.color} />}
-          >
-            Add Recipe
-          </Button>
+        {/* Empty state */}
+        {isEmpty ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyTitle}>Your recipe space is ready.</Text>
+            <Text style={styles.emptyBody}>
+              Add a recipe or a note. Home will show recent activity and quick
+              access once you do.
+            </Text>
 
-          <View style={styles.actionSpacer} />
+            <View style={styles.emptyActions}>
+              <Pressable
+                onPress={() => router.push('/(dev)/(tabs)/add-recipe')}
+                style={styles.primaryButton}
+                accessibilityRole="button"
+              >
+                <Text style={styles.primaryButtonText}>
+                  Add your first recipe
+                </Text>
+              </Pressable>
 
-          <Button
-            variant="soft"
-            size="xl"
-            onPress={onOpenFolders}
-            icon={<Feather name="folder" size={20} color={styles.softIcon.color} />}
-          >
-            Folders
-          </Button>
-        </View>
-
-        {/* Recently Added */}
-        <View style={styles.recentHeaderRow}>
-          <Text style={styles.sectionTitle}>Recently Added</Text>
-          <Pressable
-            onPress={onSeeAllRecent}
-            style={styles.seeAllBtn}
-            accessibilityRole="button"
-          >
-            <Text style={styles.seeAllText}>See All</Text>
-          </Pressable>
-        </View>
-
-        {recent.hasAny ? (
-          <View style={styles.recentCard}>
-            <View style={styles.recentThumb}>
-              {/* placeholder illustration area */}
-              <Text style={styles.recentThumbEmoji}>🍝</Text>
-            </View>
-
-            <View style={styles.recentInfo}>
-              <Text style={styles.recentTitle} numberOfLines={1}>
-                {recent.first.title}
-              </Text>
-              <Text style={styles.recentMeta} numberOfLines={1}>
-                {recent.first.meta}
-              </Text>
-            </View>
-
-            <View style={styles.recentBadge}>
-              <Text style={styles.recentBadgeText}>{recent.first.badge}</Text>
+              <Pressable
+                onPress={() => router.push('/(dev)/(tabs)/collections')}
+                style={styles.secondaryButton}
+                accessibilityRole="button"
+              >
+                <Text style={styles.secondaryButtonText}>Create a note</Text>
+              </Pressable>
             </View>
           </View>
         ) : null}
 
-        {/* Empty state dashed box */}
-        <View style={styles.emptyBox}>
-          <Feather name="coffee" size={34} style={styles.emptyIcon} />
-          <Text style={styles.emptyText}>Add more recipes to see them here</Text>
-        </View>
+        {/* Time-based pick */}
+        {pick ? (
+          <Pressable
+            style={styles.pickCard}
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${pick.recipe.title}`}
+          >
+            <View style={styles.pickLeft}>
+              <View style={styles.pickIconCircle}>
+                <Text style={styles.pickEmoji}>{pick.recipe.emoji ?? '🥗'}</Text>
+              </View>
 
-        {/* Bottom spacing so it breathes above tab bar */}
+              <View style={styles.pickTextBlock}>
+                <Text style={styles.pickLabel}>{pick.label}</Text>
+                <Text style={styles.pickTitle} numberOfLines={1}>
+                  {pick.recipe.title}
+                </Text>
+                <Text style={styles.pickSubtitle} numberOfLines={1}>
+                  {pick.recipe.subtitle ?? 'Light & satisfying'}
+                </Text>
+              </View>
+            </View>
+
+            <Feather
+              name="chevron-right"
+              size={22}
+              color={theme.colors.mutedForeground}
+            />
+          </Pressable>
+        ) : null}
+
+        {/* Recent Activity */}
+        {!isEmpty ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Recent Activity</Text>
+
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionSubtitle}>Recently added recipes</Text>
+
+              <Pressable
+                onPress={() => router.push('/(dev)/(tabs)/collections')}
+                style={styles.seeAll}
+                accessibilityRole="button"
+                accessibilityLabel="See all recipes"
+              >
+                <Text style={styles.seeAllText}>See all</Text>
+                <Feather
+                  name="chevron-right"
+                  size={18}
+                  color={theme.colors.primary}
+                />
+              </Pressable>
+            </View>
+
+            {/* Horizontal recipe cards */}
+            {recentRecipes.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.hScroll}
+                snapToInterval={recipeCardWidth + CARD_GAP}
+                snapToAlignment="start"
+                decelerationRate="fast"
+              >
+                <View style={[styles.hRow, { columnGap: CARD_GAP }]}>
+                  {recentRecipes.map((r) => (
+                    <Pressable
+                      key={r.id}
+                      style={[styles.recipeMiniCard, { width: recipeCardWidth }]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${r.title}`}
+                    >
+                      <View style={styles.recipeMiniIconWrap}>
+                        <Text style={styles.recipeMiniEmoji}>
+                          {r.emoji ?? '🍋'}
+                        </Text>
+                      </View>
+
+                      <Text style={styles.recipeMiniTitle} numberOfLines={2}>
+                        {r.title}
+                      </Text>
+                      <Text style={styles.recipeMiniMeta} numberOfLines={1}>
+                        {formatRelativeDay(r.createdAt ?? r.updatedAt)}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </ScrollView>
+            ) : (
+              <View style={styles.mutedRow}>
+                <Text style={styles.mutedRowText}>No recipes yet.</Text>
+              </View>
+            )}
+          </View>
+        ) : null}
+
+        {/* Recently edited notes */}
+        {!isEmpty && firstRecentNote ? (
+          <View style={styles.notesStrip}>
+            <View style={styles.notesStripHeader}>
+              <Feather
+                name="file-text"
+                size={18}
+                color={theme.colors.mutedForeground}
+              />
+              <Text style={styles.notesStripTitle}>Recently edited notes</Text>
+            </View>
+
+            <Pressable
+              style={styles.notePill}
+              accessibilityRole="button"
+              accessibilityLabel={`Open note ${firstRecentNote.title}`}
+            >
+              <Text style={styles.notePillTitle} numberOfLines={1}>
+                {firstRecentNote.title}
+              </Text>
+              <Text style={styles.notePillMeta} numberOfLines={1}>
+                {formatRelativeDay(firstRecentNote.updatedAt)}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {/* Continue + quick access */}
+        {!isEmpty ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionSubtitleLarge}>
+              Continue where you left off
+            </Text>
+
+            {lastViewedRecipe ? (
+              <Pressable style={styles.longCard} accessibilityRole="button">
+                <View style={styles.longCardLeft}>
+                  <View style={styles.longIconCircle}>
+                    <Text style={styles.longEmoji}>
+                      {lastViewedRecipe.emoji ?? '🍋'}
+                    </Text>
+                  </View>
+
+                  <View style={styles.longTextBlock}>
+                    <Text style={styles.longKicker}>Last viewed</Text>
+                    <Text style={styles.longTitle} numberOfLines={1}>
+                      {lastViewedRecipe.title}
+                    </Text>
+                  </View>
+                </View>
+
+                <Feather
+                  name="chevron-right"
+                  size={22}
+                  color={theme.colors.mutedForeground}
+                />
+              </Pressable>
+            ) : null}
+
+            {/* Shopping List (prominent) */}
+            {activeShoppingList ? (
+              <Pressable
+                style={[styles.longCard, styles.shoppingCard]}
+                accessibilityRole="button"
+                accessibilityLabel="Open shopping list"
+              >
+                <View style={styles.longCardLeft}>
+                  <View style={[styles.longIconCircle, styles.shoppingIconCircle]}>
+                    <Feather
+                      name="shopping-cart"
+                      size={18}
+                      color={theme.colors.mutedForeground}
+                    />
+                  </View>
+
+                  <View style={styles.longTextBlock}>
+                    <Text style={styles.longTitle} numberOfLines={1}>
+                      Shopping List
+                    </Text>
+                    <Text style={styles.longMeta} numberOfLines={1}>
+                      {activeShoppingList.checkedCount}/
+                      {activeShoppingList.totalCount} items checked
+                    </Text>
+                  </View>
+                </View>
+
+                <Feather
+                  name="chevron-right"
+                  size={22}
+                  color={theme.colors.mutedForeground}
+                />
+              </Pressable>
+            ) : null}
+
+            {/* Dinner tonight (hidden if shopping list visible) */}
+            {dinnerTonightVisible ? (
+              <Pressable
+                style={styles.longCard}
+                accessibilityRole="button"
+                accessibilityLabel="Open Dinner tonight"
+              >
+                <View style={styles.longCardLeft}>
+                  <View style={styles.longIconCircle}>
+                    <Feather
+                      name="star"
+                      size={18}
+                      color={theme.colors.mutedForeground}
+                    />
+                  </View>
+
+                  <View style={styles.longTextBlock}>
+                    <Text style={styles.longTitle} numberOfLines={1}>
+                      Dinner tonight
+                    </Text>
+                    <Text style={styles.longMeta} numberOfLines={1}>
+                      Get inspired
+                    </Text>
+                  </View>
+                </View>
+
+                <Feather
+                  name="chevron-right"
+                  size={22}
+                  color={theme.colors.mutedForeground}
+                />
+              </Pressable>
+            ) : null}
+
+            {/* Anti-inflammatory (mature only) */}
+            {isMature ? (
+              <Pressable
+                style={styles.antiCard}
+                accessibilityRole="button"
+                accessibilityLabel="Open Anti-inflammatory collection"
+              >
+                <View style={styles.antiHeader}>
+                  <View style={styles.longCardLeft}>
+                    <View style={styles.longIconCircle}>
+                      <Feather
+                        name="book-open"
+                        size={18}
+                        color={theme.colors.mutedForeground}
+                      />
+                    </View>
+
+                    <View style={styles.longTextBlock}>
+                      <Text style={styles.longTitle}>Anti-inflammatory</Text>
+                      <Text style={styles.longMeta}>6 recipes</Text>
+                    </View>
+                  </View>
+
+                  <Feather
+                    name="chevron-right"
+                    size={22}
+                    color={theme.colors.mutedForeground}
+                  />
+                </View>
+
+                <View style={styles.chipsRow}>
+                  <View style={styles.chip}>
+                    <Text style={styles.chipText}>🍲 Turmeric Soup</Text>
+                  </View>
+                  <View style={styles.chip}>
+                    <Text style={styles.chipText}>🫐 Berry Smoothie</Text>
+                  </View>
+                </View>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+
         <View style={styles.bottomSpacer} />
       </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-function GettingStartedRow({ label, done }: { label: string; done: boolean }) {
-  return (
-    <View style={styles.row}>
-      <View style={[styles.rowIconWrap, done ? styles.rowIconWrapDone : styles.rowIconWrapTodo]}>
-        {done ? (
-          <Feather name="check" size={16} color={styles.rowCheck.color} />
-        ) : null}
-      </View>
-
-      <Text style={[styles.rowLabel, done ? styles.rowLabelDone : undefined]}>
-        {label}
-      </Text>
     </View>
-  );
+  )
 }
+
+/* -------------------------------- Styles -------------------------------- */
 
 const styles = createThemedStyles((theme) => ({
-  safeArea: {
+  screen: {
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  scroll: {
-    flex: 1,
-  },
+
   content: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.xl,
+    paddingTop: theme.spacing.xl,
   },
 
-  /* Success banner */
-  successBanner: {
-    width: '100%',
-    backgroundColor: theme.colors.sageLight,
-    borderRadius: theme.radii.xl,
+  /* Banner */
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
     paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.radii.full,
+    backgroundColor: theme.colors.muted,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.border,
+    marginBottom: theme.spacing.xl,
   },
-  successBannerText: {
-    textAlign: 'center',
-    color: theme.colors.sageDark,
-    fontFamily: theme.fontFamily.medium,
+  bannerSparkle: {
+    fontSize: 16,
+  },
+  bannerText: {
+    flex: 1,
     fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.medium,
+    color: theme.colors.foreground,
+  },
+  bannerClose: {
+    width: 34,
+    height: 34,
+    borderRadius: theme.radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   /* Header */
-  header: {
+  headerBlock: {
+    marginTop: theme.spacing['4xl'],
     marginBottom: theme.spacing.lg,
+  },
+  greeting: {
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.regular,
+    color: theme.colors.mutedForeground,
+    marginBottom: theme.spacing.xs,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing.md,
   },
   title: {
-    fontFamily: theme.fontFamily.semibold,
+    flex: 1,
     fontSize: theme.fontSize.hero,
     lineHeight: theme.lineHeight.hero,
+    fontFamily: theme.fontFamily.bold,
     color: theme.colors.foreground,
   },
-  subtitle: {
-    marginTop: theme.spacing.xs,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    color: theme.colors.mutedForeground,
+  wave: {
+    fontSize: theme.fontSize.hero,
   },
-
-  /* Search */
-  searchWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.creamDark,
-    borderRadius: theme.radii.xl,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    marginBottom: theme.spacing.lg,
-  },
-  searchIcon: {
-    color: theme.colors.mutedForeground,
-    marginRight: theme.spacing.md,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    color: theme.colors.foreground,
-  },
-  searchPlaceholder: {
-    color: theme.colors.mutedForeground,
-  },
-
-  /* Card */
-  card: {
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.radii.xl,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: theme.spacing.md,
-  },
-  cardTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.foreground,
-  },
-  cardProgress: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    color: theme.colors.mutedForeground,
-  },
-
-  /* Checklist */
-  checklist: {
-    gap: theme.spacing.md,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.md,
-  },
-  rowIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: theme.radii.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-  },
-  rowIconWrapDone: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  rowIconWrapTodo: {
-    backgroundColor: 'transparent',
-    borderColor: theme.colors.border,
-  },
-  rowCheck: {
-    color: theme.colors.primaryForeground,
-  },
-  rowLabel: {
-    flex: 1,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.foreground,
-  },
-  rowLabelDone: {
-    color: theme.colors.mutedForeground,
-    textDecorationLine: 'line-through',
-  },
-
-  /* Actions */
-  actions: {
-    marginBottom: theme.spacing.lg,
-  },
-  actionSpacer: {
-    height: theme.spacing.md,
-  },
-  primaryIcon: {
-    color: theme.colors.primaryForeground,
-  },
-  softIcon: {
-    color: theme.colors.foreground,
-  },
-
-  /* Recently Added */
-  recentHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    marginTop: theme.spacing.sm,
-    marginBottom: theme.spacing.md,
-  },
-  sectionTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xxl,
-    lineHeight: theme.lineHeight.xxl,
-    color: theme.colors.foreground,
-  },
-  seeAllBtn: {
-    paddingVertical: theme.spacing.xs,
-    paddingHorizontal: theme.spacing.sm,
-  },
-  seeAllText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    color: theme.colors.primaryDark,
-  },
-
-  recentCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.radii.xl,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: theme.spacing.md,
-    gap: theme.spacing.md,
-    marginBottom: theme.spacing.lg,
-  },
-  recentThumb: {
+  fab: {
     width: 56,
     height: 56,
-    borderRadius: theme.radii.xl,
-    backgroundColor: theme.colors.terracottaLight,
+    borderRadius: theme.radii.full,
+    backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  recentThumbEmoji: {
-    fontSize: 22,
-  },
-  recentInfo: {
-    flex: 1,
-  },
-  recentTitle: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.foreground,
-  },
-  recentMeta: {
-    marginTop: 2,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    color: theme.colors.mutedForeground,
-  },
-  recentBadge: {
-    backgroundColor: theme.colors.sageLight,
-    borderRadius: theme.radii.full,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
-  },
-  recentBadgeText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
-    color: theme.colors.sageDark,
+    ...theme.shadows.soft,
   },
 
-  /* Empty dashed box */
-  emptyBox: {
+  /* Empty */
+  emptyCard: {
+    marginTop: theme.spacing.md,
+    padding: theme.spacing.xl,
     borderRadius: theme.radii.xl,
-    borderWidth: 2,
+    backgroundColor: theme.colors.card,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: theme.colors.border,
-    borderStyle: 'dashed',
-    backgroundColor: theme.colors.muted,
-    paddingVertical: theme.spacing.xl,
-    paddingHorizontal: theme.spacing.lg,
+    ...theme.shadows.soft,
+  },
+  emptyTitle: {
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
+    fontFamily: theme.fontFamily.bold,
+    color: theme.colors.foreground,
+  },
+  emptyBody: {
+    marginTop: theme.spacing.sm,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.regular,
+    color: theme.colors.mutedForeground,
+  },
+  emptyActions: {
+    marginTop: theme.spacing.lg,
+    gap: theme.spacing.sm,
+  },
+  primaryButton: {
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emptyIcon: {
-    color: theme.colors.mutedForeground,
-    marginBottom: theme.spacing.md,
-  },
-  emptyText: {
-    fontFamily: theme.fontFamily.regular,
+  primaryButtonText: {
     fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.semibold,
+    color: theme.colors.primaryForeground,
+  },
+  secondaryButton: {
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.secondary,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButtonText: {
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.semibold,
+    color: theme.colors.secondaryForeground,
+  },
+
+  /* Pick card */
+  pickCard: {
+    marginTop: theme.spacing.md,
+    padding: theme.spacing.lg,
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.muted,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  pickLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    flex: 1,
+  },
+  pickIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: theme.radii.full,
+    backgroundColor: theme.colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.border,
+  },
+  pickEmoji: {
+    fontSize: 22,
+  },
+  pickTextBlock: {
+    flex: 1,
+  },
+  pickLabel: {
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.medium,
+    color: theme.colors.primary,
+    marginBottom: 2,
+  },
+  pickTitle: {
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
+    fontFamily: theme.fontFamily.bold,
+    color: theme.colors.foreground,
+  },
+  pickSubtitle: {
+    marginTop: 4,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.regular,
     color: theme.colors.mutedForeground,
-    textAlign: 'center',
+  },
+
+  /* Sections */
+  section: {
+    marginTop: theme.spacing.xl,
+  },
+  sectionTitle: {
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
+    fontFamily: theme.fontFamily.bold,
+    color: theme.colors.foreground,
+    marginBottom: theme.spacing.md,
+  },
+  sectionSubtitle: {
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.regular,
+    color: theme.colors.mutedForeground,
+  },
+  sectionSubtitleLarge: {
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
+    fontFamily: theme.fontFamily.regular,
+    color: theme.colors.foreground,
+    marginBottom: theme.spacing.md,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.md,
+  },
+  seeAll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: theme.radii.full,
+  },
+  seeAllText: {
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.medium,
+    color: theme.colors.primary,
+  },
+
+  /* Horizontal recipe cards */
+  hScroll: {
+    paddingRight: theme.spacing.xl,
+  },
+  hRow: {
+    flexDirection: 'row',
+  },
+  recipeMiniCard: {
+    padding: theme.spacing.lg,
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.border,
+    ...theme.shadows.soft,
+  },
+  recipeMiniIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: theme.radii.full,
+    backgroundColor: theme.colors.muted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  recipeMiniEmoji: {
+    fontSize: 20,
+  },
+  recipeMiniTitle: {
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    fontFamily: theme.fontFamily.semibold,
+    color: theme.colors.foreground,
+  },
+  recipeMiniMeta: {
+    marginTop: theme.spacing.sm,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.regular,
+    color: theme.colors.mutedForeground,
+  },
+
+  /* Notes strip */
+  notesStrip: {
+    marginTop: theme.spacing.xl,
+  },
+  notesStripHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+  },
+  notesStripTitle: {
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.regular,
+    color: theme.colors.mutedForeground,
+  },
+  notePill: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.muted,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing.md,
+  },
+  notePillTitle: {
+    flex: 1,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.medium,
+    color: theme.colors.foreground,
+  },
+  notePillMeta: {
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.regular,
+    color: theme.colors.mutedForeground,
+  },
+
+  /* Long cards */
+  longCard: {
+    marginTop: theme.spacing.md,
+    padding: theme.spacing.lg,
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  longCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    flex: 1,
+  },
+  longIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: theme.radii.full,
+    backgroundColor: theme.colors.muted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  longEmoji: {
+    fontSize: 20,
+  },
+  longTextBlock: {
+    flex: 1,
+  },
+  longKicker: {
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    fontFamily: theme.fontFamily.regular,
+    color: theme.colors.mutedForeground,
+    marginBottom: 2,
+  },
+  longTitle: {
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    fontFamily: theme.fontFamily.semibold,
+    color: theme.colors.foreground,
+  },
+  longMeta: {
+    marginTop: 2,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.regular,
+    color: theme.colors.secondaryForeground,
+  },
+
+  /* Shopping highlight */
+  shoppingCard: {
+    backgroundColor: theme.colors.terracottaLight,
+    borderColor: theme.colors.border,
+  },
+  shoppingIconCircle: {
+    backgroundColor: theme.colors.card,
+  },
+
+  /* Anti-inflammatory */
+  antiCard: {
+    marginTop: theme.spacing.md,
+    padding: theme.spacing.lg,
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.border,
+  },
+  antiHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  chipsRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.md,
+  },
+  chip: {
+    flex: 1,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.radii.full,
+    backgroundColor: theme.colors.muted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chipText: {
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    fontFamily: theme.fontFamily.medium,
+    color: theme.colors.foreground,
+  },
+
+  mutedRow: {
+    padding: theme.spacing.md,
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.muted,
+  },
+  mutedRowText: {
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.regular,
+    color: theme.colors.mutedForeground,
   },
 
   bottomSpacer: {
-    height: theme.spacing.xl,
+    height: Platform.select({ ios: 28, android: 20 }),
   },
-}));
+}))
