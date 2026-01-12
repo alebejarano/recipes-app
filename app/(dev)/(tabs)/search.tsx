@@ -1,6 +1,6 @@
-import ProfileScreen from '@/features/profile/screens/ProfileScreen';
+import SearchScreen from '@/features/search/screens/SearchScreen';
 import React from 'react';
 
 export default function ProfileTab() {
-  return <ProfileScreen />;
+  return <SearchScreen />;
 }

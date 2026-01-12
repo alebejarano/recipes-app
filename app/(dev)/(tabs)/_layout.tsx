@@ -10,13 +10,13 @@ import { theme } from '@/styles/theme';
 const ICON_SIZE = 22;
 const ADD_ICON_SIZE = 28;
 
-// Make the add button size explicit (bigger than 40 looks like your screenshot)
+// Make the add button size explicit 
 const ADD_BUTTON_SIZE = 58;
 
-const styles = createThemedStyles((t) => ({
+const styles = createThemedStyles((theme) => ({
   tabBar: {
-    backgroundColor: t.colors.background,
-    borderTopColor: t.colors.border,
+    backgroundColor: theme.colors.background,
+    borderTopColor: theme.colors.border,
     borderTopWidth: 1,
 
     // important on Android to avoid weird "floating" / overlap behavior
@@ -29,8 +29,8 @@ const styles = createThemedStyles((t) => ({
   },
 
   tabBarLabel: {
-    fontSize: t.fontSize.xs,
-    fontFamily: t.fontFamily.medium,
+    fontSize: theme.fontSize.xs,
+    fontFamily: theme.fontFamily.medium,
     marginTop: 2,
   },
 
@@ -51,7 +51,7 @@ const styles = createThemedStyles((t) => ({
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: t.colors.sage,
+    backgroundColor: theme.colors.sage,
 
     shadowColor: '#000',
     shadowOpacity: 0.1,
