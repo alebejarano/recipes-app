@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
 
+import Screen from '@/components/Screen';
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
 import { createThemedStyles } from '@/styles/createStyles';
+import { theme } from '@/styles/theme';
 
 import BrowseCategorySection from '@/features/search/components/BrowseCategorySection';
 import RecentSection from '@/features/search/components/RecentSection';
@@ -39,22 +40,17 @@ export default function SearchScreen() {
     }
   }, [activeFilter]);
 
-  const bottomPadding = useTabBarBottomPadding(24);
+  const bottomPadding = useTabBarBottomPadding(theme.spacing.xl);
   const isBrowsing = query.trim().length === 0;
 
-  const handlePickRecent = (value: string) => {
-    setQuery(value);
-  };
-
-  const handleClearRecents = () => {
-    setRecents([]);
-  };
+  const handlePickRecent = (value: string) => setQuery(value);
+  const handleClearRecents = () => setRecents([]);
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}
-      keyboardShouldPersistTaps="handled"
+    <Screen
+      scroll
+      bottomPadding={bottomPadding}
+      contentStyle={styles.content}
     >
       <SearchHeader
         title="Search"
@@ -80,7 +76,7 @@ export default function SearchScreen() {
             items={BROWSE_CATEGORIES}
             onPressItem={(id) => {
               // later: route/filter by category
-              // for now: you can optionally do setQuery(id)
+              // optionally: setQuery(id)
               // setQuery(id);
             }}
           />
@@ -90,7 +86,6 @@ export default function SearchScreen() {
             items={TRENDING_NOW}
             onPressItem={(id) => {
               // later: set query or navigate
-              // for now: noop
             }}
           />
 
@@ -102,27 +97,14 @@ export default function SearchScreen() {
         </>
       ) : (
         // Placeholder for results mode (wire later)
-        <View style={styles.resultsSpacer} />
+        <></>
       )}
-
-      <View style={styles.bottomSpacer} />
-    </ScrollView>
+    </Screen>
   );
 }
 
 const styles = createThemedStyles((theme) => ({
-  screen: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
   content: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.xl,
-  },
-  resultsSpacer: {
-    height: theme.spacing.lg,
-  },
-  bottomSpacer: {
-    height: theme.spacing.xl,
+    gap: theme.spacing.xl,
   },
 }));

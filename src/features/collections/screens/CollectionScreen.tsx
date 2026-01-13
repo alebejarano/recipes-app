@@ -1,8 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import Screen from '@/components/Screen';
+import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
 import { createThemedStyles } from '@/styles/createStyles';
 import { theme } from '@/styles/theme';
 
@@ -10,13 +11,16 @@ import CollectionTile from '@/features/collections/components/CollectionTile';
 import NewCollectionTile from '@/features/collections/components/NewCollectionTile';
 import SegmentedTabs from '@/features/collections/components/SegmentedTabs';
 
-import type { CollectionItem, Recipe, SegmentKey } from '@/features/collections/types';
+import type {
+  CollectionItem,
+  Recipe,
+  SegmentKey,
+} from '@/features/collections/types';
 import {
-    buildCollectionsForSegment,
-    getCollectionsHelperText,
-    pickVariant,
+  buildCollectionsForSegment,
+  getCollectionsHelperText,
+  pickVariant,
 } from '@/features/collections/utils/collections';
-import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
 
 const MOCK_RECIPES: Recipe[] = [
   { id: '1', title: 'Pasta', tags: ['Dinner'] },
@@ -30,78 +34,87 @@ const MOCK_RECIPES: Recipe[] = [
 ];
 
 export default function CollectionsScreen() {
-    const insets = useSafeAreaInsets();
+  const [segment, setSegment] = useState<SegmentKey>('recipes');
 
-    const bottomPadding = useTabBarBottomPadding(theme.spacing.xl);
-    const [segment, setSegment] = useState<SegmentKey>('recipes');
+  const bottomPadding = useTabBarBottomPadding(theme.spacing.xl);
 
-    const collections = useMemo<CollectionItem[]>(
-        () => buildCollectionsForSegment(segment, MOCK_RECIPES),
-        [segment]
-    );
+  const collections = useMemo<CollectionItem[]>(
+    () => buildCollectionsForSegment(segment, MOCK_RECIPES),
+    [segment]
+  );
 
-    const onPressFab = () => {
-        // top-right + action
-        // later: router.push('/(tabs)/add-recipe') or open modal
-    };
+  const onPressFab = () => {
+    // TODO: open create collection / add recipe flow
+  };
 
-    return (
-        <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.headerRow}>
-            <View style={styles.headerText}>
-            <Text style={styles.title}>Collections</Text>
-            <Text style={styles.subtitle}>Everything organized in one place</Text>
-            </View>
-
-            <Pressable onPress={onPressFab} style={styles.fab} accessibilityRole="button">
-            <Feather name="plus" size={22} color={theme.colors.primaryForeground} />
-            </Pressable>
+  return (
+    <Screen
+      scroll={false}
+      // Let Screen handle top + horizontal padding consistently.
+      // Only add bottom extra if you want additional padding besides tab bar.
+      contentStyle={styles.screenContent}
+    >
+      {/* Header */}
+      <View style={styles.headerRow}>
+        <View style={styles.headerText}>
+          <Text style={styles.title}>Collections</Text>
+          <Text style={styles.subtitle}>Everything organized in one place</Text>
         </View>
 
-        {/* Segmented control */}
-        <SegmentedTabs value={segment} onChange={setSegment} />
+        <Pressable
+          onPress={onPressFab}
+          style={styles.fab}
+          accessibilityRole="button"
+          accessibilityLabel="Create collection"
+        >
+          <Feather name="plus" size={22} color={theme.colors.primaryForeground} />
+        </Pressable>
+      </View>
 
-        {/* Helper text */}
-        <Text style={styles.helperText}>{getCollectionsHelperText(segment)}</Text>
+      {/* Segmented control */}
+      <SegmentedTabs value={segment} onChange={setSegment} />
 
-        {/* Grid */}
-        <FlatList
-            data={collections}
-            keyExtractor={(item) => item.key}
-            numColumns={2}
-            columnWrapperStyle={styles.row}
-            contentContainerStyle={[
-                styles.grid,
-                { paddingBottom: bottomPadding },
-            ]}
-            renderItem={({ item, index }) => {
-            if (item.kind === 'new') {
-                return <NewCollectionTile onPress={() => {}} />;
-            }
+      {/* Helper text */}
+      <Text style={styles.helperText}>{getCollectionsHelperText(segment)}</Text>
 
-            return (
-                <CollectionTile
-                label={item.label}
-                count={item.count}
-                variant={pickVariant(item.label, index)}
-                onPress={() => {
-                    // later: router.push(`/(tabs)/collections/${encodeURIComponent(item.key)}`)
-                }}
-                />
-            );
-            }}
-        />
-        </View>
-    );
+      {/* Grid */}
+      <FlatList
+        data={collections}
+        keyExtractor={(item) => item.key}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+        contentContainerStyle={[
+          styles.grid,
+          { paddingBottom: bottomPadding },
+        ]}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item, index }) => {
+          if (item.kind === 'new') {
+            return <NewCollectionTile onPress={() => {}} />;
+          }
+
+          return (
+            <CollectionTile
+              label={item.label}
+              count={item.count}
+              variant={pickVariant(item.label, index)}
+              onPress={() => {
+                // TODO: router.push(`/(tabs)/collections/${encodeURIComponent(item.key)}`)
+              }}
+            />
+          );
+        }}
+      />
+    </Screen>
+  );
 }
 
 const styles = createThemedStyles((theme) => ({
-  container: {
+  // Only layout-specific spacing that is NOT safe-area related lives here.
+  screenContent: {
+    // Screen already provides paddingTop + paddingHorizontal.
+    // Keep content flexible.
     flex: 1,
-    backgroundColor: theme.colors.background,
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.xl,
   },
 
   headerRow: {
@@ -109,7 +122,6 @@ const styles = createThemedStyles((theme) => ({
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     marginBottom: theme.spacing.lg,
-    marginTop: theme.spacing['2xl'],
   },
 
   headerText: {
@@ -156,7 +168,9 @@ const styles = createThemedStyles((theme) => ({
   },
 
   grid: {
-    paddingBottom: theme.spacing.xl,
+    // IMPORTANT: FlatList contentContainerStyle is the right place to handle bottom padding.
+    // Do not set paddingTop/paddingHorizontal here anymore.
+    paddingTop: 0,
   },
 
   row: {

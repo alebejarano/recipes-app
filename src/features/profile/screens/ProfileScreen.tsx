@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
 
+import Screen from '@/components/Screen';
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
 import { createThemedStyles } from '@/styles/createStyles';
+import { theme } from '@/styles/theme';
 
 import DietaryPreferencesSection from '@/features/profile/components/DietaryPreferencesSection';
 import ProfileHeader from '@/features/profile/components/ProfileHeader';
@@ -20,7 +21,7 @@ import {
 } from '@/features/profile/data/profileMockData';
 
 export default function ProfileScreen() {
-  const bottomPadding = useTabBarBottomPadding(24);
+  const bottomPadding = useTabBarBottomPadding(theme.spacing.xl);
 
   // Mock user (replace later with auth/user context)
   const user = useMemo(
@@ -45,10 +46,10 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}
-      keyboardShouldPersistTaps="handled"
+    <Screen
+      scroll
+      bottomPadding={bottomPadding}
+      contentStyle={styles.content}
     >
       <ProfileHeader
         title="Profile"
@@ -85,22 +86,14 @@ export default function ProfileScreen() {
       <SettingsSection title="Account" items={ACCOUNT_ITEMS} />
 
       <SettingsSection title="Support" items={SUPPORT_ITEMS} />
-
-      <View style={styles.bottomSpacer} />
-    </ScrollView>
+    </Screen>
   );
 }
 
 const styles = createThemedStyles((theme) => ({
-  screen: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
+  // Screen already handles safe-area + top padding + horizontal padding.
+  // Keep only page-specific vertical rhythm here.
   content: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.xl,
-  },
-  bottomSpacer: {
-    height: theme.spacing.xl,
+    gap: theme.spacing.xl,
   },
 }));
