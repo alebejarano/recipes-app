@@ -10,7 +10,7 @@ import { createThemedStyles } from '@/styles/createStyles';
 import { theme } from '@/styles/theme';
 
 import ActionCard from '@/features/home/components/ActionCard';
-import ByTopicCard from '@/features/home/components/ByTopicCard';
+import CollectionCard from '@/features/home/components/CollectionCard';
 import EmptyHomeCard from '@/features/home/components/EmptyHomeCard';
 import HomeHeader from '@/features/home/components/HomeHeader';
 import NotesStrip from '@/features/home/components/NotesStrip';
@@ -20,10 +20,10 @@ import SectionHeaderRow from '@/features/home/components/SectionHeaderRow';
 import SuccessBanner from '@/features/home/components/SuccessBanner';
 
 import {
-    formatRelativeDay,
-    getMealTime,
-    getPickLabel,
-    sortMostRecent,
+  formatRelativeDay,
+  getMealTime,
+  getPickLabel,
+  sortMostRecent,
 } from '@/features/home/utils/homeFormatters';
 
 type HomeProps = {
@@ -233,7 +233,7 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
           ) : null}
 
           {isMature ? (
-            <ByTopicCard
+            <CollectionCard
               title="Anti-inflammatory"
               meta="6 recipes"
               chips={['🍲 Turmeric Soup', '🫐 Berry Smoothie']}

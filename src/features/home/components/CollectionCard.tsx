@@ -12,7 +12,7 @@ type Props = {
   onPress?: () => void;
 };
 
-export default function ByTopicCard({ title, meta, chips, onPress }: Props) {
+export default function CollectionCard({ title, meta, chips, onPress }: Props) {
   return (
     <Pressable onPress={onPress} style={styles.card} accessibilityRole="button">
       <View style={styles.header}>
