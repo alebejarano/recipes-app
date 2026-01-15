@@ -100,7 +100,6 @@ export default function TabsLayout() {
         options={{
           title: '',
           tabBarLabel: () => null,
-          href: null, // ✅ prevents navigation to /add-recipe route
           tabBarIcon: () => (
             <Feather
               name="plus"
@@ -121,7 +120,11 @@ export default function TabsLayout() {
               <View style={styles.centerSlot} pointerEvents="box-none">
                 <TouchableOpacity
                   activeOpacity={0.9}
-                  onPress={() => router.push('/(dev)/create')} // ✅ always open Create New
+                  onPress={(e) => {
+                    // Prevent Tabs from navigating to the underlying route
+                    e.preventDefault?.()
+                    router.push('/create')
+                  }}
                   accessibilityLabel={accessibilityLabel}
                   accessibilityState={accessibilityState}
                   accessibilityRole={accessibilityRole}
