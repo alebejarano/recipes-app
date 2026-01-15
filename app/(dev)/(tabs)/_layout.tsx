@@ -100,7 +100,6 @@ export default function TabsLayout() {
         options={{
           title: '',
           tabBarLabel: () => null,
-          href: null, // ✅ prevents navigation to /add-recipe route
           tabBarIcon: () => (
             <Feather
               name="plus"
@@ -124,7 +123,6 @@ export default function TabsLayout() {
                   onPress={(e) => {
                     // Prevent Tabs from navigating to the underlying route
                     e.preventDefault?.()
-                    // Use PUBLIC path; avoid group names in navigation strings
                     router.push('/create')
                   }}
                   accessibilityLabel={accessibilityLabel}
