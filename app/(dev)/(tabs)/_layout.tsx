@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Tabs, router } from 'expo-router'; // ✅ add router
 import React from 'react';
 import { Platform, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,8 +9,6 @@ import { theme } from '@/styles/theme';
 
 const ICON_SIZE = 22;
 const ADD_ICON_SIZE = 28;
-
-// Make the add button size explicit 
 const ADD_BUTTON_SIZE = 58;
 
 const styles = createThemedStyles((theme) => ({
@@ -18,13 +16,10 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.background,
     borderTopColor: theme.colors.border,
     borderTopWidth: 1,
-
-    // important on Android to avoid weird "floating" / overlap behavior
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-
     paddingTop: 10,
   },
 
@@ -34,11 +29,6 @@ const styles = createThemedStyles((theme) => ({
     marginTop: 2,
   },
 
-  /**
-   * This is the critical fix:
-   * The center tab must occupy the SAME flex slot as other tabs,
-   * otherwise it will never be perfectly centered.
-   */
   centerSlot: {
     flex: 1,
     alignItems: 'center',
@@ -64,13 +54,8 @@ const styles = createThemedStyles((theme) => ({
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
 
-  // Base tab bar height without safe-area.
   const baseHeight = Platform.select({ ios: 64, android: 62 }) ?? 62;
-
-  // Final height includes safe-area bottom so it never overlaps the system UI.
   const tabBarHeight = baseHeight + insets.bottom;
-
-  // Lift the add button above the bar.
   const lift = insets.bottom > 0 ? 22 : 18;
 
   return (
@@ -115,6 +100,7 @@ export default function TabsLayout() {
         options={{
           title: '',
           tabBarLabel: () => null,
+          href: null, // ✅ prevents navigation to /add-recipe route
           tabBarIcon: () => (
             <Feather
               name="plus"
@@ -124,7 +110,6 @@ export default function TabsLayout() {
           ),
           tabBarButton: (props) => {
             const {
-              onPress,
               accessibilityLabel,
               accessibilityState,
               accessibilityRole,
@@ -136,12 +121,15 @@ export default function TabsLayout() {
               <View style={styles.centerSlot} pointerEvents="box-none">
                 <TouchableOpacity
                   activeOpacity={0.9}
-                  onPress={onPress ?? undefined}
+                  onPress={() => router.push('/(dev)/create')} // ✅ always open Create New
                   accessibilityLabel={accessibilityLabel}
                   accessibilityState={accessibilityState}
                   accessibilityRole={accessibilityRole}
                   testID={testID}
-                  style={[styles.centerButton, { transform: [{ translateY: -lift }] }]}
+                  style={[
+                    styles.centerButton,
+                    { transform: [{ translateY: -lift }] },
+                  ]}
                 >
                   {children}
                 </TouchableOpacity>
