@@ -45,4 +45,5 @@ app-example
 .vscode
 .idea
 
-.env-test.tsx
+.env-test.ts
+
