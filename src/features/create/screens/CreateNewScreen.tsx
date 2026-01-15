@@ -17,10 +17,10 @@ export default function CreateNewScreen() {
 
   const handleCreateRecipe = useCallback(() => {
     console.log('testing in dev')
-    // router.push({
-    // //   pathname: '/(dev)/recipes/create',
-    // //   params: { variant: 'app' },
-    // })
+    router.push({
+      pathname: '/(dev)/recipes/create',
+      params: { variant: 'app' },
+    })
   }, [])
 
   const handleCreateNote = useCallback(() => {
