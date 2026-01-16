@@ -59,10 +59,10 @@ export default function OnboardingFlowScreen() {
       return;
     }
 
-    if (state.completed) {
-      router.replace('/login');
-      return;
-    }
+    // if (state.completed) {
+    //   router.replace('/login');
+    //   return;
+    // }
 
     setStepLocal(state.step ?? 0);
     setPathLocal(state.path ?? null);
