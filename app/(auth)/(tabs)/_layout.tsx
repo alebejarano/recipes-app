@@ -1,48 +1,63 @@
-import { Feather } from '@expo/vector-icons'
-import { Tabs } from 'expo-router'
-import React from 'react'
-import { Platform, TouchableOpacity, View } from 'react-native'
+import { Feather } from '@expo/vector-icons';
+import { Tabs, router } from 'expo-router'; // ✅ add router
+import React from 'react';
+import { Platform, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { createThemedStyles } from '@/styles/createStyles'
-import { theme } from '@/styles/theme'
+import { createThemedStyles } from '@/styles/createStyles';
+import { theme } from '@/styles/theme';
 
-const styles = createThemedStyles((t) => ({
+const ICON_SIZE = 22;
+const ADD_ICON_SIZE = 28;
+const ADD_BUTTON_SIZE = 58;
+
+const styles = createThemedStyles((theme) => ({
   tabBar: {
-    backgroundColor: t.colors.background,
-    borderTopColor: t.colors.border,
+    backgroundColor: theme.colors.background,
+    borderTopColor: theme.colors.border,
     borderTopWidth: 1,
-    height: Platform.select({ ios: 84, android: 74 }),
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     paddingTop: 10,
-    paddingBottom: Platform.select({ ios: 22, android: 12 }),
   },
 
   tabBarLabel: {
-    fontSize: t.fontSize.xs,
-    fontFamily: t.fontFamily.medium,
+    fontSize: theme.fontSize.xs,
+    fontFamily: theme.fontFamily.medium,
+    marginTop: 2,
   },
 
-  centerButtonWrap: {
+  centerSlot: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
   },
 
   centerButton: {
-    width: 58,
-    height: 58,
-    marginTop: -18,
+    width: ADD_BUTTON_SIZE,
+    height: ADD_BUTTON_SIZE,
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: t.colors.primary,
+    backgroundColor: theme.colors.sage,
+
     shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
+    shadowOpacity: 0.1,
+    shadowRadius: 14,
     shadowOffset: { width: 0, height: 6 },
     elevation: 6,
   },
-}))
+}));
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+
+  const baseHeight = Platform.select({ ios: 64, android: 62 }) ?? 62;
+  const tabBarHeight = baseHeight + insets.bottom;
+  const lift = insets.bottom > 0 ? 22 : 18;
+
   return (
     <Tabs
       screenOptions={{
@@ -50,92 +65,102 @@ export default function TabsLayout() {
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.mutedForeground,
         tabBarLabelStyle: styles.tabBarLabel,
-        tabBarStyle: styles.tabBar,
+        tabBarHideOnKeyboard: true,
+        tabBarStyle: [
+          styles.tabBar,
+          {
+            height: tabBarHeight,
+            paddingBottom: insets.bottom,
+          },
+        ],
       }}
     >
-        <Tabs.Screen
-            name="index"
-            options={{
-            title: 'Home',
-            tabBarIcon: ({ color, size }) => (
-                <Feather name="home" size={size ?? 22} color={color} />
-            ),
-            }}
-        />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color }) => (
+            <Feather name="home" size={ICON_SIZE} color={color} />
+          ),
+        }}
+      />
 
-        <Tabs.Screen
-            name="folders"
-            options={{
-            title: 'Folders',
-            tabBarIcon: ({ color, size }) => (
-                <Feather name="folder" size={size ?? 22} color={color} />
-            ),
-            }}
-        />
+      <Tabs.Screen
+        name="collections"
+        options={{
+          title: 'Collections',
+          tabBarIcon: ({ color }) => (
+            <Feather name="folder" size={ICON_SIZE} color={color} />
+          ),
+        }}
+      />
 
-        {/* ✅ THIS IS WHERE THE FIX GOES */}
-        <Tabs.Screen
-            name="add-recipe"
-            options={{
-            title: '',
-            tabBarLabel: () => null,
-            tabBarIcon: ({ size }) => (
+      <Tabs.Screen
+        name="add-recipe"
+        options={{
+          title: '',
+          tabBarLabel: () => null,
+          tabBarIcon: () => (
             <Feather
-                name="plus"
-                size={(size ?? 22) + 2}
-                color={theme.colors.primaryForeground}
+              name="plus"
+              size={ADD_ICON_SIZE}
+              color={theme.colors.primaryForeground}
             />
-        ),
-        tabBarButton: (props) => {
+          ),
+          tabBarButton: (props) => {
             const {
-                onPress,
-                accessibilityLabel,
-                accessibilityState,
-                accessibilityRole,
-                testID,
-                style,
-                children,
-            } = props
+              accessibilityLabel,
+              accessibilityState,
+              accessibilityRole,
+              testID,
+              children,
+            } = props;
 
             return (
-                <View style={styles.centerButtonWrap} pointerEvents="box-none">
+              <View style={styles.centerSlot} pointerEvents="box-none">
                 <TouchableOpacity
-                    activeOpacity={0.9}
-                    onPress={onPress ?? undefined} // normalize possible null
-                    accessibilityLabel={accessibilityLabel}
-                    accessibilityState={accessibilityState}
-                    accessibilityRole={accessibilityRole}
-                    testID={testID}
-                    style={[styles.centerButton, style]}
+                  activeOpacity={0.9}
+                  onPress={(e) => {
+                    // Prevent Tabs from navigating to the underlying route
+                    e.preventDefault?.()
+                    router.push('/create')
+                  }}
+                  accessibilityLabel={accessibilityLabel}
+                  accessibilityState={accessibilityState}
+                  accessibilityRole={accessibilityRole}
+                  testID={testID}
+                  style={[
+                    styles.centerButton,
+                    { transform: [{ translateY: -lift }] },
+                  ]}
                 >
-                    {children}
+                  {children}
                 </TouchableOpacity>
-                </View>
-            )
-        },
-    }}
-/>
-
-
-        <Tabs.Screen
-        name="notes"
-        options={{
-            title: 'Notes',
-            tabBarIcon: ({ color, size }) => (
-            <Feather name="file-text" size={size ?? 22} color={color} />
-            ),
+              </View>
+            );
+          },
         }}
-        />
+      />
 
-        <Tabs.Screen
-        name="settings"
+      <Tabs.Screen
+        name="search"
         options={{
-            title: 'Settings',
-            tabBarIcon: ({ color, size }) => (
-            <Feather name="settings" size={size ?? 22} color={color} />
-            ),
+          title: 'Search',
+          tabBarIcon: ({ color }) => (
+            <Feather name="search" size={ICON_SIZE} color={color} />
+          ),
         }}
-        />
-        </Tabs>
-    )
+      />
+
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => (
+            <Feather name="user" size={ICON_SIZE} color={color} />
+          ),
+        }}
+      />
+    </Tabs>
+  );
 }

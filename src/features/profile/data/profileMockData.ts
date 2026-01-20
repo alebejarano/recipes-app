@@ -1,5 +1,6 @@
-import type { SettingsRowItem } from '@/features/profile/components/SettingsRow';
-import type { Feather } from '@expo/vector-icons';
+import type { SettingsRowItem } from '@/features/profile/components/SettingsRow'
+import type { Feather } from '@expo/vector-icons'
+import type React from 'react'
 
 export type DietaryId =
   | 'vegetarian'
@@ -8,13 +9,13 @@ export type DietaryId =
   | 'glutenFree'
   | 'dairyFree'
   | 'eggFree'
-  | 'nutFree';
+  | 'nutFree'
 
 export type DietaryOption = {
-  id: DietaryId;
-  label: string;
-  icon: React.ComponentProps<typeof Feather>['name'];
-};
+  id: DietaryId
+  label: string
+  icon: React.ComponentProps<typeof Feather>['name']
+}
 
 export const DIETARY_OPTIONS: DietaryOption[] = [
   { id: 'vegetarian', label: 'Vegetarian', icon: 'feather' },
@@ -24,23 +25,23 @@ export const DIETARY_OPTIONS: DietaryOption[] = [
   { id: 'dairyFree', label: 'Dairy-Free', icon: 'droplet' },
   { id: 'eggFree', label: 'Egg-Free', icon: 'circle' },
   { id: 'nutFree', label: 'Nut-Free', icon: 'alert-triangle' },
-];
+]
 
-// Default selection to match your screenshot (Vegetarian selected)
-export const DEFAULT_DIETARY_PREFERENCES: DietaryId[] = ['vegetarian'];
+// Default selection
+export const DEFAULT_DIETARY_PREFERENCES: DietaryId[] = ['vegetarian']
 
 export type PreferenceToggles = {
-  pushNotifications: boolean;
-  emailUpdates: boolean;
-  // darkMode: boolean; // TODO later
-};
+  pushNotifications: boolean
+  emailUpdates: boolean
+  // darkMode: boolean // TODO later
+}
 
 export const PREFERENCES_ITEMS = ({
   toggles,
   setToggles,
 }: {
-  toggles: PreferenceToggles;
-  setToggles: React.Dispatch<React.SetStateAction<PreferenceToggles>>;
+  toggles: PreferenceToggles
+  setToggles: React.Dispatch<React.SetStateAction<PreferenceToggles>>
 }): SettingsRowItem[] => [
   {
     id: 'push',
@@ -62,28 +63,13 @@ export const PREFERENCES_ITEMS = ({
     onValueChange: (next) =>
       setToggles((prev) => ({ ...prev, emailUpdates: next })),
   },
+]
 
-  // TODO later:
-  // {
-  //   id: 'dark',
-  //   type: 'toggle',
-  //   icon: 'moon',
-  //   title: 'Dark Mode',
-  //   subtitle: 'Easier on the eyes',
-  //   value: toggles.darkMode,
-  //   onValueChange: (next) => setToggles((prev) => ({ ...prev, darkMode: next })),
-  // },
-  // {
-  //   id: 'lang',
-  //   type: 'link',
-  //   icon: 'globe',
-  //   title: 'Language',
-  //   subtitle: 'English',
-  //   onPress: () => {},
-  // },
-];
-
-export const ACCOUNT_ITEMS: SettingsRowItem[] = [
+/**
+ * Static account items that don’t need runtime handlers yet.
+ * Keep this list small and stable.
+ */
+export const ACCOUNT_ITEMS_BASE: SettingsRowItem[] = [
   {
     id: 'premium',
     type: 'link',
@@ -109,7 +95,53 @@ export const ACCOUNT_ITEMS: SettingsRowItem[] = [
     subtitle: 'Manage your data',
     onPress: () => {},
   },
-];
+]
+
+/**
+ * Account section should include logout/delete (not Support).
+ * We build it so ProfileScreen can inject real handlers.
+ */
+export function buildAccountItems(args: {
+  onLogoutPress: () => void
+  onDeleteAccountPress?: () => void
+  isLoggingOut?: boolean
+  isDeletingAccount?: boolean
+}): SettingsRowItem[] {
+  const {
+    onLogoutPress,
+    onDeleteAccountPress,
+    isLoggingOut = false,
+    isDeletingAccount = false,
+  } = args
+
+  const items: SettingsRowItem[] = [...ACCOUNT_ITEMS_BASE]
+
+  // ✅ LOG OUT ROW — THIS IS WHERE YOUR SNIPPET GOES
+  items.push({
+    id: 'logout',
+    type: 'link',
+    icon: 'log-out',
+    title: isLoggingOut ? 'Logging out…' : 'Log Out',
+    subtitle: 'Sign out of your account',
+    onPress: isLoggingOut ? undefined : onLogoutPress,
+  })
+
+  // ❗ Delete account keeps confirmation (later)
+  if (onDeleteAccountPress) {
+    items.push({
+      id: 'delete',
+      type: 'link',
+      icon: 'trash-2',
+      title: isDeletingAccount ? 'Deleting…' : 'Delete Account',
+      subtitle: 'Permanently remove your data',
+      tone: 'danger',
+      onPress: isDeletingAccount ? undefined : onDeleteAccountPress,
+    })
+  }
+
+  return items
+}
+
 
 export const SUPPORT_ITEMS: SettingsRowItem[] = [
   {
@@ -128,21 +160,4 @@ export const SUPPORT_ITEMS: SettingsRowItem[] = [
     subtitle: 'Share your feedback',
     onPress: () => {},
   },
-  {
-    id: 'logout',
-    type: 'link',
-    icon: 'log-out',
-    title: 'Log Out',
-    subtitle: 'Sign out of your account',
-    onPress: () => {},
-  },
-  {
-    id: 'delete',
-    type: 'link',
-    icon: 'trash-2',
-    title: 'Delete Account',
-    subtitle: 'Permanently remove your data',
-    tone: 'danger',
-    onPress: () => {},
-  },
-];
+]

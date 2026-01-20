@@ -1,26 +1,18 @@
-// import React from 'react'
+// app/index.tsx (final, after removing dev)
 // import { Redirect } from 'expo-router'
 // import { useAuth } from '@/features/auth/context/AuthContext'
-// import { useOnboarding } from '@/features/onboarding/context/OnboardingContext'
 
 // export default function Index() {
-//   const { user, isLoading: authLoading } = useAuth()
-//   const { isLoaded: onboardingLoaded, hasCompletedOnboarding } = useOnboarding()
+//   const { session, isLoading } = useAuth()
+//   if (isLoading) return null
 
-//   if (authLoading || !onboardingLoaded) return null
-
-//   // Logged out
-//   if (!user) {
-//     return hasCompletedOnboarding
-//       ? <Redirect href="/(public)/login" />
-//       : <Redirect href="/(public)/get-started" />
-//   }
-
-//   // Logged in
-//   return hasCompletedOnboarding
-//     ? <Redirect href="/(auth)/(tabs)" />
-//     : <Redirect href="/onboarding" />
+//   return session ? (
+//     <Redirect href="/(auth)/(tabs)" />
+//   ) : (
+//     <Redirect href="/(public)/get-started" />
+//   )
 // }
+
 
 
 

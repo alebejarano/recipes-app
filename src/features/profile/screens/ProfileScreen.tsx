@@ -1,69 +1,92 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react'
+import { Alert } from 'react-native'
 
-import Screen from '@/components/Screen';
-import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
-import { createThemedStyles } from '@/styles/createStyles';
-import { theme } from '@/styles/theme';
+import Screen from '@/components/Screen'
+import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding'
+import { createThemedStyles } from '@/styles/createStyles'
+import { theme } from '@/styles/theme'
 
-import DietaryPreferencesSection from '@/features/profile/components/DietaryPreferencesSection';
-import ProfileHeader from '@/features/profile/components/ProfileHeader';
-import ProfileUserCard from '@/features/profile/components/ProfileUserCard';
-import SettingsSection from '@/features/profile/components/SettingsSection';
+import DietaryPreferencesSection from '@/features/profile/components/DietaryPreferencesSection'
+import ProfileHeader from '@/features/profile/components/ProfileHeader'
+import ProfileUserCard from '@/features/profile/components/ProfileUserCard'
+import SettingsSection from '@/features/profile/components/SettingsSection'
 
 import {
-  ACCOUNT_ITEMS,
   DEFAULT_DIETARY_PREFERENCES,
   DIETARY_OPTIONS,
   PREFERENCES_ITEMS,
   SUPPORT_ITEMS,
+  buildAccountItems,
   type DietaryId,
   type PreferenceToggles,
-} from '@/features/profile/data/profileMockData';
+} from '@/features/profile/data/profileMockData'
+
+import { useAuth } from '@/features/auth/context/AuthContext'
 
 export default function ProfileScreen() {
-  const bottomPadding = useTabBarBottomPadding(theme.spacing.xl);
+  const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
 
-  // Mock user (replace later with auth/user context)
-  const user = useMemo(
-    () => ({ name: 'Amanda', email: 'amanda@email.com' }),
-    []
-  );
+  const { user, logout } = useAuth()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-  const [dietary, setDietary] = useState<DietaryId[]>(
-    DEFAULT_DIETARY_PREFERENCES
-  );
+  const displayName = useMemo(() => {
+    // You can later pull this from profile table; for now use email prefix
+    const email = user?.email ?? ''
+    if (!email) return 'Account'
+    return email.split('@')[0] || 'Account'
+  }, [user?.email])
+
+  const [dietary, setDietary] = useState<DietaryId[]>(DEFAULT_DIETARY_PREFERENCES)
 
   const [toggles, setToggles] = useState<PreferenceToggles>({
     pushNotifications: true,
     emailUpdates: false,
-    // darkMode: false, // TODO later
-  });
+  })
 
   const onToggleDietary = (id: DietaryId) => {
-    setDietary((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
+    setDietary((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }
+
+  const onLogoutPress = useCallback(async () => {
+  if (isLoggingOut) return
+
+  setIsLoggingOut(true)
+  try {
+    await logout()
+    // No manual navigation needed:
+    // (auth)/_layout.tsx will redirect when session/user becomes null.
+  } catch (e: any) {
+    Alert.alert('Unable to log out', e?.message ?? 'Please try again.')
+  } finally {
+    setIsLoggingOut(false)
+  }
+  }, [isLoggingOut, logout])
+
+
+  const accountItems = useMemo(
+    () =>
+      buildAccountItems({
+        isLoggingOut,
+        onLogoutPress,
+      }),
+    [isLoggingOut, onLogoutPress]
+  )
 
   return (
-    <Screen
-      scroll
-      bottomPadding={bottomPadding}
-      contentStyle={styles.content}
-    >
+    <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
       <ProfileHeader
         title="Profile"
         subtitle="Manage your account"
         onPressSettings={() => {
-          // TODO: navigate to settings later
+          // TODO later
         }}
       />
 
       <ProfileUserCard
-        name={user.name}
-        email={user.email}
+        name={displayName}
+        email={user?.email ?? ''}
         onPressEdit={() => {
-          // TODO: edit profile later
+          // TODO later
         }}
       />
 
@@ -83,17 +106,15 @@ export default function ProfileScreen() {
         })}
       />
 
-      <SettingsSection title="Account" items={ACCOUNT_ITEMS} />
+      <SettingsSection title="Account" items={accountItems} />
 
       <SettingsSection title="Support" items={SUPPORT_ITEMS} />
     </Screen>
-  );
+  )
 }
 
 const styles = createThemedStyles((theme) => ({
-  // Screen already handles safe-area + top padding + horizontal padding.
-  // Keep only page-specific vertical rhythm here.
   content: {
     gap: theme.spacing.xl,
   },
-}));
+}))

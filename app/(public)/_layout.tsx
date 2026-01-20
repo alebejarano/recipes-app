@@ -2,11 +2,11 @@ import { useAuth } from '@/features/auth/context/AuthContext'
 import { Redirect, Slot } from 'expo-router'
 
 export default function PublicLayout() {
-  const { user, isLoading } = useAuth()
+  const { session, isLoading } = useAuth()
 
   if (isLoading) return null
 
-  if (user) {
+  if (session) {
     return <Redirect href="/(auth)/(tabs)" />
   }
 

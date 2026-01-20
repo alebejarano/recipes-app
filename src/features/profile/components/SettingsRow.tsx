@@ -1,41 +1,50 @@
-import { Feather } from '@expo/vector-icons';
-import React from 'react';
-import { Switch, Text, TouchableOpacity, View } from 'react-native';
+import { Feather } from '@expo/vector-icons'
+import React from 'react'
+import { Switch, Text, TouchableOpacity, View } from 'react-native'
 
-import { createThemedStyles } from '@/styles/createStyles';
+import { createThemedStyles } from '@/styles/createStyles'
 
 type RowBase = {
-  id: string;
-  title: string;
-  subtitle?: string;
-  icon: React.ComponentProps<typeof Feather>['name'];
-  tone?: 'default' | 'accent' | 'danger';
-};
+  id: string
+  title: string
+  subtitle?: string
+  icon: React.ComponentProps<typeof Feather>['name']
+  tone?: 'default' | 'accent' | 'danger'
+}
 
 type ToggleRow = RowBase & {
-  type: 'toggle';
-  value: boolean;
-  onValueChange: (next: boolean) => void;
-};
+  type: 'toggle'
+  value: boolean
+  onValueChange: (next: boolean) => void
+}
 
 type LinkRow = RowBase & {
-  type: 'link';
-  rightText?: string;
-  onPress?: () => void;
-};
+  type: 'link'
+  rightText?: string
+  onPress?: () => void
+}
 
-export type SettingsRowItem = ToggleRow | LinkRow;
+export type SettingsRowItem = ToggleRow | LinkRow
 
-export default function SettingsRow({ item, isLast }: { item: SettingsRowItem; isLast: boolean }) {
-  const tone = item.tone ?? 'default';
+export default function SettingsRow({
+  item,
+  isLast,
+}: {
+  item: SettingsRowItem
+  isLast: boolean
+}) {
+  const tone = item.tone ?? 'default'
+  const rowStyle = [styles.row, !isLast && styles.rowDivider]
 
-  return (
-    <TouchableOpacity
-      activeOpacity={item.type === 'link' ? 0.85 : 1}
-      onPress={item.type === 'link' ? item.onPress : undefined}
-      style={[styles.row, !isLast && styles.rowDivider]}
-    >
-      <View style={[styles.iconWrap, tone === 'accent' && styles.iconWrapAccent, tone === 'danger' && styles.iconWrapDanger]}>
+  const content = (
+    <>
+      <View
+        style={[
+          styles.iconWrap,
+          tone === 'accent' && styles.iconWrapAccent,
+          tone === 'danger' && styles.iconWrapDanger,
+        ]}
+      >
         <Feather
           name={item.icon}
           size={18}
@@ -58,24 +67,34 @@ export default function SettingsRow({ item, isLast }: { item: SettingsRowItem; i
           {item.title}
         </Text>
 
-        {!!item.subtitle && (
-          <Text style={styles.subtitle}>{item.subtitle}</Text>
-        )}
+        {!!item.subtitle && <Text style={styles.subtitle}>{item.subtitle}</Text>}
       </View>
 
       {item.type === 'toggle' ? (
-        <Switch
-          value={item.value}
-          onValueChange={item.onValueChange}
-        />
+        <Switch value={item.value} onValueChange={item.onValueChange} />
       ) : (
         <View style={styles.right}>
           {!!item.rightText && <Text style={styles.rightText}>{item.rightText}</Text>}
           <Feather name="chevron-right" size={18} style={styles.chevron} />
         </View>
       )}
-    </TouchableOpacity>
-  );
+    </>
+  )
+
+  if (item.type === 'link') {
+    return (
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={item.onPress}
+        style={rowStyle}
+      >
+        {content}
+      </TouchableOpacity>
+    )
+  }
+
+  // Toggle rows should not pretend to be links.
+  return <View style={rowStyle}>{content}</View>
 }
 
 const styles = createThemedStyles((theme) => ({
@@ -147,4 +166,4 @@ const styles = createThemedStyles((theme) => ({
   chevron: {
     color: theme.colors.mutedForeground,
   },
-}));
+}))

@@ -1,13 +1,16 @@
-import { supabase } from '@/lib/supabase'; // adjust import to your supabase.ts path
-import type { Session, User } from '@supabase/supabase-js'
+// features/auth/context/AuthContext.tsx
+
+import { supabase } from '@/lib/supabase'
+import type { AuthResponse, Session, User } from '@supabase/supabase-js'
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
 type AuthContextValue = {
   session: Session | null
   user: User | null
   isLoading: boolean
+
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string) => Promise<void>
+  register: (email: string, password: string) => Promise<AuthResponse['data']>
   logout: () => Promise<void>
 }
 
@@ -20,17 +23,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true
 
-    // 1) Restore existing session (from SecureStore via your supabase client config)
+    // Restore existing session (persisted via SecureStore in supabase client config)
     supabase.auth
       .getSession()
       .then(({ data, error }) => {
         if (!isMounted) return
+
         if (error) {
-          // You may want to log error in dev; do not crash prod for this
           setSession(null)
         } else {
           setSession(data.session ?? null)
         }
+
         setIsLoading(false)
       })
       .catch(() => {
@@ -39,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false)
       })
 
-    // 2) Listen for auth changes
+    // Listen for auth changes (sign-in, sign-out, token refresh)
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession)
     })
@@ -55,11 +59,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error
   }
 
+  /**
+   * Returns Supabase's auth response data so the UI can decide what to do next:
+   * - If email confirmations are enabled, data.session may be null -> show "Check your email"
+   * - If data.session exists, user is signed in -> redirect to app
+   */
   const register = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) throw error
-    // Note: depending on your Supabase email confirmation settings,
-    // the user may not be signed in immediately.
+    return data
   }
 
   const logout = async () => {
