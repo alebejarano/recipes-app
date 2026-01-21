@@ -2,6 +2,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const STORAGE_KEY = 'shopping_list_id_v1'
 
+export async function getShoppingList<T = unknown>(): Promise<T | null> {
+  const raw = await AsyncStorage.getItem(STORAGE_KEY)
+  return raw ? (JSON.parse(raw) as T) : null
+}
+
 export async function getShoppingListId(): Promise<string | null> {
   try {
     return await AsyncStorage.getItem(STORAGE_KEY)

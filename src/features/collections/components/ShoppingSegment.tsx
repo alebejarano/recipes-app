@@ -1,41 +1,61 @@
 import { Feather } from '@expo/vector-icons'
-import React from 'react'
+import { router } from 'expo-router'
+import React, { useEffect, useMemo } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
-type ShoppingList = {
-  title: string
-  statusLabel: string
-  checked: number
-  total: number
-  highlights: string[]
-  moreCount: number
-}
+import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
 
-const MOCK_SHOPPING: ShoppingList = {
-  title: 'Current List',
-  statusLabel: 'Active',
-  checked: 5,
-  total: 12,
-  highlights: ['Olive oil', 'Chicken breast', 'Lemons'],
-  moreCount: 9,
-}
+const HIGHLIGHTS_COUNT = 3
+
+// Update this if your route differs in Expo Router filesystem:
+const SHOPPING_ROUTE = '/(dev)/shopping-list'
 
 export default function ShoppingSegment({ bottomPadding }: { bottomPadding: number }) {
-  const progress = MOCK_SHOPPING.total === 0 ? 0 : MOCK_SHOPPING.checked / MOCK_SHOPPING.total
+  const hydrate = useShoppingListStore((s) => s.hydrate)
+  const isHydrated = useShoppingListStore((s) => s.isHydrated)
+  const isHydrating = useShoppingListStore((s) => s.isHydrating)
+  const items = useShoppingListStore((s) => s.items)
+
+  useEffect(() => {
+    hydrate()
+  }, [hydrate])
+
+  const isLoading = !isHydrated || isHydrating
+
+  const { total, checked, progress, highlights, moreCount, statusLabel } = useMemo(() => {
+    const total = items.length
+    const checked = items.reduce((acc, i) => acc + (i.checked ? 1 : 0), 0)
+    const progress = total === 0 ? 0 : checked / total
+
+    // highlights source: prefer unchecked items, otherwise any items
+    const unchecked = items.filter((i) => !i.checked)
+    const source = unchecked.length > 0 ? unchecked : items
+
+    const highlights = source.slice(0, HIGHLIGHTS_COUNT).map((i) => i.name)
+    const moreCount = Math.max(0, source.length - highlights.length)
+
+    const statusLabel = total === 0 ? 'Empty' : 'Active'
+
+    return { total, checked, progress, highlights, moreCount, statusLabel }
+  }, [items])
+
+  const onOpenList = () => {
+    router.push(SHOPPING_ROUTE)
+  }
 
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
       contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}
     >
-      <Text style={styles.helper}>Your kitchen notes and ideas</Text>
+      <Text style={styles.helper}>Everything you need, in one list</Text>
 
       {/* Current List card */}
       <Pressable
-        onPress={() => {}}
+        onPress={onOpenList}
         style={styles.currentCard}
         accessibilityRole="button"
         accessibilityLabel="Open current shopping list"
@@ -47,29 +67,43 @@ export default function ShoppingSegment({ bottomPadding }: { bottomPadding: numb
 
           <View style={styles.currentMain}>
             <View style={styles.currentTitleRow}>
-              <Text style={styles.currentTitle}>{MOCK_SHOPPING.title}</Text>
+              <Text style={styles.currentTitle}>Current List</Text>
+
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>{MOCK_SHOPPING.statusLabel}</Text>
+                <Text style={styles.badgeText}>{statusLabel}</Text>
               </View>
             </View>
 
             <Text style={styles.currentSub}>
-              {MOCK_SHOPPING.checked}/{MOCK_SHOPPING.total} items checked
+              {isLoading ? (
+                <>Loading…</>
+              ) : total === 0 ? (
+                <>No items yet</>
+              ) : (
+                <>
+                  {checked}/{total} items checked
+                </>
+              )}
             </Text>
 
             <View style={styles.progressTrack}>
               <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%` }]} />
             </View>
 
-            <View style={styles.pillsRow}>
-              {MOCK_SHOPPING.highlights.map((label) => (
-                <View key={label} style={styles.pill}>
-                  <Text style={styles.pillText}>{label}</Text>
-                </View>
-              ))}
+            {/* Only show pills when we have items and we are not loading */}
+            {!isLoading && total > 0 ? (
+              <View style={styles.pillsRow}>
+                {highlights.map((label) => (
+                  <View key={label} style={styles.pill}>
+                    <Text style={styles.pillText} numberOfLines={1}>
+                      {label}
+                    </Text>
+                  </View>
+                ))}
 
-              <Text style={styles.moreText}>+{MOCK_SHOPPING.moreCount} more</Text>
-            </View>
+                {moreCount > 0 ? <Text style={styles.moreText}>+{moreCount} more</Text> : null}
+              </View>
+            ) : null}
           </View>
 
           <Feather name="chevron-right" size={22} color={theme.colors.mutedForeground} />
@@ -78,10 +112,13 @@ export default function ShoppingSegment({ bottomPadding }: { bottomPadding: numb
 
       {/* From Recipe tile */}
       <Pressable
-        onPress={() => {}}
+        onPress={() => {
+          // TODO: route to "pick recipe → add ingredients to current list"
+          // This is where you'll use store.bulkAdd([...ingredientNames])
+        }}
         style={styles.fromRecipeCard}
         accessibilityRole="button"
-        accessibilityLabel="Create shopping list from recipe"
+        accessibilityLabel="Add ingredients from a recipe"
       >
         <View style={styles.fromRecipeIconWrap}>
           <Feather name="image" size={18} color={theme.colors.mutedForeground} />
@@ -203,6 +240,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   pill: {
+    maxWidth: 120,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.xs,
     borderRadius: 999,

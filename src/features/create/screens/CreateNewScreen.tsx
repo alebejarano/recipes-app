@@ -1,25 +1,44 @@
 import { Feather } from '@expo/vector-icons'
-import { router } from 'expo-router'
-import React, { useCallback, useState } from 'react'
+import { router, useFocusEffect } from 'expo-router'
+import React, { useCallback, useMemo, useState } from 'react'
 import { ActivityIndicator, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
 import { createThemedStyles } from '@/styles/createStyles'
 
-import { useShoppingListStatus } from '@/features/shopping-list/hooks/useShoppingListStatus'
-import { ensureShoppingList } from '@/features/shopping-list/storage/shoppingListStorage'
+import {
+  ensureShoppingList,
+  getShoppingList, // ✅ add/import a read function (see below if missing)
+} from '@/features/shopping-list/storage/shoppingListStorage'
 import CreateActionCard from '../components/CreateActionCard'
 
 export default function CreateNewScreen() {
-  const { isLoading, hasShoppingList, refresh } = useShoppingListStatus()
+  const [isLoading, setIsLoading] = useState(true)
+  const [hasShoppingList, setHasShoppingList] = useState(false)
   const [isCreatingList, setIsCreatingList] = useState(false)
 
+  const refreshShoppingListStatus = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const list = await getShoppingList()
+      setHasShoppingList(Boolean(list))
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  // Keep status in sync when navigating back to this screen
+  useFocusEffect(
+    useCallback(() => {
+      refreshShoppingListStatus()
+    }, [refreshShoppingListStatus])
+  )
+
   const handleCreateRecipe = useCallback(() => {
-    console.log('testing in dev')
     router.push({
-    pathname: '/(dev)/recipes/create',
-    params: { variant: 'app' },
+      pathname: '/(dev)/recipes/create',
+      params: { variant: 'app' },
     })
   }, [])
 
@@ -28,17 +47,31 @@ export default function CreateNewScreen() {
   }, [])
 
   const handleShoppingList = useCallback(async () => {
+    // Keep your existing behavior: if already created, do nothing.
     if (hasShoppingList) return
 
     setIsCreatingList(true)
     try {
       await ensureShoppingList()
-      await refresh()
+      await refreshShoppingListStatus()
       router.push('/(dev)/shopping-list')
     } finally {
       setIsCreatingList(false)
     }
-  }, [hasShoppingList, refresh])
+  }, [hasShoppingList, refreshShoppingListStatus])
+
+  const shoppingSubtitle = useMemo(() => {
+    if (isLoading) return 'Checking…'
+    return hasShoppingList ? 'Already created' : 'Plan your grocery run'
+  }, [hasShoppingList, isLoading])
+
+  const shoppingDisabled = hasShoppingList || isLoading || isCreatingList
+
+  const shoppingIcon = useMemo(() => {
+    if (isCreatingList) return <ActivityIndicator />
+    if (hasShoppingList) return <Feather name="check" size={22} color={styles.icon.color} />
+    return <Feather name="shopping-cart" size={22} color={styles.icon.color} />
+  }, [hasShoppingList, isCreatingList])
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -77,19 +110,11 @@ export default function CreateNewScreen() {
 
           <CreateActionCard
             title="Shopping List"
-            subtitle={hasShoppingList ? 'Already created' : 'Plan your grocery run'}
-            tone={hasShoppingList ? 'neutral' : 'neutral'}
-            disabled={hasShoppingList || isLoading || isCreatingList}
+            subtitle={shoppingSubtitle}
+            tone="neutral"
+            disabled={shoppingDisabled}
             onPress={handleShoppingList}
-            icon={
-              isCreatingList ? (
-                <ActivityIndicator />
-              ) : hasShoppingList ? (
-                <Feather name="check" size={22} color={styles.icon.color} />
-              ) : (
-                <Feather name="shopping-cart" size={22} color={styles.icon.color} />
-              )
-            }
+            icon={shoppingIcon}
           />
         </View>
       </View>

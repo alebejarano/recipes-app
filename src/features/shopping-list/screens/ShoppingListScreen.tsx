@@ -1,14 +1,14 @@
 import { Feather } from '@expo/vector-icons'
 import { router } from 'expo-router'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
-    ActivityIndicator,
-    Keyboard,
-    Pressable,
-    ScrollView,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Keyboard,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -16,102 +16,51 @@ import Button from '@/components/Button'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
-import type { ShoppingItem } from '../storage/shoppingListItemsStorage'
-import { getShoppingListItems, setShoppingListItems } from '../storage/shoppingListItemsStorage'
+import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
 
-const QUICK_ADD_ITEMS = [
-  'Milk',
-  'Eggs',
-  'Bread',
-  'Butter',
-  'Cheese',
-  'Chicken',
-  'Rice',
-  'Onions',
-]
+const QUICK_ADD_ITEMS = ['Milk', 'Eggs', 'Bread', 'Butter', 'Cheese', 'Chicken', 'Rice', 'Onions']
 
 export default function ShoppingListScreen() {
   const inputRef = useRef<TextInput | null>(null)
-
-  const [items, setItems] = useState<ShoppingItem[]>([])
   const [newItem, setNewItem] = useState('')
 
-  const [isSaving, setIsSaving] = useState(false)
-  const [isComplete, setIsComplete] = useState(false)
-  const [isBootstrapping, setIsBootstrapping] = useState(true)
+  // ----- store -----
+  const hydrate = useShoppingListStore((s) => s.hydrate)
+  const isHydrated = useShoppingListStore((s) => s.isHydrated)
+  const isHydrating = useShoppingListStore((s) => s.isHydrating)
 
-  // Load persisted items (if any)
+  const isCreating = useShoppingListStore((s) => s.isCreating)
+  const isComplete = useShoppingListStore((s) => s.isComplete)
+
+  const items = useShoppingListStore((s) => s.items)
+  const normalizedNames = useShoppingListStore((s) => s.normalizedNames)
+
+  const addItem = useShoppingListStore((s) => s.addItem)
+  const removeItem = useShoppingListStore((s) => s.removeItem)
+  const toggleItemByName = useShoppingListStore((s) => s.toggleItemByName)
+  const setChecked = useShoppingListStore((s) => s.setChecked)
+  const setCompleteTemporarily = useShoppingListStore((s) => s.setCompleteTemporarily)
+
   useEffect(() => {
-    let mounted = true
-
-    ;(async () => {
-      const stored = await getShoppingListItems()
-      if (mounted) {
-        setItems(stored)
-        setIsBootstrapping(false)
-      }
-    })()
-
-    return () => {
-      mounted = false
-    }
-  }, [])
-
-  const normalizedNames = useMemo(() => {
-    return new Set(items.map((i) => i.name.trim().toLowerCase()))
-  }, [items])
+    hydrate()
+  }, [hydrate])
 
   const canAddTyped = newItem.trim().length > 0
 
-  const addItem = useCallback(
-    (name?: string) => {
-      const raw = (name ?? newItem).trim()
-      if (!raw) return
+  const onAdd = async (name?: string) => {
+    const raw = (name ?? newItem).trim()
+    if (!raw) return
 
-      const normalized = raw.toLowerCase()
-      if (normalizedNames.has(normalized)) {
-        setNewItem('')
-        return
-      }
+    await addItem(raw)
+    setNewItem('')
+    Keyboard.dismiss()
+  }
 
-      const next: ShoppingItem = {
-        id: String(Date.now()),
-        name: raw,
-        checked: false,
-      }
-
-      setItems((prev) => [...prev, next])
-      setNewItem('')
-
-      // Keep the UX snappy: dismiss keyboard after adding via the "+" button
-      Keyboard.dismiss()
-    },
-    [newItem, normalizedNames],
-  )
-
-  const removeItem = useCallback((id: string) => {
-    setItems((prev) => prev.filter((i) => i.id !== id))
-  }, [])
-
-  const handleSave = useCallback(async () => {
-    if (items.length === 0) return
-
-    setIsSaving(true)
-
-    // Simulate save (matches your web code); replace later with real persistence/api
-    await new Promise((resolve) => setTimeout(resolve, 900))
-
-    // Persist locally so the list survives reloads
-    await setShoppingListItems(items)
-
-    setIsSaving(false)
-    setIsComplete(true)
-
-    // Brief success display then keep user on the list (or router.back() if you prefer)
-    setTimeout(() => {
-      setIsComplete(false)
-    }, 1000)
-  }, [items])
+  const onDone = () => {
+    // If you want a success overlay before leaving:
+    // setCompleteTemporarily()
+    router.back()
+  }
 
   // ---------- COMPLETE STATE (overlay) ----------
   if (isComplete) {
@@ -122,15 +71,15 @@ export default function ShoppingListScreen() {
             <Feather name="shopping-cart" size={34} style={styles.completeIcon} />
           </View>
 
-          <Text style={styles.completeTitle}>List Created!</Text>
-          <Text style={styles.completeSubtitle}>{items.length} items added to your list</Text>
+          <Text style={styles.completeTitle}>List Updated!</Text>
+          <Text style={styles.completeSubtitle}>{items.length} items in your list</Text>
         </View>
       </SafeAreaView>
     )
   }
 
-  // ---------- SAVING STATE (overlay) ----------
-  if (isSaving) {
+  // ---------- CREATING STATE (overlay) ----------
+  if (isCreating) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.overlayCenter}>
@@ -140,6 +89,8 @@ export default function ShoppingListScreen() {
       </SafeAreaView>
     )
   }
+
+  const isLoading = !isHydrated || isHydrating
 
   // ---------- FORM STATE ----------
   return (
@@ -158,11 +109,9 @@ export default function ShoppingListScreen() {
 
           <Text style={styles.headerTitle}>Shopping List</Text>
 
-          {/* Spacer to balance header */}
           <View style={styles.headerRightSpacer} />
         </View>
 
-        {/* Content */}
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
@@ -181,13 +130,13 @@ export default function ShoppingListScreen() {
                   placeholder="Type an item..."
                   placeholderTextColor={styles.placeholder.color}
                   returnKeyType="done"
-                  onSubmitEditing={() => addItem()}
+                  onSubmitEditing={() => onAdd()}
                   style={styles.input}
                 />
               </View>
 
               <Pressable
-                onPress={() => addItem()}
+                onPress={() => onAdd()}
                 disabled={!canAddTyped}
                 accessibilityRole="button"
                 accessibilityState={{ disabled: !canAddTyped }}
@@ -213,19 +162,16 @@ export default function ShoppingListScreen() {
                 return (
                   <Pressable
                     key={label}
-                    onPress={() => !isAdded && addItem(label)}
-                    disabled={isAdded}
+                    onPress={() => toggleItemByName(label)}
                     accessibilityRole="button"
-                    accessibilityState={{ disabled: isAdded }}
+                    accessibilityLabel={isAdded ? `Remove ${label}` : `Add ${label}`}
                     style={({ pressed }) => [
                       styles.quickChip,
                       isAdded && styles.quickChipAdded,
-                      pressed && !isAdded && styles.quickChipPressed,
+                      pressed && styles.quickChipPressed,
                     ]}
                   >
-                    {isAdded ? (
-                      <Feather name="check" size={14} color={theme.colors.sage} />
-                    ) : null}
+                    {isAdded ? <Feather name="check" size={14} color={theme.colors.sage} /> : null}
                     <Text style={[styles.quickChipText, isAdded && styles.quickChipTextAdded]}>
                       {label}
                     </Text>
@@ -242,7 +188,7 @@ export default function ShoppingListScreen() {
               {items.length > 0 && <Text style={styles.countText}>{items.length} items</Text>}
             </View>
 
-            {isBootstrapping ? (
+            {isLoading ? (
               <View style={styles.emptyState}>
                 <ActivityIndicator />
               </View>
@@ -255,7 +201,25 @@ export default function ShoppingListScreen() {
               <View style={styles.list}>
                 {items.map((item) => (
                   <View key={item.id} style={styles.listRow}>
-                    <Text style={styles.listRowText} numberOfLines={1}>
+                    {/* NEW: check toggle */}
+                    <Pressable
+                      onPress={() => setChecked(item.id, !item.checked)}
+                      accessibilityRole="button"
+                      accessibilityLabel={item.checked ? `Uncheck ${item.name}` : `Check ${item.name}`}
+                      style={({ pressed }) => [styles.checkButton, pressed && styles.checkButtonPressed]}
+                      hitSlop={8}
+                    >
+                      {item.checked ? (
+                        <Feather name="check-circle" size={18} color={theme.colors.sage} />
+                      ) : (
+                        <Feather name="circle" size={18} color={theme.colors.mutedForeground} />
+                      )}
+                    </Pressable>
+
+                    <Text
+                      style={[styles.listRowText, item.checked && styles.listRowTextChecked]}
+                      numberOfLines={1}
+                    >
                       {item.name}
                     </Text>
 
@@ -263,10 +227,8 @@ export default function ShoppingListScreen() {
                       onPress={() => removeItem(item.id)}
                       accessibilityRole="button"
                       accessibilityLabel={`Remove ${item.name}`}
-                      style={({ pressed }) => [
-                        styles.removeButton,
-                        pressed && styles.removeButtonPressed,
-                      ]}
+                      style={({ pressed }) => [styles.removeButton, pressed && styles.removeButtonPressed]}
+                      hitSlop={8}
                     >
                       <Feather name="x" size={16} color={theme.colors.mutedForeground} />
                     </Pressable>
@@ -279,14 +241,20 @@ export default function ShoppingListScreen() {
 
         {/* Footer */}
         <View style={styles.footer}>
+          <Button size="xl" variant="primary" disabled={!isHydrated} onPress={onDone}>
+            Done
+          </Button>
+
+          {/* Optional: if you want a manual “save/confirm” UX still:
           <Button
             size="xl"
             variant="primary"
-            disabled={items.length === 0}
-            onPress={handleSave}
+            disabled={items.length === 0 || isLoading}
+            onPress={() => setCompleteTemporarily()}
           >
-            Create List ({items.length} items)
+            Save ({items.length})
           </Button>
+          */}
         </View>
       </View>
     </SafeAreaView>
@@ -299,9 +267,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.background,
   },
 
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
 
   header: {
     height: 56,
@@ -322,9 +288,7 @@ const styles = createThemedStyles((theme) => ({
     marginLeft: -8,
   },
 
-  headerIconPressed: {
-    backgroundColor: theme.colors.muted,
-  },
+  headerIconPressed: { backgroundColor: theme.colors.muted },
 
   headerTitle: {
     flex: 1,
@@ -335,9 +299,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.foreground,
   },
 
-  headerRightSpacer: {
-    width: 40,
-  },
+  headerRightSpacer: { width: 40 },
 
   scrollContent: {
     paddingHorizontal: theme.spacing.lg,
@@ -346,9 +308,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.xl,
   },
 
-  section: {
-    gap: theme.spacing.sm,
-  },
+  section: { gap: theme.spacing.sm },
 
   sectionTitle: {
     fontFamily: theme.fontFamily.medium,
@@ -364,11 +324,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
 
-  addRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.md,
-  },
+  addRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md },
 
   inputWrapper: {
     flex: 1,
@@ -387,9 +343,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.foreground,
   },
 
-  placeholder: {
-    color: theme.colors.mutedForeground,
-  },
+  placeholder: { color: theme.colors.mutedForeground },
 
   addButton: {
     width: 52,
@@ -402,20 +356,11 @@ const styles = createThemedStyles((theme) => ({
     borderColor: theme.colors.border,
   },
 
-  addButtonDisabled: {
-    opacity: 0.6,
-  },
+  addButtonDisabled: { opacity: 0.6 },
 
-  addButtonPressed: {
-    opacity: 0.95,
-    transform: [{ scale: 0.99 }],
-  },
+  addButtonPressed: { opacity: 0.95, transform: [{ scale: 0.99 }] },
 
-  quickWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: theme.spacing.sm,
-  },
+  quickWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm },
 
   quickChip: {
     flexDirection: 'row',
@@ -429,15 +374,9 @@ const styles = createThemedStyles((theme) => ({
     borderColor: theme.colors.border,
   },
 
-  quickChipPressed: {
-    opacity: 0.95,
-    transform: [{ scale: 0.99 }],
-  },
+  quickChipPressed: { opacity: 0.95, transform: [{ scale: 0.99 }] },
 
-  quickChipAdded: {
-    backgroundColor: theme.colors.sageLight,
-    borderColor: theme.colors.sageLight,
-  },
+  quickChipAdded: { backgroundColor: theme.colors.sageLight, borderColor: theme.colors.sageLight },
 
   quickChipText: {
     fontFamily: theme.fontFamily.medium,
@@ -446,15 +385,9 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
 
-  quickChipTextAdded: {
-    color: theme.colors.foreground,
-  },
+  quickChipTextAdded: { color: theme.colors.foreground },
 
-  listHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
+  listHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 
   countText: {
     fontFamily: theme.fontFamily.regular,
@@ -470,10 +403,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.md,
   },
 
-  emptyIcon: {
-    color: theme.colors.mutedForeground,
-    opacity: 0.4,
-  },
+  emptyIcon: { color: theme.colors.mutedForeground, opacity: 0.4 },
 
   emptyText: {
     fontFamily: theme.fontFamily.regular,
@@ -482,9 +412,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
 
-  list: {
-    gap: theme.spacing.sm,
-  },
+  list: { gap: theme.spacing.sm },
 
   listRow: {
     flexDirection: 'row',
@@ -498,6 +426,21 @@ const styles = createThemedStyles((theme) => ({
     borderColor: theme.colors.border,
   },
 
+  // NEW
+  checkButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.sm,
+  },
+
+  // NEW
+  checkButtonPressed: {
+    backgroundColor: theme.colors.muted,
+  },
+
   listRowText: {
     flex: 1,
     marginRight: theme.spacing.md,
@@ -505,6 +448,12 @@ const styles = createThemedStyles((theme) => ({
     fontSize: theme.fontSize.sm,
     lineHeight: theme.lineHeight.sm,
     color: theme.colors.foreground,
+  },
+
+  // NEW
+  listRowTextChecked: {
+    textDecorationLine: 'line-through',
+    opacity: 0.6,
   },
 
   removeButton: {
@@ -515,9 +464,7 @@ const styles = createThemedStyles((theme) => ({
     justifyContent: 'center',
   },
 
-  removeButtonPressed: {
-    backgroundColor: theme.colors.muted,
-  },
+  removeButtonPressed: { backgroundColor: theme.colors.muted },
 
   footer: {
     paddingHorizontal: theme.spacing.lg,
@@ -527,7 +474,6 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.background,
   },
 
-  // Overlays
   overlayCenter: {
     flex: 1,
     alignItems: 'center',
@@ -536,9 +482,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.md,
   },
 
-  spinner: {
-    color: theme.colors.primary,
-  },
+  spinner: { color: theme.colors.primary },
 
   savingTitle: {
     fontFamily: theme.fontFamily.medium,
@@ -556,9 +500,7 @@ const styles = createThemedStyles((theme) => ({
     justifyContent: 'center',
   },
 
-  completeIcon: {
-    color: theme.colors.sage,
-  },
+  completeIcon: { color: theme.colors.sage },
 
   completeTitle: {
     fontFamily: theme.fontFamily.semibold,
