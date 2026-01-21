@@ -1,290 +1,129 @@
 // src/features/recipes/screens/CreateRecipeScreen.tsx
 
-import { Feather, Ionicons } from '@expo/vector-icons';
-import React, { useMemo, useState } from 'react';
-import {
-    ActivityIndicator,
-    ScrollView,
-    Text,
-    TextInput,
-    View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons'
+import { router } from 'expo-router'
+import React, { useCallback, useMemo } from 'react'
+import { Alert, ScrollView, Text, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
-import Button from '@/components/Button';
-import TagChip from '@/components/TagChip';
-import { createThemedStyles } from '@/styles/createStyles';
+import Button from '@/components/Button'
+import { createThemedStyles } from '@/styles/createStyles'
 
-export type CreateRecipeVariant = 'onboarding' | 'app';
+import RecipeForm, {
+  createEmptyRecipeFormValues,
+  type RecipeFormSubmitValues,
+} from '@/features/recipes/components/RecipeForm'
+import { useCreateRecipe } from '@/features/recipes/hooks/useCreateRecipe'
+
+export type CreateRecipeVariant = 'onboarding' | 'app'
 
 interface CreateRecipeScreenProps {
-  variant?: CreateRecipeVariant;
-  onSaved?: (recipeId: string) => void;
-  onBack?: () => void;
+  variant?: CreateRecipeVariant
+  onSaved?: (recipeId: string) => void
+  onBack?: () => void
 }
-
-const suggestedTags = [
-  'Dinner',
-  'Quick',
-  'Healthy',
-  'Comfort Food',
-  'Vegetarian',
-  'Dessert',
-];
 
 export default function CreateRecipeScreen({
   variant = 'app',
   onSaved,
   onBack,
 }: CreateRecipeScreenProps) {
-  const isOnboarding = variant === 'onboarding';
-
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
-
-  const [titleFocused, setTitleFocused] = useState(false);
-  const [contentFocused, setContentFocused] = useState(false);
+  const isOnboarding = variant === 'onboarding'
+  const createMutation = useCreateRecipe()
 
   const screenTitle = useMemo(
     () => (isOnboarding ? 'Create your first recipe' : 'Create your recipe'),
-    [isOnboarding],
-  );
+    [isOnboarding]
+  )
 
   const screenSubtitle = useMemo(
-    () =>
-      isOnboarding
-        ? 'Add the basics—you can always edit later.'
-        : 'Add the basics—you can always edit later.',
-    [isOnboarding],
-  );
+    () => 'Add the basics—you can always edit later.',
+    []
+  )
 
-  const ctaLabel = useMemo(
+  const submitLabel = useMemo(
     () => (isOnboarding ? 'Save and continue' : 'Add Recipe'),
-    [isOnboarding],
-  );
+    [isOnboarding]
+  )
 
-  const toggleTag = (tag: string) => {
-    setTags(prev =>
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag],
-    );
-  };
+  const handleSubmit = useCallback(
+    async (values: RecipeFormSubmitValues) => {
+      try {
+        const recipe = await createMutation.mutateAsync(values)
 
-  const isValid = title.trim().length > 0;
+        // Preferred: let the caller control the next step (especially onboarding)
+        if (onSaved) {
+          onSaved(recipe.id)
+          return
+        }
 
-  const handleSave = () => {
-    if (!isValid) return;
+        // Default navigation for app flow
+        router.replace('/recipes/[id]')
+      } catch (e) {
+        Alert.alert('Save failed', 'Please try again.')
+      }
+    },
+    [createMutation, onSaved]
+  )
 
-    setIsSaving(true);
-
-    // Since backend isn't connected yet, we simulate:
-    // - create an id
-    // - show "saving" state
-    // - show "complete" state
-    // - call onSaved(recipeId)
-    const fakeRecipeId = String(Date.now());
-
-    setTimeout(() => {
-      setIsSaving(false);
-      setIsComplete(true);
-
-      setTimeout(() => {
-        onSaved?.(fakeRecipeId);
-      }, 1200);
-    }, 1200);
-  };
-
-  /* ========= COMPLETE STATE ========= */
-  if (isComplete) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.centeredContainer}>
-          <View style={styles.completeCheckCircle}>
-            <Feather
-              name="check"
-              size={40}
-              style={styles.completeCheckIcon}
-            />
-          </View>
-
-          <View style={styles.completeTextBlock}>
-            <Text style={styles.completeTitle}>Recipe saved!</Text>
-            <Text style={styles.completeSubtitle}>
-              Settling into your collection...
-            </Text>
-          </View>
-
-          <View style={styles.previewCard}>
-            <View style={styles.previewEmojiWrapper}>
-              <Text style={styles.previewEmoji}>📝</Text>
-            </View>
-            <View style={styles.previewTextWrapper}>
-              <Text style={styles.previewTitle} numberOfLines={1}>
-                {title}
-              </Text>
-              <Text style={styles.previewMeta}>Added just now</Text>
-            </View>
-            <Ionicons
-              name="sparkles-outline"
-              size={16}
-              style={styles.previewSparkles}
-            />
-          </View>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  /* ========= SAVING STATE ========= */
-  if (isSaving) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.centeredContainer}>
-          <View style={styles.savingCircleWrapper}>
-            <ActivityIndicator
-              size="large"
-              color={styles.savingSpinner.color}
-            />
-            <Ionicons
-              name="sparkles-outline"
-              size={32}
-              style={styles.savingSparkles}
-            />
-          </View>
-          <Text style={styles.savingTitle}>Saving your recipe...</Text>
-          <Text style={styles.savingSubtitle}>
-            Organizing everything beautifully
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  /* ========= FORM STATE ========= */
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <View style={styles.content}>
-          {onBack && (
-            <View style={styles.backWrapper}>
-              <Button
-                variant="ghost"
-                size="md"
-                onPress={onBack}
-                style={styles.backButton}
-                textStyle={styles.backText}
-                icon={
-                  <Feather
-                    name="arrow-left"
-                    size={16}
-                    style={styles.backIcon}
-                  />
-                }
-              >
-                Back
-              </Button>
-            </View>
-          )}
+        {/* Optional back (onboarding) */}
+        {onBack ? (
+          <View style={styles.backWrapper}>
+            <Button
+              variant="ghost"
+              size="md"
+              onPress={onBack}
+              style={styles.backButton}
+              textStyle={styles.backText}
+              icon={<Feather name="arrow-left" size={16} style={styles.backIcon} />}
+              disabled={createMutation.isPending}
+            >
+              Back
+            </Button>
+          </View>
+        ) : null}
 
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.title}>{screenTitle}</Text>
-              <Text style={styles.subtitle}>{screenSubtitle}</Text>
-            </View>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>{screenTitle}</Text>
+            <Text style={styles.subtitle}>{screenSubtitle}</Text>
+          </View>
 
-            {/* Recipe Title */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Recipe Title</Text>
-              <View
-                style={[
-                  styles.inputWrapper,
-                  titleFocused && styles.inputWrapperFocused,
-                ]}
-              >
-                <TextInput
-                  value={title}
-                  onChangeText={setTitle}
-                  placeholder="e.g., Grandma's Pasta"
-                  placeholderTextColor={styles.inputPlaceholder.color}
-                  onFocus={() => setTitleFocused(true)}
-                  onBlur={() => setTitleFocused(false)}
-                  style={styles.input}
-                />
-              </View>
-            </View>
-
-            {/* Instructions */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Instructions or Notes</Text>
-              <View
-                style={[
-                  styles.textAreaWrapper,
-                  contentFocused && styles.inputWrapperFocused,
-                ]}
-              >
-                <TextInput
-                  value={content}
-                  onChangeText={setContent}
-                  placeholder="Paste your recipe here, or jot down the steps..."
-                  placeholderTextColor={styles.inputPlaceholder.color}
-                  multiline
-                  textAlignVertical="top"
-                  onFocus={() => setContentFocused(true)}
-                  onBlur={() => setContentFocused(false)}
-                  style={styles.textArea}
-                />
-              </View>
-            </View>
-
-            {/* Tags */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Tags (optional)</Text>
-
-              <View style={styles.tagsContainer}>
-                {suggestedTags.map(tag => (
-                  <TagChip
-                    key={tag}
-                    label={tag}
-                    selected={tags.includes(tag)}
-                    onPress={() => toggleTag(tag)}
-                  />
-                ))}
-              </View>
-            </View>
-          </ScrollView>
-        </View>
-
-        {/* Footer button */}
-        <View style={styles.footer}>
-          <Button
-            onPress={handleSave}
-            size="xl"
-            variant="primary"
-            disabled={!isValid}
-            icon={
-              <Feather
-                name="plus"
-                size={20}
-                style={styles.addIcon}
-              />
+          <RecipeForm
+            initialValues={createEmptyRecipeFormValues()}
+            submitLabel={submitLabel}
+            isSubmitting={createMutation.isPending}
+            onSubmit={handleSubmit}
+            onCancel={
+              // In app flow, you said you rely on router.back from the page header.
+              // We only show cancel if you pass onBack (or if you later want it).
+              onBack ? onBack : undefined
             }
-          >
-            {ctaLabel}
-          </Button>
-        </View>
+          />
+        </ScrollView>
+
+        {/* Inline error state (optional) */}
+        {createMutation.isError ? (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorText}>
+              Unable to save right now. Please try again.
+            </Text>
+          </View>
+        ) : null}
       </View>
     </SafeAreaView>
-  );
+  )
 }
 
-const styles = createThemedStyles(theme => ({
+const styles = createThemedStyles((theme) => ({
   safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -293,9 +132,6 @@ const styles = createThemedStyles(theme => ({
     flex: 1,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.lg,
-  },
-  content: {
-    flex: 1,
   },
 
   scrollContent: {
@@ -337,177 +173,19 @@ const styles = createThemedStyles(theme => ({
     color: theme.colors.mutedForeground,
   },
 
-  /* Fields */
-  fieldGroup: {
-    marginBottom: theme.spacing.lg,
-  },
-  fieldLabel: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.foreground,
-    marginBottom: theme.spacing.sm,
-  },
-
-  inputWrapper: {
-    borderWidth: 2,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radii.xl,
-    backgroundColor: theme.colors.card,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-  },
-  textAreaWrapper: {
-    borderWidth: 2,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radii.xl,
-    backgroundColor: theme.colors.card,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    minHeight: 140,
-  },
-  inputWrapperFocused: {
-    borderColor: theme.colors.primary,
-  },
-
-  input: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    color: theme.colors.foreground,
-  },
-  textArea: {
-    flex: 1,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    color: theme.colors.foreground,
-  },
-  inputPlaceholder: {
-    color: theme.colors.mutedForeground,
-  },
-
-  /* Tags */
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: theme.spacing.sm,
-  },
-
-  /* Footer */
-  footer: {
+  /* Error banner */
+  errorBanner: {
     marginTop: theme.spacing.md,
-  },
-  addIcon: {
-    color: theme.colors.primaryForeground,
-  },
-
-  /* Complete state */
-  centeredContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: theme.spacing.lg,
-  },
-  completeCheckCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: theme.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.lg,
-  },
-  completeCheckIcon: {
-    color: theme.colors.primaryForeground,
-  },
-  completeTextBlock: {
-    alignItems: 'center',
-    marginBottom: theme.spacing.lg,
-  },
-  completeTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
-    color: theme.colors.foreground,
-    marginBottom: theme.spacing.xs,
-  },
-  completeSubtitle: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.mutedForeground,
-  },
-  previewCard: {
-    width: '100%',
-    maxWidth: 320,
-    flexDirection: 'row',
-    alignItems: 'center',
     padding: theme.spacing.md,
     borderRadius: theme.radii.xl,
-    backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 2,
+    backgroundColor: theme.colors.card,
   },
-  previewEmojiWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: theme.radii.lg,
-    backgroundColor: theme.colors.sageLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: theme.spacing.md,
-  },
-  previewEmoji: {
-    fontSize: 24,
-  },
-  previewTextWrapper: {
-    flex: 1,
-  },
-  previewTitle: {
+  errorText: {
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.sm,
-    color: theme.colors.foreground,
-    marginBottom: 2,
-  },
-  previewMeta: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.xs,
+    lineHeight: theme.lineHeight.sm,
     color: theme.colors.mutedForeground,
   },
-  previewSparkles: {
-    color: theme.colors.primary,
-    marginLeft: theme.spacing.sm,
-  },
-
-  /* Saving state */
-  savingCircleWrapper: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    borderWidth: 4,
-    borderColor: theme.colors.sageLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.lg,
-  },
-  savingSpinner: {
-    color: theme.colors.primary,
-  },
-  savingSparkles: {
-    position: 'absolute',
-    color: theme.colors.primary,
-  },
-  savingTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    color: theme.colors.foreground,
-    marginBottom: theme.spacing.xs,
-  },
-  savingSubtitle: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.mutedForeground,
-  },
-}));
+}))
