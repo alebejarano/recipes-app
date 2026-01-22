@@ -2,6 +2,13 @@
 import { supabase } from '@/lib/supabase'
 import type { RecipeFormSubmitValues } from '../components/RecipeForm'
 
+async function requireAuth() {
+  const { data, error } = await supabase.auth.getUser()
+  if (error) throw error
+  if (!data.user) throw new Error('Not authenticated')
+  return data.user
+}
+
 /**
  * Option A data model:
  * - ingredients_text and steps_text are stored directly on `recipes`
@@ -63,6 +70,8 @@ export type CreateRecipeInput = RecipeFormSubmitValues
 export type UpdateRecipeInput = RecipeFormSubmitValues
 
 export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
+  await requireAuth()
+  
   const { data, error } = await supabase
     .from('recipes')
     .insert({
@@ -170,6 +179,7 @@ export async function listRecipes(params?: {
 }
 
 export async function updateRecipe(id: string, input: UpdateRecipeInput): Promise<Recipe> {
+  await requireAuth()
   const { data, error } = await supabase
     .from('recipes')
     .update({
@@ -208,6 +218,7 @@ export async function updateRecipe(id: string, input: UpdateRecipeInput): Promis
 }
 
 export async function deleteRecipeById(id: string): Promise<void> {
+  await requireAuth()
   const { error } = await supabase.from('recipes').delete().eq('id', id)
   if (error) throw error
 }

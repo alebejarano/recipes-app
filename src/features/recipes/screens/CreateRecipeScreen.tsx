@@ -2,7 +2,7 @@
 
 import { Feather } from '@expo/vector-icons'
 import { router } from 'expo-router'
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo, useRef } from 'react'
 import { Alert, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -11,6 +11,7 @@ import { createThemedStyles } from '@/styles/createStyles'
 
 import RecipeForm, {
   createEmptyRecipeFormValues,
+  type RecipeFormHandle,
   type RecipeFormSubmitValues,
 } from '@/features/recipes/components/RecipeForm'
 import { useCreateRecipe } from '@/features/recipes/hooks/useCreateRecipe'
@@ -30,15 +31,11 @@ export default function CreateRecipeScreen({
 }: CreateRecipeScreenProps) {
   const isOnboarding = variant === 'onboarding'
   const createMutation = useCreateRecipe()
+  const formRef = useRef<RecipeFormHandle>(null)
 
   const screenTitle = useMemo(
     () => (isOnboarding ? 'Create your first recipe' : 'Create your recipe'),
     [isOnboarding]
-  )
-
-  const screenSubtitle = useMemo(
-    () => 'Add the basics—you can always edit later.',
-    []
   )
 
   const submitLabel = useMemo(
@@ -46,78 +43,114 @@ export default function CreateRecipeScreen({
     [isOnboarding]
   )
 
+  const handleBack = useCallback(() => {
+    if (createMutation.isPending) return
+
+    if (onBack) {
+      onBack()
+      return
+    }
+
+    router.back()
+  }, [createMutation.isPending, onBack])
+
   const handleSubmit = useCallback(
     async (values: RecipeFormSubmitValues) => {
       try {
         const recipe = await createMutation.mutateAsync(values)
 
-        // Preferred: let the caller control the next step (especially onboarding)
         if (onSaved) {
           onSaved(recipe.id)
           return
         }
 
-        // Default navigation for app flow
-        router.replace('/recipes/[id]')
-      } catch (e) {
-        Alert.alert('Save failed', 'Please try again.')
+        // Adjust pathname if your route is different.
+        router.replace({
+          pathname: '/(dev)/recipes/[id]',
+          params: { id: recipe.id },
+        })
+      } catch (e: any) {
+        Alert.alert('Save failed', e?.message ?? 'Please try again.')
       }
     },
     [createMutation, onSaved]
   )
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Optional back (onboarding) */}
-        {onBack ? (
-          <View style={styles.backWrapper}>
-            <Button
-              variant="ghost"
-              size="md"
-              onPress={onBack}
-              style={styles.backButton}
-              textStyle={styles.backText}
-              icon={<Feather name="arrow-left" size={16} style={styles.backIcon} />}
-              disabled={createMutation.isPending}
-            >
-              Back
-            </Button>
-          </View>
-        ) : null}
+  const triggerSave = useCallback(() => {
+    if (createMutation.isPending) return
+    formRef.current?.submit()
+  }, [createMutation.isPending])
 
+  return (
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <View style={styles.container}>
+        {/* Header / Back */}
+        <View style={styles.topBar}>
+          <Button
+            variant="ghost"
+            size="md"
+            onPress={handleBack}
+            style={styles.backButton}
+            textStyle={styles.backText}
+            icon={<Feather name="arrow-left" size={16} style={styles.backIcon} />}
+            disabled={createMutation.isPending}
+          >
+            Back
+          </Button>
+        </View>
+
+        {/* Form */}
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>{screenTitle}</Text>
-            <Text style={styles.subtitle}>{screenSubtitle}</Text>
+            <Text style={styles.subtitle}>Add the basics—you can always edit later.</Text>
           </View>
 
           <RecipeForm
+            ref={formRef}
             initialValues={createEmptyRecipeFormValues()}
             submitLabel={submitLabel}
             isSubmitting={createMutation.isPending}
             onSubmit={handleSubmit}
-            onCancel={
-              // In app flow, you said you rely on router.back from the page header.
-              // We only show cancel if you pass onBack (or if you later want it).
-              onBack ? onBack : undefined
-            }
+            showActions={false}
           />
+
+          {createMutation.isError ? (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorText}>
+                Unable to save right now. Please try again.
+              </Text>
+            </View>
+          ) : null}
         </ScrollView>
 
-        {/* Inline error state (optional) */}
-        {createMutation.isError ? (
-          <View style={styles.errorBanner}>
-            <Text style={styles.errorText}>
-              Unable to save right now. Please try again.
-            </Text>
-          </View>
-        ) : null}
+        {/* Sticky footer */}
+        <View style={styles.footer}>
+          <Button
+            variant="secondary"
+            size="md"
+            onPress={handleBack}
+            disabled={createMutation.isPending}
+            style={styles.footerButton}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            variant="primary"
+            size="md"
+            onPress={triggerSave}
+            loading={createMutation.isPending}
+            disabled={createMutation.isPending}
+            style={styles.footerButton}
+          >
+            {submitLabel}
+          </Button>
+        </View>
       </View>
     </SafeAreaView>
   )
@@ -130,18 +163,15 @@ const styles = createThemedStyles((theme) => ({
   },
   container: {
     flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+
+  topBar: {
     paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.lg,
+    paddingTop: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
   },
 
-  scrollContent: {
-    paddingBottom: theme.spacing.xl,
-  },
-
-  /* Back */
-  backWrapper: {
-    marginBottom: theme.spacing.md,
-  },
   backButton: {
     paddingHorizontal: 0,
     alignSelf: 'flex-start',
@@ -155,7 +185,11 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
 
-  /* Header */
+  scrollContent: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.xl,
+  },
+
   header: {
     marginBottom: theme.spacing.lg,
   },
@@ -173,7 +207,18 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
 
-  /* Error banner */
+  footer: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+  },
+  footerButton: { flex: 1 },
+
   errorBanner: {
     marginTop: theme.spacing.md,
     padding: theme.spacing.md,

@@ -2,12 +2,13 @@
 import { createThemedStyles } from '@/styles/createStyles'
 import React from 'react'
 import {
-    StyleProp,
-    Text,
-    TextStyle,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  ActivityIndicator,
+  StyleProp,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from 'react-native'
 
 type ButtonVariant = 'primary' | 'secondary' | 'soft' | 'accent' | 'ghost' | 'premium'
@@ -22,6 +23,9 @@ interface ButtonProps {
   textStyle?: StyleProp<TextStyle>
   icon?: React.ReactNode
   disabled?: boolean
+
+  /** When true, disables the button and shows a spinner */
+  loading?: boolean
 }
 
 export default function Button({
@@ -33,37 +37,54 @@ export default function Button({
   style,
   textStyle,
   disabled = false,
+  loading = false,
 }: ButtonProps) {
   const hasText = children != null && children !== ''
+  const isDisabled = disabled || loading
+
+  // Only primary buttons change label when loading
+  const displayText =
+    loading && variant === 'primary' && hasText ? 'Saving…' : children
+
+  // Match spinner color to text color
+  const spinnerColor = isDisabled
+    ? styles[`textDisabled_${variant}`]?.color
+    : styles[`text_${variant}`]?.color
 
   return (
     <TouchableOpacity
-      onPress={disabled ? undefined : onPress}
-      activeOpacity={disabled ? 1 : 0.85}
-      disabled={disabled}
+      onPress={isDisabled ? undefined : onPress}
+      activeOpacity={isDisabled ? 1 : 0.85}
+      disabled={isDisabled}
       style={[
         styles.base,
         styles[`size_${size}`],
-        !disabled && styles[variant],
-        disabled && styles[`disabled_${variant}`],
+        !isDisabled && styles[variant],
+        isDisabled && styles[`disabled_${variant}`],
         style,
       ]}
     >
-      {icon ? (
+      {/* Spinner or icon */}
+      {loading ? (
+        <View style={[styles.icon, hasText ? styles.iconWithText : undefined]}>
+          <ActivityIndicator size="small" color={spinnerColor ?? '#000'} />
+        </View>
+      ) : icon ? (
         <View style={[styles.icon, hasText ? styles.iconWithText : undefined]}>
           {icon}
         </View>
       ) : null}
 
+      {/* Text */}
       {hasText ? (
         <Text
           style={[
             styles.textBase,
-            !disabled ? styles[`text_${variant}`] : styles[`textDisabled_${variant}`],
+            !isDisabled ? styles[`text_${variant}`] : styles[`textDisabled_${variant}`],
             textStyle,
           ]}
         >
-          {children}
+          {displayText}
         </Text>
       ) : null}
     </TouchableOpacity>

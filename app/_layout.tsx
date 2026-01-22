@@ -5,8 +5,9 @@ import React, { useEffect } from 'react'
 
 import { AuthProvider } from '@/features/auth/context/AuthContext'
 import { OnboardingProvider } from '@/features/onboarding/context/OnboardingContext'
+import QueryProvider from '@/providers/QueryProvider'
 import { useLoadFonts } from '@/styles/useLoadFonts'
-import { QueryProvider } from 'app/QueryProvider'
+
 
 export default function RootLayout() {
   const fontsLoaded = useLoadFonts()

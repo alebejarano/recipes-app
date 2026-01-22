@@ -1,5 +1,11 @@
 // src/features/recipes/components/RecipeForm.tsx
-import React, { useCallback, useMemo, useState } from 'react'
+import React, {
+  forwardRef,
+  useCallback,
+  useImperativeHandle,
+  useMemo,
+  useState,
+} from 'react'
 import { Alert, Text, TextInput, View } from 'react-native'
 
 import Button from '@/components/Button'
@@ -27,13 +33,15 @@ export type RecipeFormSubmitValues = {
   stepsText: string | null
 }
 
+export type RecipeFormHandle = {
+  submit: () => void
+}
+
 function parseOptionalInt(value: string): number | null {
   const trimmed = value.trim()
   if (!trimmed) return null
-
   const n = Number(trimmed)
   if (!Number.isFinite(n)) return null
-
   const i = Math.trunc(n)
   return i >= 0 ? i : null
 }
@@ -56,19 +64,19 @@ export function createEmptyRecipeFormValues(): RecipeFormValues {
   }
 }
 
-export default function RecipeForm({
-  initialValues,
-  submitLabel,
-  isSubmitting,
-  onSubmit,
-  onCancel,
-}: {
+type Props = {
   initialValues?: RecipeFormValues
   submitLabel: string
   isSubmitting?: boolean
   onSubmit: (values: RecipeFormSubmitValues) => Promise<void> | void
   onCancel?: () => void
-}) {
+  showActions?: boolean
+}
+
+const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
+  { initialValues, submitLabel, isSubmitting, onSubmit, onCancel, showActions = true },
+  ref
+) {
   const [values, setValues] = useState<RecipeFormValues>(
     initialValues ?? createEmptyRecipeFormValues()
   )
@@ -77,18 +85,21 @@ export default function RecipeForm({
     return values.title.trim().length > 0 && !isSubmitting
   }, [values.title, isSubmitting])
 
-  const update = useCallback(<K extends keyof RecipeFormValues>(key: K, next: RecipeFormValues[K]) => {
-    setValues((prev) => ({ ...prev, [key]: next }))
-  }, [])
+  const update = useCallback(
+    <K extends keyof RecipeFormValues>(key: K, next: RecipeFormValues[K]) => {
+      setValues((prev) => ({ ...prev, [key]: next }))
+    },
+    []
+  )
 
-  const handleSubmit = useCallback(async () => {
+  const buildPayload = useCallback((): RecipeFormSubmitValues | null => {
     const title = values.title.trim()
     if (!title) {
       Alert.alert('Missing title', 'Please enter a recipe title.')
-      return
+      return null
     }
 
-    const payload: RecipeFormSubmitValues = {
+    return {
       title,
       subtitle: normalizeOptionalText(values.subtitle),
       description: normalizeOptionalText(values.description),
@@ -98,9 +109,23 @@ export default function RecipeForm({
       ingredientsText: normalizeOptionalText(values.ingredientsText),
       stepsText: normalizeOptionalText(values.stepsText),
     }
+  }, [values])
 
+  const handleSubmit = useCallback(async () => {
+    const payload = buildPayload()
+    if (!payload) return
     await onSubmit(payload)
-  }, [onSubmit, values])
+  }, [buildPayload, onSubmit])
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      submit: () => {
+        void handleSubmit()
+      },
+    }),
+    [handleSubmit]
+  )
 
   return (
     <View style={styles.form}>
@@ -235,33 +260,31 @@ export default function RecipeForm({
         </View>
       </View>
 
-      {/* Actions */}
-      <View style={styles.actions}>
-        {onCancel ? (
-          <Button variant="ghost" size="md" onPress={onCancel} disabled={isSubmitting}>
-            Cancel
-          </Button>
-        ) : (
-          <View />
-        )}
+      {/* Actions (optional) */}
+      {showActions ? (
+        <View style={styles.actions}>
+          {onCancel ? (
+            <Button variant="ghost" size="md" onPress={onCancel} disabled={isSubmitting}>
+              Cancel
+            </Button>
+          ) : (
+            <View />
+          )}
 
-        <Button variant="primary" size="md" onPress={handleSubmit} disabled={!canSubmit}>
-          {isSubmitting ? 'Saving…' : submitLabel}
-        </Button>
-      </View>
+          <Button variant="primary" size="md" onPress={handleSubmit} disabled={!canSubmit}>
+            {isSubmitting ? 'Saving…' : submitLabel}
+          </Button>
+        </View>
+      ) : null}
     </View>
   )
-}
+})
+
+export default RecipeForm
 
 const styles = createThemedStyles((theme) => ({
-  form: {
-    gap: theme.spacing.lg,
-  },
-
-  section: {
-    gap: theme.spacing.sm,
-  },
-
+  form: { gap: theme.spacing.lg },
+  section: { gap: theme.spacing.sm },
   sectionTitle: {
     fontFamily: theme.fontFamily.semibold,
     fontSize: theme.fontSize.lg,
@@ -269,49 +292,29 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
   },
-
-  field: {
-    gap: theme.spacing.xs,
-  },
-
+  field: { gap: theme.spacing.xs },
   label: {
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.sm,
     lineHeight: theme.lineHeight.sm,
     color: theme.colors.mutedForeground,
   },
-
   input: {
     borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.background,
-    borderRadius: theme.radii.xl, // per your design system
+    borderRadius: theme.radii.xl,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base, // your system: no "md"
+    fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.base,
     color: theme.colors.foreground,
   },
-
-  textarea: {
-    minHeight: 120,
-    textAlignVertical: 'top',
-  },
-
-  placeholder: {
-    color: theme.colors.mutedForeground,
-  },
-
-  row: {
-    flexDirection: 'row',
-    gap: theme.spacing.sm,
-  },
-
-  flex1: {
-    flex: 1,
-  },
-
+  textarea: { minHeight: 120, textAlignVertical: 'top' },
+  placeholder: { color: theme.colors.mutedForeground },
+  row: { flexDirection: 'row', gap: theme.spacing.sm },
+  flex1: { flex: 1 },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
