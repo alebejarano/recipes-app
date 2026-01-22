@@ -70,11 +70,11 @@ export type CreateRecipeInput = RecipeFormSubmitValues
 export type UpdateRecipeInput = RecipeFormSubmitValues
 
 export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
-  await requireAuth()
-  
+  const user = await requireAuth()
   const { data, error } = await supabase
     .from('recipes')
     .insert({
+      user_id: user.id,
       title: input.title,
       subtitle: input.subtitle,
       description: input.description,
