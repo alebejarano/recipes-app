@@ -13,8 +13,8 @@ export function useCreateRecipe() {
       // If/when you add a list screen
       qc.invalidateQueries({ queryKey: ['recipes', 'list'] })
 
-      // Prime detail cache
-      qc.setQueryData(['recipes', 'detail', recipe.id], recipe)
+      // Let the detail screen fetch fresh data (incl. ingredients)
+      qc.invalidateQueries({ queryKey: ['recipes', 'detail', recipe.id] })
     },
   })
 }

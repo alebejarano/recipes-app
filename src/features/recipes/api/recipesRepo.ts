@@ -9,12 +9,6 @@ async function requireAuth() {
   return data.user
 }
 
-/**
- * Option A data model:
- * - ingredients_text and steps_text are stored directly on `recipes`
- * - no child tables for ingredients/steps
- */
-
 export type Recipe = {
   id: string
   userId: string
@@ -23,8 +17,8 @@ export type Recipe = {
   subtitle: string | null
   description: string | null
 
-  ingredientsText: string | null
-  stepsText: string | null
+  ingredients: RecipeIngredient[]
+  steps: string[]
 
   prepTimeMinutes: number | null
   cookTimeMinutes: number | null
@@ -34,19 +28,68 @@ export type Recipe = {
   updatedAt: string
 }
 
+export type RecipeIngredient = {
+  id: string
+  name: string
+  quantity: string | null
+  unit: string | null
+  notes: string | null
+  position: number
+}
+
 type RecipeRow = {
   id: string
   user_id: string
   title: string
   subtitle: string | null
   description: string | null
-  ingredients_text: string | null
   steps_text: string | null
   prep_time_minutes: number | null
   cook_time_minutes: number | null
   servings: number | null
   created_at: string
   updated_at: string
+  recipe_ingredients?: RecipeIngredientRow[] | null
+}
+
+type RecipeIngredientRow = {
+  id: string
+  name: string
+  quantity: string | null
+  unit: string | null
+  notes: string | null
+  position: number
+}
+
+function mapIngredients(rows: RecipeIngredientRow[] | null | undefined): RecipeIngredient[] {
+  if (!rows || rows.length === 0) return []
+  return rows
+    .map((row) => ({
+      id: row.id,
+      name: row.name,
+      quantity: row.quantity ?? null,
+      unit: row.unit ?? null,
+      notes: row.notes ?? null,
+      position: row.position ?? 0,
+    }))
+    .sort((a, b) => a.position - b.position)
+}
+
+function parseStepsText(value: string | null): string[] {
+  if (!value) return []
+  const trimmed = value.trim()
+  if (!trimmed) return []
+  const lines = trimmed
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+  return lines.length ? lines : [trimmed]
+}
+
+function serializeSteps(steps: string[] | null | undefined): string | null {
+  if (!steps) return null
+  const normalized = steps.map((step) => step.trim()).filter(Boolean)
+  return normalized.length ? normalized.join('\n') : null
 }
 
 function mapRecipe(row: RecipeRow): Recipe {
@@ -56,8 +99,8 @@ function mapRecipe(row: RecipeRow): Recipe {
     title: row.title,
     subtitle: row.subtitle,
     description: row.description,
-    ingredientsText: row.ingredients_text,
-    stepsText: row.steps_text,
+    ingredients: mapIngredients(row.recipe_ingredients),
+    steps: parseStepsText(row.steps_text),
     prepTimeMinutes: row.prep_time_minutes,
     cookTimeMinutes: row.cook_time_minutes,
     servings: row.servings,
@@ -78,8 +121,7 @@ export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
       title: input.title,
       subtitle: input.subtitle,
       description: input.description,
-      ingredients_text: input.ingredientsText,
-      steps_text: input.stepsText,
+      steps_text: serializeSteps(input.steps),
       prep_time_minutes: input.prepTimeMinutes,
       cook_time_minutes: input.cookTimeMinutes,
       servings: input.servings,
@@ -91,7 +133,6 @@ export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
       title,
       subtitle,
       description,
-      ingredients_text,
       steps_text,
       prep_time_minutes,
       cook_time_minutes,
@@ -104,6 +145,20 @@ export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
 
   if (error) throw error
   if (!data) throw new Error('Create recipe failed')
+
+  const recipe = mapRecipe(data as RecipeRow)
+
+  if (input.ingredients && input.ingredients.length > 0) {
+    const { error: ingredientError } = await supabase.from('recipe_ingredients').insert(
+      input.ingredients.map((name, index) => ({
+        recipe_id: recipe.id,
+        name,
+        position: index + 1,
+      }))
+    )
+
+    if (ingredientError) throw ingredientError
+  }
 
   return mapRecipe(data as RecipeRow)
 }
@@ -118,13 +173,20 @@ export async function getRecipeById(id: string): Promise<Recipe> {
       title,
       subtitle,
       description,
-      ingredients_text,
       steps_text,
       prep_time_minutes,
       cook_time_minutes,
       servings,
       created_at,
-      updated_at
+      updated_at,
+      recipe_ingredients:recipe_ingredients (
+        id,
+        name,
+        quantity,
+        unit,
+        notes,
+        position
+      )
     `
     )
     .eq('id', id)
@@ -155,7 +217,6 @@ export async function listRecipes(params?: {
       title,
       subtitle,
       description,
-      ingredients_text,
       steps_text,
       prep_time_minutes,
       cook_time_minutes,
@@ -186,8 +247,7 @@ export async function updateRecipe(id: string, input: UpdateRecipeInput): Promis
       title: input.title,
       subtitle: input.subtitle,
       description: input.description,
-      ingredients_text: input.ingredientsText,
-      steps_text: input.stepsText,
+      steps_text: serializeSteps(input.steps),
       prep_time_minutes: input.prepTimeMinutes,
       cook_time_minutes: input.cookTimeMinutes,
       servings: input.servings,
@@ -200,7 +260,6 @@ export async function updateRecipe(id: string, input: UpdateRecipeInput): Promis
       title,
       subtitle,
       description,
-      ingredients_text,
       steps_text,
       prep_time_minutes,
       cook_time_minutes,
@@ -213,6 +272,29 @@ export async function updateRecipe(id: string, input: UpdateRecipeInput): Promis
 
   if (error) throw error
   if (!data) throw new Error('Update recipe failed')
+
+  if (input.ingredients) {
+    const { error: deleteError } = await supabase
+      .from('recipe_ingredients')
+      .delete()
+      .eq('recipe_id', id)
+
+    if (deleteError) throw deleteError
+
+    if (input.ingredients.length > 0) {
+      const { error: ingredientError } = await supabase
+        .from('recipe_ingredients')
+        .insert(
+          input.ingredients.map((name, index) => ({
+            recipe_id: id,
+            name,
+            position: index + 1,
+          }))
+        )
+
+      if (ingredientError) throw ingredientError
+    }
+  }
 
   return mapRecipe(data as RecipeRow)
 }

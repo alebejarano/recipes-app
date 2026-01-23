@@ -18,8 +18,8 @@ export type RecipeFormValues = {
   prepTimeMinutes: string
   cookTimeMinutes: string
   servings: string
-  ingredientsText: string
-  stepsText: string
+  ingredients: string[]
+  steps: string[]
 }
 
 export type RecipeFormSubmitValues = {
@@ -29,8 +29,8 @@ export type RecipeFormSubmitValues = {
   prepTimeMinutes: number | null
   cookTimeMinutes: number | null
   servings: number | null
-  ingredientsText: string | null
-  stepsText: string | null
+  ingredients: string[] | null
+  steps: string[] | null
 }
 
 export type RecipeFormHandle = {
@@ -59,8 +59,8 @@ export function createEmptyRecipeFormValues(): RecipeFormValues {
     prepTimeMinutes: '',
     cookTimeMinutes: '',
     servings: '',
-    ingredientsText: '',
-    stepsText: '',
+    ingredients: [''],
+    steps: [''],
   }
 }
 
@@ -92,12 +92,58 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     []
   )
 
+  const updateStep = useCallback((index: number, next: string) => {
+    setValues((prev) => {
+      const steps = [...prev.steps]
+      steps[index] = next
+      return { ...prev, steps }
+    })
+  }, [])
+
+  const updateIngredient = useCallback((index: number, next: string) => {
+    setValues((prev) => {
+      const ingredients = [...prev.ingredients]
+      ingredients[index] = next
+      return { ...prev, ingredients }
+    })
+  }, [])
+
+  const addIngredient = useCallback(() => {
+    setValues((prev) => ({ ...prev, ingredients: [...prev.ingredients, ''] }))
+  }, [])
+
+  const removeIngredient = useCallback((index: number) => {
+    setValues((prev) => {
+      const ingredients = prev.ingredients.filter((_, i) => i !== index)
+      return { ...prev, ingredients: ingredients.length ? ingredients : [''] }
+    })
+  }, [])
+
+  const addStep = useCallback(() => {
+    setValues((prev) => ({ ...prev, steps: [...prev.steps, ''] }))
+  }, [])
+
+  const removeStep = useCallback((index: number) => {
+    setValues((prev) => {
+      const steps = prev.steps.filter((_, i) => i !== index)
+      return { ...prev, steps: steps.length ? steps : [''] }
+    })
+  }, [])
+
   const buildPayload = useCallback((): RecipeFormSubmitValues | null => {
     const title = values.title.trim()
     if (!title) {
       Alert.alert('Missing title', 'Please enter a recipe title.')
       return null
     }
+
+    const normalizedIngredients = values.ingredients
+      .map((ingredient) => ingredient.trim())
+      .filter(Boolean)
+
+    const normalizedSteps = values.steps
+      .map((step) => step.trim())
+      .filter(Boolean)
 
     return {
       title,
@@ -106,8 +152,8 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       prepTimeMinutes: parseOptionalInt(values.prepTimeMinutes),
       cookTimeMinutes: parseOptionalInt(values.cookTimeMinutes),
       servings: parseOptionalInt(values.servings),
-      ingredientsText: normalizeOptionalText(values.ingredientsText),
-      stepsText: normalizeOptionalText(values.stepsText),
+      ingredients: normalizedIngredients.length ? normalizedIngredients : null,
+      steps: normalizedSteps.length ? normalizedSteps : null,
     }
   }, [values])
 
@@ -228,16 +274,49 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
 
         <View style={styles.field}>
           <Text style={styles.label}>List</Text>
-          <TextInput
-            value={values.ingredientsText}
-            onChangeText={(t) => update('ingredientsText', t)}
-            placeholder={`Write ingredients freely.\n\nOne per line is recommended.`}
-            placeholderTextColor={styles.placeholder.color}
-            multiline
-            style={[styles.input, styles.textarea]}
-            editable={!isSubmitting}
-            autoCapitalize="sentences"
-          />
+          <View style={styles.stepsStack}>
+            {values.ingredients.map((ingredient, index) => {
+              const ingredientNumber = `${index + 1}`
+              return (
+                <View key={`ingredient-${index}`} style={styles.stepRow}>
+                  <View style={styles.stepBadge}>
+                    <Text style={styles.stepBadgeText}>{ingredientNumber}</Text>
+                  </View>
+
+                  <TextInput
+                    value={ingredient}
+                    onChangeText={(t) => updateIngredient(index, t)}
+                    placeholder={`Ingredient ${ingredientNumber}`}
+                    placeholderTextColor={styles.placeholder.color}
+                    style={[styles.input, styles.stepInput]}
+                    editable={!isSubmitting}
+                    autoCapitalize="sentences"
+                  />
+
+                  {values.ingredients.length > 1 ? (
+                    <Text
+                      style={styles.removeStep}
+                      onPress={() => removeIngredient(index)}
+                      accessibilityRole="button"
+                    >
+                      Remove
+                    </Text>
+                  ) : null}
+                </View>
+              )
+            })}
+          </View>
+
+          <Button
+            variant="ghost"
+            size="md"
+            onPress={addIngredient}
+            disabled={isSubmitting}
+            style={styles.addStepButton}
+            textStyle={styles.addStepText}
+          >
+            Add ingredient
+          </Button>
         </View>
       </View>
 
@@ -247,16 +326,50 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
 
         <View style={styles.field}>
           <Text style={styles.label}>Instructions</Text>
-          <TextInput
-            value={values.stepsText}
-            onChangeText={(t) => update('stepsText', t)}
-            placeholder={`Write your steps freely.\n\nLine breaks are preserved.`}
-            placeholderTextColor={styles.placeholder.color}
-            multiline
-            style={[styles.input, styles.textarea]}
-            editable={!isSubmitting}
-            autoCapitalize="sentences"
-          />
+
+          <View style={styles.stepsStack}>
+            {values.steps.map((step, index) => {
+              const stepNumber = `${index + 1}`
+              return (
+                <View key={`step-${index}`} style={styles.stepRow}>
+                  <View style={styles.stepBadge}>
+                    <Text style={styles.stepBadgeText}>{stepNumber}</Text>
+                  </View>
+
+                  <TextInput
+                    value={step}
+                    onChangeText={(t) => updateStep(index, t)}
+                    placeholder={`Step ${stepNumber}`}
+                    placeholderTextColor={styles.placeholder.color}
+                    style={[styles.input, styles.stepInput]}
+                    editable={!isSubmitting}
+                    autoCapitalize="sentences"
+                  />
+
+                  {values.steps.length > 1 ? (
+                    <Text
+                      style={styles.removeStep}
+                      onPress={() => removeStep(index)}
+                      accessibilityRole="button"
+                    >
+                      Remove
+                    </Text>
+                  ) : null}
+                </View>
+              )
+            })}
+          </View>
+
+          <Button
+            variant="ghost"
+            size="md"
+            onPress={addStep}
+            disabled={isSubmitting}
+            style={styles.addStepButton}
+            textStyle={styles.addStepText}
+          >
+            Add step
+          </Button>
         </View>
       </View>
 
@@ -315,6 +428,43 @@ const styles = createThemedStyles((theme) => ({
   placeholder: { color: theme.colors.mutedForeground },
   row: { flexDirection: 'row', gap: theme.spacing.sm },
   flex1: { flex: 1 },
+  stepsStack: {
+    gap: theme.spacing.sm,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  stepBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.creamDark,
+  },
+  stepBadgeText: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.foreground,
+  },
+  stepInput: {
+    flex: 1,
+    paddingVertical: theme.spacing.xs,
+  },
+  removeStep: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.mutedForeground,
+  },
+  addStepButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 0,
+  },
+  addStepText: {
+    fontSize: theme.fontSize.sm,
+  },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
