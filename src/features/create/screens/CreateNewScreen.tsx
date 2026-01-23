@@ -9,7 +9,7 @@ import { createThemedStyles } from '@/styles/createStyles'
 
 import {
   ensureShoppingList,
-  getShoppingList, // ✅ add/import a read function (see below if missing)
+  getShoppingList,
 } from '@/features/shopping-list/storage/shoppingListStorage'
 import CreateActionCard from '../components/CreateActionCard'
 
@@ -37,13 +37,13 @@ export default function CreateNewScreen() {
 
   const handleCreateRecipe = useCallback(() => {
     router.push({
-      pathname: '/(dev)/recipes/create',
+      pathname: '/(auth)/recipes/create',
       params: { variant: 'app' },
     })
   }, [])
 
   const handleCreateNote = useCallback(() => {
-    router.push('/(dev)/notes/create')
+    router.push('/(auth)/notes/create')
   }, [])
 
   const handleShoppingList = useCallback(async () => {
@@ -54,7 +54,7 @@ export default function CreateNewScreen() {
     try {
       await ensureShoppingList()
       await refreshShoppingListStatus()
-      router.push('/(dev)/shopping-list')
+      router.push('/(auth)/shopping-list')
     } finally {
       setIsCreatingList(false)
     }

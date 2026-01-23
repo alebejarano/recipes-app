@@ -64,9 +64,8 @@ export default function CreateRecipeScreen({
           return
         }
 
-        // Adjust pathname if your route is different.
         router.replace({
-          pathname: '/(dev)/recipes/[id]',
+          pathname: '/(auth)/recipes/[id]',
           params: { id: recipe.id },
         })
       } catch (e: any) {
