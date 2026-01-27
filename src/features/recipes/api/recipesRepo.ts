@@ -19,6 +19,7 @@ export type Recipe = {
 
   ingredients: RecipeIngredient[]
   steps: string[]
+  tags: string[]
 
   prepTimeMinutes: number | null
   cookTimeMinutes: number | null
@@ -44,6 +45,7 @@ type RecipeRow = {
   subtitle: string | null
   description: string | null
   steps_text: string | null
+  tags: string[] | null
   prep_time_minutes: number | null
   cook_time_minutes: number | null
   servings: number | null
@@ -101,6 +103,7 @@ function mapRecipe(row: RecipeRow): Recipe {
     description: row.description,
     ingredients: mapIngredients(row.recipe_ingredients),
     steps: parseStepsText(row.steps_text),
+    tags: row.tags ?? [],
     prepTimeMinutes: row.prep_time_minutes,
     cookTimeMinutes: row.cook_time_minutes,
     servings: row.servings,
@@ -122,6 +125,7 @@ export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
       subtitle: input.subtitle,
       description: input.description,
       steps_text: serializeSteps(input.steps),
+      tags: input.tags,
       prep_time_minutes: input.prepTimeMinutes,
       cook_time_minutes: input.cookTimeMinutes,
       servings: input.servings,
@@ -134,6 +138,7 @@ export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
       subtitle,
       description,
       steps_text,
+      tags,
       prep_time_minutes,
       cook_time_minutes,
       servings,
@@ -174,6 +179,7 @@ export async function getRecipeById(id: string): Promise<Recipe> {
       subtitle,
       description,
       steps_text,
+      tags,
       prep_time_minutes,
       cook_time_minutes,
       servings,
@@ -218,6 +224,7 @@ export async function listRecipes(params?: {
       subtitle,
       description,
       steps_text,
+      tags,
       prep_time_minutes,
       cook_time_minutes,
       servings,
@@ -239,6 +246,34 @@ export async function listRecipes(params?: {
   return (data ?? []).map((row) => mapRecipe(row as RecipeRow))
 }
 
+export type RecipeTagSuggestion = { label: string; count: number }
+
+export async function listRecipeTags(): Promise<RecipeTagSuggestion[]> {
+  const { data, error } = await supabase.from('recipes').select('tags')
+  if (error) throw error
+
+  const map = new Map<string, { label: string; count: number }>()
+  for (const row of data ?? []) {
+    const tags = (row as { tags: string[] | null }).tags ?? []
+    for (const tag of tags) {
+      const trimmed = tag.trim()
+      if (!trimmed) continue
+      const key = trimmed.toLowerCase()
+      const existing = map.get(key)
+      if (existing) {
+        existing.count += 1
+      } else {
+        map.set(key, { label: trimmed, count: 1 })
+      }
+    }
+  }
+
+  return Array.from(map.values()).sort((a, b) => {
+    if (b.count !== a.count) return b.count - a.count
+    return a.label.localeCompare(b.label)
+  })
+}
+
 export async function updateRecipe(id: string, input: UpdateRecipeInput): Promise<Recipe> {
   await requireAuth()
   const { data, error } = await supabase
@@ -248,6 +283,7 @@ export async function updateRecipe(id: string, input: UpdateRecipeInput): Promis
       subtitle: input.subtitle,
       description: input.description,
       steps_text: serializeSteps(input.steps),
+      tags: input.tags,
       prep_time_minutes: input.prepTimeMinutes,
       cook_time_minutes: input.cookTimeMinutes,
       servings: input.servings,
@@ -261,6 +297,7 @@ export async function updateRecipe(id: string, input: UpdateRecipeInput): Promis
       subtitle,
       description,
       steps_text,
+      tags,
       prep_time_minutes,
       cook_time_minutes,
       servings,

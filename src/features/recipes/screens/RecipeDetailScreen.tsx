@@ -27,6 +27,7 @@ function buildIngredientLines(ingredients: { name: string }[] | undefined): stri
   return ingredients.map((item) => item.name).filter(Boolean)
 }
 
+
 export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
   const { data: recipe, isLoading, isError } = useRecipe(recipeId)
 
@@ -35,10 +36,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
     [recipe?.ingredients]
   )
 
-  const tags = useMemo(() => {
-    if (recipe?.subtitle) return [recipe.subtitle]
-    return FALLBACK_TAGS
-  }, [recipe?.subtitle])
+  const tags = useMemo(() => recipe?.tags ?? FALLBACK_TAGS, [recipe?.tags])
 
   if (isLoading) {
     return (
@@ -108,6 +106,8 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
         <View style={styles.header}>
           <Text style={styles.title}>{recipe.title}</Text>
 
+          {recipe.subtitle ? <Text style={styles.subtitle}>{recipe.subtitle}</Text> : null}
+
           {tags.length > 0 ? (
             <View style={styles.tagsRow}>
               {tags.map((tag) => (
@@ -146,7 +146,6 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
             {ingredientLines.length > 0 ? (
               ingredientLines.map((line, index) => (
                 <View key={`${line}-${index}`} style={styles.ingredientRow}>
-                  <View style={styles.dot} />
                   <Text style={styles.ingredientText}>{line}</Text>
                 </View>
               ))
@@ -245,6 +244,12 @@ const styles = createThemedStyles((theme) => ({
     lineHeight: theme.lineHeight.display,
     color: theme.colors.foreground,
   },
+  subtitle: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
+  },
   tagsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -299,14 +304,8 @@ const styles = createThemedStyles((theme) => ({
   },
   ingredientRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: theme.spacing.sm,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: theme.colors.sage,
   },
   ingredientText: {
     flex: 1,

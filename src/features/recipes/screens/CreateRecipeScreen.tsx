@@ -3,8 +3,15 @@
 import { Feather } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import React, { useCallback, useMemo, useRef } from 'react'
-import { Alert, ScrollView, Text, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
 import { createThemedStyles } from '@/styles/createStyles'
@@ -15,6 +22,7 @@ import RecipeForm, {
   type RecipeFormSubmitValues,
 } from '@/features/recipes/components/RecipeForm'
 import { useCreateRecipe } from '@/features/recipes/hooks/useCreateRecipe'
+import { useRecipeTags } from '@/features/recipes/hooks/useRecipeTags'
 
 export type CreateRecipeVariant = 'onboarding' | 'app'
 
@@ -24,14 +32,20 @@ interface CreateRecipeScreenProps {
   onBack?: () => void
 }
 
+const FOOTER_HEIGHT = 72
+
 export default function CreateRecipeScreen({
   variant = 'app',
   onSaved,
   onBack,
 }: CreateRecipeScreenProps) {
+  const insets = useSafeAreaInsets()
+
   const isOnboarding = variant === 'onboarding'
   const createMutation = useCreateRecipe()
+  const tagsQuery = useRecipeTags()
   const formRef = useRef<RecipeFormHandle>(null)
+  const scrollRef = useRef<ScrollView>(null)
 
   const screenTitle = useMemo(
     () => (isOnboarding ? 'Create your first recipe' : 'Create your recipe'),
@@ -45,12 +59,7 @@ export default function CreateRecipeScreen({
 
   const handleBack = useCallback(() => {
     if (createMutation.isPending) return
-
-    if (onBack) {
-      onBack()
-      return
-    }
-
+    if (onBack) return onBack()
     router.back()
   }, [createMutation.isPending, onBack])
 
@@ -80,6 +89,18 @@ export default function CreateRecipeScreen({
     formRef.current?.submit()
   }, [createMutation.isPending])
 
+  const keyboardVerticalOffset = Platform.select({
+    ios: insets.top + 44,
+    android: 0,
+  })
+
+  const requestScrollTo = useCallback((y: number) => {
+    // small delay so keyboard has time to appear before scrolling
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: Math.max(0, y), animated: true })
+    }, 50)
+  }, [])
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <View style={styles.container}>
@@ -98,72 +119,81 @@ export default function CreateRecipeScreen({
           </Button>
         </View>
 
-        {/* Form */}
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+        <KeyboardAvoidingView
+          style={styles.flex1}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={keyboardVerticalOffset}
         >
-          <View style={styles.header}>
-            <Text style={styles.title}>{screenTitle}</Text>
-            <Text style={styles.subtitle}>Add the basics—you can always edit later.</Text>
-          </View>
-
-          <RecipeForm
-            ref={formRef}
-            initialValues={createEmptyRecipeFormValues()}
-            submitLabel={submitLabel}
-            isSubmitting={createMutation.isPending}
-            onSubmit={handleSubmit}
-            showActions={false}
-          />
-
-          {createMutation.isError ? (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorText}>
-                Unable to save right now. Please try again.
-              </Text>
+          <ScrollView
+            ref={scrollRef}
+            style={styles.flex1}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: insets.bottom + FOOTER_HEIGHT + 24 },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+            showsVerticalScrollIndicator={false}
+            automaticallyAdjustKeyboardInsets
+          >
+            <View style={styles.header}>
+              <Text style={styles.title}>{screenTitle}</Text>
+              <Text style={styles.subtitle}>Add the basics—you can always edit later.</Text>
             </View>
-          ) : null}
-        </ScrollView>
 
-        {/* Sticky footer */}
-        <View style={styles.footer}>
-          <Button
-            variant="secondary"
-            size="md"
-            onPress={handleBack}
-            disabled={createMutation.isPending}
-            style={styles.footerButton}
-          >
-            Cancel
-          </Button>
+            <RecipeForm
+              ref={formRef}
+              initialValues={createEmptyRecipeFormValues()}
+              submitLabel={submitLabel}
+              isSubmitting={createMutation.isPending}
+              onSubmit={handleSubmit}
+              showActions={false}
+              onRequestScrollTo={requestScrollTo}
+              suggestedTags={tagsQuery.data ?? []}
+            />
 
-          <Button
-            variant="primary"
-            size="md"
-            onPress={triggerSave}
-            loading={createMutation.isPending}
-            disabled={createMutation.isPending}
-            style={styles.footerButton}
-          >
-            {submitLabel}
-          </Button>
-        </View>
+            {createMutation.isError ? (
+              <View style={styles.errorBanner}>
+                <Text style={styles.errorText}>
+                  Unable to save right now. Please try again.
+                </Text>
+              </View>
+            ) : null}
+          </ScrollView>
+
+          {/* Sticky footer */}
+          <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+            <Button
+              variant="secondary"
+              size="md"
+              onPress={handleBack}
+              disabled={createMutation.isPending}
+              style={styles.footerButton}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              variant="primary"
+              size="md"
+              onPress={triggerSave}
+              loading={createMutation.isPending}
+              disabled={createMutation.isPending}
+              style={styles.footerButton}
+            >
+              {submitLabel}
+            </Button>
+          </View>
+        </KeyboardAvoidingView>
       </View>
     </SafeAreaView>
   )
 }
 
 const styles = createThemedStyles((theme) => ({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
+  safeArea: { flex: 1, backgroundColor: theme.colors.background },
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  flex1: { flex: 1 },
 
   topBar: {
     paddingHorizontal: theme.spacing.lg,
@@ -171,27 +201,17 @@ const styles = createThemedStyles((theme) => ({
     paddingBottom: theme.spacing.md,
   },
 
-  backButton: {
-    paddingHorizontal: 0,
-    alignSelf: 'flex-start',
-  },
+  backButton: { paddingHorizontal: 0, alignSelf: 'flex-start' },
   backText: {
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.sm,
     color: theme.colors.mutedForeground,
   },
-  backIcon: {
-    color: theme.colors.mutedForeground,
-  },
+  backIcon: { color: theme.colors.mutedForeground },
 
-  scrollContent: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-  },
+  scrollContent: { paddingHorizontal: theme.spacing.lg },
 
-  header: {
-    marginBottom: theme.spacing.lg,
-  },
+  header: { marginBottom: theme.spacing.lg },
   title: {
     fontFamily: theme.fontFamily.semibold,
     fontSize: theme.fontSize.display,
