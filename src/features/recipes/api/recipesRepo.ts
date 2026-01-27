@@ -3,10 +3,10 @@ import { supabase } from '@/lib/supabase'
 import type { RecipeFormSubmitValues } from '../components/RecipeForm'
 
 async function requireAuth() {
-  const { data, error } = await supabase.auth.getUser()
+  const { data, error } = await supabase.auth.getSession()
   if (error) throw error
-  if (!data.user) throw new Error('Not authenticated')
-  return data.user
+  if (!data.session?.user) throw new Error('Not authenticated')
+  return data.session.user
 }
 
 export type Recipe = {

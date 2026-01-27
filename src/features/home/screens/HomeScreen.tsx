@@ -129,7 +129,7 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
             What's cooking? <Text style={styles.wave}>👋</Text>
           </>
         }
-        onPressAdd={() => router.push('/(dev)/(tabs)/add-recipe')}
+        onPressAdd={() => router.push('/create')}
       />
 
       {isEmpty ? (
@@ -138,8 +138,8 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
           body="Add a recipe or a note. Home will show recent activity and quick access once you do."
           primaryLabel="Add your first recipe"
           secondaryLabel="Create a note"
-          onPressPrimary={() => router.push('/(dev)/(tabs)/add-recipe')}
-          onPressSecondary={() => router.push('/(dev)/(tabs)/collections')}
+          onPressPrimary={() => router.push('/(auth)/(tabs)/add-recipe')}
+          onPressSecondary={() => router.push('/(auth)/(tabs)/collections')}
         />
       ) : null}
 
@@ -161,7 +161,7 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
             title="Recent Activity"
             subtitle="Recently added recipes"
             ctaLabel="See all"
-            onPressCta={() => router.push('/(dev)/(tabs)/collections')}
+            onPressCta={() => router.push('/(auth)/(tabs)/collections')}
           />
 
           {recentRecipeCards.length > 0 ? (

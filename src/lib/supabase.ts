@@ -1,4 +1,5 @@
 import { createClient, processLock } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import * as SecureStore from 'expo-secure-store'
 import { AppState, Platform } from 'react-native'
 import 'react-native-url-polyfill/auto'
@@ -18,22 +19,32 @@ const lockWithTimeout = async <T,>(
   _acquireTimeout: number,
   fn: () => Promise<T>
 ): Promise<T> => {
-  return processLock(name, 20_000, fn) // 10s
+  return processLock(name, 20_000, fn)
 }
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    ...(Platform.OS !== 'web' ? { storage: ExpoSecureStoreAdapter } : {}),
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-    lock: lockWithTimeout,
-  },
-})
 
 declare global {
   // eslint-disable-next-line no-var
   var __recipesapp_supabase_appstate_bound: boolean | undefined
+  // eslint-disable-next-line no-var
+  var __recipesapp_supabase_client: SupabaseClient | undefined
+}
+
+function createSupabaseClient() {
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      ...(Platform.OS !== 'web' ? { storage: ExpoSecureStoreAdapter } : {}),
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+      lock: lockWithTimeout,
+    },
+  })
+}
+
+export const supabase = global.__recipesapp_supabase_client ?? createSupabaseClient()
+
+if (!global.__recipesapp_supabase_client) {
+  global.__recipesapp_supabase_client = supabase
 }
 
 if (Platform.OS !== 'web' && !global.__recipesapp_supabase_appstate_bound) {
