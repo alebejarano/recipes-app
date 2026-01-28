@@ -13,7 +13,13 @@ export function buildCollectionsForSegment(
   const map = new Map<string, number>();
 
   for (const recipe of recipes) {
-    const tags = recipe.tags?.filter(Boolean) ?? [];
+    const tags = recipe.tags?.map((tag) => tag.trim()).filter(Boolean) ?? [];
+
+    if (tags.length === 0) {
+      map.set('Uncategorized', (map.get('Uncategorized') ?? 0) + 1);
+      continue;
+    }
+
     for (const tag of tags) {
       map.set(tag, (map.get(tag) ?? 0) + 1);
     }

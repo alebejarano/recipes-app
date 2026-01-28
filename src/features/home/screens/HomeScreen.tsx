@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Text, View, useWindowDimensions } from 'react-native';
 
-import { getTransitionalHomeMocks, type HomeMocks } from '@/__mocks__/home';
+import { getMatureHomeMocks, type HomeMocks } from '@/__mocks__/home';
 import Screen from '@/components/Screen';
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
 import { createThemedStyles } from '@/styles/createStyles';
@@ -31,7 +31,7 @@ type HomeProps = {
 };
 
 function useHomeDataMock(): HomeMocks {
-  return getTransitionalHomeMocks();
+  return getMatureHomeMocks();
 }
 
 export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
@@ -138,7 +138,7 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
           body="Add a recipe or a note. Home will show recent activity and quick access once you do."
           primaryLabel="Add your first recipe"
           secondaryLabel="Create a note"
-          onPressPrimary={() => router.push('/(auth)/(tabs)/add-recipe')}
+          onPressPrimary={() => router.push('/create')}
           onPressSecondary={() => router.push('/(auth)/(tabs)/collections')}
         />
       ) : null}

@@ -1,7 +1,7 @@
 // src/features/recipes/screens/RecipeDetailScreen.tsx
 
 import { Feather } from '@expo/vector-icons'
-import { router } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import React, { useMemo } from 'react'
 import {
   ActivityIndicator,
@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { createThemedStyles } from '@/styles/createStyles'
 
 import { useRecipe } from '@/features/recipes/hooks/useRecipe'
+import { getSafeReturnTo } from '@/lib/navigation'
 
 const FALLBACK_TAGS: string[] = []
 
@@ -29,6 +30,8 @@ function buildIngredientLines(ingredients: { name: string }[] | undefined): stri
 
 
 export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
+  const safeReturnTo = getSafeReturnTo(returnTo)
   const { data: recipe, isLoading, isError } = useRecipe(recipeId)
 
   const ingredientLines = useMemo(
@@ -67,7 +70,13 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
       >
         <View style={styles.topBar}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => {
+              if (safeReturnTo) {
+                router.replace(safeReturnTo)
+              } else {
+                router.back()
+              }
+            }}
             accessibilityRole="button"
             accessibilityLabel="Go back"
             style={styles.iconButton}

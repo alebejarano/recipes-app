@@ -1,8 +1,9 @@
 // app/(dev)/(tabs)/collections.tsx (or wherever CollectionsScreen lives)
 
 import { Feather } from '@expo/vector-icons'
-import React, { useMemo, useState } from 'react'
-import { FlatList, Pressable, Text, View } from 'react-native'
+import { router, useLocalSearchParams } from 'expo-router'
+import React, { useEffect, useMemo, useState } from 'react'
+import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native'
 
 import Screen from '@/components/Screen'
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding'
@@ -17,31 +18,31 @@ import SegmentedTabs from '@/features/collections/components/SegmentedTabs'
 import NotesSegment from '@/features/collections/components/NotesSegment'
 import ShoppingSegment from '@/features/collections/components/ShoppingSegment'
 
-import type { CollectionItem, Recipe, SegmentKey } from '@/features/collections/types'
+import type { CollectionItem, SegmentKey } from '@/features/collections/types'
 import {
   buildCollectionsForSegment,
   getCollectionsHelperText,
   pickVariant,
 } from '@/features/collections/utils/collections'
-
-const MOCK_RECIPES: Recipe[] = [
-  { id: '1', title: 'Pasta', tags: ['Dinner'] },
-  { id: '2', title: 'Granola Bowl', tags: ['Breakfast'] },
-  { id: '3', title: 'Salad', tags: ['Lunch', 'Vegan'] },
-  { id: '4', title: 'Brownies', tags: ['Dessert'] },
-  { id: '5', title: 'Rice', tags: ['Quick Meals'] },
-  { id: '6', title: 'Soup', tags: ['Quick Meals'] },
-  { id: '7', title: 'Oats', tags: ['Breakfast'] },
-  { id: '8', title: 'Buddha bowl', tags: ['Vegan'] },
-]
+import { useRecipesList } from '@/features/recipes/hooks/useRecipesList'
+import { getSafeReturnTo } from '@/lib/navigation'
 
 export default function CollectionsScreen() {
+  const { segment: segmentParam } = useLocalSearchParams<{ segment?: SegmentKey }>()
   const [segment, setSegment] = useState<SegmentKey>('recipes')
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
+  const recipesQuery = useRecipesList({ limit: 200 })
+  const returnTo = getSafeReturnTo('/(auth)/(tabs)/collections?segment=recipes')
+
+  useEffect(() => {
+    if (segmentParam === 'notes' || segmentParam === 'recipes' || segmentParam === 'shopping') {
+      setSegment(segmentParam)
+    }
+  }, [segmentParam])
 
   const collections = useMemo<CollectionItem[]>(
-    () => buildCollectionsForSegment(segment, MOCK_RECIPES),
-    [segment]
+    () => buildCollectionsForSegment(segment, recipesQuery.data ?? []),
+    [segment, recipesQuery.data]
   )
 
   const onPressFab = () => {
@@ -75,28 +76,71 @@ export default function CollectionsScreen() {
         <>
           <Text style={styles.helperText}>{getCollectionsHelperText(segment)}</Text>
 
-          <FlatList
-            data={collections}
-            keyExtractor={(item) => item.key}
-            numColumns={2}
-            columnWrapperStyle={styles.row}
-            contentContainerStyle={[styles.grid, { paddingBottom: bottomPadding }]}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item, index }) => {
-              if (item.kind === 'new') return <NewCollectionTile onPress={() => {}} />
+          {recipesQuery.isLoading ? (
+            <View style={styles.loadingState}>
+              <ActivityIndicator size="small" color={styles.loadingText.color} />
+              <Text style={styles.loadingText}>Loading recipes…</Text>
+            </View>
+          ) : (recipesQuery.data ?? []).length === 0 ? (
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIcon}>
+                <Feather name="folder" size={22} color={theme.colors.mutedForeground} />
+              </View>
+              <Text style={styles.emptyTitle}>No recipes yet</Text>
+              <Text style={styles.emptyBody}>
+                Add a recipe to start building collections by tag.
+              </Text>
+              <Pressable
+                onPress={() => router.push('/(auth)/(tabs)/add-recipe')}
+                style={styles.emptyCta}
+                accessibilityRole="button"
+                accessibilityLabel="Create your first recipe"
+              >
+                <Feather name="plus" size={18} color={theme.colors.primaryForeground} />
+                <Text style={styles.emptyCtaText}>Create your first recipe</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <FlatList
+              data={collections}
+              keyExtractor={(item) => item.key}
+              numColumns={2}
+              columnWrapperStyle={styles.row}
+              contentContainerStyle={[styles.grid, { paddingBottom: bottomPadding }]}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item, index }) => {
+                if (item.kind === 'new') return <NewCollectionTile onPress={() => {}} />
 
-              return (
-                <CollectionTile
-                  label={item.label}
-                  count={item.count}
-                  variant={pickVariant(item.label, index)}
-                  onPress={() => {
-                    // TODO: router.push(`/(tabs)/collections/${encodeURIComponent(item.key)}`)
-                  }}
-                />
-              )
-            }}
-          />
+                return (
+                  <CollectionTile
+                    label={item.label}
+                    count={item.count}
+                    variant={pickVariant(item.label, index)}
+                    onPress={() => {
+                      if (item.label === 'Uncategorized') {
+                        router.push({
+                          pathname: '/(auth)/collections/[key]',
+                          params: {
+                            key: 'uncategorized',
+                            returnTo,
+                          },
+                        })
+                        return
+                      }
+
+                      router.push({
+                        pathname: '/(auth)/collections/[key]',
+                        params: {
+                          key: encodeURIComponent(item.label),
+                          returnTo,
+                        },
+                      })
+                    }}
+                  />
+                )
+              }}
+            />
+          )}
         </>
       ) : segment === 'notes' ? (
         <NotesSegment bottomPadding={bottomPadding} />
@@ -159,6 +203,62 @@ const styles = createThemedStyles((theme) => ({
 
   grid: {
     paddingTop: 0,
+  },
+  loadingState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+    paddingVertical: theme.spacing.lg,
+  },
+  loadingText: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.mutedForeground,
+  },
+  emptyState: {
+    marginTop: theme.spacing.xl,
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.secondary,
+  },
+  emptyTitle: {
+    fontFamily: theme.fontFamily.semibold,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    color: theme.colors.foreground,
+  },
+  emptyBody: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
+    textAlign: 'center',
+    maxWidth: 280,
+  },
+  emptyCta: {
+    marginTop: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.sage,
+  },
+  emptyCtaText: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.primaryForeground,
   },
 
   row: {

@@ -1,9 +1,13 @@
 import { Feather } from '@expo/vector-icons'
+import { router } from 'expo-router'
 import React, { useMemo } from 'react'
-import { FlatList, Pressable, Text, View } from 'react-native'
+import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native'
 
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
+import { formatRelativeDay } from '@/features/home/utils/homeFormatters'
+import { useNotesList } from '@/features/notes/hooks/useNotesList'
+import { getSafeReturnTo } from '@/lib/navigation'
 
 type NoteItem = {
   id: string
@@ -12,35 +16,60 @@ type NoteItem = {
   relativeDate: string
 }
 
-const MOCK_NOTES: NoteItem[] = [
-  {
-    id: '1',
-    title: 'Meal prep ideas',
-    preview: 'Weekly batch cooking schedule...',
-    relativeDate: 'Today',
-  },
-  {
-    id: '2',
-    title: 'Restaurant recommendat...',
-    preview: 'That Italian place downtown...',
-    relativeDate: 'Yesterday',
-  },
-  {
-    id: '3',
-    title: 'Substitution ideas',
-    preview: 'Dairy-free swaps for baking...',
-    relativeDate: '3 days ago',
-  },
-]
+const FALLBACK_TITLE = 'Untitled note'
+const PREVIEW_LIMIT = 80
 
 export default function NotesSegment({ bottomPadding }: { bottomPadding: number }) {
-  const data = useMemo(() => MOCK_NOTES, [])
+  const notesQuery = useNotesList({ limit: 50 })
+  const returnTo = getSafeReturnTo('/(auth)/(tabs)/collections?segment=notes')
+
+  const data = useMemo<NoteItem[]>(() => {
+    const notes = notesQuery.data ?? []
+    return notes.map((note) => ({
+      id: note.id,
+      title: note.title?.trim() || FALLBACK_TITLE,
+      preview: (note.content ?? '').trim().slice(0, PREVIEW_LIMIT) || 'No note content yet.',
+      relativeDate: formatRelativeDay(note.updatedAt),
+    }))
+  }, [notesQuery.data])
 
   return (
     <View style={styles.wrap}>
       <Text style={styles.helper}>Your kitchen notes and ideas</Text>
 
-      <FlatList
+      {notesQuery.isLoading ? (
+        <View style={styles.loadingState}>
+          <ActivityIndicator size="small" color={styles.loadingText.color} />
+          <Text style={styles.loadingText}>Loading notes…</Text>
+        </View>
+      ) : data.length === 0 ? (
+        <View style={styles.emptyState}>
+          <View style={styles.emptyIcon}>
+            <Feather name="file-text" size={22} color={theme.colors.mutedForeground} />
+          </View>
+          <Text style={styles.emptyTitle}>No notes yet</Text>
+          <Text style={styles.emptyBody}>
+            Save substitutions, meal prep ideas, or reminders.
+          </Text>
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: '/(auth)/notes/create',
+                params: {
+                  returnTo,
+                },
+              })
+            }
+            style={styles.emptyCta}
+            accessibilityRole="button"
+            accessibilityLabel="Create your first note"
+          >
+            <Feather name="plus" size={18} color={theme.colors.primaryForeground} />
+            <Text style={styles.emptyCtaText}>Create your first note</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <FlatList
         data={data}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
@@ -48,7 +77,15 @@ export default function NotesSegment({ bottomPadding }: { bottomPadding: number 
         ItemSeparatorComponent={() => <View style={{ height: theme.spacing.md }} />}
         renderItem={({ item }) => (
           <Pressable
-            onPress={() => {}}
+            onPress={() =>
+              router.push({
+                pathname: '/(auth)/notes/[id]',
+                params: {
+                  id: item.id,
+                  returnTo,
+                },
+              })
+            }
             style={styles.row}
             accessibilityRole="button"
             accessibilityLabel={`Open note ${item.title}`}
@@ -73,7 +110,14 @@ export default function NotesSegment({ bottomPadding }: { bottomPadding: number 
         )}
         ListFooterComponent={
           <Pressable
-            onPress={() => {}}
+            onPress={() =>
+              router.push({
+                pathname: '/(auth)/notes/create',
+                params: {
+                  returnTo,
+                },
+              })
+            }
             style={styles.newNote}
             accessibilityRole="button"
             accessibilityLabel="Create new note"
@@ -83,6 +127,7 @@ export default function NotesSegment({ bottomPadding }: { bottomPadding: number 
           </Pressable>
         }
       />
+      )}
     </View>
   )
 }
@@ -102,6 +147,62 @@ const styles = createThemedStyles((theme) => ({
 
   listContent: {
     paddingTop: 0,
+  },
+  loadingState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+    paddingVertical: theme.spacing.lg,
+  },
+  loadingText: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.mutedForeground,
+  },
+  emptyState: {
+    marginTop: theme.spacing.xl,
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.secondary,
+  },
+  emptyTitle: {
+    fontFamily: theme.fontFamily.semibold,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    color: theme.colors.foreground,
+  },
+  emptyBody: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
+    textAlign: 'center',
+    maxWidth: 280,
+  },
+  emptyCta: {
+    marginTop: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.sage,
+  },
+  emptyCtaText: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.primaryForeground,
   },
 
   row: {
