@@ -5,6 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router'
 import React, { useMemo } from 'react'
 import {
   ActivityIndicator,
+  Image,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -113,7 +114,14 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
         </View>
 
         <View style={styles.header}>
-          <Text style={styles.title}>{recipe.title}</Text>
+          <View style={styles.titleRow}>
+            {recipe.emoji ? (
+              <Text style={styles.titleEmoji} accessibilityLabel="Recipe emoji">
+                {recipe.emoji}
+              </Text>
+            ) : null}
+            <Text style={styles.title}>{recipe.title}</Text>
+          </View>
 
           {recipe.subtitle ? <Text style={styles.subtitle}>{recipe.subtitle}</Text> : null}
 
@@ -125,6 +133,14 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
                 </View>
               ))}
             </View>
+          ) : null}
+
+          {recipe.imageUrl ? (
+            <Image
+              source={{ uri: recipe.imageUrl }}
+              style={styles.heroImage}
+              resizeMode="cover"
+            />
           ) : null}
 
           <View style={styles.metaRow}>
@@ -247,6 +263,14 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
     paddingBottom: theme.spacing.lg,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  titleEmoji: {
+    fontSize: 28,
+  },
   title: {
     fontFamily: theme.fontFamily.semibold,
     fontSize: theme.fontSize.display,
@@ -258,6 +282,12 @@ const styles = createThemedStyles((theme) => ({
     fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.base,
     color: theme.colors.mutedForeground,
+  },
+  heroImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.card,
   },
   tagsRow: {
     flexDirection: 'row',

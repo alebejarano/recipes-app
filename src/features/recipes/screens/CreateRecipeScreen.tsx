@@ -45,7 +45,6 @@ export default function CreateRecipeScreen({
   const createMutation = useCreateRecipe()
   const tagsQuery = useRecipeTags()
   const formRef = useRef<RecipeFormHandle>(null)
-  const scrollRef = useRef<ScrollView>(null)
 
   const screenTitle = useMemo(
     () => (isOnboarding ? 'Create your first recipe' : 'Create your recipe'),
@@ -94,12 +93,6 @@ export default function CreateRecipeScreen({
     android: 0,
   })
 
-  const requestScrollTo = useCallback((y: number) => {
-    // small delay so keyboard has time to appear before scrolling
-    setTimeout(() => {
-      scrollRef.current?.scrollTo({ y: Math.max(0, y), animated: true })
-    }, 50)
-  }, [])
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
@@ -125,7 +118,6 @@ export default function CreateRecipeScreen({
           keyboardVerticalOffset={keyboardVerticalOffset}
         >
           <ScrollView
-            ref={scrollRef}
             style={styles.flex1}
             contentContainerStyle={[
               styles.scrollContent,
@@ -148,7 +140,6 @@ export default function CreateRecipeScreen({
               isSubmitting={createMutation.isPending}
               onSubmit={handleSubmit}
               showActions={false}
-              onRequestScrollTo={requestScrollTo}
               suggestedTags={tagsQuery.data ?? []}
             />
 

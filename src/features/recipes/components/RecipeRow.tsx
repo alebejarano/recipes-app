@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons'
 import React from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Image, Pressable, Text, View } from 'react-native'
 
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
@@ -8,12 +8,16 @@ import { theme } from '@/styles/theme'
 interface RecipeRowProps {
   title: string
   tags?: string[]
+  emoji?: string | null
+  imageUrl?: string | null
   onPress?: () => void
 }
 
 export default function RecipeRow({
   title,
   tags = [],
+  emoji,
+  imageUrl,
   onPress,
 }: RecipeRowProps) {
   const meta =
@@ -30,7 +34,11 @@ export default function RecipeRow({
       accessibilityLabel={`${title}. ${meta}`}
     >
       <View style={styles.iconWrapper}>
-        <Text style={styles.emoji}>📝</Text>
+        {imageUrl ? (
+          <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
+        ) : (
+          <Text style={styles.emoji}>{emoji ?? '📝'}</Text>
+        )}
       </View>
 
       <View style={styles.textBlock}>
@@ -76,10 +84,15 @@ const styles = createThemedStyles(theme => ({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: theme.spacing.md,
+    overflow: 'hidden',
   },
 
   emoji: {
     fontSize: 20,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
   },
 
   textBlock: {

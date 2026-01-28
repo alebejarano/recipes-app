@@ -117,6 +117,8 @@ export default function CollectionDetailScreen() {
             <RecipeRow
               title={item.title}
               tags={item.tags}
+              emoji={item.emoji}
+              imageUrl={item.imageUrl}
               onPress={() => {
                 router.push({
                   pathname: '/(dev)/recipes/[id]',

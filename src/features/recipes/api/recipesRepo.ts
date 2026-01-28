@@ -1,4 +1,5 @@
 // src/features/recipes/api/recipesRepo.ts
+import { fetch } from 'expo/fetch'
 import { supabase } from '@/lib/supabase'
 import type { RecipeFormSubmitValues } from '../components/RecipeForm'
 
@@ -16,6 +17,8 @@ export type Recipe = {
   title: string
   subtitle: string | null
   description: string | null
+  emoji: string | null
+  imageUrl: string | null
 
   ingredients: RecipeIngredient[]
   steps: string[]
@@ -44,6 +47,8 @@ type RecipeRow = {
   title: string
   subtitle: string | null
   description: string | null
+  emoji: string | null
+  image_url: string | null
   steps_text: string | null
   tags: string[] | null
   prep_time_minutes: number | null
@@ -101,6 +106,8 @@ function mapRecipe(row: RecipeRow): Recipe {
     title: row.title,
     subtitle: row.subtitle,
     description: row.description,
+    emoji: row.emoji ?? null,
+    imageUrl: row.image_url ?? null,
     ingredients: mapIngredients(row.recipe_ingredients),
     steps: parseStepsText(row.steps_text),
     tags: row.tags ?? [],
@@ -115,6 +122,39 @@ function mapRecipe(row: RecipeRow): Recipe {
 export type CreateRecipeInput = RecipeFormSubmitValues
 export type UpdateRecipeInput = RecipeFormSubmitValues
 
+type UploadRecipeImageInput = {
+  uri: string
+  fileName?: string | null
+  mimeType?: string | null
+}
+
+const RECIPE_IMAGES_BUCKET = 'recipe-images'
+
+export async function uploadRecipeImage(input: UploadRecipeImageInput): Promise<string> {
+  const user = await requireAuth()
+  const fileName = input.fileName?.trim() || input.uri.split('/').pop() || 'recipe.jpg'
+  const ext = fileName.includes('.') ? fileName.split('.').pop() : 'jpg'
+  const path = `${user.id}/${Date.now()}.${ext}`
+
+  const response = await fetch(input.uri)
+  const arrayBuffer = await response.arrayBuffer()
+  const bytes = new Uint8Array(arrayBuffer)
+
+  const { error: uploadError } = await supabase.storage
+    .from(RECIPE_IMAGES_BUCKET)
+    .upload(path, bytes, {
+      contentType: input.mimeType ?? 'image/jpeg',
+      upsert: false,
+    })
+
+  if (uploadError) throw uploadError
+
+  const { data } = supabase.storage.from(RECIPE_IMAGES_BUCKET).getPublicUrl(path)
+  if (!data?.publicUrl) throw new Error('Unable to get image URL')
+
+  return data.publicUrl
+}
+
 export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
   const user = await requireAuth()
   const { data, error } = await supabase
@@ -124,6 +164,8 @@ export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
       title: input.title,
       subtitle: input.subtitle,
       description: input.description,
+      emoji: input.emoji,
+      image_url: input.imageUrl,
       steps_text: serializeSteps(input.steps),
       tags: input.tags,
       prep_time_minutes: input.prepTimeMinutes,
@@ -137,6 +179,8 @@ export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
       title,
       subtitle,
       description,
+      emoji,
+      image_url,
       steps_text,
       tags,
       prep_time_minutes,
@@ -178,6 +222,8 @@ export async function getRecipeById(id: string): Promise<Recipe> {
       title,
       subtitle,
       description,
+      emoji,
+      image_url,
       steps_text,
       tags,
       prep_time_minutes,
@@ -223,6 +269,8 @@ export async function listRecipes(params?: {
       title,
       subtitle,
       description,
+      emoji,
+      image_url,
       steps_text,
       tags,
       prep_time_minutes,
@@ -282,6 +330,8 @@ export async function updateRecipe(id: string, input: UpdateRecipeInput): Promis
       title: input.title,
       subtitle: input.subtitle,
       description: input.description,
+      emoji: input.emoji,
+      image_url: input.imageUrl,
       steps_text: serializeSteps(input.steps),
       tags: input.tags,
       prep_time_minutes: input.prepTimeMinutes,
@@ -296,6 +346,8 @@ export async function updateRecipe(id: string, input: UpdateRecipeInput): Promis
       title,
       subtitle,
       description,
+      emoji,
+      image_url,
       steps_text,
       tags,
       prep_time_minutes,

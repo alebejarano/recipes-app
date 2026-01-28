@@ -1,4 +1,6 @@
 // src/features/recipes/components/RecipeForm.tsx
+import { Feather } from '@expo/vector-icons'
+import * as ImagePicker from 'expo-image-picker'
 import React, {
   forwardRef,
   useCallback,
@@ -7,16 +9,28 @@ import React, {
   useRef,
   useState,
 } from 'react'
-import { Alert, Text, TextInput, View } from 'react-native'
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Modal,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+} from 'react-native'
 
 import Button from '@/components/Button'
 import TagChip from '@/components/TagChip'
 import { createThemedStyles } from '@/styles/createStyles'
+import { uploadRecipeImage } from '@/features/recipes/api/recipesRepo'
 
 export type RecipeFormValues = {
   title: string
   subtitle: string
   description: string
+  emoji: string
+  imageUrl: string
   prepTimeMinutes: string
   cookTimeMinutes: string
   servings: string
@@ -29,6 +43,8 @@ export type RecipeFormSubmitValues = {
   title: string
   subtitle: string | null
   description: string | null
+  emoji: string | null
+  imageUrl: string | null
   prepTimeMinutes: number | null
   cookTimeMinutes: number | null
   servings: number | null
@@ -60,6 +76,8 @@ export function createEmptyRecipeFormValues(): RecipeFormValues {
     title: '',
     subtitle: '',
     description: '',
+    emoji: '',
+    imageUrl: '',
     prepTimeMinutes: '',
     cookTimeMinutes: '',
     servings: '',
@@ -79,9 +97,6 @@ type Props = {
   onCancel?: () => void
   showActions?: boolean
   suggestedTags?: TagSuggestion[]
-
-  /** Called by fields when they need the parent ScrollView to scroll */
-  onRequestScrollTo?: (y: number) => void
 }
 
 const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
@@ -93,7 +108,6 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     onCancel,
     showActions = true,
     suggestedTags = [],
-    onRequestScrollTo,
   },
   ref
 ) {
@@ -101,6 +115,9 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     initialValues ?? createEmptyRecipeFormValues()
   )
   const [tagInput, setTagInput] = useState('')
+  const [isEmojiModalOpen, setIsEmojiModalOpen] = useState(false)
+  const [emojiDraft, setEmojiDraft] = useState('')
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
   const normalizedSuggestedTags = useMemo(() => {
     if (!suggestedTags.length) return []
     const selected = new Set(values.tags.map((tag) => tag.toLowerCase()))
@@ -113,21 +130,12 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     return filtered.slice(0, 8)
   }, [suggestedTags, tagInput, values.tags])
 
-  // Store Y positions (relative to the ScrollView content)
-  const ingredientRowY = useRef<number[]>([])
-  const stepRowY = useRef<number[]>([])
-  const ingredientSectionY = useRef(0)
-  const ingredientFieldY = useRef(0)
-  const ingredientStackY = useRef(0)
-  const stepSectionY = useRef(0)
-  const stepFieldY = useRef(0)
-  const stepStackY = useRef(0)
   const ingredientInputRefs = useRef<Array<TextInput | null>>([])
   const stepInputRefs = useRef<Array<TextInput | null>>([])
 
   const canSubmit = useMemo(() => {
-    return values.title.trim().length > 0 && !isSubmitting
-  }, [values.title, isSubmitting])
+    return values.title.trim().length > 0 && !isSubmitting && !isUploadingImage
+  }, [values.title, isSubmitting, isUploadingImage])
 
   const update = useCallback(
     <K extends keyof RecipeFormValues>(key: K, next: RecipeFormValues[K]) => {
@@ -157,11 +165,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       const nextIngredients = [...prev.ingredients, '']
       return { ...prev, ingredients: nextIngredients }
     })
-    requestAnimationFrame(() => {
-      const nextIndex = values.ingredients.length
-      ingredientInputRefs.current[nextIndex]?.focus()
-    })
-  }, [values.ingredients.length])
+  }, [])
 
   const removeIngredient = useCallback((index: number) => {
     setValues((prev) => {
@@ -175,11 +179,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       const nextSteps = [...prev.steps, '']
       return { ...prev, steps: nextSteps }
     })
-    requestAnimationFrame(() => {
-      const nextIndex = values.steps.length
-      stepInputRefs.current[nextIndex]?.focus()
-    })
-  }, [values.steps.length])
+  }, [])
 
   const removeStep = useCallback((index: number) => {
     setValues((prev) => {
@@ -227,10 +227,15 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     const normalizedSteps = values.steps.map((step) => step.trim()).filter(Boolean)
     const normalizedTags = values.tags.map((tag) => tag.trim()).filter(Boolean)
 
+    const emoji = normalizeOptionalText(values.emoji)
+    const imageUrl = normalizeOptionalText(values.imageUrl)
+
     return {
       title,
       subtitle: normalizeOptionalText(values.subtitle),
       description: normalizeOptionalText(values.description),
+      emoji,
+      imageUrl: emoji ? null : imageUrl,
       prepTimeMinutes: parseOptionalInt(values.prepTimeMinutes),
       cookTimeMinutes: parseOptionalInt(values.cookTimeMinutes),
       servings: parseOptionalInt(values.servings),
@@ -241,10 +246,14 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   }, [values])
 
   const handleSubmit = useCallback(async () => {
+    if (isUploadingImage) {
+      Alert.alert('Upload in progress', 'Please wait for the image to finish uploading.')
+      return
+    }
     const payload = buildPayload()
     if (!payload) return
     await onSubmit(payload)
-  }, [buildPayload, onSubmit])
+  }, [buildPayload, isUploadingImage, onSubmit])
 
   useImperativeHandle(
     ref,
@@ -256,36 +265,171 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     [handleSubmit]
   )
 
-  const requestScroll = useCallback(
-    (y?: number) => {
-      if (y == null) return
-      // Slight negative offset so the field sits above the keyboard comfortably
-      onRequestScrollTo?.(Math.max(0, y - 24))
+  const openEmojiModal = useCallback(() => {
+    setEmojiDraft(values.emoji)
+    setIsEmojiModalOpen(true)
+  }, [values.emoji])
+
+  const saveEmoji = useCallback(() => {
+    const trimmed = emojiDraft.trim()
+    update('emoji', trimmed)
+    if (trimmed.length > 0) update('imageUrl', '')
+    setIsEmojiModalOpen(false)
+  }, [emojiDraft, update])
+
+  const clearCover = useCallback(() => {
+    update('emoji', '')
+    update('imageUrl', '')
+  }, [update])
+
+  const confirmPermissionPrompt = useCallback((title: string, message: string) => {
+    return new Promise<boolean>((resolve) => {
+      Alert.alert(title, message, [
+        { text: 'Not now', style: 'cancel', onPress: () => resolve(false) },
+        { text: 'Continue', onPress: () => resolve(true) },
+      ])
+    })
+  }, [])
+
+  const ensureLibraryPermission = useCallback(async () => {
+    const existing = await ImagePicker.getMediaLibraryPermissionsAsync()
+    if (existing.status === 'granted') return true
+
+    const shouldContinue = await confirmPermissionPrompt(
+      'Allow photo access?',
+      'We use your photo library to add a cover image for your recipe.'
+    )
+    if (!shouldContinue) return false
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow access to your photo library to upload images.')
+      return false
+    }
+    return true
+  }, [confirmPermissionPrompt])
+
+  const ensureCameraPermission = useCallback(async () => {
+    const existing = await ImagePicker.getCameraPermissionsAsync()
+    if (existing.status === 'granted') return true
+
+    const shouldContinue = await confirmPermissionPrompt(
+      'Allow camera access?',
+      'We use your camera to take a photo for your recipe cover.'
+    )
+    if (!shouldContinue) return false
+    const { status } = await ImagePicker.requestCameraPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow access to your camera to take a photo.')
+      return false
+    }
+    return true
+  }, [confirmPermissionPrompt])
+
+  const uploadImageAsset = useCallback(
+    async (asset: ImagePicker.ImagePickerAsset) => {
+      try {
+        setIsUploadingImage(true)
+        const url = await uploadRecipeImage({
+          uri: asset.uri,
+          fileName: asset.fileName ?? null,
+          mimeType: asset.mimeType ?? null,
+        })
+        update('imageUrl', url)
+        update('emoji', '')
+      } catch (error: any) {
+        Alert.alert('Upload failed', error?.message ?? 'Please try again.')
+      } finally {
+        setIsUploadingImage(false)
+      }
     },
-    [onRequestScrollTo]
+    [update]
   )
 
-  const getIngredientScrollY = useCallback(
-    (index: number) => {
-      const rowY = ingredientRowY.current[index] ?? 0
-      return ingredientSectionY.current + ingredientFieldY.current + ingredientStackY.current + rowY
-    },
-    []
-  )
+  const handlePickImage = useCallback(async () => {
+    const ok = await ensureLibraryPermission()
+    if (!ok) return
 
-  const getStepScrollY = useCallback(
-    (index: number) => {
-      const rowY = stepRowY.current[index] ?? 0
-      return stepSectionY.current + stepFieldY.current + stepStackY.current + rowY
-    },
-    []
-  )
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.85,
+    })
+
+    if (result.canceled) return
+    const asset = result.assets?.[0]
+    if (!asset) return
+    await uploadImageAsset(asset)
+  }, [ensureLibraryPermission, uploadImageAsset])
+
+  const handleTakePhoto = useCallback(async () => {
+    const ok = await ensureCameraPermission()
+    if (!ok) return
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.85,
+    })
+
+    if (result.canceled) return
+    const asset = result.assets?.[0]
+    if (!asset) return
+    await uploadImageAsset(asset)
+  }, [ensureCameraPermission, uploadImageAsset])
+
+  const openCoverOptions = useCallback(() => {
+    const options: Array<{
+      text: string
+      onPress?: () => void
+      style?: 'default' | 'cancel' | 'destructive'
+    }> = [
+      { text: 'Pick emoji', onPress: openEmojiModal },
+      { text: 'Upload photo', onPress: handlePickImage },
+      { text: 'Take photo', onPress: handleTakePhoto },
+    ]
+    if (values.emoji || values.imageUrl) {
+      options.push({ text: 'Remove', style: 'destructive', onPress: clearCover })
+    }
+    options.push({ text: 'Cancel', style: 'cancel' })
+
+    Alert.alert('Add cover', 'Choose an emoji or a photo.', options)
+  }, [clearCover, handlePickImage, handleTakePhoto, openEmojiModal, values])
 
   return (
     <View style={styles.form}>
       {/* Basics */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Basics</Text>
+
+        <Pressable
+          onPress={openCoverOptions}
+          style={({ pressed }) => [
+            styles.coverCard,
+            pressed && styles.coverCardPressed,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="Add emoji or photo"
+        >
+          {values.imageUrl ? (
+            <Image source={{ uri: values.imageUrl }} style={styles.coverImage} />
+          ) : values.emoji ? (
+            <Text style={styles.coverEmoji}>{values.emoji}</Text>
+          ) : (
+            <View style={styles.coverPlaceholder}>
+              <View style={styles.coverIconWrap}>
+                <Feather name="camera" size={20} color={styles.coverHint.color} />
+              </View>
+              <Text style={styles.coverHint}>Add emoji or photo</Text>
+            </View>
+          )}
+
+          {isUploadingImage ? (
+            <View style={styles.coverOverlay}>
+              <ActivityIndicator size="small" color={styles.coverHint.color} />
+              <Text style={styles.coverHint}>Uploading…</Text>
+            </View>
+          ) : null}
+        </Pressable>
 
         <View style={styles.field}>
           <Text style={styles.label}>Title</Text>
@@ -377,42 +521,23 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       </View>
 
       {/* Ingredients */}
-      <View
-        style={styles.section}
-        onLayout={(e) => {
-          ingredientSectionY.current = e.nativeEvent.layout.y
-        }}
-      >
+      <View style={styles.section}>
         <Text style={styles.sectionTitle}>Ingredients</Text>
 
-        <View
-          style={styles.field}
-          onLayout={(e) => {
-            ingredientFieldY.current = e.nativeEvent.layout.y
-          }}
-        >
+        <View style={styles.field}>
           <Text style={styles.label}>List</Text>
 
-          <View
-            style={styles.stepsStack}
-            onLayout={(e) => {
-              ingredientStackY.current = e.nativeEvent.layout.y
-            }}
-          >
+          <View style={styles.stepsStack}>
             {values.ingredients.map((ingredient, index) => {
               const n = index + 1
               return (
                 <View
                   key={`ingredient-${index}`}
                   style={styles.ingredientRow}
-                  onLayout={(e) => {
-                    ingredientRowY.current[index] = e.nativeEvent.layout.y
-                  }}
                 >
                   <TextInput
                     value={ingredient}
                     onChangeText={(t) => updateIngredient(index, t)}
-                    onFocus={() => requestScroll(getIngredientScrollY(index))}
                     placeholder={`Ingredient ${n}`}
                     placeholderTextColor={styles.placeholder.color}
                     style={[styles.input, styles.stepInput]}
@@ -451,37 +576,19 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       </View>
 
       {/* Steps */}
-      <View
-        style={styles.section}
-        onLayout={(e) => {
-          stepSectionY.current = e.nativeEvent.layout.y
-        }}
-      >
+      <View style={styles.section}>
         <Text style={styles.sectionTitle}>Steps</Text>
 
-        <View
-          style={styles.field}
-          onLayout={(e) => {
-            stepFieldY.current = e.nativeEvent.layout.y
-          }}
-        >
+        <View style={styles.field}>
           <Text style={styles.label}>Instructions</Text>
 
-          <View
-            style={styles.stepsStack}
-            onLayout={(e) => {
-              stepStackY.current = e.nativeEvent.layout.y
-            }}
-          >
+          <View style={styles.stepsStack}>
             {values.steps.map((step, index) => {
               const n = index + 1
               return (
                 <View
                   key={`step-${index}`}
                   style={styles.stepRow}
-                  onLayout={(e) => {
-                    stepRowY.current[index] = e.nativeEvent.layout.y
-                  }}
                 >
                   <View style={styles.stepBadge}>
                     <Text style={styles.stepBadgeText}>{n}</Text>
@@ -490,7 +597,6 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
                   <TextInput
                     value={step}
                     onChangeText={(t) => updateStep(index, t)}
-                    onFocus={() => requestScroll(getStepScrollY(index))}
                     placeholder={`Step ${n}`}
                     placeholderTextColor={styles.placeholder.color}
                     style={[styles.input, styles.stepInput]}
@@ -594,6 +700,50 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
           </Button>
         </View>
       ) : null}
+
+      <Modal
+        visible={isEmojiModalOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setIsEmojiModalOpen(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Pick an emoji</Text>
+            <Text style={styles.modalSubtitle}>
+              Choose a single emoji to represent this recipe.
+            </Text>
+            <TextInput
+              value={emojiDraft}
+              onChangeText={setEmojiDraft}
+              placeholder="e.g. 🍋"
+              placeholderTextColor={styles.placeholder.color}
+              style={styles.modalInput}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+
+            <View style={styles.modalActions}>
+              <Button
+                variant="secondary"
+                size="md"
+                onPress={() => setIsEmojiModalOpen(false)}
+                style={styles.modalActionButton}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                onPress={saveEmoji}
+                style={styles.modalActionButton}
+              >
+                Save
+              </Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 })
@@ -639,6 +789,99 @@ const styles = createThemedStyles((theme) => ({
   placeholder: { color: theme.colors.mutedForeground },
   row: { flexDirection: 'row', gap: theme.spacing.sm },
   flex1: { flex: 1 },
+  flex2: { flex: 2 },
+  coverCard: {
+    height: 160,
+    borderRadius: theme.radii.xl,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  coverCardPressed: {
+    opacity: 0.96,
+    transform: [{ scale: 0.99 }],
+  },
+  coverPlaceholder: {
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  coverIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.secondary,
+  },
+  coverHint: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.mutedForeground,
+  },
+  coverEmoji: {
+    fontSize: 48,
+  },
+  coverImage: {
+    width: '100%',
+    height: '100%',
+  },
+  coverOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    backgroundColor: theme.colors.card,
+    borderTopLeftRadius: theme.radii.xl,
+    borderTopRightRadius: theme.radii.xl,
+    padding: theme.spacing.lg,
+    gap: theme.spacing.sm,
+  },
+  modalTitle: {
+    fontFamily: theme.fontFamily.semibold,
+    fontSize: theme.fontSize.lg,
+    color: theme.colors.foreground,
+  },
+  modalSubtitle: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.mutedForeground,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.radii.xl,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.lg,
+    color: theme.colors.foreground,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    width: '100%',
+  },
+  modalActionButton: {
+    flex: 1,
+    width: 'auto',
+  },
 
   stepsStack: { gap: theme.spacing.sm },
   ingredientRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
