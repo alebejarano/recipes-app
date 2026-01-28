@@ -35,6 +35,7 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
   const resolvedNoteId = noteId ?? ''
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
+  const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
 
   const noteQuery = useNote(resolvedNoteId)
   const createMutation = useCreateNote()
@@ -99,14 +100,14 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
         await updateMutation.mutateAsync({ title, content })
         router.replace({
           pathname: '/(auth)/notes/[id]',
-          params: { id: resolvedNoteId, returnTo: safeReturnTo },
+          params: { id: resolvedNoteId, returnTo: returnToParam },
         })
         return
       } else {
         const note = await createMutation.mutateAsync({ title, content })
         router.replace({
           pathname: '/(auth)/notes/[id]',
-          params: { id: note.id, returnTo: safeReturnTo },
+          params: { id: note.id, returnTo: returnToParam },
         })
         return
       }

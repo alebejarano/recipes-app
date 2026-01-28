@@ -27,6 +27,7 @@ type NoteDetailScreenProps = {
 export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
+  const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
   const { data: note, isLoading, isError } = useNote(noteId)
   const deleteMutation = useDeleteNote()
 
@@ -36,7 +37,7 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
   const handleEdit = () => {
     router.push({
       pathname: '/(auth)/notes/[id]/edit',
-      params: { id: noteId, returnTo: safeReturnTo },
+      params: { id: noteId, returnTo: returnToParam },
     })
   }
 

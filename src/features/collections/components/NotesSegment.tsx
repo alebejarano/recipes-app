@@ -22,6 +22,7 @@ const PREVIEW_LIMIT = 80
 export default function NotesSegment({ bottomPadding }: { bottomPadding: number }) {
   const notesQuery = useNotesList({ limit: 50 })
   const returnTo = getSafeReturnTo('/(auth)/(tabs)/collections?segment=notes')
+  const returnToParam = typeof returnTo === 'string' ? returnTo : undefined
 
   const data = useMemo<NoteItem[]>(() => {
     const notes = notesQuery.data ?? []
@@ -56,7 +57,7 @@ export default function NotesSegment({ bottomPadding }: { bottomPadding: number 
               router.push({
                 pathname: '/(auth)/notes/create',
                 params: {
-                  returnTo,
+                  returnTo: returnToParam,
                 },
               })
             }
@@ -82,7 +83,7 @@ export default function NotesSegment({ bottomPadding }: { bottomPadding: number 
                 pathname: '/(auth)/notes/[id]',
                 params: {
                   id: item.id,
-                  returnTo,
+                  returnTo: returnToParam,
                 },
               })
             }
@@ -114,7 +115,7 @@ export default function NotesSegment({ bottomPadding }: { bottomPadding: number 
               router.push({
                 pathname: '/(auth)/notes/create',
                 params: {
-                  returnTo,
+                  returnTo: returnToParam,
                 },
               })
             }

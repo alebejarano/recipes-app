@@ -33,6 +33,7 @@ export default function CollectionsScreen() {
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
   const recipesQuery = useRecipesList({ limit: 200 })
   const returnTo = getSafeReturnTo('/(auth)/(tabs)/collections?segment=recipes')
+  const returnToParam = typeof returnTo === 'string' ? returnTo : undefined
 
   useEffect(() => {
     if (segmentParam === 'notes' || segmentParam === 'recipes' || segmentParam === 'shopping') {
@@ -122,7 +123,7 @@ export default function CollectionsScreen() {
                           pathname: '/(auth)/collections/[key]',
                           params: {
                             key: 'uncategorized',
-                            returnTo,
+                            returnTo: returnToParam,
                           },
                         })
                         return
@@ -132,7 +133,7 @@ export default function CollectionsScreen() {
                         pathname: '/(auth)/collections/[key]',
                         params: {
                           key: encodeURIComponent(item.label),
-                          returnTo,
+                          returnTo: returnToParam,
                         },
                       })
                     }}

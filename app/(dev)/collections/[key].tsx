@@ -29,6 +29,7 @@ export default function CollectionDetailScreen() {
   const rawKey = params.key ?? ''
   const key = decodeKey(Array.isArray(rawKey) ? rawKey[0] : rawKey)
   const safeReturnTo = getSafeReturnTo(params.returnTo)
+  const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
 
   const isUncategorized = isUncategorizedKey(key)
   const title = isUncategorized ? 'Uncategorized' : key
@@ -122,7 +123,7 @@ export default function CollectionDetailScreen() {
                   params: {
                     id: item.id,
                     returnTo:
-                      safeReturnTo ?? '/(dev)/(tabs)/collections?segment=recipes',
+                      returnToParam ?? '/(dev)/(tabs)/collections?segment=recipes',
                   },
                 })
               }}
