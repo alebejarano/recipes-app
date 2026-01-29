@@ -40,27 +40,54 @@ export default function RecipeCarousel({
       decelerationRate="fast"
     >
       <View style={[styles.row, { columnGap: gap }]}>
-        {items.map((r) => (
-          <Pressable
-            key={r.id}
-            onPress={() => onPressItem?.(r.id)}
-            style={[styles.card, { width: cardWidth }]}
-            accessibilityRole="button"
-            accessibilityLabel={`Open ${r.title}`}
-          >
-            <View style={styles.iconWrap}>
-              <Text style={styles.emoji}>{r.emoji ?? '🍋'}</Text>
-            </View>
+        {items.map((r) => {
+          const hasEmoji = Boolean(r.emoji);
+          const isMinimal = !hasEmoji;
 
-            <Text style={styles.title} numberOfLines={2}>
-              {r.title}
-            </Text>
+          const content = (
+            <Pressable
+              key={r.id}
+              onPress={() => onPressItem?.(r.id)}
+              style={[
+                styles.card,
+                { width: cardWidth },
+                isMinimal ? styles.cardMinimal : null,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${r.title}`}
+            >
+              {hasEmoji ? (
+                <View style={styles.iconWrap}>
+                  <Text style={styles.emoji}>{r.emoji}</Text>
+                </View>
+              ) : null}
 
-            <Text style={styles.meta} numberOfLines={1}>
-              {formatMeta(r)}
-            </Text>
-          </Pressable>
-        ))}
+              {isMinimal ? (
+                <View style={styles.minimalContent}>
+                  <Text style={styles.title} numberOfLines={2}>
+                    {r.title}
+                  </Text>
+
+                  <Text style={styles.meta} numberOfLines={1}>
+                    {formatMeta(r)}
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <Text style={styles.title} numberOfLines={2}>
+                    {r.title}
+                  </Text>
+
+                  <Text style={styles.meta} numberOfLines={1}>
+                    {formatMeta(r)}
+                  </Text>
+                </>
+              )}
+            </Pressable>
+          );
+
+          return content;
+        })}
       </View>
     </ScrollView>
   );
@@ -78,6 +105,12 @@ const styles = createThemedStyles((theme) => ({
     borderWidth: 1,
     borderColor: theme.colors.border,
     ...theme.shadows.soft,
+  },
+  cardMinimal: {
+    justifyContent: 'center',
+  },
+  minimalContent: {
+    width: '100%',
   },
   iconWrap: {
     width: 44,

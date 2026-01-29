@@ -1,9 +1,7 @@
-import { Feather } from '@expo/vector-icons';
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { createThemedStyles } from '@/styles/createStyles';
-import { theme } from '@/styles/theme';
 
 type Props = {
   greeting: string;
@@ -18,15 +16,6 @@ export default function HomeHeader({ greeting, title, onPressAdd }: Props) {
 
       <View style={styles.row}>
         <Text style={styles.title}>{title}</Text>
-
-        <Pressable
-          onPress={onPressAdd}
-          style={styles.fab}
-          accessibilityRole="button"
-          accessibilityLabel="Add recipe"
-        >
-          <Feather name="plus" size={26} color={theme.colors.primaryForeground} />
-        </Pressable>
       </View>
     </View>
   );

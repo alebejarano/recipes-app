@@ -1,9 +1,8 @@
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import { router, useSegments } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Text, View, useWindowDimensions } from 'react-native';
 
-import { getMatureHomeMocks, type HomeMocks } from '@/__mocks__/home';
 import Screen from '@/components/Screen';
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
 import { createThemedStyles } from '@/styles/createStyles';
@@ -18,6 +17,9 @@ import PickCard from '@/features/home/components/PickCard';
 import RecipeCarousel, { type RecipePreview } from '@/features/home/components/RecipeCarousel';
 import SectionHeaderRow from '@/features/home/components/SectionHeaderRow';
 import SuccessBanner from '@/features/home/components/SuccessBanner';
+import { useNotesList } from '@/features/notes/hooks/useNotesList';
+import { useRecipesList } from '@/features/recipes/hooks/useRecipesList';
+import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore';
 
 import {
   formatRelativeDay,
@@ -30,12 +32,25 @@ type HomeProps = {
   showAccountSuccessBanner?: boolean;
 };
 
-function useHomeDataMock(): HomeMocks {
-  return getMatureHomeMocks();
-}
+type HomeRecipe = {
+  id: string;
+  title: string;
+  subtitle?: string | null;
+  emoji?: string | null;
+  mealTimes?: string[];
+  createdAt: string;
+  updatedAt?: string;
+};
+
+type HomeNote = {
+  id: string;
+  title: string;
+  updatedAt: string;
+};
 
 export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl);
+  const segments = useSegments();
 
   const { width: screenWidth } = useWindowDimensions();
 
@@ -44,8 +59,8 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
   const CARD_GAP = theme.spacing.md;
   const PEEK = 16;
 
-  const MIN_CARD_WIDTH = 150;
-  const MAX_CARD_WIDTH = 340;
+  const MIN_CARD_WIDTH = 180;
+  const MAX_CARD_WIDTH = 200;
 
   const recipeCardWidth = useMemo(() => {
     const availableWidth = screenWidth - 2 * PAGE_PADDING;
@@ -54,7 +69,48 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
     return Math.floor(clamped);
   }, [screenWidth, PAGE_PADDING, CARD_GAP]);
 
-  const { recipes, notes, lastViewedRecipe, shoppingList } = useHomeDataMock();
+  const recipesQuery = useRecipesList({ limit: 50 });
+  const notesQuery = useNotesList({ limit: 50 });
+
+  const hydrateShopping = useShoppingListStore((s) => s.hydrate);
+  const isShoppingHydrated = useShoppingListStore((s) => s.isHydrated);
+  const isShoppingHydrating = useShoppingListStore((s) => s.isHydrating);
+  const shoppingItems = useShoppingListStore((s) => s.items);
+
+  useEffect(() => {
+    hydrateShopping();
+  }, [hydrateShopping]);
+
+  const recipes = useMemo<HomeRecipe[]>(
+    () =>
+      (recipesQuery.data ?? []).map((recipe) => ({
+        id: recipe.id,
+        title: recipe.title,
+        subtitle: recipe.subtitle ?? null,
+        emoji: recipe.emoji ?? null,
+        createdAt: recipe.createdAt,
+        updatedAt: recipe.updatedAt ?? recipe.createdAt,
+      })),
+    [recipesQuery.data]
+  );
+
+  const notes = useMemo<HomeNote[]>(
+    () =>
+      (notesQuery.data ?? []).map((note) => ({
+        id: note.id,
+        title: note.title?.trim() || 'Untitled note',
+        updatedAt: note.updatedAt,
+      })),
+    [notesQuery.data]
+  );
+
+  const shoppingList = useMemo(() => {
+    if (!isShoppingHydrated || isShoppingHydrating) return null;
+    const totalCount = shoppingItems.length;
+    if (totalCount === 0) return null;
+    const checkedCount = shoppingItems.reduce((acc, item) => acc + (item.checked ? 1 : 0), 0);
+    return { totalCount, checkedCount };
+  }, [isShoppingHydrated, isShoppingHydrating, shoppingItems]);
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
@@ -104,7 +160,7 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
       recentRecipes.map((r) => ({
         id: r.id,
         title: r.title,
-        emoji: r.emoji,
+        emoji: r.emoji ?? undefined,
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
       })),
@@ -112,6 +168,15 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
   );
 
   const firstRecentNote = useMemo(() => sortMostRecent(notes)[0], [notes]);
+
+  const root = segments[0] === '(dev)' ? '(dev)' : '(auth)';
+  const recipeDetailPath =
+    root === '(dev)' ? '/(dev)/recipes/[id]' : '/(auth)/recipes/[id]';
+  const noteDetailPath = root === '(dev)' ? '/(dev)/notes/[id]' : '/(auth)/notes/[id]';
+  const collectionsPath =
+    root === '(dev)' ? '/(dev)/(tabs)/collections' : '/(auth)/(tabs)/collections';
+  const shoppingListPath =
+    root === '(dev)' ? '/(dev)/shopping-list' : '/(auth)/shopping-list';
 
   return (
     <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
@@ -139,7 +204,7 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
           primaryLabel="Add your first recipe"
           secondaryLabel="Create a note"
           onPressPrimary={() => router.push('/create')}
-          onPressSecondary={() => router.push('/(auth)/(tabs)/collections')}
+          onPressSecondary={() => router.push(collectionsPath)}
         />
       ) : null}
 
@@ -147,10 +212,10 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
         <PickCard
           label={pick.label}
           title={pick.recipe.title}
-          subtitle={pick.recipe.subtitle}
-          emoji={pick.recipe.emoji}
+          subtitle={pick.recipe.subtitle ?? undefined}
+          emoji={pick.recipe.emoji ?? undefined}
           onPress={() => {
-            // TODO: navigate to recipe detail
+            router.push({ pathname: recipeDetailPath, params: { id: pick.recipe.id } });
           }}
         />
       ) : null}
@@ -161,7 +226,7 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
             title="Recent Activity"
             subtitle="Recently added recipes"
             ctaLabel="See all"
-            onPressCta={() => router.push('/(auth)/(tabs)/collections')}
+            onPressCta={() => router.push(collectionsPath)}
           />
 
           {recentRecipeCards.length > 0 ? (
@@ -171,8 +236,8 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
               gap={CARD_GAP}
               rightPadding={theme.spacing.lg}
               formatMeta={(r) => formatRelativeDay(r.createdAt ?? r.updatedAt)}
-              onPressItem={() => {
-                // TODO: navigate to recipe detail
+              onPressItem={(id) => {
+                router.push({ pathname: recipeDetailPath, params: { id } });
               }}
             />
           ) : (
@@ -189,7 +254,7 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
           note={{ title: firstRecentNote.title, updatedAt: firstRecentNote.updatedAt }}
           meta={formatRelativeDay(firstRecentNote.updatedAt)}
           onPress={() => {
-            // TODO: navigate to note detail
+            router.push({ pathname: noteDetailPath, params: { id: firstRecentNote.id } });
           }}
         />
       ) : null}
@@ -198,17 +263,6 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
         <View style={styles.section}>
           <Text style={styles.sectionSubtitleLarge}>Continue where you left off</Text>
 
-          {lastViewedRecipe ? (
-            <ActionCard
-              kicker="Last viewed"
-              title={lastViewedRecipe.title}
-              leftIcon={<Text style={styles.actionEmoji}>{lastViewedRecipe.emoji ?? '🍋'}</Text>}
-              onPress={() => {
-                // TODO: open last viewed
-              }}
-            />
-          ) : null}
-
           {activeShoppingList ? (
             <ActionCard
               title="Shopping List"
@@ -216,7 +270,7 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
               variant="highlight"
               leftIcon={<Feather name="shopping-cart" size={18} color={theme.colors.mutedForeground} />}
               onPress={() => {
-                // TODO: open shopping list
+                router.push(shoppingListPath);
               }}
             />
           ) : null}

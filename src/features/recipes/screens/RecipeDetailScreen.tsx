@@ -1,10 +1,11 @@
 // src/features/recipes/screens/RecipeDetailScreen.tsx
 
 import { Feather } from '@expo/vector-icons'
-import { router, useLocalSearchParams } from 'expo-router'
+import { router, useLocalSearchParams, useSegments } from 'expo-router'
 import React, { useMemo } from 'react'
 import {
   ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   Text,
@@ -15,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { createThemedStyles } from '@/styles/createStyles'
 
+import { useDeleteRecipe } from '@/features/recipes/hooks/useDeleteRecipe'
 import { useRecipe } from '@/features/recipes/hooks/useRecipe'
 import { getSafeReturnTo } from '@/lib/navigation'
 
@@ -33,6 +35,9 @@ function buildIngredientLines(ingredients: { name: string }[] | undefined): stri
 export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
+  const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
+  const segments = useSegments()
+  const deleteMutation = useDeleteRecipe()
   const { data: recipe, isLoading, isError } = useRecipe(recipeId)
 
   const ingredientLines = useMemo(
@@ -41,6 +46,59 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
   )
 
   const tags = useMemo(() => recipe?.tags ?? FALLBACK_TAGS, [recipe?.tags])
+
+  const { editPath, detailPath } = useMemo(() => {
+    const root = segments[0]
+    if (root === '(dev)' || root === '(auth)') {
+      return {
+        editPath: `/${root}/recipes/[id]/edit`,
+        detailPath: `/${root}/recipes/${recipeId}`,
+      }
+    }
+    return {
+      editPath: '/(auth)/recipes/[id]/edit',
+      detailPath: `/(auth)/recipes/${recipeId}`,
+    }
+  }, [recipeId, segments])
+
+  const handleEdit = () => {
+    router.push({
+      pathname: editPath as any,
+      params: { id: recipeId, returnTo: returnToParam ?? detailPath },
+    })
+  }
+
+  const handleMore = () => {
+    Alert.alert('Recipe actions', undefined, [
+      { text: 'Edit recipe', onPress: handleEdit },
+      {
+        text: 'Delete recipe',
+        style: 'destructive',
+        onPress: () => {
+          Alert.alert('Delete recipe?', 'This cannot be undone.', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await deleteMutation.mutateAsync(recipeId)
+                  if (safeReturnTo) {
+                    router.replace(safeReturnTo)
+                  } else {
+                    router.back()
+                  }
+                } catch (error: any) {
+                  Alert.alert('Delete failed', error?.message ?? 'Please try again.')
+                }
+              },
+            },
+          ])
+        },
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ])
+  }
 
   if (isLoading) {
     return (
@@ -103,7 +161,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
               <Feather name="share-2" size={18} style={styles.icon} />
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => {}}
+              onPress={handleMore}
               accessibilityRole="button"
               accessibilityLabel="More actions"
               style={styles.iconButton}
@@ -114,12 +172,24 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
         </View>
 
         <View style={styles.header}>
+          {recipe.imageUrl || recipe.emoji ? (
+            <View style={styles.mediaBadge}>
+              {recipe.imageUrl ? (
+                <Image
+                  source={{ uri: recipe.imageUrl }}
+                  style={styles.mediaImage}
+                  resizeMode="cover"
+                  accessibilityLabel="Recipe thumbnail"
+                />
+              ) : (
+                <Text style={styles.mediaEmoji} accessibilityLabel="Recipe emoji">
+                  {recipe.emoji}
+                </Text>
+              )}
+            </View>
+          ) : null}
+
           <View style={styles.titleRow}>
-            {recipe.emoji ? (
-              <Text style={styles.titleEmoji} accessibilityLabel="Recipe emoji">
-                {recipe.emoji}
-              </Text>
-            ) : null}
             <Text style={styles.title}>{recipe.title}</Text>
           </View>
 
@@ -133,14 +203,6 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
                 </View>
               ))}
             </View>
-          ) : null}
-
-          {recipe.imageUrl ? (
-            <Image
-              source={{ uri: recipe.imageUrl }}
-              style={styles.heroImage}
-              resizeMode="cover"
-            />
           ) : null}
 
           <View style={styles.metaRow}>
@@ -263,13 +325,28 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
     paddingBottom: theme.spacing.lg,
   },
+  mediaBadge: {
+    width: 100,
+    height: 100,
+    borderRadius: theme.radii.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.secondary,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    overflow: 'hidden',
+  },
+  mediaImage: {
+    width: '100%',
+    height: '100%',
+  },
+  mediaEmoji: {
+    fontSize: 50,
+  },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.sm,
-  },
-  titleEmoji: {
-    fontSize: 28,
   },
   title: {
     fontFamily: theme.fontFamily.semibold,
@@ -282,12 +359,6 @@ const styles = createThemedStyles((theme) => ({
     fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.base,
     color: theme.colors.mutedForeground,
-  },
-  heroImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: theme.radii.xl,
-    backgroundColor: theme.colors.card,
   },
   tagsRow: {
     flexDirection: 'row',

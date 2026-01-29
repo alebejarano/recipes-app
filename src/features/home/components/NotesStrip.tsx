@@ -60,6 +60,8 @@ const styles = createThemedStyles((theme) => ({
     paddingVertical: theme.spacing.md,
     borderRadius: theme.radii.xl,
     backgroundColor: theme.colors.muted,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
