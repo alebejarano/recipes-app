@@ -5,6 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router'
 import React, { useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Modal,
   Pressable,
@@ -119,7 +120,13 @@ export default function CollectionsScreen() {
 
     try {
       await createFolderMutation.mutateAsync({ name, emoji })
-    } catch {
+    } catch (error: any) {
+      const code = error?.code ?? error?.cause?.code
+      if (code === '23505') {
+        Alert.alert('Folder already exists', 'Choose a different folder name.')
+      } else {
+        Alert.alert('Unable to create folder', 'Please try again.')
+      }
       return
     }
 

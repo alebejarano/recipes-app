@@ -58,3 +58,49 @@ export async function createFolder(input: { name: string; emoji?: string | null 
 
   return mapFolder(data as FolderRow)
 }
+
+export async function updateFolder(input: {
+  id: string
+  name: string
+  emoji?: string | null
+}): Promise<Folder> {
+  const name = input.name.trim()
+  if (!name) throw new Error('Folder name is required')
+
+  const emoji = input.emoji?.trim() || '📁'
+
+  const { data, error } = await supabase
+    .from('folders')
+    .update({ name, emoji })
+    .eq('id', input.id)
+    .select('id,name,emoji,created_at')
+    .single()
+
+  if (error) throw error
+  if (!data) throw new Error('Update folder failed')
+
+  return mapFolder(data as FolderRow)
+}
+
+export async function deleteFolderWithRecipes(input: { id: string }): Promise<void> {
+  const { data: links, error: linksError } = await supabase
+    .from('recipe_folders')
+    .select('recipe_id')
+    .eq('folder_id', input.id)
+
+  if (linksError) throw linksError
+
+  const recipeIds = (links ?? []).map((row) => row.recipe_id).filter(Boolean)
+
+  if (recipeIds.length > 0) {
+    const { error: deleteRecipesError } = await supabase
+      .from('recipes')
+      .delete()
+      .in('id', recipeIds)
+
+    if (deleteRecipesError) throw deleteRecipesError
+  }
+
+  const { error: deleteFolderError } = await supabase.from('folders').delete().eq('id', input.id)
+  if (deleteFolderError) throw deleteFolderError
+}

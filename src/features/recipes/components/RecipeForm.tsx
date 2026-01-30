@@ -22,6 +22,7 @@ import {
 
 import Button from '@/components/Button'
 import TagChip from '@/components/TagChip'
+import { useCreateFolder } from '@/features/folders/hooks/useCreateFolder'
 import { uploadRecipeImage } from '@/features/recipes/api/recipesRepo'
 import { createThemedStyles } from '@/styles/createStyles'
 
@@ -115,9 +116,11 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     initialValues ?? createEmptyRecipeFormValues()
   )
   const [folderInput, setFolderInput] = useState('')
+  const [folderEmojiInput, setFolderEmojiInput] = useState('')
   const [isEmojiModalOpen, setIsEmojiModalOpen] = useState(false)
   const [emojiDraft, setEmojiDraft] = useState('')
   const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const createFolderMutation = useCreateFolder()
   const normalizedSuggestedFolders = useMemo(() => {
     if (!suggestedFolders.length) return []
     const selected = new Set(values.folders.map((folder) => folder.toLowerCase()))
@@ -197,13 +200,42 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       const nextFolder = normalizeFolder(nextValue ?? folderInput)
       if (!nextFolder) return
       const lower = nextFolder.toLowerCase()
+      const exists = suggestedFolders.some(
+        (folder) => folder.label.trim().toLowerCase() === lower
+      )
       setValues((prev) => {
         if (prev.folders.some((folder) => folder.toLowerCase() === lower)) return prev
         return { ...prev, folders: [...prev.folders, nextFolder] }
       })
+      if (exists) {
+        if (folderEmojiInput.trim()) {
+          Alert.alert(
+            'Folder already exists',
+            'We’ll use the existing folder. Its emoji will not be changed here.'
+          )
+        }
+      } else if (!createFolderMutation.isPending) {
+        void createFolderMutation
+          .mutateAsync({
+            name: nextFolder,
+            emoji: folderEmojiInput.trim() || null,
+          })
+          .catch((error: any) => {
+            const code = error?.code ?? error?.cause?.code
+            if (code === '23505') {
+              Alert.alert(
+                'Folder already exists',
+                'We used the existing folder instead.'
+              )
+            } else {
+              Alert.alert('Unable to create folder', 'Please try again.')
+            }
+          })
+      }
       setFolderInput('')
+      setFolderEmojiInput('')
     },
-    [normalizeFolder, folderInput]
+    [normalizeFolder, folderInput, folderEmojiInput, createFolderMutation, suggestedFolders]
   )
 
   const removeFolder = useCallback((folderToRemove: string) => {
@@ -643,6 +675,17 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
 
           <View style={styles.tagInputRow}>
             <TextInput
+              value={folderEmojiInput}
+              onChangeText={setFolderEmojiInput}
+              placeholder="📁"
+              placeholderTextColor={styles.placeholder.color}
+              style={[styles.input, styles.folderEmojiInput]}
+              editable={!isSubmitting}
+              autoCapitalize="none"
+              returnKeyType="done"
+              onSubmitEditing={() => addFolder()}
+            />
+            <TextInput
               value={folderInput}
               onChangeText={setFolderInput}
               placeholder="e.g. Healthy"
@@ -683,7 +726,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
               {normalizedSuggestedFolders.map((folder) => (
                 <TagChip
                   key={folder.label}
-                  label={folder.label}
+                  label={`${folder.emoji ?? '📁'} ${folder.label}`}
                   onPress={() => addFolder(folder.label)}
                 />
               ))}
@@ -910,6 +953,10 @@ const styles = createThemedStyles((theme) => ({
   addStepButton: { alignSelf: 'flex-start', paddingHorizontal: 0 },
   addStepText: { fontSize: theme.fontSize.sm },
   tagInputRow: { flexDirection: 'row', gap: theme.spacing.sm, alignItems: 'center' },
+  folderEmojiInput: {
+    width: 56,
+    textAlign: 'center',
+  },
   tagInput: { flex: 1 },
   tagAddButton: {
     width: 'auto',
