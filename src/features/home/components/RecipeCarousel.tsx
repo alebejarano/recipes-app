@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { createThemedStyles } from '@/styles/createStyles';
 
@@ -7,6 +7,7 @@ export type RecipePreview = {
   id: string;
   title: string;
   emoji?: string;
+  imageUrl?: string;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -41,8 +42,8 @@ export default function RecipeCarousel({
     >
       <View style={[styles.row, { columnGap: gap }]}>
         {items.map((r) => {
-          const hasEmoji = Boolean(r.emoji);
-          const isMinimal = !hasEmoji;
+          const hasMedia = Boolean(r.emoji || r.imageUrl);
+          const isMinimal = !hasMedia;
 
           const content = (
             <Pressable
@@ -56,9 +57,13 @@ export default function RecipeCarousel({
               accessibilityRole="button"
               accessibilityLabel={`Open ${r.title}`}
             >
-              {hasEmoji ? (
+              {hasMedia ? (
                 <View style={styles.iconWrap}>
-                  <Text style={styles.emoji}>{r.emoji}</Text>
+                  {r.imageUrl ? (
+                    <Image source={{ uri: r.imageUrl }} style={styles.image} />
+                  ) : (
+                    <Text style={styles.emoji}>{r.emoji}</Text>
+                  )}
                 </View>
               ) : null}
 
@@ -115,11 +120,16 @@ const styles = createThemedStyles((theme) => ({
   iconWrap: {
     width: 44,
     height: 44,
-    borderRadius: theme.radii.full,
+    borderRadius: theme.radii.md,
     backgroundColor: theme.colors.muted,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: theme.spacing.md,
+    overflow: 'hidden',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
   },
   emoji: {
     fontSize: 20,

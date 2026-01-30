@@ -7,5 +7,7 @@ import RecipeDetailScreen from '@/features/recipes/screens/RecipeDetailScreen'
 export default function RecipeShowRoute() {
   const { id } = useLocalSearchParams<{ id: string }>()
 
-  return <RecipeDetailScreen recipeId={id ?? ''} />
+  const normalizedId = Array.isArray(id) ? id[0] : id
+
+  return <RecipeDetailScreen recipeId={normalizedId ?? ''} />
 }

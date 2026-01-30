@@ -24,7 +24,7 @@ import RecipeForm, {
 } from '@/features/recipes/components/RecipeForm'
 import type { Recipe } from '@/features/recipes/api/recipesRepo'
 import { useRecipe } from '@/features/recipes/hooks/useRecipe'
-import { useRecipeTags } from '@/features/recipes/hooks/useRecipeTags'
+import { useFoldersList } from '@/features/folders/hooks/useFoldersList'
 import { useUpdateRecipe } from '@/features/recipes/hooks/useUpdateRecipe'
 import { getSafeReturnTo } from '@/lib/navigation'
 
@@ -54,7 +54,7 @@ function buildInitialValues(recipe: Recipe): RecipeFormValues {
         ? recipe.ingredients.map((item) => item.name).filter(Boolean)
         : [''],
     steps: recipe.steps?.length ? recipe.steps : [''],
-    tags: recipe.tags ?? [],
+    folders: recipe.folders?.map((folder) => folder.name) ?? [],
   }
 }
 
@@ -67,7 +67,15 @@ export default function EditRecipeScreen() {
 
   const { data: recipe, isLoading, isError } = useRecipe(recipeId)
   const updateMutation = useUpdateRecipe(recipeId)
-  const tagsQuery = useRecipeTags()
+  const foldersQuery = useFoldersList()
+  const folderSuggestions = useMemo(
+    () =>
+      (foldersQuery.data ?? []).map((folder) => ({
+        label: folder.name,
+        emoji: folder.emoji,
+      })),
+    [foldersQuery.data]
+  )
   const formRef = useRef<RecipeFormHandle>(null)
 
   const handleBack = useCallback(() => {
@@ -172,7 +180,7 @@ export default function EditRecipeScreen() {
               isSubmitting={updateMutation.isPending}
               onSubmit={handleSubmit}
               showActions={false}
-              suggestedTags={tagsQuery.data ?? []}
+              suggestedFolders={folderSuggestions}
             />
 
             {updateMutation.isError ? (

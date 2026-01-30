@@ -9,16 +9,24 @@ type CollectionTileProps = {
   label: string;
   count: number;
   variant: CollectionTileVariant;
+  emoji?: string;
   onPress: () => void;
 };
 
-export default function CollectionTile({ label, count, variant, onPress }: CollectionTileProps) {
+export default function CollectionTile({
+  label,
+  count,
+  variant,
+  emoji,
+  onPress,
+}: CollectionTileProps) {
   const v = useMemo(() => getVariantStyle(variant), [variant]);
+  const icon = emoji ?? pickEmoji(label);
 
   return (
     <Pressable onPress={onPress} style={[styles.tile, { backgroundColor: v.backgroundColor }]}>
       <View style={styles.iconBubble}>
-        <Text style={styles.emoji}>{pickEmoji(label)}</Text>
+        <Text style={styles.emoji}>{icon}</Text>
       </View>
 
       <View style={styles.textArea}>

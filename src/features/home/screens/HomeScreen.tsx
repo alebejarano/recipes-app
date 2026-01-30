@@ -1,13 +1,14 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useSegments } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Text, View, useWindowDimensions } from 'react-native';
 
 import Screen from '@/components/Screen';
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
 import { createThemedStyles } from '@/styles/createStyles';
 import { theme } from '@/styles/theme';
 
+import { buildCollectionsForSegment } from '@/features/collections/utils/collections';
 import ActionCard from '@/features/home/components/ActionCard';
 import CollectionCard from '@/features/home/components/CollectionCard';
 import EmptyHomeCard from '@/features/home/components/EmptyHomeCard';
@@ -37,6 +38,8 @@ type HomeRecipe = {
   title: string;
   subtitle?: string | null;
   emoji?: string | null;
+  imageUrl?: string | null;
+  folders?: { id: string; name: string; emoji: string }[];
   mealTimes?: string[];
   createdAt: string;
   updatedAt?: string;
@@ -69,6 +72,15 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
     return Math.floor(clamped);
   }, [screenWidth, PAGE_PADDING, CARD_GAP]);
 
+  const getWeekKey = (date: Date) => {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+    return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+  };
+
   const recipesQuery = useRecipesList({ limit: 50 });
   const notesQuery = useNotesList({ limit: 50 });
 
@@ -88,11 +100,62 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
         title: recipe.title,
         subtitle: recipe.subtitle ?? null,
         emoji: recipe.emoji ?? null,
+        imageUrl: recipe.imageUrl ?? null,
+        folders: recipe.folders ?? [],
         createdAt: recipe.createdAt,
         updatedAt: recipe.updatedAt ?? recipe.createdAt,
       })),
     [recipesQuery.data]
   );
+
+  const recipeCollections = useMemo(() => {
+    const items = buildCollectionsForSegment('recipes', recipesQuery.data ?? []);
+    return items.filter(
+      (item) => item.kind === 'tag' && item.count > 0 && item.label !== 'Uncategorized'
+    );
+  }, [recipesQuery.data]);
+
+  const recipeCollectionsKey = useMemo(
+    () => recipeCollections.map((item) => item.key).join('|'),
+    [recipeCollections]
+  );
+
+  const featuredCollection = useMemo(() => {
+    if (recipeCollections.length === 0) return null;
+    const weekKey = getWeekKey(new Date());
+    let hash = 0;
+    const seed = `${weekKey}|${recipeCollectionsKey}`;
+    for (let i = 0; i < seed.length; i += 1) {
+      hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+    }
+    const index = hash % recipeCollections.length;
+    return recipeCollections[index] ?? null;
+  }, [recipeCollectionsKey]);
+
+  const featuredCollectionRecipes = useMemo(() => {
+    if (!featuredCollection) return [];
+    const list = recipesQuery.data ?? [];
+
+    if (featuredCollection.label === 'Uncategorized') {
+      return list.filter((recipe) => (recipe.folders?.length ?? 0) === 0);
+    }
+
+    return list.filter((recipe) =>
+      (recipe.folders ?? []).map((folder) => folder.name.trim()).includes(featuredCollection.label)
+    );
+  }, [featuredCollection, recipesQuery.data]);
+
+  const featuredCollectionChips = useMemo(() => {
+    const chips = featuredCollectionRecipes.slice(0, 2).map((recipe) => {
+      if (recipe.emoji) return `${recipe.emoji} ${recipe.title}`;
+      return recipe.title;
+    });
+    const remainingCount = featuredCollectionRecipes.length - chips.length;
+    if (remainingCount > 0) {
+      chips.push(`+${remainingCount} more`);
+    }
+    return chips;
+  }, [featuredCollectionRecipes]);
 
   const notes = useMemo<HomeNote[]>(
     () =>
@@ -113,11 +176,14 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
   }, [isShoppingHydrated, isShoppingHydrating, shoppingItems]);
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const isInitialLoading =
+    (recipesQuery.isLoading || notesQuery.isLoading) &&
+    !recipesQuery.data &&
+    !notesQuery.data;
 
   const totalItems = recipes.length + notes.length;
   const isEmpty = totalItems <= 1;
   const isTransitional = totalItems >= 2 && totalItems <= 4;
-  const isMature = totalItems >= 5;
 
   const shoppingListVisible = (shoppingList?.totalCount ?? 0) > 0;
   const activeShoppingList = shoppingListVisible ? shoppingList : null;
@@ -161,6 +227,7 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
         id: r.id,
         title: r.title,
         emoji: r.emoji ?? undefined,
+        imageUrl: r.imageUrl ?? undefined,
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
       })),
@@ -173,10 +240,23 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
   const recipeDetailPath =
     root === '(dev)' ? '/(dev)/recipes/[id]' : '/(auth)/recipes/[id]';
   const noteDetailPath = root === '(dev)' ? '/(dev)/notes/[id]' : '/(auth)/notes/[id]';
+  const collectionDetailPath =
+    root === '(dev)' ? '/(dev)/collections/[key]' : '/(auth)/collections/[key]';
   const collectionsPath =
     root === '(dev)' ? '/(dev)/(tabs)/collections' : '/(auth)/(tabs)/collections';
   const shoppingListPath =
     root === '(dev)' ? '/(dev)/shopping-list' : '/(auth)/shopping-list';
+
+  if (isInitialLoading) {
+    return (
+      <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
+        <View style={styles.loadingState}>
+          <ActivityIndicator size="small" color={styles.loadingText.color} />
+          <Text style={styles.loadingText}>Loading your recipes…</Text>
+        </View>
+      </Screen>
+    );
+  }
 
   return (
     <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
@@ -214,6 +294,7 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
           title={pick.recipe.title}
           subtitle={pick.recipe.subtitle ?? undefined}
           emoji={pick.recipe.emoji ?? undefined}
+          imageUrl={pick.recipe.imageUrl ?? undefined}
           onPress={() => {
             router.push({ pathname: recipeDetailPath, params: { id: pick.recipe.id } });
           }}
@@ -261,7 +342,7 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
 
       {!isEmpty ? (
         <View style={styles.section}>
-          <Text style={styles.sectionSubtitleLarge}>Continue where you left off</Text>
+          <Text style={styles.sectionSubtitleLarge}>This week</Text>
 
           {activeShoppingList ? (
             <ActionCard
@@ -286,13 +367,22 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
             />
           ) : null}
 
-          {isMature ? (
+          {featuredCollection && featuredCollectionChips.length > 0 ? (
             <CollectionCard
-              title="Anti-inflammatory"
-              meta="6 recipes"
-              chips={['🍲 Turmeric Soup', '🫐 Berry Smoothie']}
+              title={featuredCollection.label}
+              meta={`${featuredCollection.count} recipe${
+                featuredCollection.count === 1 ? '' : 's'
+              }`}
+              chips={featuredCollectionChips}
               onPress={() => {
-                // TODO: open collection
+                const collectionKey =
+                  featuredCollection.label === 'Uncategorized'
+                    ? 'uncategorized'
+                    : encodeURIComponent(featuredCollection.label);
+                router.push({
+                  pathname: collectionDetailPath,
+                  params: { key: collectionKey },
+                });
               }}
             />
           ) : null}
@@ -333,5 +423,17 @@ const styles = createThemedStyles((theme) => ({
   },
   actionEmoji: {
     fontSize: 20,
+  },
+  loadingState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+    paddingVertical: theme.spacing.xl,
+  },
+  loadingText: {
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.medium,
+    color: theme.colors.mutedForeground,
   },
 }));

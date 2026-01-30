@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 
 import { createThemedStyles } from '@/styles/createStyles';
 import { theme } from '@/styles/theme';
@@ -10,10 +10,20 @@ type Props = {
   title: string;
   subtitle?: string;
   emoji?: string;
+  imageUrl?: string;
   onPress?: () => void;
 };
 
-export default function PickCard({ label, title, subtitle, emoji, onPress }: Props) {
+export default function PickCard({
+  label,
+  title,
+  subtitle,
+  emoji,
+  imageUrl,
+  onPress,
+}: Props) {
+  const hasMedia = Boolean(emoji || imageUrl);
+
   return (
     <Pressable
       onPress={onPress}
@@ -22,9 +32,15 @@ export default function PickCard({ label, title, subtitle, emoji, onPress }: Pro
       accessibilityLabel={`Open ${title}`}
     >
       <View style={styles.left}>
-        <View style={styles.iconCircle}>
-          <Text style={styles.emoji}>{emoji ?? '🥗'}</Text>
-        </View>
+        {hasMedia ? (
+          <View style={styles.iconCircle}>
+            {imageUrl ? (
+              <Image source={{ uri: imageUrl }} style={styles.image} />
+            ) : (
+              <Text style={styles.emoji}>{emoji}</Text>
+            )}
+          </View>
+        ) : null}
 
         <View style={styles.textBlock}>
           <Text style={styles.label}>{label}</Text>
@@ -62,14 +78,19 @@ const styles = createThemedStyles((theme) => ({
   iconCircle: {
     width: 56,
     height: 56,
-    borderRadius: theme.radii.full,
+    borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.card,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: theme.colors.border,
+    overflow: 'hidden',
   },
   emoji: { fontSize: 22 },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
   textBlock: { flex: 1 },
   label: {
     fontSize: theme.fontSize.base,

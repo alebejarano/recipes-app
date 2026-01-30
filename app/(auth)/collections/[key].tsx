@@ -38,11 +38,11 @@ export default function CollectionDetailScreen() {
   const recipes = useMemo(() => {
     const list = recipesQuery.data ?? []
     if (isUncategorized) {
-      return list.filter((r) => (r.tags?.length ?? 0) === 0)
+      return list.filter((r) => (r.folders?.length ?? 0) === 0)
     }
 
     return list.filter((r) =>
-      (r.tags ?? []).map((tag) => tag.trim()).includes(title)
+      (r.folders ?? []).map((folder) => folder.name.trim()).includes(title)
     )
   }, [isUncategorized, title, recipesQuery.data])
 
@@ -98,8 +98,8 @@ export default function CollectionDetailScreen() {
           <Text style={styles.emptyTitle}>Nothing here yet</Text>
           <Text style={styles.emptySubtitle}>
             {isUncategorized
-              ? 'Recipes without tags appear here.'
-              : 'Add this tag to a recipe to see it here.'}
+              ? 'Recipes without folders appear here.'
+              : 'Add this folder to a recipe to see it here.'}
           </Text>
 
           <View style={styles.emptyCta}>
@@ -116,7 +116,7 @@ export default function CollectionDetailScreen() {
           renderItem={({ item }) => (
             <RecipeRow
               title={item.title}
-              tags={item.tags}
+              folders={item.folders?.map((folder) => folder.name)}
               emoji={item.emoji}
               imageUrl={item.imageUrl}
               onPress={() => {

@@ -3,7 +3,7 @@ export type SegmentKey = 'recipes' | 'notes' | 'shopping';
 export type Recipe = {
   id: string;
   title: string;
-  tags?: string[];
+  folders?: { id: string; name: string; emoji: string }[];
 };
 
 export type CollectionKind = 'tag' | 'new';
@@ -13,6 +13,7 @@ export type CollectionItem = {
   label: string;
   count: number;
   kind: CollectionKind;
+  emoji?: string;
 };
 
 export type CollectionTileVariant = 'sage' | 'mint' | 'warm' | 'pink' | 'butter';

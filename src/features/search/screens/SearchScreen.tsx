@@ -1,4 +1,6 @@
+import { router, useSegments } from 'expo-router';
 import React, { useMemo, useState } from 'react';
+import { Text } from 'react-native';
 
 import Screen from '@/components/Screen';
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
@@ -6,33 +8,29 @@ import { createThemedStyles } from '@/styles/createStyles';
 import { theme } from '@/styles/theme';
 
 import BrowseCategorySection from '@/features/search/components/BrowseCategorySection';
-import RecentSection from '@/features/search/components/RecentSection';
 import SearchBar from '@/features/search/components/SearchBar';
 import SearchFilterPills from '@/features/search/components/SearchFilterPills';
 import SearchHeader from '@/features/search/components/SearchHeader';
-import TrendingSection from '@/features/search/components/TrendingSection';
 
+import { useFoldersList } from '@/features/folders/hooks/useFoldersList';
 import {
-  BROWSE_CATEGORIES,
-  RECENT_SEARCHES,
   SEARCH_FILTERS,
-  TRENDING_NOW,
+  type BrowseCategory,
   type SearchFilterId,
 } from '@/features/search/data/searchMockData';
 
 export default function SearchScreen() {
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<SearchFilterId>('all');
-
-  // Local state for now (later: persist it)
-  const [recents, setRecents] = useState<string[]>(RECENT_SEARCHES);
+  const segments = useSegments();
+  const foldersQuery = useFoldersList();
 
   const placeholder = useMemo(() => {
     switch (activeFilter) {
       case 'recipes':
         return 'Search recipes...';
       case 'collections':
-        return 'Search collections...';
+        return 'Search folders...';
       case 'notes':
         return 'Search notes...';
       default:
@@ -42,9 +40,18 @@ export default function SearchScreen() {
 
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl);
   const isBrowsing = query.trim().length === 0;
+  const root = segments[0] === '(dev)' ? '(dev)' : '(auth)';
+  const collectionDetailPath =
+    root === '(dev)' ? '/(dev)/collections/[key]' : '/(auth)/collections/[key]';
 
-  const handlePickRecent = (value: string) => setQuery(value);
-  const handleClearRecents = () => setRecents([]);
+  const collectionCards = useMemo<BrowseCategory[]>(() => {
+    return (foldersQuery.data ?? []).map((folder, index) => ({
+      id: folder.name,
+      label: folder.name,
+      icon: 'folder',
+      tone: index % 2 === 0 ? 'sage' : 'neutral',
+    }));
+  }, [foldersQuery.data]);
 
   return (
     <Screen
@@ -54,7 +61,7 @@ export default function SearchScreen() {
     >
       <SearchHeader
         title="Search"
-        subtitle="Find recipes, collections, and notes in one place."
+        subtitle="Find recipes, folders, and notes in one place."
       />
 
       <SearchBar
@@ -71,29 +78,26 @@ export default function SearchScreen() {
 
       {isBrowsing ? (
         <>
-          <BrowseCategorySection
-            title="Browse by category"
-            items={BROWSE_CATEGORIES}
-            onPressItem={(id) => {
-              // later: route/filter by category
-              // optionally: setQuery(id)
-              // setQuery(id);
-            }}
-          />
-
-          <TrendingSection
-            title="Trending now"
-            items={TRENDING_NOW}
-            onPressItem={(id) => {
-              // later: set query or navigate
-            }}
-          />
-
-          <RecentSection
-            items={recents}
-            onPick={handlePickRecent}
-            onClearAll={handleClearRecents}
-          />
+          {activeFilter === 'collections' ? (
+            collectionCards.length > 0 ? (
+              <BrowseCategorySection
+                title="Folders"
+                items={collectionCards}
+                onPressItem={(label) => {
+                  const key =
+                    label === 'Uncategorized'
+                      ? 'uncategorized'
+                      : encodeURIComponent(label);
+                  router.push({
+                    pathname: collectionDetailPath,
+                    params: { key },
+                  });
+                }}
+              />
+            ) : (
+              <Text style={styles.emptyText}>No folders yet.</Text>
+            )
+          ) : null}
         </>
       ) : (
         // Placeholder for results mode (wire later)
@@ -106,5 +110,11 @@ export default function SearchScreen() {
 const styles = createThemedStyles((theme) => ({
   content: {
     gap: theme.spacing.xl,
+  },
+  emptyText: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
   },
 }));

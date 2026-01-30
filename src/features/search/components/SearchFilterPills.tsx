@@ -43,10 +43,13 @@ const styles = createThemedStyles((theme) => ({
   row: {
     marginTop: theme.spacing.lg,
     flexDirection: 'row',
-    gap: theme.spacing.md,
+    flexWrap: 'wrap',
+    rowGap: theme.spacing.md,
+    columnGap: theme.spacing.md,
   },
   pill: {
-    flex: 1,
+    flexBasis: '48%',
+    maxWidth: '48%',
     height: 44,
     borderRadius: theme.radii.full,
     alignItems: 'center',

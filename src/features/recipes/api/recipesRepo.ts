@@ -3,6 +3,17 @@ import { fetch } from 'expo/fetch'
 import { supabase } from '@/lib/supabase'
 import type { RecipeFormSubmitValues } from '../components/RecipeForm'
 
+const REQUEST_TIMEOUT_MS = 10000
+
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error(message)), ms)
+    }),
+  ])
+}
+
 async function requireAuth() {
   const { data, error } = await supabase.auth.getSession()
   if (error) throw error
@@ -22,7 +33,7 @@ export type Recipe = {
 
   ingredients: RecipeIngredient[]
   steps: string[]
-  tags: string[]
+  folders: RecipeFolder[]
 
   prepTimeMinutes: number | null
   cookTimeMinutes: number | null
@@ -41,6 +52,12 @@ export type RecipeIngredient = {
   position: number
 }
 
+export type RecipeFolder = {
+  id: string
+  name: string
+  emoji: string
+}
+
 type RecipeRow = {
   id: string
   user_id: string
@@ -50,13 +67,13 @@ type RecipeRow = {
   emoji: string | null
   image_url: string | null
   steps_text: string | null
-  tags: string[] | null
   prep_time_minutes: number | null
   cook_time_minutes: number | null
   servings: number | null
   created_at: string
   updated_at: string
   recipe_ingredients?: RecipeIngredientRow[] | null
+  recipe_folders?: RecipeFolderJoinRow[] | null
 }
 
 type RecipeIngredientRow = {
@@ -66,6 +83,16 @@ type RecipeIngredientRow = {
   unit: string | null
   notes: string | null
   position: number
+}
+
+type RecipeFolderJoinRow = {
+  folder: RecipeFolderRow | null
+}
+
+type RecipeFolderRow = {
+  id: string
+  name: string
+  emoji: string | null
 }
 
 function mapIngredients(rows: RecipeIngredientRow[] | null | undefined): RecipeIngredient[] {
@@ -80,6 +107,18 @@ function mapIngredients(rows: RecipeIngredientRow[] | null | undefined): RecipeI
       position: row.position ?? 0,
     }))
     .sort((a, b) => a.position - b.position)
+}
+
+function mapFolders(rows: RecipeFolderJoinRow[] | null | undefined): RecipeFolder[] {
+  if (!rows || rows.length === 0) return []
+  return rows
+    .map((row) => row.folder)
+    .filter((folder): folder is RecipeFolderRow => Boolean(folder))
+    .map((folder) => ({
+      id: folder.id,
+      name: folder.name,
+      emoji: folder.emoji ?? '📁',
+    }))
 }
 
 function parseStepsText(value: string | null): string[] {
@@ -110,7 +149,7 @@ function mapRecipe(row: RecipeRow): Recipe {
     imageUrl: row.image_url ?? null,
     ingredients: mapIngredients(row.recipe_ingredients),
     steps: parseStepsText(row.steps_text),
-    tags: row.tags ?? [],
+    folders: mapFolders(row.recipe_folders),
     prepTimeMinutes: row.prep_time_minutes,
     cookTimeMinutes: row.cook_time_minutes,
     servings: row.servings,
@@ -167,7 +206,6 @@ export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
       emoji: input.emoji,
       image_url: input.imageUrl,
       steps_text: serializeSteps(input.steps),
-      tags: input.tags,
       prep_time_minutes: input.prepTimeMinutes,
       cook_time_minutes: input.cookTimeMinutes,
       servings: input.servings,
@@ -182,7 +220,6 @@ export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
       emoji,
       image_url,
       steps_text,
-      tags,
       prep_time_minutes,
       cook_time_minutes,
       servings,
@@ -197,6 +234,19 @@ export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
 
   const recipe = mapRecipe(data as RecipeRow)
 
+  if (input.folders && input.folders.length > 0) {
+    const folderIds = await getOrCreateFolderIds(input.folders, user.id)
+    if (folderIds.length > 0) {
+      const { error: folderError } = await supabase.from('recipe_folders').insert(
+        folderIds.map((folderId) => ({
+          recipe_id: recipe.id,
+          folder_id: folderId,
+        }))
+      )
+      if (folderError) throw folderError
+    }
+  }
+
   if (input.ingredients && input.ingredients.length > 0) {
     const { error: ingredientError } = await supabase.from('recipe_ingredients').insert(
       input.ingredients.map((name, index) => ({
@@ -209,45 +259,58 @@ export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
     if (ingredientError) throw ingredientError
   }
 
-  return mapRecipe(data as RecipeRow)
+  return getRecipeById(recipe.id)
 }
 
 export async function getRecipeById(id: string): Promise<Recipe> {
-  const { data, error } = await supabase
-    .from('recipes')
-    .select(
-      `
-      id,
-      user_id,
-      title,
-      subtitle,
-      description,
-      emoji,
-      image_url,
-      steps_text,
-      tags,
-      prep_time_minutes,
-      cook_time_minutes,
-      servings,
-      created_at,
-      updated_at,
-      recipe_ingredients:recipe_ingredients (
+  const trimmedId = id.trim()
+  if (!trimmedId) throw new Error('Missing recipe id')
+
+  const { data, error } = await withTimeout(
+    supabase
+      .from('recipes')
+      .select(
+        `
         id,
-        name,
-        quantity,
-        unit,
-        notes,
-        position
+        user_id,
+        title,
+        subtitle,
+        description,
+        emoji,
+        image_url,
+        steps_text,
+        prep_time_minutes,
+        cook_time_minutes,
+        servings,
+        created_at,
+        updated_at,
+        recipe_ingredients:recipe_ingredients (
+          id,
+          name,
+          quantity,
+          unit,
+          notes,
+          position
+        ),
+        recipe_folders:recipe_folders (
+          folder:folders (
+            id,
+            name,
+            emoji
+          )
+        )
+      `
       )
-    `
-    )
-    .eq('id', id)
-    .single()
+      .eq('id', trimmedId)
+      .single(),
+    REQUEST_TIMEOUT_MS,
+    'Recipe request timed out'
+  )
 
   if (error) throw error
   if (!data) throw new Error('Recipe not found')
 
-  return mapRecipe(data as RecipeRow)
+  return getRecipeById(id)
 }
 
 /**
@@ -272,12 +335,18 @@ export async function listRecipes(params?: {
       emoji,
       image_url,
       steps_text,
-      tags,
       prep_time_minutes,
       cook_time_minutes,
       servings,
       created_at,
-      updated_at
+      updated_at,
+      recipe_folders:recipe_folders (
+        folder:folders (
+          id,
+          name,
+          emoji
+        )
+      )
     `
     )
     .order('updated_at', { ascending: false })
@@ -297,29 +366,7 @@ export async function listRecipes(params?: {
 export type RecipeTagSuggestion = { label: string; count: number }
 
 export async function listRecipeTags(): Promise<RecipeTagSuggestion[]> {
-  const { data, error } = await supabase.from('recipes').select('tags')
-  if (error) throw error
-
-  const map = new Map<string, { label: string; count: number }>()
-  for (const row of data ?? []) {
-    const tags = (row as { tags: string[] | null }).tags ?? []
-    for (const tag of tags) {
-      const trimmed = tag.trim()
-      if (!trimmed) continue
-      const key = trimmed.toLowerCase()
-      const existing = map.get(key)
-      if (existing) {
-        existing.count += 1
-      } else {
-        map.set(key, { label: trimmed, count: 1 })
-      }
-    }
-  }
-
-  return Array.from(map.values()).sort((a, b) => {
-    if (b.count !== a.count) return b.count - a.count
-    return a.label.localeCompare(b.label)
-  })
+  return []
 }
 
 export async function updateRecipe(id: string, input: UpdateRecipeInput): Promise<Recipe> {
@@ -333,7 +380,6 @@ export async function updateRecipe(id: string, input: UpdateRecipeInput): Promis
       emoji: input.emoji,
       image_url: input.imageUrl,
       steps_text: serializeSteps(input.steps),
-      tags: input.tags,
       prep_time_minutes: input.prepTimeMinutes,
       cook_time_minutes: input.cookTimeMinutes,
       servings: input.servings,
@@ -349,7 +395,6 @@ export async function updateRecipe(id: string, input: UpdateRecipeInput): Promis
       emoji,
       image_url,
       steps_text,
-      tags,
       prep_time_minutes,
       cook_time_minutes,
       servings,
@@ -361,6 +406,31 @@ export async function updateRecipe(id: string, input: UpdateRecipeInput): Promis
 
   if (error) throw error
   if (!data) throw new Error('Update recipe failed')
+
+  if (input.folders) {
+    const { error: deleteError } = await supabase
+      .from('recipe_folders')
+      .delete()
+      .eq('recipe_id', id)
+
+    if (deleteError) throw deleteError
+
+    if (input.folders.length > 0) {
+      const user = await requireAuth()
+      const folderIds = await getOrCreateFolderIds(input.folders, user.id)
+      if (folderIds.length > 0) {
+        const { error: folderError } = await supabase
+          .from('recipe_folders')
+          .insert(
+            folderIds.map((folderId) => ({
+              recipe_id: id,
+              folder_id: folderId,
+            }))
+          )
+        if (folderError) throw folderError
+      }
+    }
+  }
 
   if (input.ingredients) {
     const { error: deleteError } = await supabase
@@ -386,6 +456,40 @@ export async function updateRecipe(id: string, input: UpdateRecipeInput): Promis
   }
 
   return mapRecipe(data as RecipeRow)
+}
+
+async function getOrCreateFolderIds(names: string[], userId: string): Promise<string[]> {
+  const trimmed = Array.from(
+    new Set(names.map((name) => name.trim()).filter(Boolean))
+  )
+  if (trimmed.length === 0) return []
+
+  const { data: existing, error: listError } = await supabase
+    .from('folders')
+    .select('id,name,emoji')
+    .eq('user_id', userId)
+
+  if (listError) throw listError
+
+  const map = new Map<string, string>()
+  for (const folder of (existing ?? []) as RecipeFolderRow[]) {
+    map.set(folder.name.toLowerCase(), folder.id)
+  }
+
+  const missing = trimmed.filter((name) => !map.has(name.toLowerCase()))
+  if (missing.length > 0) {
+    const { data: inserted, error: insertError } = await supabase
+      .from('folders')
+      .insert(missing.map((name) => ({ user_id: userId, name, emoji: '📁' })))
+      .select('id,name,emoji')
+
+    if (insertError) throw insertError
+    for (const folder of (inserted ?? []) as RecipeFolderRow[]) {
+      map.set(folder.name.toLowerCase(), folder.id)
+    }
+  }
+
+  return trimmed.map((name) => map.get(name.toLowerCase())).filter(Boolean) as string[]
 }
 
 export async function deleteRecipeById(id: string): Promise<void> {

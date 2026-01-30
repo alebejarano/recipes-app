@@ -7,41 +7,51 @@ export function buildCollectionsForSegment(
 ): CollectionItem[] {
   // For now, your screenshots correspond to the Recipes segment.
   if (segment !== 'recipes') {
-    return [{ key: 'new', label: 'New Collection', count: 0, kind: 'new' }];
+    return [{ key: 'new', label: 'Create folder', count: 0, kind: 'new' }];
   }
 
-  const map = new Map<string, number>();
+  const map = new Map<string, { count: number; emoji?: string }>();
 
   for (const recipe of recipes) {
-    const tags = recipe.tags?.map((tag) => tag.trim()).filter(Boolean) ?? [];
+    const folders =
+      recipe.folders?.map((folder) => ({
+        name: folder.name.trim(),
+        emoji: folder.emoji,
+      })).filter((folder) => folder.name) ?? [];
 
-    if (tags.length === 0) {
-      map.set('Uncategorized', (map.get('Uncategorized') ?? 0) + 1);
+    if (folders.length === 0) {
+      const current = map.get('Uncategorized');
+      map.set('Uncategorized', { count: (current?.count ?? 0) + 1 });
       continue;
     }
 
-    for (const tag of tags) {
-      map.set(tag, (map.get(tag) ?? 0) + 1);
+    for (const folder of folders) {
+      const current = map.get(folder.name);
+      map.set(folder.name, {
+        count: (current?.count ?? 0) + 1,
+        emoji: current?.emoji ?? folder.emoji,
+      });
     }
   }
 
   const items: CollectionItem[] = Array.from(map.entries())
     .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([label, count]) => ({
+    .map(([label, data]) => ({
       key: label,
       label,
-      count,
+      count: data.count,
       kind: 'tag',
+      emoji: data.emoji,
     }));
 
-  // Always add “New Collection” tile at the end
-  items.push({ key: 'new', label: 'New Collection', count: 0, kind: 'new' });
+  // Always add “Create folder” tile at the end
+  items.push({ key: 'new', label: 'Create folder', count: 0, kind: 'new' });
 
   return items;
 }
 
 export function getCollectionsHelperText(segment: SegmentKey): string {
-  if (segment === 'recipes') return 'Recipes are grouped automatically based on tags';
+  if (segment === 'recipes') return 'Your recipes organized by folders';
   if (segment === 'notes') return 'Keep notes by topic, ingredients, or ideas';
   return 'Your current shopping list in one place';
 }

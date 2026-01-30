@@ -58,7 +58,7 @@ const styles = createThemedStyles((theme) => ({
   pill: {
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.muted,
     borderWidth: 1,
     borderColor: theme.colors.border,

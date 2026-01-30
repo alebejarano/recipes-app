@@ -20,7 +20,7 @@ import { useDeleteRecipe } from '@/features/recipes/hooks/useDeleteRecipe'
 import { useRecipe } from '@/features/recipes/hooks/useRecipe'
 import { getSafeReturnTo } from '@/lib/navigation'
 
-const FALLBACK_TAGS: string[] = []
+const FALLBACK_FOLDERS: string[] = []
 
 type RecipeDetailScreenProps = {
   recipeId: string
@@ -38,14 +38,17 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
   const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
   const segments = useSegments()
   const deleteMutation = useDeleteRecipe()
-  const { data: recipe, isLoading, isError } = useRecipe(recipeId)
+  const { data: recipe, isLoading, isError, error } = useRecipe(recipeId)
 
   const ingredientLines = useMemo(
     () => buildIngredientLines(recipe?.ingredients),
     [recipe?.ingredients]
   )
 
-  const tags = useMemo(() => recipe?.tags ?? FALLBACK_TAGS, [recipe?.tags])
+  const folders = useMemo(
+    () => recipe?.folders?.map((folder) => folder.name) ?? FALLBACK_FOLDERS,
+    [recipe?.folders]
+  )
 
   const { editPath, detailPath } = useMemo(() => {
     const root = segments[0]
@@ -116,6 +119,24 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.loadingState}>
           <Text style={styles.loadingText}>Unable to load this recipe.</Text>
+          {error ? (
+            <Text style={styles.errorText}>
+              {error instanceof Error ? error.message : String(error)}
+            </Text>
+          ) : null}
+          <TouchableOpacity
+            onPress={() => {
+              if (safeReturnTo) {
+                router.replace(safeReturnTo)
+              } else {
+                router.back()
+              }
+            }}
+            accessibilityRole="button"
+            style={styles.retryButton}
+          >
+            <Text style={styles.retryText}>Go back</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     )
@@ -195,11 +216,11 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
 
           {recipe.subtitle ? <Text style={styles.subtitle}>{recipe.subtitle}</Text> : null}
 
-          {tags.length > 0 ? (
+          {folders.length > 0 ? (
             <View style={styles.tagsRow}>
-              {tags.map((tag) => (
-                <View key={tag} style={styles.tagPill}>
-                  <Text style={styles.tagText}>{tag}</Text>
+              {folders.map((folder) => (
+                <View key={folder} style={styles.tagPill}>
+                  <Text style={styles.tagText}>{folder}</Text>
                 </View>
               ))}
             </View>
@@ -296,6 +317,26 @@ const styles = createThemedStyles((theme) => ({
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.base,
     color: theme.colors.mutedForeground,
+  },
+  errorText: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.mutedForeground,
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.radii.full,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  retryText: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.foreground,
   },
   topBar: {
     flexDirection: 'row',

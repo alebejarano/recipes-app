@@ -22,7 +22,7 @@ import RecipeForm, {
   type RecipeFormSubmitValues,
 } from '@/features/recipes/components/RecipeForm'
 import { useCreateRecipe } from '@/features/recipes/hooks/useCreateRecipe'
-import { useRecipeTags } from '@/features/recipes/hooks/useRecipeTags'
+import { useFoldersList } from '@/features/folders/hooks/useFoldersList'
 
 export type CreateRecipeVariant = 'onboarding' | 'app'
 
@@ -43,7 +43,15 @@ export default function CreateRecipeScreen({
 
   const isOnboarding = variant === 'onboarding'
   const createMutation = useCreateRecipe()
-  const tagsQuery = useRecipeTags()
+  const foldersQuery = useFoldersList()
+  const folderSuggestions = useMemo(
+    () =>
+      (foldersQuery.data ?? []).map((folder) => ({
+        label: folder.name,
+        emoji: folder.emoji,
+      })),
+    [foldersQuery.data]
+  )
   const formRef = useRef<RecipeFormHandle>(null)
 
   const screenTitle = useMemo(
@@ -140,7 +148,7 @@ export default function CreateRecipeScreen({
               isSubmitting={createMutation.isPending}
               onSubmit={handleSubmit}
               showActions={false}
-              suggestedTags={tagsQuery.data ?? []}
+              suggestedFolders={folderSuggestions}
             />
 
             {createMutation.isError ? (

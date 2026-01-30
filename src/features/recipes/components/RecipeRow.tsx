@@ -7,7 +7,7 @@ import { theme } from '@/styles/theme'
 
 interface RecipeRowProps {
   title: string
-  tags?: string[]
+  folders?: string[]
   emoji?: string | null
   imageUrl?: string | null
   onPress?: () => void
@@ -15,13 +15,13 @@ interface RecipeRowProps {
 
 export default function RecipeRow({
   title,
-  tags = [],
+  folders = [],
   emoji,
   imageUrl,
   onPress,
 }: RecipeRowProps) {
   const meta =
-    tags.length === 0 ? 'No tags' : tags.join(' • ')
+    folders.length === 0 ? 'No folders' : folders.join(' • ')
 
   return (
     <Pressable

@@ -6,7 +6,7 @@ export type FeatherIconName = keyof typeof Feather.glyphMap;
 export const SEARCH_FILTERS: Array<{ id: SearchFilterId; label: string }> = [
   { id: 'all', label: 'All' },
   { id: 'recipes', label: 'Recipes' },
-  { id: 'collections', label: 'Collections' },
+  { id: 'collections', label: 'Folders' },
   { id: 'notes', label: 'Notes' },
 ];
 
@@ -23,17 +23,3 @@ export const BROWSE_CATEGORIES: BrowseCategory[] = [
   { id: 'comfort', label: 'Comfort\nFood', icon: 'coffee', tone: 'neutral' },
   { id: 'new-ideas', label: 'New\nIdeas', icon: 'star', tone: 'sage' },
 ];
-
-export type TrendingChip = {
-  id: string;
-  label: string;
-  icon: FeatherIconName;
-};
-
-export const TRENDING_NOW: TrendingChip[] = [
-  { id: 'one-pot', label: 'One-pot meals', icon: 'pie-chart' },
-  { id: 'quick-breakfast', label: 'Quick breakfast', icon: 'search' },
-  { id: 'meal-prep', label: 'Meal prep', icon: 'box' },
-];
-
-export const RECENT_SEARCHES: string[] = ['Quinoa', 'Chicken', 'Pasta', 'Salad'];

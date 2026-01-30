@@ -15,7 +15,7 @@ export default function NewCollectionTile({ onPress }: NewCollectionTileProps) {
       <View style={styles.plus}>
         <Feather name="plus" size={22} color={theme.colors.mutedForeground} />
       </View>
-      <Text style={styles.label}>New Collection</Text>
+      <Text style={styles.label}>Create folder</Text>
     </Pressable>
   );
 }

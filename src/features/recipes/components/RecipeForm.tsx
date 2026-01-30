@@ -22,8 +22,8 @@ import {
 
 import Button from '@/components/Button'
 import TagChip from '@/components/TagChip'
-import { createThemedStyles } from '@/styles/createStyles'
 import { uploadRecipeImage } from '@/features/recipes/api/recipesRepo'
+import { createThemedStyles } from '@/styles/createStyles'
 
 export type RecipeFormValues = {
   title: string
@@ -36,7 +36,7 @@ export type RecipeFormValues = {
   servings: string
   ingredients: string[]
   steps: string[]
-  tags: string[]
+  folders: string[]
 }
 
 export type RecipeFormSubmitValues = {
@@ -50,7 +50,7 @@ export type RecipeFormSubmitValues = {
   servings: number | null
   ingredients: string[] | null
   steps: string[] | null
-  tags: string[] | null
+  folders: string[] | null
 }
 
 export type RecipeFormHandle = {
@@ -83,11 +83,11 @@ export function createEmptyRecipeFormValues(): RecipeFormValues {
     servings: '',
     ingredients: [''],
     steps: [''],
-    tags: [],
+    folders: [],
   }
 }
 
-type TagSuggestion = { label: string; count: number }
+type FolderSuggestion = { label: string; emoji?: string | null }
 
 type Props = {
   initialValues?: RecipeFormValues
@@ -96,7 +96,7 @@ type Props = {
   onSubmit: (values: RecipeFormSubmitValues) => Promise<void> | void
   onCancel?: () => void
   showActions?: boolean
-  suggestedTags?: TagSuggestion[]
+  suggestedFolders?: FolderSuggestion[]
 }
 
 const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
@@ -107,28 +107,28 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     onSubmit,
     onCancel,
     showActions = true,
-    suggestedTags = [],
+    suggestedFolders = [],
   },
   ref
 ) {
   const [values, setValues] = useState<RecipeFormValues>(
     initialValues ?? createEmptyRecipeFormValues()
   )
-  const [tagInput, setTagInput] = useState('')
+  const [folderInput, setFolderInput] = useState('')
   const [isEmojiModalOpen, setIsEmojiModalOpen] = useState(false)
   const [emojiDraft, setEmojiDraft] = useState('')
   const [isUploadingImage, setIsUploadingImage] = useState(false)
-  const normalizedSuggestedTags = useMemo(() => {
-    if (!suggestedTags.length) return []
-    const selected = new Set(values.tags.map((tag) => tag.toLowerCase()))
-    const query = tagInput.trim().toLowerCase()
-    const filtered = suggestedTags
-      .map((tag) => ({ label: tag.label.trim(), count: tag.count }))
-      .filter((tag) => tag.label)
-      .filter((tag) => !selected.has(tag.label.toLowerCase()))
-      .filter((tag) => (query ? tag.label.toLowerCase().includes(query) : true))
+  const normalizedSuggestedFolders = useMemo(() => {
+    if (!suggestedFolders.length) return []
+    const selected = new Set(values.folders.map((folder) => folder.toLowerCase()))
+    const query = folderInput.trim().toLowerCase()
+    const filtered = suggestedFolders
+      .map((folder) => ({ label: folder.label.trim(), emoji: folder.emoji }))
+      .filter((folder) => folder.label)
+      .filter((folder) => !selected.has(folder.label.toLowerCase()))
+      .filter((folder) => (query ? folder.label.toLowerCase().includes(query) : true))
     return filtered.slice(0, 8)
-  }, [suggestedTags, tagInput, values.tags])
+  }, [suggestedFolders, folderInput, values.folders])
 
   const ingredientInputRefs = useRef<Array<TextInput | null>>([])
   const stepInputRefs = useRef<Array<TextInput | null>>([])
@@ -188,28 +188,28 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     })
   }, [])
 
-  const normalizeTag = useCallback((value: string) => {
+  const normalizeFolder = useCallback((value: string) => {
     return value.trim().replace(/\s+/g, ' ')
   }, [])
 
-  const addTag = useCallback(
+  const addFolder = useCallback(
     (nextValue?: string) => {
-      const nextTag = normalizeTag(nextValue ?? tagInput)
-    if (!nextTag) return
-    const lower = nextTag.toLowerCase()
-    setValues((prev) => {
-      if (prev.tags.some((tag) => tag.toLowerCase() === lower)) return prev
-      return { ...prev, tags: [...prev.tags, nextTag] }
-    })
-    setTagInput('')
+      const nextFolder = normalizeFolder(nextValue ?? folderInput)
+      if (!nextFolder) return
+      const lower = nextFolder.toLowerCase()
+      setValues((prev) => {
+        if (prev.folders.some((folder) => folder.toLowerCase() === lower)) return prev
+        return { ...prev, folders: [...prev.folders, nextFolder] }
+      })
+      setFolderInput('')
     },
-    [normalizeTag, tagInput]
+    [normalizeFolder, folderInput]
   )
 
-  const removeTag = useCallback((tagToRemove: string) => {
+  const removeFolder = useCallback((folderToRemove: string) => {
     setValues((prev) => ({
       ...prev,
-      tags: prev.tags.filter((tag) => tag !== tagToRemove),
+      folders: prev.folders.filter((folder) => folder !== folderToRemove),
     }))
   }, [])
 
@@ -225,7 +225,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       .filter(Boolean)
 
     const normalizedSteps = values.steps.map((step) => step.trim()).filter(Boolean)
-    const normalizedTags = values.tags.map((tag) => tag.trim()).filter(Boolean)
+    const normalizedFolders = values.folders.map((folder) => folder.trim()).filter(Boolean)
 
     const emoji = normalizeOptionalText(values.emoji)
     const imageUrl = normalizeOptionalText(values.imageUrl)
@@ -241,7 +241,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       servings: parseOptionalInt(values.servings),
       ingredients: normalizedIngredients.length ? normalizedIngredients : null,
       steps: normalizedSteps.length ? normalizedSteps : null,
-      tags: normalizedTags.length ? normalizedTags : null,
+      folders: normalizedFolders.length ? normalizedFolders : null,
     }
   }, [values])
 
@@ -636,28 +636,27 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
 
       {/* Tags */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Add to a collection (optional)</Text>
-        <Text style={styles.helperText}>Tags act as collections—each tag you add creates a folder.</Text>
+        <Text style={styles.sectionTitle}>Add to a folder (optional)</Text>
 
         <View style={styles.field}>
-          <Text style={styles.label}>Collections</Text>
+          <Text style={styles.label}>Folders</Text>
 
           <View style={styles.tagInputRow}>
             <TextInput
-              value={tagInput}
-              onChangeText={setTagInput}
+              value={folderInput}
+              onChangeText={setFolderInput}
               placeholder="e.g. Healthy"
               placeholderTextColor={styles.placeholder.color}
               style={[styles.input, styles.tagInput]}
               editable={!isSubmitting}
               autoCapitalize="words"
               returnKeyType="done"
-              onSubmitEditing={() => addTag()}
+              onSubmitEditing={() => addFolder()}
             />
             <Button
               variant="soft"
               size="md"
-              onPress={addTag}
+              onPress={addFolder}
               disabled={isSubmitting}
               style={styles.tagAddButton}
               textStyle={styles.tagAddText}
@@ -666,18 +665,27 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
             </Button>
           </View>
 
-          {values.tags.length > 0 ? (
+          {values.folders.length > 0 ? (
             <View style={styles.tagsRow}>
-              {values.tags.map((tag) => (
-                <TagChip key={tag} label={tag} selected onPress={() => removeTag(tag)} />
+              {values.folders.map((folder) => (
+                <TagChip
+                  key={folder}
+                  label={folder}
+                  selected
+                  onPress={() => removeFolder(folder)}
+                />
               ))}
             </View>
           ) : null}
 
-          {normalizedSuggestedTags.length > 0 ? (
+          {normalizedSuggestedFolders.length > 0 ? (
             <View style={styles.suggestedTags}>
-              {normalizedSuggestedTags.map((tag) => (
-                <TagChip key={tag.label} label={tag.label} onPress={() => addTag(tag.label)} />
+              {normalizedSuggestedFolders.map((folder) => (
+                <TagChip
+                  key={folder.label}
+                  label={folder.label}
+                  onPress={() => addFolder(folder.label)}
+                />
               ))}
             </View>
           ) : null}
@@ -766,12 +774,6 @@ const styles = createThemedStyles((theme) => ({
     fontSize: theme.fontSize.sm,
     lineHeight: theme.lineHeight.sm,
     color: theme.colors.mutedForeground,
-  },
-  helperText: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.sm,
-    color: theme.colors.foreground,
   },
   input: {
     borderWidth: 1,
