@@ -19,7 +19,7 @@ import {
 
 export default function OnboardingFlowScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ reset?: string }>();
+  const params = useLocalSearchParams<{ reset?: string; dev?: string }>();
   const didResetRef = useRef(false);
   const didHydrateRef = useRef(false);
 
@@ -42,6 +42,8 @@ export default function OnboardingFlowScreen() {
   didHydrateRef.current = true;
 
     // Dev helper: run reset only once, even if state changes
+    const allowDevPreview = __DEV__ && params.dev === '1';
+
     if (__DEV__ && params.reset === '1' && !didResetRef.current) {
       didResetRef.current = true;
 
@@ -53,7 +55,9 @@ export default function OnboardingFlowScreen() {
         setPathLocal(null);
 
         // Optional but recommended: remove the query param to prevent accidental re-reset
-        router.replace('/onboarding');
+        router.replace(
+          allowDevPreview ? '/(public)/onboarding?dev=1' : '/onboarding'
+        );
       })();
 
       return;

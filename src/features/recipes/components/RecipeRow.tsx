@@ -65,7 +65,7 @@ const styles = createThemedStyles(theme => ({
     flexDirection: 'row',
     alignItems: 'center',
     padding: theme.spacing.md,
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,

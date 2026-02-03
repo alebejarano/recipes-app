@@ -24,7 +24,7 @@ const styles = createThemedStyles((theme) => ({
   tile: {
     flex: 1,
     minHeight: 160,
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     borderWidth: 2,
     borderStyle: 'dashed',
     borderColor: theme.colors.border,

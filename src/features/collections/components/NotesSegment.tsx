@@ -3,11 +3,11 @@ import { router } from 'expo-router'
 import React, { useMemo } from 'react'
 import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native'
 
-import { createThemedStyles } from '@/styles/createStyles'
-import { theme } from '@/styles/theme'
 import { formatRelativeDay } from '@/features/home/utils/homeFormatters'
 import { useNotesList } from '@/features/notes/hooks/useNotesList'
 import { getSafeReturnTo } from '@/lib/navigation'
+import { createThemedStyles } from '@/styles/createStyles'
+import { theme } from '@/styles/theme'
 
 type NoteItem = {
   id: string
@@ -196,7 +196,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
     paddingVertical: theme.spacing.sm,
     paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.sage,
   },
   emptyCtaText: {
@@ -212,7 +212,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     padding: theme.spacing.lg,
     ...theme.shadows.soft,
   },
@@ -262,7 +262,7 @@ const styles = createThemedStyles((theme) => ({
   newNote: {
     marginTop: theme.spacing.lg,
     height: 64,
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     borderWidth: 2,
     borderStyle: 'dashed',
     borderColor: theme.colors.border,

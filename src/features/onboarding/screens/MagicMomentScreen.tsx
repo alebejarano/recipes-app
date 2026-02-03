@@ -188,7 +188,7 @@ const styles = createThemedStyles(theme => ({
     /* Card */
     card: {
         backgroundColor: theme.colors.card,
-        borderRadius: theme.radii.md,
+        borderRadius: theme.radii.lg,
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: theme.colors.border,
@@ -286,7 +286,7 @@ const styles = createThemedStyles(theme => ({
     /* Ingredients */
     ingredientsCard: {
         backgroundColor: theme.colors.secondary,
-        borderRadius: theme.radii.xl,
+        borderRadius: theme.radii.lg,
         paddingHorizontal: theme.spacing.md,
         paddingVertical: theme.spacing.md,
         marginBottom: theme.spacing.md,

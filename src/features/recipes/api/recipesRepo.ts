@@ -310,7 +310,7 @@ export async function getRecipeById(id: string): Promise<Recipe> {
   if (error) throw error
   if (!data) throw new Error('Recipe not found')
 
-  return getRecipeById(id)
+  return mapRecipe(data as RecipeRow)
 }
 
 /**

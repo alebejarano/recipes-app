@@ -32,7 +32,7 @@ const styles = createThemedStyles((theme) => ({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,

@@ -27,7 +27,7 @@ const styles = createThemedStyles(theme => ({
     alignItems: 'center',
     gap: theme.spacing.md,
     backgroundColor: theme.colors.card,
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.lg,
     borderWidth: 1,

@@ -35,7 +35,7 @@ const styles = createThemedStyles((theme) => ({
   card: {
     flex: 1,
     minHeight: 92,
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: theme.spacing.lg,

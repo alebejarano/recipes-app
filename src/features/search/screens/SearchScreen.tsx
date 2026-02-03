@@ -43,6 +43,8 @@ export default function SearchScreen() {
   const root = segments[0] === '(dev)' ? '(dev)' : '(auth)';
   const collectionDetailPath =
     root === '(dev)' ? '/(dev)/collections/[key]' : '/(auth)/collections/[key]';
+  const searchReturnTo =
+    root === '(dev)' ? '/(dev)/(tabs)/search' : '/(auth)/(tabs)/search';
 
   const collectionCards = useMemo<BrowseCategory[]>(() => {
     return (foldersQuery.data ?? []).map((folder, index) => ({
@@ -90,7 +92,7 @@ export default function SearchScreen() {
                       : encodeURIComponent(label);
                   router.push({
                     pathname: collectionDetailPath,
-                    params: { key },
+                    params: { key, returnTo: searchReturnTo },
                   });
                 }}
               />

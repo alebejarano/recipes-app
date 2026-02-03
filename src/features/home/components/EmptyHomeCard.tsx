@@ -41,7 +41,7 @@ export default function EmptyHomeCard({
 const styles = createThemedStyles((theme) => ({
   card: {
     padding: theme.spacing.xl,
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,

@@ -75,7 +75,7 @@ const styles = createThemedStyles((theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     padding: theme.spacing.lg,
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.card,

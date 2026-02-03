@@ -424,7 +424,7 @@ const styles = createThemedStyles(theme => ({
   },
   modalCard: {
     width: '100%',
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.background,
     padding: theme.spacing.lg,
     gap: theme.spacing.md,

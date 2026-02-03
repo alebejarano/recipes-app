@@ -30,8 +30,12 @@ export default function DevLandingScreen() {
       </Text>
 
       <View style={styles.buttons}>
-        <Link href="/onboarding">
+        <Link href="/(public)/onboarding?dev=1">
           Onboarding
+        </Link>
+
+        <Link href="/(public)/onboarding?dev=1&reset=1">
+          Onboarding (reset)
         </Link>
 
         <Link href="/(dev)/(tabs)">

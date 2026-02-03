@@ -157,7 +157,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   currentCard: {
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.sageLight,
@@ -266,7 +266,7 @@ const styles = createThemedStyles((theme) => ({
 
   fromRecipeCard: {
     marginTop: theme.spacing.xl,
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.card,
@@ -304,7 +304,7 @@ const styles = createThemedStyles((theme) => ({
 
   tip: {
     marginTop: theme.spacing['2xl'],
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.secondary,
     paddingVertical: theme.spacing.lg,
     paddingHorizontal: theme.spacing.lg,

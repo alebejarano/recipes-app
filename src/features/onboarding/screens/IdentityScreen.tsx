@@ -209,7 +209,7 @@ const styles = createThemedStyles(theme => ({
         alignItems: 'center',
         paddingVertical: theme.spacing.md,
         paddingHorizontal: theme.spacing.md,
-        borderRadius: theme.radii.xl,
+        borderRadius: theme.radii.lg,
         borderWidth: 2,
         marginBottom: theme.spacing.sm,
     },

@@ -43,7 +43,7 @@ const styles = createThemedStyles((theme) => ({
   tile: {
     flex: 1,
     minHeight: 160,
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
     overflow: 'hidden',

@@ -211,7 +211,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         if (folderEmojiInput.trim()) {
           Alert.alert(
             'Folder already exists',
-            'We’ll use the existing folder. Its emoji will not be changed here.'
+            "We’ll use the existing folder. Its emoji will not be changed here."
           )
         }
       } else if (!createFolderMutation.isPending) {
@@ -837,7 +837,7 @@ const styles = createThemedStyles((theme) => ({
   flex2: { flex: 2 },
   coverCard: {
     height: 160,
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     borderWidth: 2,
     borderStyle: 'dashed',
     borderColor: theme.colors.border,
@@ -892,8 +892,8 @@ const styles = createThemedStyles((theme) => ({
   },
   modalCard: {
     backgroundColor: theme.colors.card,
-    borderTopLeftRadius: theme.radii.xl,
-    borderTopRightRadius: theme.radii.xl,
+    borderTopLeftRadius: theme.radii.lg,
+    borderTopRightRadius: theme.radii.lg,
     padding: theme.spacing.lg,
     gap: theme.spacing.sm,
   },

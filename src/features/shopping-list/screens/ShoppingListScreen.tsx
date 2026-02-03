@@ -419,7 +419,7 @@ const styles = createThemedStyles((theme) => ({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: theme.colors.secondary,
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
     borderWidth: 1,

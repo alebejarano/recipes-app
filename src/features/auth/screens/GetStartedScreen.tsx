@@ -197,7 +197,7 @@ const styles = createThemedStyles((theme) => ({
     maxWidth: 420,
     alignSelf: 'center',
     padding: theme.spacing.xl,
-    borderRadius: theme.radii.xl, // per your design system memory
+    borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,

@@ -190,7 +190,7 @@ const styles = createThemedStyles((theme) => ({
   card: {
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.card,
     padding: theme.spacing.lg,
   },

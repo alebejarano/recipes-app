@@ -33,7 +33,7 @@ const styles = createThemedStyles((theme) => ({
     marginBottom: theme.spacing.xl,
   },
   card: {
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
