@@ -4,9 +4,16 @@ import { useQuery } from '@tanstack/react-query'
 import type { Note } from '../api/notesRepo'
 import { listNotes } from '../api/notesRepo'
 
-export function useNotesList(params?: { limit?: number; search?: string }) {
+type NotesListParams = {
+  limit?: number
+  search?: string
+  enabled?: boolean
+}
+
+export function useNotesList(params?: NotesListParams) {
   return useQuery<Note[]>({
     queryKey: ['notes', 'list', params?.limit ?? 50, params?.search ?? ''],
     queryFn: () => listNotes(params),
+    enabled: params?.enabled ?? true,
   })
 }

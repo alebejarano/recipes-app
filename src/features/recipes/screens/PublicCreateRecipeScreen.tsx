@@ -1,5 +1,3 @@
-// src/features/recipes/screens/CreateRecipeScreen.tsx
-
 import { Feather } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import React, { useCallback, useMemo, useRef } from 'react'
@@ -16,57 +14,40 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import Button from '@/components/Button'
 import { createThemedStyles } from '@/styles/createStyles'
 
+import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
 import RecipeForm, {
   createEmptyRecipeFormValues,
   type RecipeFormHandle,
   type RecipeFormSubmitValues,
 } from '@/features/recipes/components/RecipeForm'
-import { useCreateRecipe } from '@/features/recipes/hooks/useCreateRecipe'
-import { useFoldersList } from '@/features/folders/hooks/useFoldersList'
+import { useCreateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
 
-export type CreateRecipeVariant = 'onboarding' | 'app'
 
-interface CreateRecipeScreenProps {
-  variant?: CreateRecipeVariant
+
+type PublicCreateRecipeScreenProps = {
   onSaved?: (recipeId: string) => void
   onBack?: () => void
 }
 
-const FOOTER_HEIGHT = 72
-
-export default function CreateRecipeScreen({
-  variant = 'app',
+export default function PublicCreateRecipeScreen({
   onSaved,
   onBack,
-}: CreateRecipeScreenProps) {
+}: PublicCreateRecipeScreenProps) {
   const insets = useSafeAreaInsets()
-
-  const isOnboarding = variant === 'onboarding'
-  const createMutation = useCreateRecipe()
-  const foldersQuery = useFoldersList()
-  const folderSuggestions = useMemo(
-    () =>
-      (foldersQuery.data ?? []).map((folder) => ({
-        label: folder.name,
-        emoji: folder.emoji,
-      })),
-    [foldersQuery.data]
-  )
+  const createMutation = useCreateLocalRecipe()
+  const foldersQuery = useLocalFoldersList()
+  const createFolderMutation = useCreateLocalFolder()
   const formRef = useRef<RecipeFormHandle>(null)
 
-  const screenTitle = useMemo(
-    () => (isOnboarding ? 'Create your first recipe' : 'Create your recipe'),
-    [isOnboarding]
-  )
-
-  const submitLabel = useMemo(
-    () => (isOnboarding ? 'Save and continue' : 'Add Recipe'),
-    [isOnboarding]
-  )
+  const screenTitle = 'Create your recipe'
+  const submitLabel = 'Add Recipe'
 
   const handleBack = useCallback(() => {
     if (createMutation.isPending) return
-    if (onBack) return onBack()
+    if (onBack) {
+      onBack()
+      return
+    }
     router.back()
   }, [createMutation.isPending, onBack])
 
@@ -74,14 +55,13 @@ export default function CreateRecipeScreen({
     async (values: RecipeFormSubmitValues) => {
       try {
         const recipe = await createMutation.mutateAsync(values)
-
         if (onSaved) {
           onSaved(recipe.id)
           return
         }
 
         router.replace({
-          pathname: '/(auth)/recipes/[id]',
+          pathname: '/(public)/recipes/[id]',
           params: { id: recipe.id },
         })
       } catch (e: any) {
@@ -96,16 +76,41 @@ export default function CreateRecipeScreen({
     formRef.current?.submit()
   }, [createMutation.isPending])
 
-  const keyboardVerticalOffset = Platform.select({
-    ios: insets.top + 44,
-    android: 0,
-  })
+   const keyboardVerticalOffset = Platform.select({
+      ios: insets.top + 44,
+      android: 0,
+    })
 
+  const initialValues = useMemo(() => createEmptyRecipeFormValues(), [])
+  const folderSuggestions = useMemo(
+    () =>
+      (foldersQuery.data ?? []).map((folder) => ({
+        label: folder.name,
+        emoji: folder.emoji,
+      })),
+    [foldersQuery.data]
+  )
+  const handleCreateFolder = useCallback(
+    async (input: { name: string; emoji?: string | null }) => {
+      const folderCount = foldersQuery.data?.length ?? 0
+      await createFolderMutation.mutateAsync(input)
+      if (folderCount >= 2) {
+        Alert.alert(
+          'Keep your folders safe',
+          'Create an account to sync and back up your folders.',
+          [
+            { text: 'Not now', style: 'cancel' },
+            { text: 'Create account', onPress: () => router.push('/(public)/get-started') },
+          ]
+        )
+      }
+    },
+    [createFolderMutation, foldersQuery.data]
+  )
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <View style={styles.container}>
-        {/* Header / Back */}
         <View style={styles.topBar}>
           <Button
             variant="ghost"
@@ -129,7 +134,7 @@ export default function CreateRecipeScreen({
             style={styles.flex1}
             contentContainerStyle={[
               styles.scrollContent,
-              { paddingBottom: insets.bottom + FOOTER_HEIGHT + 24 },
+              { paddingBottom: insets.bottom },
             ]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
@@ -143,12 +148,15 @@ export default function CreateRecipeScreen({
 
             <RecipeForm
               ref={formRef}
-              initialValues={createEmptyRecipeFormValues()}
+              initialValues={initialValues}
               submitLabel={submitLabel}
               isSubmitting={createMutation.isPending}
               onSubmit={handleSubmit}
               showActions={false}
               suggestedFolders={folderSuggestions}
+              allowFolderCreation
+              onCreateFolder={handleCreateFolder}
+              imageUploadMode="local"
             />
 
             {createMutation.isError ? (
@@ -160,8 +168,7 @@ export default function CreateRecipeScreen({
             ) : null}
           </ScrollView>
 
-          {/* Sticky footer */}
-          <View style={[styles.footer, { paddingBottom: insets.bottom + 8 }]}>
+          <View style={styles.footer}>
             <Button
               variant="secondary"
               size="md"
@@ -230,10 +237,12 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.lg,
-    paddingBottom: theme.spacing.sm,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
     backgroundColor: theme.colors.background,
+  },
+  footerCompact: {
+    paddingTop: theme.spacing.md,
   },
   footerButton: { flex: 1 },
 

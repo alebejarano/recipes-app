@@ -10,10 +10,13 @@ import { useShoppingListStore } from '@/features/shopping-list/store/useShopping
 
 const HIGHLIGHTS_COUNT = 3
 
-// Update this if your route differs in Expo Router filesystem:
-const SHOPPING_ROUTE = '/(dev)/shopping-list'
-
-export default function ShoppingSegment({ bottomPadding }: { bottomPadding: number }) {
+export default function ShoppingSegment({
+  bottomPadding,
+  mode = 'auth',
+}: {
+  bottomPadding: number
+  mode?: 'auth' | 'public' | 'dev'
+}) {
   const hydrate = useShoppingListStore((s) => s.hydrate)
   const isHydrated = useShoppingListStore((s) => s.isHydrated)
   const isHydrating = useShoppingListStore((s) => s.isHydrating)
@@ -43,7 +46,13 @@ export default function ShoppingSegment({ bottomPadding }: { bottomPadding: numb
   }, [items])
 
   const onOpenList = () => {
-    router.push(SHOPPING_ROUTE)
+    const route =
+      mode === 'dev'
+        ? '/(dev)/shopping-list'
+        : mode === 'public'
+          ? '/(public)/shopping-list'
+          : '/(auth)/shopping-list'
+    router.push(route)
   }
 
   return (

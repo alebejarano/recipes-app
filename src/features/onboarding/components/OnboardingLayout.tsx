@@ -17,6 +17,7 @@ type OnboardingLayoutProps = {
     children: ReactNode;
     showBackButton?: boolean;
     onBackPress?: () => void;
+    scrollEnabled?: boolean;
 };
 
 export default function OnboardingLayout({
@@ -25,58 +26,71 @@ export default function OnboardingLayout({
                                              children,
                                              showBackButton = false,
                                              onBackPress,
+                                             scrollEnabled = true,
                                          }: OnboardingLayoutProps) {
     const showProgress = totalSteps > 0 && step >= 1 && step <= totalSteps;
     const progress =
         showProgress && totalSteps > 0 ? step / totalSteps : 0;
 
+    const content = (
+        <>
+            {/* Header: back + progress */}
+            <View style={styles.header}>
+                {showBackButton && onBackPress ? (
+                    <TouchableOpacity
+                        onPress={onBackPress}
+                        style={styles.backRow}
+                    >
+                        <Feather
+                            name="arrow-left"
+                            size={18}
+                            style={styles.backIcon}
+                        />
+                        <Text style={styles.backText}>Back</Text>
+                    </TouchableOpacity>
+                ) : (
+                    // keep spacing even when no back button
+                    <View style={styles.backPlaceholder} />
+                )}
+
+                {showProgress && (
+                    <View style={styles.progressContainer}>
+                        <Text style={styles.progressLabel}>
+                            Step {step} of {totalSteps}
+                        </Text>
+                        <View style={styles.progressTrack}>
+                            <View
+                                style={[
+                                    styles.progressBar,
+                                    { width: `${Math.min(progress * 100, 100)}%` },
+                                ]}
+                            />
+                        </View>
+                    </View>
+                )}
+            </View>
+
+            {/* Main content */}
+            <View style={styles.body}>
+                {children}
+            </View>
+        </>
+    );
+
     return (
         <SafeAreaView style={styles.safeArea}>
-            <ScrollView
-                contentContainerStyle={styles.content}
-                keyboardShouldPersistTaps="handled"
-            >
-                {/* Header: back + progress */}
-                <View style={styles.header}>
-                    {showBackButton && onBackPress ? (
-                        <TouchableOpacity
-                            onPress={onBackPress}
-                            style={styles.backRow}
-                        >
-                            <Feather
-                                name="arrow-left"
-                                size={18}
-                                style={styles.backIcon}
-                            />
-                            <Text style={styles.backText}>Back</Text>
-                        </TouchableOpacity>
-                    ) : (
-                        // keep spacing even when no back button
-                        <View style={styles.backPlaceholder} />
-                    )}
-
-                    {showProgress && (
-                        <View style={styles.progressContainer}>
-                            <Text style={styles.progressLabel}>
-                                Step {step} of {totalSteps}
-                            </Text>
-                            <View style={styles.progressTrack}>
-                                <View
-                                    style={[
-                                        styles.progressBar,
-                                        { width: `${Math.min(progress * 100, 100)}%` },
-                                    ]}
-                                />
-                            </View>
-                        </View>
-                    )}
+            {scrollEnabled ? (
+                <ScrollView
+                    contentContainerStyle={styles.content}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    {content}
+                </ScrollView>
+            ) : (
+                <View style={styles.content}>
+                    {content}
                 </View>
-
-                {/* Main content */}
-                <View style={styles.body}>
-                    {children}
-                </View>
-            </ScrollView>
+            )}
         </SafeAreaView>
     );
 }

@@ -10,7 +10,7 @@ import ImportSourcesScreen from '@/features/onboarding/screens/ImportSourcesScre
 import MagicMomentScreen from '@/features/onboarding/screens/MagicMomentScreen';
 import SpaceReadyScreen from '@/features/onboarding/screens/SpaceReadyScreen';
 import WelcomeScreen from '@/features/onboarding/screens/WelcomeScreen';
-import CreateRecipeScreen from '@/features/recipes/screens/CreateRecipeScreen';
+import PublicCreateRecipeScreen from '@/features/recipes/screens/PublicCreateRecipeScreen';
 
 import {
   useOnboarding,
@@ -96,8 +96,8 @@ export default function OnboardingFlowScreen() {
   };
 
   const handleSkipPath = async () => {
-    await setPath('b');
-    await setStep(3);
+    await markCompleted();
+    router.replace('/(public)/(tabs)');
   };
 
   const goToRegister = async () => {
@@ -110,8 +110,12 @@ export default function OnboardingFlowScreen() {
     router.replace('/get-started');
   };
 
-  const handleRecipeSaved = async () => {
-    await goToRegister();
+  const handleRecipeSaved = async (recipeId?: string) => {
+    await markCompleted();
+    router.replace({
+      pathname: '/(public)/(tabs)',
+      params: { banner: 'recipe-saved', recipeId: recipeId ?? '' },
+    });
   };
 
   const renderScreen = () => {
@@ -129,10 +133,10 @@ export default function OnboardingFlowScreen() {
           return <AddRecipeScreen onSelectManual={() => setStep(4)} />;
         case 4:
           return (
-            <CreateRecipeScreen
-              variant="onboarding"
-              onSaved={() => handleRecipeSaved()}
+            <PublicCreateRecipeScreen
+              onSaved={(id) => handleRecipeSaved(id)}
               onBack={() => setStep(3)}
+              compactFooter
             />
           );
         default:
@@ -148,9 +152,9 @@ export default function OnboardingFlowScreen() {
           return <MagicMomentScreen onAddRecipe={() => setStep(5)} onGoGetStarted={goToGetStarted} />;
         case 5:
           return (
-            <CreateRecipeScreen
-              variant="onboarding"
-              onSaved={() => handleRecipeSaved()}
+            <PublicCreateRecipeScreen
+              onSaved={(id) => handleRecipeSaved(id)}
+              compactFooter
             />
           );
 
@@ -170,8 +174,12 @@ export default function OnboardingFlowScreen() {
 
   const { current, total } = getProgress();
 
+  const isEmbeddedScrollStep =
+    (path === 'a' && step === 4) ||
+    (path === 'b' && step === 5);
+
   return (
-      <OnboardingLayout step={current} totalSteps={total}>
+      <OnboardingLayout step={current} totalSteps={total} scrollEnabled={!isEmbeddedScrollStep}>
         <View style={{ flex: 1 }}>{renderScreen()}</View>
       </OnboardingLayout>
   );

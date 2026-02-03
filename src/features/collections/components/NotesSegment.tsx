@@ -4,6 +4,7 @@ import React, { useMemo } from 'react'
 import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native'
 
 import { formatRelativeDay } from '@/features/home/utils/homeFormatters'
+import { useLocalNotesList } from '@/features/notes/hooks/useLocalNotes'
 import { useNotesList } from '@/features/notes/hooks/useNotesList'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { createThemedStyles } from '@/styles/createStyles'
@@ -19,26 +20,40 @@ type NoteItem = {
 const FALLBACK_TITLE = 'Untitled note'
 const PREVIEW_LIMIT = 80
 
-export default function NotesSegment({ bottomPadding }: { bottomPadding: number }) {
-  const notesQuery = useNotesList({ limit: 50 })
-  const returnTo = getSafeReturnTo('/(auth)/(tabs)/collections?segment=notes')
+export default function NotesSegment({
+  bottomPadding,
+  mode = 'auth',
+}: {
+  bottomPadding: number
+  mode?: 'auth' | 'public' | 'dev'
+}) {
+  const isPublic = mode === 'public'
+  const notesQuery = useNotesList({ limit: 50, enabled: !isPublic })
+  const localNotesQuery = useLocalNotesList()
+  const returnTo = getSafeReturnTo(
+    mode === 'dev'
+      ? '/(dev)/(tabs)/collections?segment=notes'
+      : mode === 'public'
+        ? '/(public)/(tabs)/collections?segment=notes'
+        : '/(auth)/(tabs)/collections?segment=notes'
+  )
   const returnToParam = typeof returnTo === 'string' ? returnTo : undefined
 
   const data = useMemo<NoteItem[]>(() => {
-    const notes = notesQuery.data ?? []
+    const notes = isPublic ? localNotesQuery.data ?? [] : notesQuery.data ?? []
     return notes.map((note) => ({
       id: note.id,
       title: note.title?.trim() || FALLBACK_TITLE,
       preview: (note.content ?? '').trim().slice(0, PREVIEW_LIMIT) || 'No note content yet.',
       relativeDate: formatRelativeDay(note.updatedAt),
     }))
-  }, [notesQuery.data])
+  }, [isPublic, localNotesQuery.data, notesQuery.data])
 
   return (
     <View style={styles.wrap}>
       <Text style={styles.helper}>Your kitchen notes and ideas</Text>
 
-      {notesQuery.isLoading ? (
+      {notesQuery.isLoading && !isPublic ? (
         <View style={styles.loadingState}>
           <ActivityIndicator size="small" color={styles.loadingText.color} />
           <Text style={styles.loadingText}>Loading notes…</Text>
@@ -55,7 +70,7 @@ export default function NotesSegment({ bottomPadding }: { bottomPadding: number 
           <Pressable
             onPress={() =>
               router.push({
-                pathname: '/(auth)/notes/create',
+                pathname: isPublic ? '/(public)/notes/create' : '/(auth)/notes/create',
                 params: {
                   returnTo: returnToParam,
                 },
@@ -80,7 +95,7 @@ export default function NotesSegment({ bottomPadding }: { bottomPadding: number 
           <Pressable
             onPress={() =>
               router.push({
-                pathname: '/(auth)/notes/[id]',
+                pathname: isPublic ? '/(public)/notes/[id]' : '/(auth)/notes/[id]',
                 params: {
                   id: item.id,
                   returnTo: returnToParam,
@@ -113,7 +128,7 @@ export default function NotesSegment({ bottomPadding }: { bottomPadding: number 
           <Pressable
             onPress={() =>
               router.push({
-                pathname: '/(auth)/notes/create',
+                pathname: isPublic ? '/(public)/notes/create' : '/(auth)/notes/create',
                 params: {
                   returnTo: returnToParam,
                 },

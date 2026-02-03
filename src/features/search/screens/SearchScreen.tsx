@@ -12,6 +12,7 @@ import SearchBar from '@/features/search/components/SearchBar';
 import SearchFilterPills from '@/features/search/components/SearchFilterPills';
 import SearchHeader from '@/features/search/components/SearchHeader';
 
+import { useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders';
 import { useFoldersList } from '@/features/folders/hooks/useFoldersList';
 import {
   SEARCH_FILTERS,
@@ -19,11 +20,20 @@ import {
   type SearchFilterId,
 } from '@/features/search/data/searchMockData';
 
-export default function SearchScreen() {
+type SearchScreenProps = {
+  mode?: 'auth' | 'public' | 'dev';
+};
+
+export default function SearchScreen({ mode }: SearchScreenProps) {
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<SearchFilterId>('all');
   const segments = useSegments();
-  const foldersQuery = useFoldersList();
+  const resolvedMode =
+    mode ??
+    (segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth');
+  const isPublic = resolvedMode === 'public';
+  const foldersQuery = useFoldersList({ enabled: !isPublic });
+  const localFoldersQuery = useLocalFoldersList();
 
   const placeholder = useMemo(() => {
     switch (activeFilter) {
@@ -40,20 +50,25 @@ export default function SearchScreen() {
 
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl);
   const isBrowsing = query.trim().length === 0;
-  const root = segments[0] === '(dev)' ? '(dev)' : '(auth)';
+  const root = resolvedMode === 'dev' ? '(dev)' : resolvedMode === 'public' ? '(public)' : '(auth)';
   const collectionDetailPath =
-    root === '(dev)' ? '/(dev)/collections/[key]' : '/(auth)/collections/[key]';
+    root === '(dev)'
+      ? '/(dev)/collections/[key]'
+      : root === '(public)'
+        ? '/(public)/collections/[key]'
+        : '/(auth)/collections/[key]';
   const searchReturnTo =
-    root === '(dev)' ? '/(dev)/(tabs)/search' : '/(auth)/(tabs)/search';
+    root === '(dev)' ? '/(dev)/(tabs)/search' : root === '(public)' ? '/(public)/(tabs)/search' : '/(auth)/(tabs)/search';
 
   const collectionCards = useMemo<BrowseCategory[]>(() => {
-    return (foldersQuery.data ?? []).map((folder, index) => ({
+    const source = isPublic ? localFoldersQuery.data ?? [] : foldersQuery.data ?? [];
+    return source.map((folder, index) => ({
       id: folder.name,
       label: folder.name,
       icon: 'folder',
       tone: index % 2 === 0 ? 'sage' : 'neutral',
     }));
-  }, [foldersQuery.data]);
+  }, [foldersQuery.data, localFoldersQuery.data, isPublic]);
 
   return (
     <Screen

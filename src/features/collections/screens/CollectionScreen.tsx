@@ -1,7 +1,7 @@
 // app/(dev)/(tabs)/collections.tsx (or wherever CollectionsScreen lives)
 
 import { Feather } from '@expo/vector-icons'
-import { router, useLocalSearchParams } from 'expo-router'
+import { router, useLocalSearchParams, useSegments } from 'expo-router'
 import React, { useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
@@ -35,20 +35,40 @@ import {
 } from '@/features/collections/utils/collections'
 import { useCreateFolder } from '@/features/folders/hooks/useCreateFolder'
 import { useFoldersList } from '@/features/folders/hooks/useFoldersList'
+import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
+import { useLocalRecipesList } from '@/features/recipes/hooks/useLocalRecipes'
 import { useRecipesList } from '@/features/recipes/hooks/useRecipesList'
 import { getSafeReturnTo } from '@/lib/navigation'
 
-export default function CollectionsScreen() {
+type CollectionsScreenProps = {
+  mode?: 'auth' | 'public' | 'dev'
+}
+
+export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   const { segment: segmentParam } = useLocalSearchParams<{ segment?: SegmentKey }>()
+  const segments = useSegments()
+  const resolvedMode =
+    mode ??
+    (segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth')
+  const isPublic = resolvedMode === 'public'
   const [segment, setSegment] = useState<SegmentKey>('recipes')
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false)
   const [newFolderEmoji, setNewFolderEmoji] = useState('')
   const [newFolderName, setNewFolderName] = useState('')
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
-  const recipesQuery = useRecipesList({ limit: 200 })
-  const foldersQuery = useFoldersList()
+  const recipesQuery = useRecipesList({ limit: 200, enabled: !isPublic })
+  const localRecipesQuery = useLocalRecipesList()
+  const foldersQuery = useFoldersList({ enabled: !isPublic })
+  const localFoldersQuery = useLocalFoldersList()
   const createFolderMutation = useCreateFolder()
-  const returnTo = getSafeReturnTo('/(auth)/(tabs)/collections?segment=recipes')
+  const createLocalFolderMutation = useCreateLocalFolder()
+  const returnTo = getSafeReturnTo(
+    resolvedMode === 'dev'
+      ? '/(dev)/(tabs)/collections?segment=recipes'
+      : resolvedMode === 'public'
+        ? '/(public)/(tabs)/collections?segment=recipes'
+        : '/(auth)/(tabs)/collections?segment=recipes'
+  )
   const returnToParam = typeof returnTo === 'string' ? returnTo : undefined
 
   useEffect(() => {
@@ -57,10 +77,12 @@ export default function CollectionsScreen() {
     }
   }, [segmentParam])
 
+  const recipeData = isPublic ? localRecipesQuery.data ?? [] : recipesQuery.data ?? []
+
   const folderCounts = useMemo(() => {
     const counts = new Map<string, number>()
     let uncategorized = 0
-    for (const recipe of recipesQuery.data ?? []) {
+    for (const recipe of recipeData) {
       const folders = recipe.folders ?? []
       if (folders.length === 0) {
         uncategorized += 1
@@ -72,20 +94,22 @@ export default function CollectionsScreen() {
       }
     }
     return { counts, uncategorized }
-  }, [recipesQuery.data])
+  }, [recipeData])
 
   const collections = useMemo<CollectionItem[]>(() => {
-    const base = buildCollectionsForSegment(segment, recipesQuery.data ?? [])
+    const base = buildCollectionsForSegment(segment, recipeData)
     if (segment !== 'recipes') return base
 
+    const folderSource = isPublic ? localFoldersQuery.data ?? [] : foldersQuery.data ?? []
+
     const folderItems =
-      foldersQuery.data?.map((folder) => ({
+      folderSource.map((folder) => ({
         key: folder.name,
         label: folder.name,
         count: folderCounts.counts.get(folder.name.toLowerCase()) ?? 0,
         kind: 'tag' as const,
         emoji: folder.emoji,
-      })) ?? []
+      }))
 
     const items = [...folderItems]
     if (folderCounts.uncategorized > 0) {
@@ -101,7 +125,7 @@ export default function CollectionsScreen() {
     items.push({ key: 'new', label: 'Create folder', count: 0, kind: 'new' })
 
     return items
-  }, [segment, recipesQuery.data, foldersQuery.data, folderCounts])
+  }, [segment, recipeData, foldersQuery.data, localFoldersQuery.data, folderCounts, isPublic])
 
   const fabLabel = segment === 'recipes' ? 'Create folder' : 'Create collection'
 
@@ -119,7 +143,22 @@ export default function CollectionsScreen() {
     const emoji = newFolderEmoji.trim() || '📁'
 
     try {
-      await createFolderMutation.mutateAsync({ name, emoji })
+      if (isPublic) {
+        const folderCount = localFoldersQuery.data?.length ?? 0
+        await createLocalFolderMutation.mutateAsync({ name, emoji })
+        if (folderCount >= 2) {
+          Alert.alert(
+            'Keep your folders safe',
+            'Create an account to sync and back up your folders.',
+            [
+              { text: 'Not now', style: 'cancel' },
+              { text: 'Create account', onPress: () => router.push('/(public)/get-started') },
+            ]
+          )
+        }
+      } else {
+        await createFolderMutation.mutateAsync({ name, emoji })
+      }
     } catch (error: any) {
       const code = error?.code ?? error?.cause?.code
       if (code === '23505') {
@@ -162,12 +201,12 @@ export default function CollectionsScreen() {
         <>
           <Text style={styles.helperText}>{getCollectionsHelperText(segment)}</Text>
 
-          {recipesQuery.isLoading ? (
+          {recipesQuery.isLoading && !isPublic ? (
             <View style={styles.loadingState}>
               <ActivityIndicator size="small" color={styles.loadingText.color} />
               <Text style={styles.loadingText}>Loading recipes…</Text>
             </View>
-          ) : (recipesQuery.data ?? []).length === 0 ? (
+          ) : recipeData.length === 0 ? (
             <View style={styles.emptyState}>
               <View style={styles.emptyIcon}>
                 <Feather name="folder" size={22} color={theme.colors.mutedForeground} />
@@ -176,8 +215,13 @@ export default function CollectionsScreen() {
               <Text style={styles.emptyBody}>
                 Add a recipe to start building folders.
               </Text>
+              {isPublic ? (
+                <Text style={styles.publicHint}>Sign in to sync folders across devices.</Text>
+              ) : null}
               <Pressable
-                onPress={() => router.push('/(auth)/(tabs)/add-recipe')}
+                onPress={() =>
+                  router.push(isPublic ? '/(public)/recipes/create' : '/(auth)/(tabs)/add-recipe')
+                }
                 style={styles.emptyCta}
                 accessibilityRole="button"
                 accessibilityLabel="Create your first recipe"
@@ -207,7 +251,7 @@ export default function CollectionsScreen() {
                     onPress={() => {
                       if (item.label === 'Uncategorized') {
                         router.push({
-                          pathname: '/(auth)/collections/[key]',
+                          pathname: isPublic ? '/(public)/collections/[key]' : '/(auth)/collections/[key]',
                           params: {
                             key: 'uncategorized',
                             returnTo: returnToParam,
@@ -217,7 +261,7 @@ export default function CollectionsScreen() {
                       }
 
                       router.push({
-                        pathname: '/(auth)/collections/[key]',
+                        pathname: isPublic ? '/(public)/collections/[key]' : '/(auth)/collections/[key]',
                         params: {
                           key: encodeURIComponent(item.label),
                           returnTo: returnToParam,
@@ -229,11 +273,20 @@ export default function CollectionsScreen() {
               }}
             />
           )}
+          {isPublic && recipeData.length > 0 ? (
+            <Text style={styles.publicHint}>Sign in to sync folders across devices.</Text>
+          ) : null}
         </>
       ) : segment === 'notes' ? (
-        <NotesSegment bottomPadding={bottomPadding} />
+        <NotesSegment
+          bottomPadding={bottomPadding}
+          mode={isPublic ? 'public' : resolvedMode}
+        />
       ) : (
-        <ShoppingSegment bottomPadding={bottomPadding} />
+        <ShoppingSegment
+          bottomPadding={bottomPadding}
+          mode={isPublic ? 'public' : resolvedMode}
+        />
       )}
 
       <Modal
@@ -246,6 +299,11 @@ export default function CollectionsScreen() {
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Create folder</Text>
             <Text style={styles.modalSubtitle}>Add an emoji and a title.</Text>
+            {isPublic ? (
+              <Text style={styles.modalHelper}>
+                Folders are saved on this device. Create an account to sync them.
+              </Text>
+            ) : null}
 
             <View style={styles.modalField}>
               <Text style={styles.modalLabel}>Emoji</Text>
@@ -387,6 +445,14 @@ const styles = createThemedStyles((theme) => ({
     textAlign: 'center',
     maxWidth: 280,
   },
+  publicHint: {
+    marginTop: theme.spacing.sm,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.mutedForeground,
+    textAlign: 'center',
+  },
   emptyCta: {
     marginTop: theme.spacing.sm,
     flexDirection: 'row',
@@ -433,6 +499,13 @@ const styles = createThemedStyles((theme) => ({
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
+  },
+  modalHelper: {
+    marginTop: -theme.spacing.sm,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
     color: theme.colors.mutedForeground,
   },
   modalField: {

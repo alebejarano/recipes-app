@@ -42,7 +42,7 @@ export default function SpaceReadyScreen({
                     </Text>
 
                     <Text style={styles.subtitle}>
-                    Everything you save will be beautifully organized automatically.
+                    Everything you save is stored safely in your personal space.
                     </Text>
                 </View>
             </View>
@@ -65,7 +65,7 @@ export default function SpaceReadyScreen({
                 textStyle={styles.skipText}
                 style={styles.skipButton}
             >
-                Skip for Now
+                Continue without an account
             </Button>
             </View>
         </View>
@@ -154,7 +154,7 @@ const styles = createThemedStyles(theme => ({
   },
   skipText: {
     fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    color: theme.colors.mutedForeground,
+    fontSize: theme.fontSize.lg,
+    color: theme.colors.foreground,
   },
 }));

@@ -18,7 +18,9 @@ import PickCard from '@/features/home/components/PickCard';
 import RecipeCarousel, { type RecipePreview } from '@/features/home/components/RecipeCarousel';
 import SectionHeaderRow from '@/features/home/components/SectionHeaderRow';
 import SuccessBanner from '@/features/home/components/SuccessBanner';
+import { useLocalNotesList } from '@/features/notes/hooks/useLocalNotes';
 import { useNotesList } from '@/features/notes/hooks/useNotesList';
+import { useLocalRecipesList } from '@/features/recipes/hooks/useLocalRecipes';
 import { useRecipesList } from '@/features/recipes/hooks/useRecipesList';
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore';
 
@@ -31,6 +33,8 @@ import {
 
 type HomeProps = {
   showAccountSuccessBanner?: boolean;
+  showRecipeSuccessBanner?: boolean;
+  mode?: 'auth' | 'public' | 'dev';
 };
 
 type HomeRecipe = {
@@ -51,9 +55,17 @@ type HomeNote = {
   updatedAt: string;
 };
 
-export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
+export default function HomeScreen({
+  showAccountSuccessBanner,
+  showRecipeSuccessBanner,
+  mode,
+}: HomeProps) {
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl);
   const segments = useSegments();
+  const resolvedMode =
+    mode ??
+    (segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth');
+  const isPublic = resolvedMode === 'public';
 
   const { width: screenWidth } = useWindowDimensions();
 
@@ -81,8 +93,10 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
     return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
   };
 
-  const recipesQuery = useRecipesList({ limit: 50 });
-  const notesQuery = useNotesList({ limit: 50 });
+  const recipesQuery = useRecipesList({ limit: 50, enabled: !isPublic });
+  const notesQuery = useNotesList({ limit: 50, enabled: !isPublic });
+  const localRecipesQuery = useLocalRecipesList();
+  const localNotesQuery = useLocalNotesList();
 
   const hydrateShopping = useShoppingListStore((s) => s.hydrate);
   const isShoppingHydrated = useShoppingListStore((s) => s.isHydrated);
@@ -94,8 +108,9 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
   }, [hydrateShopping]);
 
   const recipes = useMemo<HomeRecipe[]>(
-    () =>
-      (recipesQuery.data ?? []).map((recipe) => ({
+    () => {
+      const source = isPublic ? localRecipesQuery.data ?? [] : recipesQuery.data ?? [];
+      return source.map((recipe) => ({
         id: recipe.id,
         title: recipe.title,
         subtitle: recipe.subtitle ?? null,
@@ -104,16 +119,20 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
         folders: recipe.folders ?? [],
         createdAt: recipe.createdAt,
         updatedAt: recipe.updatedAt ?? recipe.createdAt,
-      })),
-    [recipesQuery.data]
+      }));
+    },
+    [isPublic, localRecipesQuery.data, recipesQuery.data]
   );
 
   const recipeCollections = useMemo(() => {
-    const items = buildCollectionsForSegment('recipes', recipesQuery.data ?? []);
+    const items = buildCollectionsForSegment(
+      'recipes',
+      (isPublic ? localRecipesQuery.data ?? [] : recipesQuery.data ?? []) as any
+    );
     return items.filter(
       (item) => item.kind === 'tag' && item.count > 0 && item.label !== 'Uncategorized'
     );
-  }, [recipesQuery.data]);
+  }, [isPublic, localRecipesQuery.data, recipesQuery.data]);
 
   const recipeCollectionsKey = useMemo(
     () => recipeCollections.map((item) => item.key).join('|'),
@@ -134,7 +153,7 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
 
   const featuredCollectionRecipes = useMemo(() => {
     if (!featuredCollection) return [];
-    const list = recipesQuery.data ?? [];
+    const list = isPublic ? localRecipesQuery.data ?? [] : recipesQuery.data ?? [];
 
     if (featuredCollection.label === 'Uncategorized') {
       return list.filter((recipe) => (recipe.folders?.length ?? 0) === 0);
@@ -143,7 +162,7 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
     return list.filter((recipe) =>
       (recipe.folders ?? []).map((folder) => folder.name.trim()).includes(featuredCollection.label)
     );
-  }, [featuredCollection, recipesQuery.data]);
+  }, [featuredCollection, isPublic, localRecipesQuery.data, recipesQuery.data]);
 
   const featuredCollectionChips = useMemo(() => {
     const chips = featuredCollectionRecipes.slice(0, 2).map((recipe) => {
@@ -158,13 +177,15 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
   }, [featuredCollectionRecipes]);
 
   const notes = useMemo<HomeNote[]>(
-    () =>
-      (notesQuery.data ?? []).map((note) => ({
+    () => {
+      const source = isPublic ? localNotesQuery.data ?? [] : notesQuery.data ?? [];
+      return source.map((note) => ({
         id: note.id,
         title: note.title?.trim() || 'Untitled note',
         updatedAt: note.updatedAt,
-      })),
-    [notesQuery.data]
+      }));
+    },
+    [isPublic, localNotesQuery.data, notesQuery.data]
   );
 
   const shoppingList = useMemo(() => {
@@ -177,13 +198,35 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const isInitialLoading =
+    !isPublic &&
     (recipesQuery.isLoading || notesQuery.isLoading) &&
     !recipesQuery.data &&
     !notesQuery.data;
 
+  const emptyStateTitle = isPublic ? 'Start your recipe collection' : 'Your recipe space is ready.';
+  const emptyStateBody = isPublic
+    ? 'Add a recipe or a note. Everything stays on this device until you create an account.'
+    : 'Add a recipe or a note. Home will show recent activity and quick access once you do.';
+
+  const handlePrimaryCta = () => {
+    if (isPublic) {
+      router.push('/(public)/recipes/create');
+      return;
+    }
+    router.push('/create');
+  };
+
+  const handleSecondaryCta = () => {
+    if (isPublic) {
+      router.push('/(public)/notes/create');
+      return;
+    }
+    router.push(collectionsPath);
+  };
+
   const totalItems = recipes.length + notes.length;
-  const isEmpty = totalItems <= 1;
-  const isTransitional = totalItems >= 2 && totalItems <= 4;
+  const isEmpty = totalItems === 0;
+  const isTransitional = totalItems >= 1 && totalItems <= 4;
 
   const shoppingListVisible = (shoppingList?.totalCount ?? 0) > 0;
   const activeShoppingList = shoppingListVisible ? shoppingList : null;
@@ -236,16 +279,34 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
 
   const firstRecentNote = useMemo(() => sortMostRecent(notes)[0], [notes]);
 
-  const root = segments[0] === '(dev)' ? '(dev)' : '(auth)';
+  const root =
+    resolvedMode === 'dev' ? '(dev)' : resolvedMode === 'public' ? '(public)' : '(auth)';
   const recipeDetailPath =
-    root === '(dev)' ? '/(dev)/recipes/[id]' : '/(auth)/recipes/[id]';
-  const noteDetailPath = root === '(dev)' ? '/(dev)/notes/[id]' : '/(auth)/notes/[id]';
+    root === '(dev)'
+      ? '/(dev)/recipes/[id]'
+      : root === '(public)'
+        ? '/(public)/recipes/[id]'
+        : '/(auth)/recipes/[id]';
+  const noteDetailPath =
+    root === '(dev)'
+      ? '/(dev)/notes/[id]'
+      : root === '(public)'
+        ? '/(public)/notes/[id]'
+        : '/(auth)/notes/[id]';
   const collectionDetailPath =
     root === '(dev)' ? '/(dev)/collections/[key]' : '/(auth)/collections/[key]';
   const collectionsPath =
-    root === '(dev)' ? '/(dev)/(tabs)/collections' : '/(auth)/(tabs)/collections';
+    root === '(dev)'
+      ? '/(dev)/(tabs)/collections'
+      : root === '(public)'
+        ? '/(public)/(tabs)/collections'
+        : '/(auth)/(tabs)/collections';
   const shoppingListPath =
-    root === '(dev)' ? '/(dev)/shopping-list' : '/(auth)/shopping-list';
+    root === '(dev)'
+      ? '/(dev)/shopping-list'
+      : root === '(public)'
+        ? '/(public)/shopping-list'
+        : '/(auth)/shopping-list';
 
   if (isInitialLoading) {
     return (
@@ -260,9 +321,15 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
 
   return (
     <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
-      {showAccountSuccessBanner && !bannerDismissed ? (
+      {showAccountSuccessBanner && !bannerDismissed && !isPublic ? (
         <SuccessBanner
           text="You're all set! Your recipes are safe."
+          onDismiss={() => setBannerDismissed(true)}
+        />
+      ) : null}
+      {showRecipeSuccessBanner && !bannerDismissed ? (
+        <SuccessBanner
+          text="Recipe saved! Create an account to sync it everywhere."
           onDismiss={() => setBannerDismissed(true)}
         />
       ) : null}
@@ -274,18 +341,29 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
             What's cooking? <Text style={styles.wave}>👋</Text>
           </>
         }
-        onPressAdd={() => router.push('/create')}
+        onPressAdd={() =>
+          router.push(isPublic ? '/(public)/recipes/create' : '/create')
+        }
       />
 
       {isEmpty ? (
         <EmptyHomeCard
-          title="Your recipe space is ready."
-          body="Add a recipe or a note. Home will show recent activity and quick access once you do."
+          title={emptyStateTitle}
+          body={emptyStateBody}
           primaryLabel="Add your first recipe"
           secondaryLabel="Create a note"
-          onPressPrimary={() => router.push('/create')}
-          onPressSecondary={() => router.push(collectionsPath)}
+          onPressPrimary={handlePrimaryCta}
+          onPressSecondary={handleSecondaryCta}
         />
+      ) : null}
+
+      {isPublic ? (
+        <View style={styles.localOnlyCard}>
+          <Text style={styles.localOnlyTitle}>Local-only for now</Text>
+          <Text style={styles.localOnlyBody}>
+            Everything stays on this device. Create an account anytime to sync and back up your data.
+          </Text>
+        </View>
       ) : null}
 
       {pick ? (
@@ -306,8 +384,8 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
           <SectionHeaderRow
             title="Recent Activity"
             subtitle="Recently added recipes"
-            ctaLabel="See all"
-            onPressCta={() => router.push(collectionsPath)}
+            ctaLabel={isPublic ? undefined : 'See all'}
+            onPressCta={isPublic ? undefined : () => router.push(collectionsPath)}
           />
 
           {recentRecipeCards.length > 0 ? (
@@ -367,7 +445,7 @@ export default function HomeScreen({ showAccountSuccessBanner }: HomeProps) {
             />
           ) : null}
 
-          {featuredCollection && featuredCollectionChips.length > 0 ? (
+          {!isPublic && featuredCollection && featuredCollectionChips.length > 0 ? (
             <CollectionCard
               title={featuredCollection.label}
               meta={`${featuredCollection.count} recipe${
@@ -434,6 +512,26 @@ const styles = createThemedStyles((theme) => ({
     fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.base,
     fontFamily: theme.fontFamily.medium,
+    color: theme.colors.mutedForeground,
+  },
+  localOnlyCard: {
+    padding: theme.spacing.lg,
+    borderRadius: theme.radii.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+  },
+  localOnlyTitle: {
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    fontFamily: theme.fontFamily.semibold,
+    color: theme.colors.foreground,
+    marginBottom: theme.spacing.xs,
+  },
+  localOnlyBody: {
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.regular,
     color: theme.colors.mutedForeground,
   },
 }));

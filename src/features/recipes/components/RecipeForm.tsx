@@ -98,6 +98,9 @@ type Props = {
   onCancel?: () => void
   showActions?: boolean
   suggestedFolders?: FolderSuggestion[]
+  imageUploadMode?: 'cloud' | 'local'
+  allowFolderCreation?: boolean
+  onCreateFolder?: (input: { name: string; emoji?: string | null }) => Promise<void>
 }
 
 const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
@@ -109,6 +112,9 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     onCancel,
     showActions = true,
     suggestedFolders = [],
+    imageUploadMode = 'cloud',
+    allowFolderCreation = true,
+    onCreateFolder,
   },
   ref
 ) {
@@ -191,13 +197,16 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     })
   }, [])
 
-  const normalizeFolder = useCallback((value: string) => {
-    return value.trim().replace(/\s+/g, ' ')
+  const normalizeFolder = useCallback((value?: unknown) => {
+    if (value === null || value === undefined) return ''
+    const text = typeof value === 'string' ? value : String(value)
+    return text.trim().replace(/\s+/g, ' ')
   }, [])
 
   const addFolder = useCallback(
-    (nextValue?: string) => {
-      const nextFolder = normalizeFolder(nextValue ?? folderInput)
+    (nextValue?: unknown) => {
+      const candidate = typeof nextValue === 'string' ? nextValue : undefined
+      const nextFolder = normalizeFolder(candidate ?? folderInput)
       if (!nextFolder) return
       const lower = nextFolder.toLowerCase()
       const exists = suggestedFolders.some(
@@ -214,28 +223,41 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
             "We’ll use the existing folder. Its emoji will not be changed here."
           )
         }
-      } else if (!createFolderMutation.isPending) {
-        void createFolderMutation
-          .mutateAsync({
-            name: nextFolder,
-            emoji: folderEmojiInput.trim() || null,
-          })
-          .catch((error: any) => {
-            const code = error?.code ?? error?.cause?.code
-            if (code === '23505') {
-              Alert.alert(
-                'Folder already exists',
-                'We used the existing folder instead.'
-              )
-            } else {
-              Alert.alert('Unable to create folder', 'Please try again.')
-            }
-          })
+      } else if (allowFolderCreation && !createFolderMutation.isPending) {
+        const createFolder = onCreateFolder
+          ? onCreateFolder({
+              name: nextFolder,
+              emoji: folderEmojiInput.trim() || null,
+            })
+          : createFolderMutation.mutateAsync({
+              name: nextFolder,
+              emoji: folderEmojiInput.trim() || null,
+            })
+
+        void createFolder.catch((error: any) => {
+          const code = error?.code ?? error?.cause?.code
+          if (code === '23505') {
+            Alert.alert(
+              'Folder already exists',
+              'We used the existing folder instead.'
+            )
+          } else {
+            Alert.alert('Unable to create folder', 'Please try again.')
+          }
+        })
       }
       setFolderInput('')
       setFolderEmojiInput('')
     },
-    [normalizeFolder, folderInput, folderEmojiInput, createFolderMutation, suggestedFolders]
+    [
+      allowFolderCreation,
+      normalizeFolder,
+      folderInput,
+      folderEmojiInput,
+      createFolderMutation,
+      suggestedFolders,
+      onCreateFolder,
+    ]
   )
 
   const removeFolder = useCallback((folderToRemove: string) => {
@@ -361,11 +383,14 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     async (asset: ImagePicker.ImagePickerAsset) => {
       try {
         setIsUploadingImage(true)
-        const url = await uploadRecipeImage({
-          uri: asset.uri,
-          fileName: asset.fileName ?? null,
-          mimeType: asset.mimeType ?? null,
-        })
+        const url =
+          imageUploadMode === 'local'
+            ? asset.uri
+            : await uploadRecipeImage({
+                uri: asset.uri,
+                fileName: asset.fileName ?? null,
+                mimeType: asset.mimeType ?? null,
+              })
         update('imageUrl', url)
         update('emoji', '')
       } catch (error: any) {
@@ -374,7 +399,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         setIsUploadingImage(false)
       }
     },
-    [update]
+    [imageUploadMode, update]
   )
 
   const handlePickImage = useCallback(async () => {
