@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactNode, useState } from 'react'
 
-export function QueryProvider({ children }: { children: ReactNode }) {
+export function QueryProviderComponent({ children }: { children: ReactNode }) {
   // useState ensures the client is created once
   const [queryClient] = useState(
     () =>
@@ -23,4 +23,4 @@ export function QueryProvider({ children }: { children: ReactNode }) {
   )
 }
 
-export default QueryProvider
+export default QueryProviderComponent

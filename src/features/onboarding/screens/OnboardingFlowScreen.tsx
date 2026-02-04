@@ -72,6 +72,7 @@ export default function OnboardingFlowScreen() {
     setPathLocal(state.path ?? null);
   }, [
     isLoaded,
+    params.dev,
     params.reset,
     state.completed,
     state.step,
@@ -98,11 +99,6 @@ export default function OnboardingFlowScreen() {
   const handleSkipPath = async () => {
     await markCompleted();
     router.replace('/(public)/(tabs)');
-  };
-
-  const goToRegister = async () => {
-    await markCompleted();
-    router.replace('/register');
   };
 
   const goToGetStarted = async () => {

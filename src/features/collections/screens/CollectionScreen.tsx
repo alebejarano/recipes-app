@@ -77,7 +77,10 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     }
   }, [segmentParam])
 
-  const recipeData = isPublic ? localRecipesQuery.data ?? [] : recipesQuery.data ?? []
+  const recipeData = useMemo(
+    () => (isPublic ? localRecipesQuery.data ?? [] : recipesQuery.data ?? []),
+    [isPublic, localRecipesQuery.data, recipesQuery.data]
+  )
 
   const folderCounts = useMemo(() => {
     const counts = new Map<string, number>()

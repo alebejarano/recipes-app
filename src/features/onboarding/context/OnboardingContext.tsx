@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 export type OnboardingPath = 'a' | 'b' | null;
 
@@ -69,45 +69,45 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     load();
   }, []);
 
-  const persist = async (next: OnboardingState) => {
+  const persist = useCallback(async (next: OnboardingState) => {
     setState(next);
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  };
+  }, []);
 
-  const setPath = async (path: OnboardingPath) => {
+  const setPath = useCallback(async (path: OnboardingPath) => {
     const next: OnboardingState = {
       ...state,
       path,
       updatedAt: Date.now(),
     };
     await persist(next);
-  };
+  }, [persist, state]);
 
-  const setStep = async (step: number) => {
+  const setStep = useCallback(async (step: number) => {
     const next: OnboardingState = {
       ...state,
       step,
       updatedAt: Date.now(),
     };
     await persist(next);
-  };
+  }, [persist, state]);
 
-  const markCompleted = async () => {
+  const markCompleted = useCallback(async () => {
     const next: OnboardingState = {
       ...state,
       completed: true,
       updatedAt: Date.now(),
     };
     await persist(next);
-  };
+  }, [persist, state]);
 
-  const resetOnboarding = async () => {
-  // Reset in-memory state immediately (fast UI feedback)
-  setState({ ...DEFAULT_STATE, updatedAt: Date.now() });
+  const resetOnboarding = useCallback(async () => {
+    // Reset in-memory state immediately (fast UI feedback)
+    setState({ ...DEFAULT_STATE, updatedAt: Date.now() });
 
-  // Remove persisted state so next cold start behaves like first run
-  await AsyncStorage.removeItem(STORAGE_KEY);
-};
+    // Remove persisted state so next cold start behaves like first run
+    await AsyncStorage.removeItem(STORAGE_KEY);
+  }, []);
 
 
   const value = useMemo<OnboardingContextValue>(() => {
@@ -127,7 +127,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
       markCompleted,
       resetOnboarding,
     };
-  }, [isLoaded, state]);
+  }, [isLoaded, markCompleted, resetOnboarding, setPath, setStep, state]);
 
   return (
     <OnboardingContext.Provider value={value}>

@@ -4,12 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function useTabBarBottomPadding(extra = 0) {
   const insets = useSafeAreaInsets();
-  let tabBarHeight = 0;
-  try {
-    tabBarHeight = useBottomTabBarHeight();
-  } catch {
-    tabBarHeight = 0;
-  }
+  const tabBarHeight = useBottomTabBarHeight();
 
   return tabBarHeight + insets.bottom + extra;
 }

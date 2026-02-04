@@ -14,8 +14,11 @@ import {
 
 import Button from '@/components/Button'
 import RecipeRow from '@/features/recipes/components/RecipeRow'
-import { useDeleteLocalFolder, useUpdateLocalFolder } from '@/features/folders/hooks/useLocalFolders'
-import { useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
+import {
+  useDeleteLocalFolder,
+  useLocalFoldersList,
+  useUpdateLocalFolder,
+} from '@/features/folders/hooks/useLocalFolders'
 import { useLocalRecipesList } from '@/features/recipes/hooks/useLocalRecipes'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { createThemedStyles } from '@/styles/createStyles'

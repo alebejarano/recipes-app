@@ -139,8 +139,8 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     return filtered.slice(0, 8)
   }, [suggestedFolders, folderInput, values.folders])
 
-  const ingredientInputRefs = useRef<Array<TextInput | null>>([])
-  const stepInputRefs = useRef<Array<TextInput | null>>([])
+  const ingredientInputRefs = useRef<(TextInput | null)[]>([])
+  const stepInputRefs = useRef<(TextInput | null)[]>([])
 
   const canSubmit = useMemo(() => {
     return values.title.trim().length > 0 && !isSubmitting && !isUploadingImage
@@ -435,11 +435,11 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   }, [ensureCameraPermission, uploadImageAsset])
 
   const openCoverOptions = useCallback(() => {
-    const options: Array<{
+    const options: {
       text: string
       onPress?: () => void
       style?: 'default' | 'cancel' | 'destructive'
-    }> = [
+    }[] = [
       { text: 'Pick emoji', onPress: openEmojiModal },
       { text: 'Upload photo', onPress: handlePickImage },
       { text: 'Take photo', onPress: handleTakePhoto },

@@ -6,7 +6,7 @@ import React, { useEffect } from 'react'
 import { AuthProvider } from '@/features/auth/context/AuthContext'
 import { OnboardingProvider } from '@/features/onboarding/context/OnboardingContext'
 import { runLocalMigrations } from '@/lib/localMigrations'
-import QueryProvider from '@/providers/QueryProvider'
+import QueryProviderComponent from '@/providers/QueryProvider'
 import { useLoadFonts } from '@/styles/useLoadFonts'
 
 
@@ -29,12 +29,12 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryProvider>
+    <QueryProviderComponent>
       <AuthProvider>
         <OnboardingProvider>
           <Slot />
         </OnboardingProvider>
       </AuthProvider>
-    </QueryProvider>
+    </QueryProviderComponent>
   )
 }

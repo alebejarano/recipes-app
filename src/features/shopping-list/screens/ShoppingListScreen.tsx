@@ -39,7 +39,6 @@ export default function ShoppingListScreen() {
   const removeItem = useShoppingListStore((s) => s.removeItem)
   const toggleItemByName = useShoppingListStore((s) => s.toggleItemByName)
   const setChecked = useShoppingListStore((s) => s.setChecked)
-  const setCompleteTemporarily = useShoppingListStore((s) => s.setCompleteTemporarily)
 
   useEffect(() => {
     hydrate()

@@ -3,7 +3,7 @@ import { Feather } from '@expo/vector-icons';
 export type SearchFilterId = 'all' | 'recipes' | 'collections' | 'notes';
 export type FeatherIconName = keyof typeof Feather.glyphMap;
 
-export const SEARCH_FILTERS: Array<{ id: SearchFilterId; label: string }> = [
+export const SEARCH_FILTERS: { id: SearchFilterId; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'recipes', label: 'Recipes' },
   { id: 'collections', label: 'Folders' },

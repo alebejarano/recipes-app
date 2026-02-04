@@ -23,9 +23,7 @@ const lockWithTimeout = async <T,>(
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var __recipesapp_supabase_appstate_bound: boolean | undefined
-  // eslint-disable-next-line no-var
   var __recipesapp_supabase_client: SupabaseClient | undefined
 }
 

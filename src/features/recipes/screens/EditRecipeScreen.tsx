@@ -62,7 +62,6 @@ export default function EditRecipeScreen() {
   const { id, returnTo } = useLocalSearchParams<{ id?: string; returnTo?: string }>()
   const recipeId = id ?? ''
   const safeReturnTo = getSafeReturnTo(returnTo)
-  const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
   const insets = useSafeAreaInsets()
 
   const { data: recipe, isLoading, isError } = useRecipe(recipeId)

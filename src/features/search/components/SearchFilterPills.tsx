@@ -5,7 +5,7 @@ import { Text, TouchableOpacity, View } from 'react-native';
 type Option<T extends string> = { id: T; label: string };
 
 type Props<T extends string> = {
-  options: Array<Option<T>>;
+  options: Option<T>[];
   value: T;
   onChange: (next: T) => void;
 };

@@ -149,7 +149,7 @@ export default function HomeScreen({
     }
     const index = hash % recipeCollections.length;
     return recipeCollections[index] ?? null;
-  }, [recipeCollectionsKey]);
+  }, [recipeCollections, recipeCollectionsKey]);
 
   const featuredCollectionRecipes = useMemo(() => {
     if (!featuredCollection) return [];
@@ -323,7 +323,7 @@ export default function HomeScreen({
     <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
       {showAccountSuccessBanner && !bannerDismissed && !isPublic ? (
         <SuccessBanner
-          text="You're all set! Your recipes are safe."
+          text="You&apos;re all set! Your recipes are safe."
           onDismiss={() => setBannerDismissed(true)}
         />
       ) : null}
@@ -338,7 +338,7 @@ export default function HomeScreen({
         greeting={greeting}
         title={
           <>
-            What's cooking? <Text style={styles.wave}>👋</Text>
+            What&apos;s cooking? <Text style={styles.wave}>👋</Text>
           </>
         }
         onPressAdd={() =>
