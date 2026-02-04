@@ -6,12 +6,16 @@ import { createThemedStyles } from '@/styles/createStyles';
 type Props = {
   title: string;
   rightPillText?: string;
+  subtitle?: string;
 };
 
-export default function SectionHeader({ title, rightPillText }: Props) {
+export default function SectionHeader({ title, rightPillText, subtitle }: Props) {
   return (
     <View style={styles.row}>
-      <Text style={styles.title}>{title}</Text>
+      <View style={styles.titleWrap}>
+        <Text style={styles.title}>{title}</Text>
+        {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+      </View>
 
       {!!rightPillText && (
         <View style={styles.pill}>
@@ -28,12 +32,23 @@ const styles = createThemedStyles((theme) => ({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: theme.spacing.md,
+    gap: theme.spacing.sm,
+  },
+  titleWrap: {
+    flex: 1,
   },
   title: {
     fontFamily: theme.fontFamily.semibold,
     fontSize: theme.fontSize.lg,
     lineHeight: theme.lineHeight.lg,
     color: theme.colors.foreground,
+  },
+  subtitle: {
+    marginTop: theme.spacing.xs,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.mutedForeground,
   },
   pill: {
     paddingHorizontal: theme.spacing.md,

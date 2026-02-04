@@ -10,6 +10,7 @@ type RowBase = {
   subtitle?: string
   icon: React.ComponentProps<typeof Feather>['name']
   tone?: 'default' | 'accent' | 'danger'
+  disabled?: boolean
 }
 
 type ToggleRow = RowBase & {
@@ -34,7 +35,8 @@ export default function SettingsRow({
   isLast: boolean
 }) {
   const tone = item.tone ?? 'default'
-  const rowStyle = [styles.row, !isLast && styles.rowDivider]
+  const isDisabled = item.disabled ?? false
+  const rowStyle = [styles.row, !isLast && styles.rowDivider, isDisabled && styles.rowDisabled]
 
   const content = (
     <>
@@ -71,7 +73,7 @@ export default function SettingsRow({
       </View>
 
       {item.type === 'toggle' ? (
-        <Switch value={item.value} onValueChange={item.onValueChange} />
+        <Switch value={item.value} onValueChange={item.onValueChange} disabled={isDisabled} />
       ) : (
         <View style={styles.right}>
           {!!item.rightText && <Text style={styles.rightText}>{item.rightText}</Text>}
@@ -84,8 +86,8 @@ export default function SettingsRow({
   if (item.type === 'link') {
     return (
       <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={item.onPress}
+        activeOpacity={isDisabled ? 1 : 0.85}
+        onPress={isDisabled ? undefined : item.onPress}
         style={rowStyle}
       >
         {content}
@@ -107,6 +109,9 @@ const styles = createThemedStyles((theme) => ({
   rowDivider: {
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
+  },
+  rowDisabled: {
+    opacity: 0.5,
   },
 
   iconWrap: {

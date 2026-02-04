@@ -8,13 +8,15 @@ import SettingsRow, { type SettingsRowItem } from '@/features/profile/components
 
 type Props = {
   title: string;
+  subtitle?: string;
+  rightPillText?: string;
   items: SettingsRowItem[];
 };
 
-export default function SettingsSection({ title, items }: Props) {
+export default function SettingsSection({ title, subtitle, rightPillText, items }: Props) {
   return (
     <View style={styles.wrap}>
-      <SectionHeader title={title} />
+      <SectionHeader title={title} subtitle={subtitle} rightPillText={rightPillText} />
       <View style={styles.card}>
         {items.map((item, idx) => (
           <SettingsRow

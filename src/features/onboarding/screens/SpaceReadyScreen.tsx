@@ -63,7 +63,7 @@ export default function SpaceReadyScreen({
           textStyle={styles.skipText}
           style={styles.skipButton}
         >
-          Continue to Home
+          See the app first
         </Button>
       </View>
     </View>

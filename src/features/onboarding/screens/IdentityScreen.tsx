@@ -7,6 +7,7 @@ import {
     MaterialCommunityIcons,
     MaterialIcons,
 } from '@expo/vector-icons';
+import { usePostHog } from 'posthog-react-native';
 import React, { useState } from 'react';
 import {
     ScrollView,
@@ -64,11 +65,22 @@ const options = [
 
 export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
     const [selected, setSelected] = useState<string[]>([]);
+    const posthog = usePostHog();
 
     const toggleOption = (id: string) => {
-        setSelected(prev =>
-            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id],
-        );
+        setSelected(prev => {
+            const nextSelected = prev.includes(id)
+                ? prev.filter(i => i !== id)
+                : [...prev, id];
+
+            posthog?.capture('onboarding_identity_option_toggled', {
+                option: id,
+                selected: nextSelected.includes(id),
+                selected_count: nextSelected.length,
+            });
+
+            return nextSelected;
+        });
     };
 
     const isContinueDisabled = selected.length === 0;
@@ -151,9 +163,15 @@ export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
                         variant="primary"
                         size="xl"
                         disabled={isContinueDisabled}
-                        onPress={() => onContinue(selected)}
+                        onPress={() => {
+                            posthog?.capture('onboarding_identity_continue', {
+                                selected,
+                                selected_count: selected.length,
+                            });
+                            onContinue(selected);
+                        }}
                     >
-                        See the app first
+                        Continue
                     </Button>
                 </View>
             </View>

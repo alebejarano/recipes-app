@@ -1,3 +1,4 @@
+import { router } from 'expo-router'
 import React, { useCallback, useMemo, useState } from 'react'
 import { Alert } from 'react-native'
 
@@ -68,7 +69,14 @@ export default function ProfileScreen() {
       buildAccountItems({
         isLoggingOut,
         onLogoutPress,
-      }),
+      }).map((item) =>
+        item.id === 'privacy'
+          ? {
+              ...item,
+              onPress: () => router.push('/privacy'),
+            }
+          : item
+      ),
     [isLoggingOut, onLogoutPress]
   )
 

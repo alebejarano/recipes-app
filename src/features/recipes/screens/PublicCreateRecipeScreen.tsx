@@ -21,6 +21,7 @@ import RecipeForm, {
   type RecipeFormSubmitValues,
 } from '@/features/recipes/components/RecipeForm'
 import { useCreateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
+import { addRecipePdfAttachment, type PendingPdfAttachment } from '@/features/recipes/storage/recipePdfStorage'
 
 
 
@@ -52,9 +53,23 @@ export default function PublicCreateRecipeScreen({
   }, [createMutation.isPending, onBack])
 
   const handleSubmit = useCallback(
-    async (values: RecipeFormSubmitValues) => {
+    async (values: RecipeFormSubmitValues, pendingPdfs: PendingPdfAttachment[]) => {
       try {
         const recipe = await createMutation.mutateAsync(values)
+        if (pendingPdfs.length) {
+          try {
+            for (const pdf of pendingPdfs) {
+              await addRecipePdfAttachment({
+                recipeId: recipe.id,
+                uri: pdf.uri,
+                name: pdf.name,
+                size: pdf.size,
+              })
+            }
+          } catch {
+            Alert.alert('PDF upload failed', 'Your recipe saved, but PDFs could not be added.')
+          }
+        }
         if (onSaved) {
           onSaved(recipe.id)
           return

@@ -26,6 +26,8 @@ import type { Recipe } from '@/features/recipes/api/recipesRepo'
 import { useRecipe } from '@/features/recipes/hooks/useRecipe'
 import { useFoldersList } from '@/features/folders/hooks/useFoldersList'
 import { useUpdateRecipe } from '@/features/recipes/hooks/useUpdateRecipe'
+import { useDeleteRecipePdfAttachment, useRecipePdfAttachments } from '@/features/recipes/hooks/useRecipePdfAttachments'
+import { addRecipePdfAttachment, type PendingPdfAttachment } from '@/features/recipes/storage/recipePdfStorage'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 const FOOTER_HEIGHT = 72
@@ -66,6 +68,8 @@ export default function EditRecipeScreen() {
 
   const { data: recipe, isLoading, isError } = useRecipe(recipeId)
   const updateMutation = useUpdateRecipe(recipeId)
+  const pdfAttachmentsQuery = useRecipePdfAttachments(recipeId)
+  const deletePdfMutation = useDeleteRecipePdfAttachment(recipeId)
   const foldersQuery = useFoldersList()
   const folderSuggestions = useMemo(
     () =>
@@ -83,9 +87,23 @@ export default function EditRecipeScreen() {
   }, [updateMutation.isPending])
 
   const handleSubmit = useCallback(
-    async (values: RecipeFormSubmitValues) => {
+    async (values: RecipeFormSubmitValues, pendingPdfs: PendingPdfAttachment[]) => {
       try {
         await updateMutation.mutateAsync(values)
+        if (pendingPdfs.length) {
+          try {
+            for (const pdf of pendingPdfs) {
+              await addRecipePdfAttachment({
+                recipeId,
+                uri: pdf.uri,
+                name: pdf.name,
+                size: pdf.size,
+              })
+            }
+          } catch {
+            Alert.alert('PDF upload failed', 'Your changes saved, but PDFs could not be added.')
+          }
+        }
         if (safeReturnTo) {
           router.replace(safeReturnTo)
         } else {
@@ -180,6 +198,8 @@ export default function EditRecipeScreen() {
               onSubmit={handleSubmit}
               showActions={false}
               suggestedFolders={folderSuggestions}
+              existingPdfAttachments={pdfAttachmentsQuery.data ?? []}
+              onRemovePdfAttachment={(id) => deletePdfMutation.mutateAsync(id)}
             />
 
             {updateMutation.isError ? (

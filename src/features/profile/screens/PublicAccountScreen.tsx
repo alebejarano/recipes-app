@@ -52,6 +52,14 @@ export default function PublicAccountScreen() {
         icon: 'hard-drive' as const,
         onPress: () => router.push('/(public)/get-started'),
       },
+      {
+        id: 'privacy',
+        type: 'link' as const,
+        title: 'Privacy & Security',
+        subtitle: 'Manage analytics and replay',
+        icon: 'shield' as const,
+        onPress: () => router.push('/privacy'),
+      },
     ],
     []
   )

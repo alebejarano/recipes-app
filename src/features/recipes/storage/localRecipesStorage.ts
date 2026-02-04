@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
+import { deleteRecipePdfAttachmentsForRecipe } from '@/features/recipes/storage/recipePdfStorage'
 
 const STORAGE_KEY = 'recipes:local'
 
@@ -219,4 +220,5 @@ export async function deleteLocalRecipe(id: string): Promise<void> {
   const items = await readAll()
   const nextItems = items.filter((item) => item.id !== id)
   await writeAll(nextItems)
+  await deleteRecipePdfAttachmentsForRecipe(id)
 }

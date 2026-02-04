@@ -2,7 +2,8 @@
 
 import { supabase } from '@/lib/supabase'
 import type { AuthResponse, Session, User } from '@supabase/supabase-js'
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { usePostHog } from 'posthog-react-native'
 
 type AuthContextValue = {
   session: Session | null
@@ -19,6 +20,8 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const posthog = usePostHog()
+  const lastIdentifiedUserId = useRef<string | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -53,6 +56,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       sub.subscription.unsubscribe()
     }
   }, [])
+
+  useEffect(() => {
+    if (!posthog) return
+
+    const userId = session?.user?.id ?? null
+
+    if (!userId) {
+      if (lastIdentifiedUserId.current) {
+        posthog.reset()
+        lastIdentifiedUserId.current = null
+      }
+      return
+    }
+
+    if (lastIdentifiedUserId.current !== userId) {
+      posthog.identify(userId, {
+        email: session?.user?.email ?? undefined,
+      })
+      lastIdentifiedUserId.current = userId
+    }
+  }, [posthog, session?.user?.id, session?.user?.email])
 
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
