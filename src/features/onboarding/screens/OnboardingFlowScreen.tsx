@@ -6,8 +6,6 @@ import { View } from 'react-native';
 import OnboardingLayout from '@/features/onboarding/components/OnboardingLayout';
 import AddRecipeScreen from '@/features/onboarding/screens/AddRecipeScreen';
 import IdentityScreen from '@/features/onboarding/screens/IdentityScreen';
-import ImportSourcesScreen from '@/features/onboarding/screens/ImportSourcesScreen';
-import MagicMomentScreen from '@/features/onboarding/screens/MagicMomentScreen';
 import SpaceReadyScreen from '@/features/onboarding/screens/SpaceReadyScreen';
 import WelcomeScreen from '@/features/onboarding/screens/WelcomeScreen';
 import PublicCreateRecipeScreen from '@/features/recipes/screens/PublicCreateRecipeScreen';
@@ -22,7 +20,6 @@ export default function OnboardingFlowScreen() {
   const params = useLocalSearchParams<{ reset?: string; dev?: string }>();
   const didResetRef = useRef(false);
   const didHydrateRef = useRef(false);
-
 
   const {
     isLoaded,
@@ -39,7 +36,7 @@ export default function OnboardingFlowScreen() {
   useEffect(() => {
     if (!isLoaded || didHydrateRef.current) return;
 
-  didHydrateRef.current = true;
+    didHydrateRef.current = true;
 
     // Dev helper: run reset only once, even if state changes
     const allowDevPreview = __DEV__ && params.dev === '1';
@@ -101,11 +98,6 @@ export default function OnboardingFlowScreen() {
     router.replace('/(public)/(tabs)');
   };
 
-  const goToGetStarted = async () => {
-    await markCompleted();
-    router.replace('/get-started');
-  };
-
   const handleRecipeSaved = async (recipeId?: string) => {
     await markCompleted();
     router.replace({
@@ -119,7 +111,10 @@ export default function OnboardingFlowScreen() {
     if (step === 1) return <IdentityScreen onContinue={() => setStep(2)} />;
     if (step === 2) {
       return (
-          <SpaceReadyScreen onAddRecipe={handleAddRecipePath} onSkip={handleSkipPath} />
+        <SpaceReadyScreen
+          onAddRecipe={handleAddRecipePath}
+          onSkip={handleSkipPath}
+        />
       );
     }
 
@@ -132,28 +127,8 @@ export default function OnboardingFlowScreen() {
             <PublicCreateRecipeScreen
               onSaved={(id) => handleRecipeSaved(id)}
               onBack={() => setStep(3)}
-              compactFooter
             />
           );
-        default:
-          return <WelcomeScreen onContinue={() => setStep(1)} />;
-      }
-    }
-
-    if (path === 'b') {
-      switch (step) {
-        case 3:
-          return <ImportSourcesScreen onContinue={() => setStep(4)} />;
-        case 4:
-          return <MagicMomentScreen onAddRecipe={() => setStep(5)} onGoGetStarted={goToGetStarted} />;
-        case 5:
-          return (
-            <PublicCreateRecipeScreen
-              onSaved={(id) => handleRecipeSaved(id)}
-              compactFooter
-            />
-          );
-
         default:
           return <WelcomeScreen onContinue={() => setStep(1)} />;
       }
@@ -164,19 +139,20 @@ export default function OnboardingFlowScreen() {
 
   const getProgress = () => {
     if (path === 'a') return { current: step + 1, total: 5 };
-    if (path === 'b') return { current: step + 1, total: 6 };
     return { current: step + 1, total: 3 };
   };
 
   const { current, total } = getProgress();
 
-  const isEmbeddedScrollStep =
-    (path === 'a' && step === 4) ||
-    (path === 'b' && step === 5);
+  const isEmbeddedScrollStep = path === 'a' && step === 4;
 
   return (
-      <OnboardingLayout step={current} totalSteps={total} scrollEnabled={!isEmbeddedScrollStep}>
-        <View style={{ flex: 1 }}>{renderScreen()}</View>
-      </OnboardingLayout>
+    <OnboardingLayout
+      step={current}
+      totalSteps={total}
+      scrollEnabled={!isEmbeddedScrollStep}
+    >
+      <View style={{ flex: 1 }}>{renderScreen()}</View>
+    </OnboardingLayout>
   );
 }

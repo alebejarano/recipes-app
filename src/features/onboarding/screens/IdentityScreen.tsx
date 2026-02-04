@@ -153,7 +153,7 @@ export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
                         disabled={isContinueDisabled}
                         onPress={() => onContinue(selected)}
                     >
-                        Continue
+                        See the app first
                     </Button>
                 </View>
             </View>

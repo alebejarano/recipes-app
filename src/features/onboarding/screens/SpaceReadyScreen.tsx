@@ -12,64 +12,62 @@ interface SpaceReadyScreenProps {
   onSkip: () => void;
 }
 
-
 export default function SpaceReadyScreen({
-                                             onAddRecipe,
-                                             onSkip,
-                                         }: SpaceReadyScreenProps) {
-    return (
+  onAddRecipe,
+  onSkip,
+}: SpaceReadyScreenProps) {
+  return (
+    <View style={styles.container}>
+      {/* TOP: illustration + text (keeps a tight, controlled spacing) */}
+      <View style={styles.topBlock}>
+        <IllustrationHero
+          source={spaceReadyIllustration}
+          maxWidth={360}
+          maxHeight={320}
+          aspectRatio={4 / 3}
+          resizeMode="contain"
+          style={styles.hero}
+        />
 
-        <View style={styles.container}>
-            {/* TOP: illustration + text (keeps a tight, controlled spacing) */}
-            <View style={styles.topBlock}>
-                <IllustrationHero
-                    source={spaceReadyIllustration}
-                    maxWidth={360}
-                    maxHeight={320}
-                    aspectRatio={4 / 3}
-                    resizeMode="contain"  
-                    style={styles.hero}
-                />
+        <View style={styles.textBlock}>
+          <View style={styles.badge}>
+            <View style={styles.badgeDot} />
+            <Text style={styles.badgeText}>Step 3 of 3</Text>
+          </View>
 
-                <View style={styles.textBlock}>
-                    <View style={styles.badge}>
-                    <View style={styles.badgeDot} />
-                    <Text style={styles.badgeText}>Ready for you</Text>
-                    </View>
+          <Text style={styles.title}>
+            Your recipe space{'\n'}is ready.
+          </Text>
 
-                    <Text style={styles.title}>
-                    Your personal recipe{'\n'}space is ready.
-                    </Text>
-
-                    <Text style={styles.subtitle}>
-                    Everything you save is stored safely in your personal space.
-                    </Text>
-                </View>
-            </View>
-
-            {/* BOTTOM: actions */}
-            <View style={styles.buttonGroup}>
-            <Button
-                onPress={onAddRecipe}
-                size="xl"
-                variant="primary"
-                icon={<Feather name="plus" size={20} style={styles.addIconColor} />}
-            >
-                Add a Recipe
-            </Button>
-
-            <Button
-                onPress={onSkip}
-                variant="ghost"
-                size="lg"
-                textStyle={styles.skipText}
-                style={styles.skipButton}
-            >
-                Continue without an account
-            </Button>
-            </View>
+          <Text style={styles.subtitle}>
+            Add your first recipe now, or continue without an account to go home.
+          </Text>
         </View>
-    );
+      </View>
+
+      {/* BOTTOM: actions */}
+      <View style={styles.buttonGroup}>
+        <Button
+          onPress={onAddRecipe}
+          size="xl"
+          variant="primary"
+          icon={<Feather name="plus" size={20} style={styles.addIconColor} />}
+        >
+          Add a Recipe
+        </Button>
+
+        <Button
+          onPress={onSkip}
+          variant="ghost"
+          size="lg"
+          textStyle={styles.skipText}
+          style={styles.skipButton}
+        >
+          Continue to Home
+        </Button>
+      </View>
+    </View>
+  );
 }
 
 const styles = createThemedStyles(theme => ({
@@ -93,7 +91,6 @@ const styles = createThemedStyles(theme => ({
   addIconColor: {
     color: theme.colors.primaryForeground,
   },
-
 
   /* Text content */
   textBlock: {
@@ -119,7 +116,7 @@ const styles = createThemedStyles(theme => ({
     backgroundColor: theme.colors.primary,
     marginRight: theme.spacing.sm,
   },
-   badgeText: {
+  badgeText: {
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.sm,
     lineHeight: theme.lineHeight.sm,
@@ -144,7 +141,7 @@ const styles = createThemedStyles(theme => ({
     maxWidth: 340,
     marginBottom: theme.spacing['3xl'],
   },
- buttonGroup: {
+  buttonGroup: {
     width: '100%',
     maxWidth: 360,
     paddingBottom: theme.spacing.lg,

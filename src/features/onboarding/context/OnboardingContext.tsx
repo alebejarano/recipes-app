@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-export type OnboardingPath = 'a' | 'b' | null;
+export type OnboardingPath = 'a' | null;
 
 type OnboardingState = {
   path: OnboardingPath;
@@ -35,6 +35,10 @@ const DEFAULT_STATE: OnboardingState = {
   updatedAt: Date.now(),
 };
 
+const normalizePath = (path: unknown): OnboardingPath => {
+  return path === 'a' ? 'a' : null;
+};
+
 const OnboardingContext = createContext<OnboardingContextValue | null>(null);
 
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
@@ -54,6 +58,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
             setState({
               ...DEFAULT_STATE,
               ...parsed,
+              path: normalizePath(parsed.path),
             });
           } else {
             setState(DEFAULT_STATE);
