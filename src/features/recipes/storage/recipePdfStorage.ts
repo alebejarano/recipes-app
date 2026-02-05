@@ -1,7 +1,7 @@
-import * as FileSystem from 'expo-file-system'
+import { Directory, File, Paths } from 'expo-file-system'
 import { Platform } from 'react-native'
 
-import { runSqlAsync, runSqlBatchAsync } from '@/lib/sqlite'
+import { getAllAsync, getFirstAsync, runSqlAsync, runSqlBatchAsync } from '@/lib/sqlite'
 
 export type RecipePdfAttachment = {
   id: string
@@ -23,7 +23,10 @@ export type PendingPdfAttachment = {
   size: number
 }
 
-const ATTACHMENTS_DIR = `${FileSystem.documentDirectory ?? ''}recipe-pdfs`
+const ATTACHMENTS_DIR = new Directory(Paths.document, 'recipe-pdfs')
+const ATTACHMENTS_BASE_URI = ATTACHMENTS_DIR.uri.endsWith('/')
+  ? ATTACHMENTS_DIR.uri
+  : `${ATTACHMENTS_DIR.uri}/`
 
 const MIGRATION_STATEMENTS = [
   {
@@ -55,22 +58,31 @@ function makeId() {
 }
 
 async function ensureDir() {
-  if (!FileSystem.documentDirectory) return
-  await FileSystem.makeDirectoryAsync(ATTACHMENTS_DIR, { intermediates: true })
+  if (Platform.OS === 'web') return
+  if (!ATTACHMENTS_DIR.exists) {
+    ATTACHMENTS_DIR.create({ intermediates: true, idempotent: true })
+  }
 }
 
 function buildDestinationPath(name: string) {
   const safeName = name.replace(/[^a-zA-Z0-9._-]/g, '_')
-  return `${ATTACHMENTS_DIR}/${Date.now()}_${safeName || 'recipe.pdf'}`
+  return `${ATTACHMENTS_BASE_URI}${Date.now()}_${safeName || 'recipe.pdf'}`
 }
 
 export async function listRecipePdfAttachments(recipeId: string): Promise<RecipePdfAttachment[]> {
   await ensureRecipePdfStorageReady()
-  const result = await runSqlAsync(
+  const rows = await getAllAsync<{
+    id: string
+    recipe_id: string
+    file_name: string
+    file_uri: string
+    file_size: number
+    created_at: string
+  }>(
     'SELECT * FROM recipe_pdf_attachments WHERE recipe_id = ? ORDER BY created_at DESC;',
     [recipeId]
   )
-  return result.rows._array.map((row) => ({
+  return rows.map((row) => ({
     id: row.id as string,
     recipeId: row.recipe_id as string,
     fileName: row.file_name as string,
@@ -82,10 +94,12 @@ export async function listRecipePdfAttachments(recipeId: string): Promise<Recipe
 
 export async function getPdfUsageSummary(): Promise<PdfUsageSummary> {
   await ensureRecipePdfStorageReady()
-  const result = await runSqlAsync(
+  const row = await getFirstAsync<{
+    totalCount: number
+    totalBytes: number
+  }>(
     'SELECT COUNT(*) as totalCount, COALESCE(SUM(file_size), 0) as totalBytes FROM recipe_pdf_attachments;'
   )
-  const row = result.rows.item(0)
   return {
     totalCount: Number(row?.totalCount ?? 0),
     totalBytes: Number(row?.totalBytes ?? 0),
@@ -106,7 +120,9 @@ export async function addRecipePdfAttachment(input: {
   const destination = buildDestinationPath(input.name)
 
   if (Platform.OS !== 'web') {
-    await FileSystem.copyAsync({ from: input.uri, to: destination })
+    const source = new File(input.uri)
+    const target = new File(destination)
+    source.copy(target)
   } else {
     // On web, keep the original uri.
   }
@@ -133,14 +149,16 @@ export async function addRecipePdfAttachment(input: {
 
 export async function deleteRecipePdfAttachment(id: string): Promise<void> {
   await ensureRecipePdfStorageReady()
-  const result = await runSqlAsync(
+  const row = await getFirstAsync<{ fileUri: string | null }>(
     'SELECT file_uri as fileUri FROM recipe_pdf_attachments WHERE id = ?;',
     [id]
   )
-  const row = result.rows.item(0)
-  if (row?.fileUri && FileSystem.documentDirectory && !row.fileUri.startsWith('http')) {
+  if (row?.fileUri && !row.fileUri.startsWith('http')) {
     try {
-      await FileSystem.deleteAsync(row.fileUri, { idempotent: true })
+      const file = new File(row.fileUri)
+      if (file.exists) {
+        file.delete()
+      }
     } catch {
       // ignore delete errors for stale files
     }
@@ -150,15 +168,17 @@ export async function deleteRecipePdfAttachment(id: string): Promise<void> {
 
 export async function deleteRecipePdfAttachmentsForRecipe(recipeId: string): Promise<void> {
   await ensureRecipePdfStorageReady()
-  const result = await runSqlAsync(
+  const attachments = await getAllAsync<{ id: string; fileUri: string }>(
     'SELECT id, file_uri as fileUri FROM recipe_pdf_attachments WHERE recipe_id = ?;',
     [recipeId]
   )
-  const attachments = result.rows._array as { id: string; fileUri: string }[]
   for (const attachment of attachments) {
-    if (attachment.fileUri && FileSystem.documentDirectory && !attachment.fileUri.startsWith('http')) {
+    if (attachment.fileUri && !attachment.fileUri.startsWith('http')) {
       try {
-        await FileSystem.deleteAsync(attachment.fileUri, { idempotent: true })
+        const file = new File(attachment.fileUri)
+        if (file.exists) {
+          file.delete()
+        }
       } catch {
         // ignore delete errors for stale files
       }

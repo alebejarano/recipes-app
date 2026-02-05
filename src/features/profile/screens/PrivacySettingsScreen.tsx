@@ -5,8 +5,8 @@ import Screen from '@/components/Screen';
 import { createThemedStyles } from '@/styles/createStyles';
 
 import ProfileHeader from '@/features/profile/components/ProfileHeader';
-import SettingsSection from '@/features/profile/components/SettingsSection';
 import type { SettingsRowItem } from '@/features/profile/components/SettingsRow';
+import SettingsSection from '@/features/profile/components/SettingsSection';
 
 import { useAnalyticsConsent } from '@/features/analytics/context/AnalyticsConsentContext';
 import { usePdfUsageSummary } from '@/features/recipes/hooks/useRecipePdfAttachments';
@@ -14,9 +14,7 @@ import { usePdfUsageSummary } from '@/features/recipes/hooks/useRecipePdfAttachm
 export default function PrivacySettingsScreen() {
   const {
     analyticsEnabled,
-    sessionReplayEnabled,
     setAnalyticsEnabled,
-    setSessionReplayEnabled,
   } = useAnalyticsConsent();
   const pdfUsageQuery = usePdfUsageSummary();
 
@@ -27,24 +25,13 @@ export default function PrivacySettingsScreen() {
         type: 'toggle',
         icon: 'bar-chart-2',
         title: 'Usage analytics',
-        subtitle: 'Help improve the app with anonymized usage data.',
+        subtitle: 'Help improve the app by sharing anonymized usage data.',
         value: analyticsEnabled,
         onValueChange: setAnalyticsEnabled,
       },
-      {
-        id: 'session-replay',
-        type: 'toggle',
-        icon: 'video',
-        title: 'Session replay',
-        subtitle: analyticsEnabled
-          ? 'Allow session recordings to diagnose issues.'
-          : 'Enable analytics to allow session recordings.',
-        value: analyticsEnabled && sessionReplayEnabled,
-        onValueChange: setSessionReplayEnabled,
-        disabled: !analyticsEnabled,
-      },
+      
     ],
-    [analyticsEnabled, sessionReplayEnabled, setAnalyticsEnabled, setSessionReplayEnabled]
+    [analyticsEnabled, setAnalyticsEnabled]
   );
 
   const totalBytes = pdfUsageQuery.data?.totalBytes ?? 0;
@@ -57,7 +44,7 @@ export default function PrivacySettingsScreen() {
     <Screen scroll contentStyle={styles.content}>
       <ProfileHeader
         title="Privacy & Security"
-        subtitle="Control analytics and session replay."
+        subtitle="Manage analytics on this device."
       />
 
       <SettingsSection title="Analytics" items={items} />
@@ -81,9 +68,17 @@ export default function PrivacySettingsScreen() {
       />
 
       <View style={styles.noteWrap}>
+        <Text style={styles.noteTitle}>Why we ask this</Text>
         <Text style={styles.note}>
-          Turning off analytics stops event collection on this device. Session replay is only
-          captured when analytics is enabled.
+          We collect anonymized information about what brings people to the app to better
+          understand which features matter most. This data helps guide future improvements
+          and is never linked to your identity.
+        </Text>
+      </View>
+
+      <View style={styles.noteWrap}>
+        <Text style={styles.note}>
+          Turning off analytics stops event collection on this device.
         </Text>
       </View>
     </Screen>
@@ -107,4 +102,9 @@ const styles = createThemedStyles((theme) => ({
     lineHeight: theme.lineHeight.base,
     color: theme.colors.mutedForeground,
   },
+  noteTitle: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.lg,
+    color: theme.colors.foreground
+  }
 }));

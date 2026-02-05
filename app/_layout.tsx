@@ -61,21 +61,20 @@ function PostHogGate({
   host: string
   children: React.ReactNode
 }) {
-  const { analyticsEnabled, sessionReplayEnabled, isLoaded } = useAnalyticsConsent()
+    const { analyticsEnabled, isLoaded } = useAnalyticsConsent()
 
+  // If analytics is off (or not ready), do not initialize PostHog at all.
   if (!apiKey || !isLoaded || !analyticsEnabled) {
     return <>{children}</>
   }
 
   return (
     <PostHogProvider
-      key={`posthog-${sessionReplayEnabled ? 'replay-on' : 'replay-off'}`}
+      key={'posthog-on'}
       apiKey={apiKey}
       options={{
         host,
-        enableSessionReplay: sessionReplayEnabled,
       }}
-      autocapture
     >
       {children}
     </PostHogProvider>

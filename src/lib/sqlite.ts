@@ -2,42 +2,44 @@ import * as SQLite from 'expo-sqlite'
 
 const DB_NAME = 'recipes.db'
 
-let db: SQLite.SQLiteDatabase | null = null
+let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null
 
-function getDatabase() {
-  if (!db) {
-    db = SQLite.openDatabase(DB_NAME)
+async function getDatabaseAsync() {
+  if (!dbPromise) {
+    dbPromise = SQLite.openDatabaseAsync(DB_NAME)
   }
-  return db
+  return dbPromise
 }
 
-export function runSqlAsync(
+export async function runSqlAsync(
   sql: string,
   params: (string | number | null)[] = []
-): Promise<SQLite.SQLResultSet> {
-  const database = getDatabase()
-  return new Promise((resolve, reject) => {
-    database.transaction((tx) => {
-      tx.executeSql(
-        sql,
-        params,
-        (_tx, result) => resolve(result),
-        (_tx, error) => {
-          reject(error)
-          return true
-        }
-      )
-    })
+): Promise<SQLite.SQLiteRunResult> {
+  const database = await getDatabaseAsync()
+  return database.runAsync(sql, params)
+}
+
+export async function runSqlBatchAsync(statements: { sql: string; params?: (string | number | null)[] }[]) {
+  const database = await getDatabaseAsync()
+  await database.withExclusiveTransactionAsync(async (txn) => {
+    for (const statement of statements) {
+      await txn.runAsync(statement.sql, statement.params ?? [])
+    }
   })
 }
 
-export function runSqlBatchAsync(statements: { sql: string; params?: (string | number | null)[] }[]) {
-  const database = getDatabase()
-  return new Promise<void>((resolve, reject) => {
-    database.transaction((tx) => {
-      for (const statement of statements) {
-        tx.executeSql(statement.sql, statement.params ?? [])
-      }
-    }, reject, resolve)
-  })
+export async function getAllAsync<T>(
+  sql: string,
+  params: (string | number | null)[] = []
+): Promise<T[]> {
+  const database = await getDatabaseAsync()
+  return database.getAllAsync<T>(sql, params)
+}
+
+export async function getFirstAsync<T>(
+  sql: string,
+  params: (string | number | null)[] = []
+): Promise<T | null> {
+  const database = await getDatabaseAsync()
+  return database.getFirstAsync<T>(sql, params)
 }
