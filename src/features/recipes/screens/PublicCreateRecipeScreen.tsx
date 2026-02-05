@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons'
 import { router } from 'expo-router'
-import React, { useCallback, useMemo, useRef } from 'react'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
 import {
   Alert,
   KeyboardAvoidingView,
@@ -20,37 +20,50 @@ import RecipeForm, {
   type RecipeFormHandle,
   type RecipeFormSubmitValues,
 } from '@/features/recipes/components/RecipeForm'
+import RecipeDocumentForm, {
+  type RecipeDocumentFormHandle,
+  type RecipeDocumentFormValues,
+} from '@/features/recipes/components/RecipeDocumentForm'
 import { useCreateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
 import { addRecipePdfAttachment, type PendingPdfAttachment } from '@/features/recipes/storage/recipePdfStorage'
+import { useAddRecipeDocument } from '@/features/recipes/hooks/useRecipeDocuments'
+import type { CreateRecipeEntry } from '@/features/recipes/screens/CreateRecipeScreen'
 
 
 
 type PublicCreateRecipeScreenProps = {
   onSaved?: (recipeId: string) => void
   onBack?: () => void
+  entry?: CreateRecipeEntry
 }
 
 export default function PublicCreateRecipeScreen({
   onSaved,
   onBack,
+  entry,
 }: PublicCreateRecipeScreenProps) {
   const insets = useSafeAreaInsets()
+  const [entryMode, setEntryMode] = useState<'scratch' | 'pdf' | null>(entry ?? null)
   const createMutation = useCreateLocalRecipe()
+  const documentMutation = useAddRecipeDocument()
   const foldersQuery = useLocalFoldersList()
   const createFolderMutation = useCreateLocalFolder()
-  const formRef = useRef<RecipeFormHandle>(null)
+  const recipeFormRef = useRef<RecipeFormHandle>(null)
+  const documentFormRef = useRef<RecipeDocumentFormHandle>(null)
 
   const screenTitle = 'Create your recipe'
-  const submitLabel = 'Add Recipe'
+  const submitLabel = entryMode === 'pdf' ? 'Save' : 'Add Recipe'
+
+  const isSaving = entryMode === 'pdf' ? documentMutation.isPending : createMutation.isPending
 
   const handleBack = useCallback(() => {
-    if (createMutation.isPending) return
+    if (isSaving) return
     if (onBack) {
       onBack()
       return
     }
     router.back()
-  }, [createMutation.isPending, onBack])
+  }, [isSaving, onBack])
 
   const handleSubmit = useCallback(
     async (values: RecipeFormSubmitValues, pendingPdfs: PendingPdfAttachment[]) => {
@@ -86,10 +99,33 @@ export default function PublicCreateRecipeScreen({
     [createMutation, onSaved]
   )
 
+  const handleDocumentSubmit = useCallback(
+    async (values: RecipeDocumentFormValues, file: { uri: string; name: string; size: number }) => {
+      try {
+        await documentMutation.mutateAsync({ title: values.title, file })
+        router.replace({
+          pathname: '/(public)/(tabs)/collections',
+          params: {
+            segment: 'recipes',
+            recipesSegment: 'documents',
+            docSuccess: '1',
+          },
+        })
+      } catch (error: any) {
+        Alert.alert('Save failed', error?.message ?? 'Please try again.')
+      }
+    },
+    [documentMutation]
+  )
+
   const triggerSave = useCallback(() => {
-    if (createMutation.isPending) return
-    formRef.current?.submit()
-  }, [createMutation.isPending])
+    if (isSaving) return
+    if (entryMode === 'pdf') {
+      documentFormRef.current?.submit()
+      return
+    }
+    recipeFormRef.current?.submit()
+  }, [entryMode, isSaving])
 
    const keyboardVerticalOffset = Platform.select({
       ios: insets.top + 44,
@@ -134,7 +170,7 @@ export default function PublicCreateRecipeScreen({
             style={styles.backButton}
             textStyle={styles.backText}
             icon={<Feather name="arrow-left" size={16} style={styles.backIcon} />}
-            disabled={createMutation.isPending}
+            disabled={isSaving}
           >
             Back
           </Button>
@@ -156,25 +192,68 @@ export default function PublicCreateRecipeScreen({
             showsVerticalScrollIndicator={false}
             automaticallyAdjustKeyboardInsets
           >
-            <View style={styles.header}>
-              <Text style={styles.title}>{screenTitle}</Text>
-              <Text style={styles.subtitle}>Add the basics—you can always edit later.</Text>
-            </View>
+            {entryMode ? (
+              <>
+                <View style={styles.header}>
+                  <Text style={styles.title}>{screenTitle}</Text>
+                  <Text style={styles.subtitle}>
+                    {entryMode === 'pdf'
+                      ? 'Upload a recipe PDF and add a title.'
+                      : 'Add the basics—you can always edit later.'}
+                  </Text>
+                </View>
 
-            <RecipeForm
-              ref={formRef}
-              initialValues={initialValues}
-              submitLabel={submitLabel}
-              isSubmitting={createMutation.isPending}
-              onSubmit={handleSubmit}
-              showActions={false}
-              suggestedFolders={folderSuggestions}
-              allowFolderCreation
-              onCreateFolder={handleCreateFolder}
-              imageUploadMode="local"
-            />
+                {entryMode === 'pdf' ? (
+                  <RecipeDocumentForm
+                    ref={documentFormRef}
+                    isSubmitting={documentMutation.isPending}
+                    onSubmit={handleDocumentSubmit}
+                    autoPickPdf
+                  />
+                ) : (
+                  <RecipeForm
+                    ref={recipeFormRef}
+                    initialValues={initialValues}
+                    submitLabel={submitLabel}
+                    isSubmitting={createMutation.isPending}
+                    onSubmit={handleSubmit}
+                    showActions={false}
+                    suggestedFolders={folderSuggestions}
+                    allowFolderCreation
+                    onCreateFolder={handleCreateFolder}
+                    imageUploadMode="local"
+                  />
+                )}
+              </>
+            ) : (
+              <View style={styles.choiceCard}>
+                <Text style={styles.choiceTitle}>How would you like to add this recipe?</Text>
+                <Text style={styles.choiceSubtitle}>
+                  Create it manually or import it from a file.
+                </Text>
 
-            {createMutation.isError ? (
+                <View style={styles.choiceButtons}>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onPress={() => setEntryMode('scratch')}
+                    icon={<Feather name="edit-3" size={18} style={styles.choiceIconPrimary} />}
+                  >
+                    Create from scratch
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    onPress={() => setEntryMode('pdf')}
+                    icon={<Feather name="file-text" size={18} style={styles.choiceIconSecondary} />}
+                  >
+                    Import from PDF
+                  </Button>
+                </View>
+              </View>
+            )}
+
+            {createMutation.isError || documentMutation.isError ? (
               <View style={styles.errorBanner}>
                 <Text style={styles.errorText}>
                   Unable to save right now. Please try again.
@@ -183,12 +262,12 @@ export default function PublicCreateRecipeScreen({
             ) : null}
           </ScrollView>
 
-          <View style={styles.footer}>
+          <View style={[styles.footer, entryMode ? null : styles.footerCompact]}>
             <Button
               variant="secondary"
               size="md"
               onPress={handleBack}
-              disabled={createMutation.isPending}
+              disabled={isSaving}
               style={styles.footerButton}
             >
               Cancel
@@ -198,8 +277,8 @@ export default function PublicCreateRecipeScreen({
               variant="primary"
               size="md"
               onPress={triggerSave}
-              loading={createMutation.isPending}
-              disabled={createMutation.isPending}
+              loading={isSaving}
+              disabled={isSaving || !entryMode}
               style={styles.footerButton}
             >
               {submitLabel}
@@ -246,6 +325,34 @@ const styles = createThemedStyles((theme) => ({
     lineHeight: theme.lineHeight.base,
     color: theme.colors.mutedForeground,
   },
+
+  choiceCard: {
+    marginTop: theme.spacing.sm,
+    padding: theme.spacing.lg,
+    borderRadius: theme.radii.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+  },
+  choiceTitle: {
+    fontFamily: theme.fontFamily.semibold,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    color: theme.colors.foreground,
+  },
+  choiceSubtitle: {
+    marginTop: theme.spacing.xs,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
+  },
+  choiceButtons: {
+    marginTop: theme.spacing.lg,
+    gap: theme.spacing.sm,
+  },
+  choiceIconPrimary: { color: theme.colors.background },
+  choiceIconSecondary: { color: theme.colors.foreground },
 
   footer: {
     flexDirection: 'row',

@@ -1,4 +1,5 @@
 export type SegmentKey = 'recipes' | 'notes' | 'shopping';
+export type RecipeSegmentKey = 'folders' | 'documents';
 
 export type Recipe = {
   id: string;

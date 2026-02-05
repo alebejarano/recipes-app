@@ -21,18 +21,16 @@ import { theme } from '@/styles/theme'
 
 import CollectionTile from '@/features/collections/components/CollectionTile'
 import NewCollectionTile from '@/features/collections/components/NewCollectionTile'
+import RecipeSegmentedTabs from '@/features/collections/components/RecipeSegmentedTabs'
 import SegmentedTabs from '@/features/collections/components/SegmentedTabs'
 
 // NEW: segment pages
 import NotesSegment from '@/features/collections/components/NotesSegment'
+import RecipeDocumentsSegment from '@/features/collections/components/RecipeDocumentsSegment'
 import ShoppingSegment from '@/features/collections/components/ShoppingSegment'
 
-import type { CollectionItem, SegmentKey } from '@/features/collections/types'
-import {
-  buildCollectionsForSegment,
-  getCollectionsHelperText,
-  pickVariant,
-} from '@/features/collections/utils/collections'
+import type { CollectionItem, RecipeSegmentKey, SegmentKey } from '@/features/collections/types'
+import { buildCollectionsForSegment, pickVariant } from '@/features/collections/utils/collections'
 import { useCreateFolder } from '@/features/folders/hooks/useCreateFolder'
 import { useFoldersList } from '@/features/folders/hooks/useFoldersList'
 import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
@@ -45,13 +43,19 @@ type CollectionsScreenProps = {
 }
 
 export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
-  const { segment: segmentParam } = useLocalSearchParams<{ segment?: SegmentKey }>()
+  const { segment: segmentParam, recipesSegment, docSuccess } = useLocalSearchParams<{
+    segment?: SegmentKey
+    recipesSegment?: RecipeSegmentKey
+    docSuccess?: string
+  }>()
   const segments = useSegments()
   const resolvedMode =
     mode ??
     (segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth')
   const isPublic = resolvedMode === 'public'
   const [segment, setSegment] = useState<SegmentKey>('recipes')
+  const [recipeSegment, setRecipeSegment] = useState<RecipeSegmentKey>('folders')
+  const [showDocSuccess, setShowDocSuccess] = useState(false)
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false)
   const [newFolderEmoji, setNewFolderEmoji] = useState('')
   const [newFolderName, setNewFolderName] = useState('')
@@ -76,6 +80,32 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
       setSegment(segmentParam)
     }
   }, [segmentParam])
+
+  useEffect(() => {
+    if (recipesSegment === 'documents' || recipesSegment === 'folders') {
+      setRecipeSegment(recipesSegment)
+    }
+  }, [recipesSegment])
+
+  useEffect(() => {
+    if (docSuccess === '1') {
+      setSegment('recipes')
+      setRecipeSegment('documents')
+      setShowDocSuccess(true)
+    }
+  }, [docSuccess])
+
+  useEffect(() => {
+    if (!showDocSuccess) return
+    const timeout = setTimeout(() => setShowDocSuccess(false), 3500)
+    return () => clearTimeout(timeout)
+  }, [showDocSuccess])
+
+  useEffect(() => {
+    if (recipeSegment !== 'documents' && showDocSuccess) {
+      setShowDocSuccess(false)
+    }
+  }, [recipeSegment, showDocSuccess])
 
   const recipeData = useMemo(
     () => (isPublic ? localRecipesQuery.data ?? [] : recipesQuery.data ?? []),
@@ -105,16 +135,16 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
 
     const folderSource = isPublic ? localFoldersQuery.data ?? [] : foldersQuery.data ?? []
 
-    const folderItems =
+    const folderItems: CollectionItem[] =
       folderSource.map((folder) => ({
         key: folder.name,
         label: folder.name,
         count: folderCounts.counts.get(folder.name.toLowerCase()) ?? 0,
         kind: 'tag' as const,
-        emoji: folder.emoji,
+        emoji: folder.emoji ?? undefined,
       }))
 
-    const items = [...folderItems]
+    const items: CollectionItem[] = [...folderItems]
     if (folderCounts.uncategorized > 0) {
       items.push({
         key: 'Uncategorized',
@@ -130,10 +160,27 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     return items
   }, [segment, recipeData, foldersQuery.data, localFoldersQuery.data, folderCounts, isPublic])
 
-  const fabLabel = segment === 'recipes' ? 'Create folder' : 'Create collection'
+  const recipeHelperText =
+    recipeSegment === 'documents'
+      ? ''
+      : 'Recipes are grouped automatically based on tags'
+
+  const fabLabel =
+    segment === 'recipes'
+      ? recipeSegment === 'documents'
+        ? 'Import PDF'
+        : 'Create folder'
+      : 'Create collection'
 
   const onPressFab = () => {
     if (segment === 'recipes') {
+      if (recipeSegment === 'documents') {
+        router.push({
+          pathname: isPublic ? '/(public)/recipes/create' : '/(auth)/recipes/create',
+          params: { entry: 'pdf' },
+        })
+        return
+      }
       setIsCreateFolderOpen(true)
       return
     }
@@ -198,13 +245,42 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
 
       {/* Segmented control */}
       <SegmentedTabs value={segment} onChange={setSegment} />
+      {segment === 'recipes' ? (
+        <RecipeSegmentedTabs value={recipeSegment} onChange={setRecipeSegment} />
+      ) : null}
+
+      {segment === 'recipes' && recipeSegment === 'documents' && showDocSuccess ? (
+        <View style={styles.successBanner} accessibilityRole="alert">
+          <View style={styles.successContent}>
+            <Feather name="check-circle" size={18} color={styles.successIcon.color} />
+            <Text style={styles.successText}>
+              Your recipe PDF has been successfully uploaded.
+            </Text>
+          </View>
+          <Pressable
+            onPress={() => setShowDocSuccess(false)}
+            style={styles.successClose}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss success message"
+          >
+            <Feather name="x" size={16} color={styles.successCloseIcon.color} />
+          </Pressable>
+        </View>
+      ) : null}
 
       {/* Segment content */}
       {segment === 'recipes' ? (
         <>
-          <Text style={styles.helperText}>{getCollectionsHelperText(segment)}</Text>
+          {recipeHelperText ? (
+            <Text style={styles.helperText}>{recipeHelperText}</Text>
+          ) : null}
 
-          {recipesQuery.isLoading && !isPublic ? (
+          {recipeSegment === 'documents' ? (
+            <RecipeDocumentsSegment
+              bottomPadding={bottomPadding}
+              mode={isPublic ? 'public' : resolvedMode}
+            />
+          ) : recipesQuery.isLoading && !isPublic ? (
             <View style={styles.loadingState}>
               <ActivityIndicator size="small" color={styles.loadingText.color} />
               <Text style={styles.loadingText}>Loading recipes…</Text>
@@ -276,7 +352,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
               }}
             />
           )}
-          {isPublic && recipeData.length > 0 ? (
+          {isPublic && recipeSegment !== 'documents' && recipeData.length > 0 ? (
             <Text style={styles.publicHint}>Sign in to sync folders across devices.</Text>
           ) : null}
         </>
@@ -403,6 +479,46 @@ const styles = createThemedStyles((theme) => ({
     lineHeight: theme.lineHeight.base,
     color: theme.colors.mutedForeground,
     maxWidth: 320,
+  },
+
+  successBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.radii.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    marginBottom: theme.spacing.lg,
+  },
+  successContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  successIcon: {
+    color: theme.colors.sage,
+  },
+  successText: {
+    flex: 1,
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.foreground,
+  },
+  successClose: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successCloseIcon: {
+    color: theme.colors.foreground,
   },
 
   grid: {

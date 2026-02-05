@@ -1,7 +1,7 @@
 // src/features/recipes/components/RecipeForm.tsx
 import { Feather } from '@expo/vector-icons'
 import * as DocumentPicker from 'expo-document-picker'
-import * as FileSystem from 'expo-file-system'
+import { File } from 'expo-file-system'
 import * as ImagePicker from 'expo-image-picker'
 import React, {
   forwardRef,
@@ -102,6 +102,7 @@ type Props = {
   initialValues?: RecipeFormValues
   submitLabel: string
   isSubmitting?: boolean
+  autoPickPdf?: boolean
   onSubmit: (
     values: RecipeFormSubmitValues,
     pendingPdfs: PendingPdfAttachment[]
@@ -121,6 +122,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     initialValues,
     submitLabel,
     isSubmitting,
+    autoPickPdf = false,
     onSubmit,
     onCancel,
     showActions = true,
@@ -144,6 +146,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   const [pendingPdfs, setPendingPdfs] = useState<PendingPdfAttachment[]>([])
   const [pdfUsage, setPdfUsage] = useState<PdfUsageSummary>({ totalBytes: 0, totalCount: 0 })
   const [isPickingPdf, setIsPickingPdf] = useState(false)
+  const autoPickAttempted = useRef(false)
   const createFolderMutation = useCreateFolder()
   const normalizedSuggestedFolders = useMemo(() => {
     if (!suggestedFolders.length) return []
@@ -506,8 +509,9 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       let size = asset.size ?? 0
       if (!size) {
         try {
-          const info = await FileSystem.getInfoAsync(asset.uri)
-          size = typeof info.size === 'number' ? info.size : 0
+          const info = await new File(asset.uri).info()
+          size =
+            info.exists && 'size' in info && typeof info.size === 'number' ? info.size : 0
         } catch {
           size = 0
         }
@@ -556,6 +560,12 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   React.useEffect(() => {
     void refreshPdfUsage()
   }, [refreshPdfUsage])
+
+  React.useEffect(() => {
+    if (!autoPickPdf || autoPickAttempted.current) return
+    autoPickAttempted.current = true
+    void handlePickPdf()
+  }, [autoPickPdf, handlePickPdf])
 
   return (
     <View style={styles.form}>
