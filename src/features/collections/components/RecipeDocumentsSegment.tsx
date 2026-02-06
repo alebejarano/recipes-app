@@ -9,7 +9,7 @@ import { getSafeReturnTo } from '@/lib/navigation'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
-const FALLBACK_TITLE = 'Untitled recipe PDF'
+const FALLBACK_TITLE = 'Untitled recipe file'
 
 export default function RecipeDocumentsSegment({
   bottomPadding,
@@ -43,21 +43,21 @@ export default function RecipeDocumentsSegment({
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.helper}>Recipes imported from PDF files</Text>
+      <Text style={styles.helper}>Recipes imported from PDF or image files</Text>
 
       {docsQuery.isLoading ? (
         <View style={styles.loadingState}>
           <ActivityIndicator size="small" color={styles.loadingText.color} />
-          <Text style={styles.loadingText}>Loading PDFs…</Text>
+          <Text style={styles.loadingText}>Loading files…</Text>
         </View>
       ) : data.length === 0 ? (
         <View style={styles.emptyState}>
           <View style={styles.emptyIcon}>
             <Feather name="file-text" size={22} color={theme.colors.mutedForeground} />
           </View>
-          <Text style={styles.emptyTitle}>No PDF recipes yet</Text>
+          <Text style={styles.emptyTitle}>No imported recipes yet</Text>
           <Text style={styles.emptyBody}>
-            Import a recipe PDF to keep it with your collection.
+            Import a recipe PDF, JPG, or PNG to keep it with your collection.
           </Text>
           <Pressable
             onPress={() =>
@@ -68,10 +68,10 @@ export default function RecipeDocumentsSegment({
             }
             style={styles.emptyCta}
             accessibilityRole="button"
-            accessibilityLabel="Import recipe PDF"
+            accessibilityLabel="Import recipe file"
           >
             <Feather name="upload" size={18} color={theme.colors.primaryForeground} />
-            <Text style={styles.emptyCtaText}>Import PDF</Text>
+            <Text style={styles.emptyCtaText}>Import file</Text>
           </Pressable>
         </View>
       ) : (
@@ -123,10 +123,10 @@ export default function RecipeDocumentsSegment({
               }
               style={styles.newItem}
               accessibilityRole="button"
-              accessibilityLabel="Import PDF"
+              accessibilityLabel="Import file"
             >
               <Feather name="upload" size={18} color={theme.colors.mutedForeground} />
-              <Text style={styles.newItemText}>Import PDF</Text>
+              <Text style={styles.newItemText}>Import file</Text>
             </Pressable>
           }
         />

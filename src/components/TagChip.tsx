@@ -1,8 +1,8 @@
 // src/components/TagChip.tsx
+import { createThemedStyles } from '@/styles/createStyles';
+import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, Text } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { createThemedStyles } from '@/styles/createStyles';
 
 interface TagChipProps {
     label: string;
@@ -48,8 +48,8 @@ const styles = createThemedStyles(theme => ({
         flexDirection: 'row',
         alignItems: 'center',
         alignSelf: 'flex-start', // ← critical
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.xs,
+        paddingHorizontal: theme.spacing.lg,
+        paddingVertical: theme.spacing.md,
         borderRadius: theme.radii.full,
     },
 

@@ -13,7 +13,11 @@ import {
 } from '@/features/shopping-list/storage/shoppingListStorage'
 import CreateActionCard from '../components/CreateActionCard'
 
-export default function CreateNewScreen() {
+type CreateNewScreenProps = {
+  group?: 'auth' | 'public' | 'dev'
+}
+
+export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [hasShoppingList, setHasShoppingList] = useState(false)
   const [isCreatingList, setIsCreatingList] = useState(false)
@@ -35,16 +39,23 @@ export default function CreateNewScreen() {
     }, [refreshShoppingListStatus])
   )
 
+  const groupPath = `/(${group})`
+
   const handleCreateRecipe = useCallback(() => {
+    if (group === 'public') {
+      router.push(`/(public)/recipes/create`)
+      return
+    }
+
     router.push({
-      pathname: '/(auth)/recipes/create',
+      pathname: `${groupPath}/recipes/create`,
       params: { variant: 'app' },
     })
-  }, [])
+  }, [group, groupPath])
 
   const handleCreateNote = useCallback(() => {
-    router.push('/(auth)/notes/create')
-  }, [])
+    router.push(`${groupPath}/notes/create`)
+  }, [groupPath])
 
   const handleShoppingList = useCallback(async () => {
     // Keep your existing behavior: if already created, do nothing.
@@ -54,11 +65,11 @@ export default function CreateNewScreen() {
     try {
       await ensureShoppingList()
       await refreshShoppingListStatus()
-      router.push('/(auth)/shopping-list')
+      router.push(`${groupPath}/shopping-list`)
     } finally {
       setIsCreatingList(false)
     }
-  }, [hasShoppingList, refreshShoppingListStatus])
+  }, [groupPath, hasShoppingList, refreshShoppingListStatus])
 
   const shoppingSubtitle = useMemo(() => {
     if (isLoading) return 'Checking…'

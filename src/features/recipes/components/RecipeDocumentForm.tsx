@@ -38,6 +38,7 @@ const MAX_COUNT = 5
 const MAX_TOTAL_BYTES = 50 * 1024 * 1024
 const MAX_FILE_BYTES = 20 * 1024 * 1024
 const METADATA_READ_LIMIT = 2 * 1024 * 1024
+const ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
 
 function titleFromFilename(name: string) {
   const trimmed = name.trim()
@@ -89,9 +90,22 @@ async function tryExtractPdfTitle(uri: string, size: number) {
   return null
 }
 
-async function buildBestTitle(input: { uri: string; name: string; size: number }) {
-  const metadataTitle = await tryExtractPdfTitle(input.uri, input.size)
-  if (metadataTitle) return metadataTitle
+function isPdfFile(name: string, mimeType?: string | null) {
+  if (mimeType === 'application/pdf') return true
+  return name.trim().toLowerCase().endsWith('.pdf')
+}
+
+function inferFallbackName(mimeType?: string | null) {
+  if (mimeType === 'image/png') return 'recipe.png'
+  if (mimeType === 'image/jpeg') return 'recipe.jpg'
+  return 'recipe.pdf'
+}
+
+async function buildBestTitle(input: { uri: string; name: string; size: number; isPdf: boolean }) {
+  if (input.isPdf) {
+    const metadataTitle = await tryExtractPdfTitle(input.uri, input.size)
+    if (metadataTitle) return metadataTitle
+  }
 
   const filenameTitle = titleFromFilename(input.name)
   if (isSaneTitle(filenameTitle)) return filenameTitle
@@ -126,12 +140,12 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
     }
   }, [])
 
-  const pickPdf = useCallback(async () => {
+  const pickFile = useCallback(async () => {
     if (isPicking) return
     setIsPicking(true)
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: 'application/pdf',
+        type: ALLOWED_MIME_TYPES,
         copyToCacheDirectory: true,
         multiple: false,
       })
@@ -154,21 +168,22 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
       const totalBytes = usage.totalBytes
 
       if (size > MAX_FILE_BYTES) {
-        Alert.alert('File too large', 'Each PDF must be 20 MB or smaller.')
+        Alert.alert('File too large', 'Each file must be 20 MB or smaller.')
         return
       }
       if (totalCount >= MAX_COUNT) {
-        Alert.alert('PDF limit reached', 'Free accounts can save up to 5 PDFs.')
+        Alert.alert('File limit reached', 'Free accounts can save up to 5 files.')
         return
       }
       if (totalBytes + size > MAX_TOTAL_BYTES) {
-        Alert.alert('Storage limit reached', 'Free accounts can save up to 50 MB of PDFs.')
+        Alert.alert('Storage limit reached', 'Free accounts can save up to 50 MB of files.')
         return
       }
 
-      const name = asset.name ?? 'recipe.pdf'
+      const name = asset.name ?? inferFallbackName(asset.mimeType)
+      const isPdf = isPdfFile(name, asset.mimeType)
       setFile({ uri: asset.uri, name, size })
-      const suggestedTitle = await buildBestTitle({ uri: asset.uri, name, size })
+      const suggestedTitle = await buildBestTitle({ uri: asset.uri, name, size, isPdf })
       setTitle((prev) => (prev.trim() ? prev : suggestedTitle))
     } finally {
       setIsPicking(false)
@@ -180,7 +195,7 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
     () => ({
       submit: () => {
         if (!file) {
-          Alert.alert('Add a PDF', 'Choose a PDF file to upload first.')
+          Alert.alert('Add a file', 'Choose a PDF, JPG, or PNG file to upload first.')
           return
         }
         onSubmit({ title }, file)
@@ -190,7 +205,9 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
   )
 
   const helperText = useMemo(() => {
-    return `Free plan: ${MAX_COUNT} PDFs, 50 MB total. ${formatBytes(usage.totalBytes)} used.`
+    return `Free plan: ${MAX_COUNT} files (PDF, JPG, PNG), 50 MB total. ${formatBytes(
+      usage.totalBytes
+    )} used.`
   }, [usage.totalBytes])
 
   React.useEffect(() => {
@@ -200,13 +217,13 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
   React.useEffect(() => {
     if (!autoPickPdf || autoPickAttempted.current) return
     autoPickAttempted.current = true
-    void pickPdf()
-  }, [autoPickPdf, pickPdf])
+    void pickFile()
+  }, [autoPickPdf, pickFile])
 
   return (
     <View style={styles.form}>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Import PDF</Text>
+        <Text style={styles.sectionTitle}>Import file</Text>
         <Text style={styles.helperText}>{helperText}</Text>
 
         <View style={styles.fileCard}>
@@ -218,7 +235,7 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
               {file?.name ?? 'No file selected'}
             </Text>
             <Text style={styles.fileMeta}>
-              {file ? formatBytes(file.size) : 'PDF only'}
+              {file ? formatBytes(file.size) : 'PDF, JPG, or PNG'}
             </Text>
           </View>
         </View>
@@ -226,7 +243,7 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
         <Button
           variant="secondary"
           size="md"
-          onPress={pickPdf}
+          onPress={pickFile}
           disabled={isSubmitting || isPicking}
           style={styles.pickButton}
           icon={
@@ -237,7 +254,7 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
             )
           }
         >
-          {isPicking ? 'Choosing…' : 'Choose PDF'}
+          {isPicking ? 'Choosing…' : 'Choose file'}
         </Button>
       </View>
 
@@ -258,18 +275,18 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
 
       {file ? (
         <Pressable
-          onPress={pickPdf}
+          onPress={pickFile}
           accessibilityRole="button"
-          accessibilityLabel="Replace PDF"
+          accessibilityLabel="Replace file"
           style={({ pressed }) => [styles.replaceRow, pressed && styles.replaceRowPressed]}
         >
           <Feather name="refresh-ccw" size={14} color={styles.replaceIcon.color} />
-          <Text style={styles.replaceText}>Replace PDF</Text>
+          <Text style={styles.replaceText}>Replace file</Text>
         </Pressable>
       ) : null}
 
       {!canSubmit && !file ? (
-        <Text style={styles.validationHint}>Select a PDF to continue.</Text>
+        <Text style={styles.validationHint}>Select a file to continue.</Text>
       ) : null}
     </View>
   )

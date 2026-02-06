@@ -2,12 +2,11 @@
 
 import { Feather } from '@expo/vector-icons'
 import { router, useLocalSearchParams, useSegments } from 'expo-router'
-import React, { useCallback, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import {
   ActivityIndicator,
   Alert,
   Image,
-  Linking,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -19,7 +18,6 @@ import { createThemedStyles } from '@/styles/createStyles'
 
 import { useDeleteRecipe } from '@/features/recipes/hooks/useDeleteRecipe'
 import { useRecipe } from '@/features/recipes/hooks/useRecipe'
-import { useRecipePdfAttachments } from '@/features/recipes/hooks/useRecipePdfAttachments'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 const FALLBACK_FOLDERS: string[] = []
@@ -41,7 +39,6 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
   const segments = useSegments()
   const deleteMutation = useDeleteRecipe()
   const { data: recipe, isLoading, isError, error } = useRecipe(recipeId)
-  const pdfAttachmentsQuery = useRecipePdfAttachments(recipeId)
 
   const ingredientLines = useMemo(
     () => buildIngredientLines(recipe?.ingredients),
@@ -106,13 +103,6 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
     ])
   }
 
-  const openPdf = useCallback(async (uri: string) => {
-    try {
-      await Linking.openURL(uri)
-    } catch {
-      Alert.alert('Unable to open PDF', 'Please try again.')
-    }
-  }, [])
 
   if (isLoading) {
     return (
@@ -291,36 +281,6 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
               })
             ) : (
               <Text style={styles.emptyText}>No instructions yet.</Text>
-            )}
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>PDFs</Text>
-          <View style={styles.card}>
-            {pdfAttachmentsQuery.data?.length ? (
-              pdfAttachmentsQuery.data.map((attachment) => (
-                <TouchableOpacity
-                  key={attachment.id}
-                  style={styles.attachmentRow}
-                  onPress={() => openPdf(attachment.fileUri)}
-                >
-                  <View style={styles.attachmentInfo}>
-                    <Feather name="file-text" size={16} style={styles.attachmentIcon} />
-                    <View style={styles.attachmentTextWrap}>
-                      <Text style={styles.attachmentName} numberOfLines={1}>
-                        {attachment.fileName}
-                      </Text>
-                      <Text style={styles.attachmentMeta}>
-                        {(attachment.fileSize / (1024 * 1024)).toFixed(1)} MB
-                      </Text>
-                    </View>
-                  </View>
-                  <Feather name="external-link" size={16} style={styles.attachmentIcon} />
-                </TouchableOpacity>
-              ))
-            ) : (
-              <Text style={styles.emptyText}>No PDFs attached.</Text>
             )}
           </View>
         </View>
@@ -537,40 +497,6 @@ const styles = createThemedStyles((theme) => ({
   emptyText: {
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.base,
-    color: theme.colors.mutedForeground,
-  },
-  attachmentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
-    borderRadius: theme.radii.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.background,
-  },
-  attachmentInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: theme.spacing.sm,
-  },
-  attachmentIcon: {
-    color: theme.colors.mutedForeground,
-  },
-  attachmentTextWrap: {
-    flex: 1,
-  },
-  attachmentName: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    color: theme.colors.foreground,
-  },
-  attachmentMeta: {
-    marginTop: 2,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
     color: theme.colors.mutedForeground,
   },
   noteText: {

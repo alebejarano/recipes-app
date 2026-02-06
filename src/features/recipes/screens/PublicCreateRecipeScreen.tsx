@@ -25,7 +25,6 @@ import RecipeDocumentForm, {
   type RecipeDocumentFormValues,
 } from '@/features/recipes/components/RecipeDocumentForm'
 import { useCreateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
-import { addRecipePdfAttachment, type PendingPdfAttachment } from '@/features/recipes/storage/recipePdfStorage'
 import { useAddRecipeDocument } from '@/features/recipes/hooks/useRecipeDocuments'
 import type { CreateRecipeEntry } from '@/features/recipes/screens/CreateRecipeScreen'
 
@@ -66,23 +65,9 @@ export default function PublicCreateRecipeScreen({
   }, [isSaving, onBack])
 
   const handleSubmit = useCallback(
-    async (values: RecipeFormSubmitValues, pendingPdfs: PendingPdfAttachment[]) => {
+    async (values: RecipeFormSubmitValues) => {
       try {
         const recipe = await createMutation.mutateAsync(values)
-        if (pendingPdfs.length) {
-          try {
-            for (const pdf of pendingPdfs) {
-              await addRecipePdfAttachment({
-                recipeId: recipe.id,
-                uri: pdf.uri,
-                name: pdf.name,
-                size: pdf.size,
-              })
-            }
-          } catch {
-            Alert.alert('PDF upload failed', 'Your recipe saved, but PDFs could not be added.')
-          }
-        }
         if (onSaved) {
           onSaved(recipe.id)
           return
@@ -198,7 +183,7 @@ export default function PublicCreateRecipeScreen({
                   <Text style={styles.title}>{screenTitle}</Text>
                   <Text style={styles.subtitle}>
                     {entryMode === 'pdf'
-                      ? 'Upload a recipe PDF and add a title.'
+                      ? 'Upload a recipe file (PDF, JPG, or PNG) and add a title.'
                       : 'Add the basics—you can always edit later.'}
                   </Text>
                 </View>
@@ -247,7 +232,7 @@ export default function PublicCreateRecipeScreen({
                     onPress={() => setEntryMode('pdf')}
                     icon={<Feather name="file-text" size={18} style={styles.choiceIconSecondary} />}
                   >
-                    Import from PDF
+                    Import from file
                   </Button>
                 </View>
               </View>

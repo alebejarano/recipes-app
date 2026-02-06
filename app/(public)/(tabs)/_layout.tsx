@@ -122,7 +122,7 @@ export default function PublicTabsLayout() {
                   activeOpacity={0.9}
                   onPress={(e) => {
                     e.preventDefault?.();
-                    router.push('/(public)/recipes/create');
+                    router.push('/(public)/create');
                   }}
                   accessibilityLabel={accessibilityLabel}
                   accessibilityState={accessibilityState}

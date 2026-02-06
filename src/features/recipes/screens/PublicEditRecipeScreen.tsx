@@ -22,8 +22,6 @@ import RecipeForm, {
 } from '@/features/recipes/components/RecipeForm'
 import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
 import { useLocalRecipe, useUpdateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
-import { useDeleteRecipePdfAttachment, useRecipePdfAttachments } from '@/features/recipes/hooks/useRecipePdfAttachments'
-import { addRecipePdfAttachment, type PendingPdfAttachment } from '@/features/recipes/storage/recipePdfStorage'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 const FOOTER_HEIGHT = 72
@@ -76,8 +74,6 @@ export default function PublicEditRecipeScreen() {
 
   const { data: recipe, isLoading, isError } = useLocalRecipe(recipeId)
   const updateMutation = useUpdateLocalRecipe(recipeId)
-  const pdfAttachmentsQuery = useRecipePdfAttachments(recipeId)
-  const deletePdfMutation = useDeleteRecipePdfAttachment(recipeId)
   const foldersQuery = useLocalFoldersList()
   const createFolderMutation = useCreateLocalFolder()
   const formRef = useRef<RecipeFormHandle>(null)
@@ -88,23 +84,9 @@ export default function PublicEditRecipeScreen() {
   }, [updateMutation.isPending])
 
   const handleSubmit = useCallback(
-    async (values: RecipeFormSubmitValues, pendingPdfs: PendingPdfAttachment[]) => {
+    async (values: RecipeFormSubmitValues) => {
       try {
         await updateMutation.mutateAsync(values)
-        if (pendingPdfs.length) {
-          try {
-            for (const pdf of pendingPdfs) {
-              await addRecipePdfAttachment({
-                recipeId,
-                uri: pdf.uri,
-                name: pdf.name,
-                size: pdf.size,
-              })
-            }
-          } catch {
-            Alert.alert('PDF upload failed', 'Your changes saved, but PDFs could not be added.')
-          }
-        }
         if (safeReturnTo) {
           router.replace(safeReturnTo)
         } else {
@@ -230,8 +212,6 @@ export default function PublicEditRecipeScreen() {
               allowFolderCreation
               onCreateFolder={handleCreateFolder}
               imageUploadMode="local"
-              existingPdfAttachments={pdfAttachmentsQuery.data ?? []}
-              onRemovePdfAttachment={(id) => deletePdfMutation.mutateAsync(id)}
             />
 
             {updateMutation.isError ? (

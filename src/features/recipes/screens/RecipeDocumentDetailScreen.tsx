@@ -12,7 +12,23 @@ import { useDeleteRecipeDocument, useRecipeDocument } from '@/features/recipes/h
 import { getSafeReturnTo } from '@/lib/navigation'
 import { createThemedStyles } from '@/styles/createStyles'
 
-const FALLBACK_TITLE = 'Recipe PDF'
+const FALLBACK_TITLE = 'Recipe file'
+
+type FileKind = 'pdf' | 'image' | 'unknown'
+
+function getFileInfo(fileName?: string | null) {
+  const lower = (fileName ?? '').trim().toLowerCase()
+  if (lower.endsWith('.pdf')) {
+    return { kind: 'pdf' as FileKind, label: 'PDF', mimeType: 'application/pdf' }
+  }
+  if (lower.endsWith('.png')) {
+    return { kind: 'image' as FileKind, label: 'PNG', mimeType: 'image/png' }
+  }
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+    return { kind: 'image' as FileKind, label: 'JPG', mimeType: 'image/jpeg' }
+  }
+  return { kind: 'unknown' as FileKind, label: 'File', mimeType: '*/*' }
+}
 
 type RecipeDocumentDetailScreenProps = {
   documentId: string
@@ -29,6 +45,8 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
   const title = useMemo(() => {
     return document?.title?.trim() || FALLBACK_TITLE
   }, [document?.title])
+
+  const fileInfo = useMemo(() => getFileInfo(document?.fileName), [document?.fileName])
 
   const uploadedOn = useMemo(() => {
     if (!document?.createdAt) return '—'
@@ -68,8 +86,8 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
     }
   }, [safeReturnTo])
 
-  // Open PDF handler
-  const handleOpenPDF = useCallback(async () => {
+  // Open file handler
+  const handleOpenFile = useCallback(async () => {
     if (!document?.fileUri) {
       Alert.alert('Error', 'No file path available.')
       return
@@ -83,7 +101,7 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
       if (!file.exists) {
         Alert.alert(
           'File Not Found',
-          'The PDF file could not be found. It may have been moved or deleted.'
+          'The file could not be found. It may have been moved or deleted.'
         )
         return
       }
@@ -99,34 +117,36 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
           )
           return
         }
-        
+
         await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
           data: contentUri,
           flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
-          type: 'application/pdf',
+          type: fileInfo.mimeType,
         })
       } else {
         // iOS: Use the file URI directly
         const canOpen = await Linking.canOpenURL(file.uri)
-        
+
         if (!canOpen) {
           Alert.alert(
-            'Cannot Open PDF',
-            'No application available to open PDF files.'
+            'Cannot Open File',
+            'No application available to open this file.'
           )
           return
         }
-        
+
         await Linking.openURL(file.uri)
       }
     } catch (error) {
-      console.error('Error opening PDF:', error)
-      
-      // Check if it's because no PDF viewer is installed
+      console.error('Error opening file:', error)
+
+      // Check if it's because no viewer is installed
       if (error instanceof Error && error.message.includes('No Activity found')) {
         Alert.alert(
-          'No PDF Viewer Found',
-          'Please install a PDF viewer app (like Adobe Acrobat Reader, Google PDF Viewer, or any file manager) to open PDF files.',
+          fileInfo.kind === 'pdf' ? 'No PDF Viewer Found' : 'No App Found',
+          fileInfo.kind === 'pdf'
+            ? 'Please install a PDF viewer app (like Adobe Acrobat Reader, Google PDF Viewer, or any file manager) to open PDF files.'
+            : 'Please install an app that can open this file type.',
           [
             {
               text: 'OK',
@@ -138,18 +158,18 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
         const errorMessage = error instanceof Error 
           ? error.message 
           : 'An unexpected error occurred.'
-        
-        Alert.alert('Unable to Open PDF', errorMessage)
+
+        Alert.alert('Unable to Open File', errorMessage)
       }
     }
-  }, [document?.fileUri])
+  }, [document?.fileUri, fileInfo])
 
   // Delete handler
-  const handleDeletePDF = useCallback(() => {
+  const handleDeleteFile = useCallback(() => {
     if (!documentId || deleteMutation.isPending) return
 
     Alert.alert(
-      'Delete PDF?',
+      'Delete file?',
       `Are you sure you want to delete "${title}"? This action cannot be undone.`,
       [
         {
@@ -162,20 +182,20 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
           onPress: async () => {
             try {
               await deleteMutation.mutateAsync(documentId)
-              
-              Alert.alert('Deleted', 'PDF has been deleted successfully.', [
+
+              Alert.alert('Deleted', 'File has been deleted successfully.', [
                 {
                   text: 'OK',
                   onPress: handleGoBack
                 }
               ])
             } catch (error) {
-              console.error('Error deleting PDF:', error)
-              
+              console.error('Error deleting file:', error)
+
               const errorMessage = error instanceof Error
                 ? error.message
-                : 'Failed to delete the PDF. Please try again.'
-              
+                : 'Failed to delete the file. Please try again.'
+
               Alert.alert('Delete Failed', errorMessage)
             }
           }
@@ -189,7 +209,7 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.centeredContainer}>
-          <Text style={styles.statusText}>Loading PDF…</Text>
+          <Text style={styles.statusText}>Loading file…</Text>
         </View>
       </SafeAreaView>
     )
@@ -201,7 +221,7 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.centeredContainer}>
           <Feather name="alert-circle" size={48} style={styles.errorIcon} />
-          <Text style={styles.errorTitle}>Unable to Load PDF</Text>
+          <Text style={styles.errorTitle}>Unable to Load File</Text>
           <Text style={styles.errorMessage}>
             This document could not be loaded. It may have been deleted or is no longer available.
           </Text>
@@ -242,10 +262,10 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
         <Button
           variant="primary"
           size="lg"
-          onPress={handleOpenPDF}
+          onPress={handleOpenFile}
           icon={<Feather name="external-link" size={18} style={styles.buttonIcon} />}
         >
-          Open PDF
+          {`Open ${fileInfo.label}`}
         </Button>
 
         {/* Metadata Card */}
@@ -278,11 +298,11 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
         <Button
           variant="secondary"
           size="md"
-          onPress={handleDeletePDF}
+          onPress={handleDeleteFile}
           disabled={deleteMutation.isPending}
           icon={<Feather name="trash-2" size={16} style={styles.deleteIcon} />}
         >
-          {deleteMutation.isPending ? 'Deleting…' : 'Delete PDF'}
+          {deleteMutation.isPending ? 'Deleting…' : 'Delete file'}
         </Button>
       </ScrollView>
     </SafeAreaView>

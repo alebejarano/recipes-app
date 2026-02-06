@@ -1,7 +1,5 @@
 // src/features/recipes/components/RecipeForm.tsx
 import { Feather } from '@expo/vector-icons'
-import * as DocumentPicker from 'expo-document-picker'
-import { File } from 'expo-file-system'
 import * as ImagePicker from 'expo-image-picker'
 import React, {
   forwardRef,
@@ -26,12 +24,6 @@ import Button from '@/components/Button'
 import TagChip from '@/components/TagChip'
 import { useCreateFolder } from '@/features/folders/hooks/useCreateFolder'
 import { uploadRecipeImage } from '@/features/recipes/api/recipesRepo'
-import {
-  type PendingPdfAttachment,
-  type PdfUsageSummary,
-  type RecipePdfAttachment,
-} from '@/features/recipes/storage/recipePdfStorage'
-import { getPdfUsageSummary } from '@/features/recipes/storage/recipePdfStorage'
 import { createThemedStyles } from '@/styles/createStyles'
 
 export type RecipeFormValues = {
@@ -102,19 +94,13 @@ type Props = {
   initialValues?: RecipeFormValues
   submitLabel: string
   isSubmitting?: boolean
-  autoPickPdf?: boolean
-  onSubmit: (
-    values: RecipeFormSubmitValues,
-    pendingPdfs: PendingPdfAttachment[]
-  ) => Promise<void> | void
+  onSubmit: (values: RecipeFormSubmitValues) => Promise<void> | void
   onCancel?: () => void
   showActions?: boolean
   suggestedFolders?: FolderSuggestion[]
   imageUploadMode?: 'cloud' | 'local'
   allowFolderCreation?: boolean
   onCreateFolder?: (input: { name: string; emoji?: string | null }) => Promise<void>
-  existingPdfAttachments?: RecipePdfAttachment[]
-  onRemovePdfAttachment?: (id: string) => Promise<void>
 }
 
 const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
@@ -122,7 +108,6 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     initialValues,
     submitLabel,
     isSubmitting,
-    autoPickPdf = false,
     onSubmit,
     onCancel,
     showActions = true,
@@ -130,8 +115,6 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     imageUploadMode = 'cloud',
     allowFolderCreation = true,
     onCreateFolder,
-    existingPdfAttachments = [],
-    onRemovePdfAttachment,
   },
   ref
 ) {
@@ -143,10 +126,6 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   const [isEmojiModalOpen, setIsEmojiModalOpen] = useState(false)
   const [emojiDraft, setEmojiDraft] = useState('')
   const [isUploadingImage, setIsUploadingImage] = useState(false)
-  const [pendingPdfs, setPendingPdfs] = useState<PendingPdfAttachment[]>([])
-  const [pdfUsage, setPdfUsage] = useState<PdfUsageSummary>({ totalBytes: 0, totalCount: 0 })
-  const [isPickingPdf, setIsPickingPdf] = useState(false)
-  const autoPickAttempted = useRef(false)
   const createFolderMutation = useCreateFolder()
   const normalizedSuggestedFolders = useMemo(() => {
     if (!suggestedFolders.length) return []
@@ -327,8 +306,8 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     }
     const payload = buildPayload()
     if (!payload) return
-    await onSubmit(payload, pendingPdfs)
-  }, [buildPayload, isUploadingImage, onSubmit, pendingPdfs])
+    await onSubmit(payload)
+  }, [buildPayload, isUploadingImage, onSubmit])
 
   useImperativeHandle(
     ref,
@@ -473,105 +452,10 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     Alert.alert('Add cover', 'Choose an emoji or a photo.', options)
   }, [clearCover, handlePickImage, handleTakePhoto, openEmojiModal, values])
 
-  const refreshPdfUsage = useCallback(async () => {
-    try {
-      const summary = await getPdfUsageSummary()
-      setPdfUsage(summary)
-    } catch {
-      // ignore
-    }
-  }, [])
-
-  const formatBytes = useCallback((bytes: number) => {
-    if (bytes <= 0) return '0 MB'
-    const mb = bytes / (1024 * 1024)
-    return `${mb.toFixed(mb >= 10 ? 0 : 1)} MB`
-  }, [])
-
-  const totalPendingBytes = useMemo(
-    () => pendingPdfs.reduce((sum, file) => sum + file.size, 0),
-    [pendingPdfs]
-  )
-  const totalPendingCount = pendingPdfs.length
-
-  const handlePickPdf = useCallback(async () => {
-    if (isPickingPdf) return
-    setIsPickingPdf(true)
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'application/pdf',
-        copyToCacheDirectory: true,
-        multiple: false,
-      })
-      if (result.canceled) return
-      const asset = result.assets?.[0]
-      if (!asset) return
-      let size = asset.size ?? 0
-      if (!size) {
-        try {
-          const info = await new File(asset.uri).info()
-          size =
-            info.exists && 'size' in info && typeof info.size === 'number' ? info.size : 0
-        } catch {
-          size = 0
-        }
-      }
-      const name = asset.name ?? 'recipe.pdf'
-
-      const totalCount = pdfUsage.totalCount + totalPendingCount
-      const totalBytes = pdfUsage.totalBytes + totalPendingBytes
-
-      const maxCount = 5
-      const maxTotalBytes = 50 * 1024 * 1024
-      const maxFileBytes = 20 * 1024 * 1024
-
-      if (size > maxFileBytes) {
-        Alert.alert('File too large', 'Each PDF must be 20 MB or smaller.')
-        return
-      }
-      if (totalCount >= maxCount) {
-        Alert.alert('PDF limit reached', 'Free accounts can save up to 5 PDFs.')
-        return
-      }
-      if (totalBytes + size > maxTotalBytes) {
-        Alert.alert('Storage limit reached', 'Free accounts can save up to 50 MB of PDFs.')
-        return
-      }
-
-      setPendingPdfs((prev) => [...prev, { uri: asset.uri, name, size }])
-    } finally {
-      setIsPickingPdf(false)
-    }
-  }, [isPickingPdf, pdfUsage, totalPendingBytes, totalPendingCount])
-
-  const removePendingPdf = useCallback((uri: string) => {
-    setPendingPdfs((prev) => prev.filter((file) => file.uri !== uri))
-  }, [])
-
-  const handleRemoveExistingPdf = useCallback(
-    async (id: string) => {
-      if (!onRemovePdfAttachment) return
-      await onRemovePdfAttachment(id)
-      await refreshPdfUsage()
-    },
-    [onRemovePdfAttachment, refreshPdfUsage]
-  )
-
-  React.useEffect(() => {
-    void refreshPdfUsage()
-  }, [refreshPdfUsage])
-
-  React.useEffect(() => {
-    if (!autoPickPdf || autoPickAttempted.current) return
-    autoPickAttempted.current = true
-    void handlePickPdf()
-  }, [autoPickPdf, handlePickPdf])
-
   return (
     <View style={styles.form}>
       {/* Basics */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Basics</Text>
 
         <Pressable
           onPress={openCoverOptions}
@@ -604,7 +488,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         </Pressable>
 
         <View style={styles.field}>
-          <Text style={styles.label}>Title</Text>
+          <Text style={styles.sectionTitle}>Title</Text>
           <TextInput
             value={values.title}
             onChangeText={(t) => update('title', t)}
@@ -618,7 +502,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>Subtitle</Text>
+          <Text style={styles.sectionTitle}>Subtitle</Text>
           <TextInput
             value={values.subtitle}
             onChangeText={(t) => update('subtitle', t)}
@@ -632,94 +516,17 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>Description</Text>
+          <Text style={styles.sectionTitle}>Commentary or notes</Text>
           <TextInput
             value={values.description}
             onChangeText={(t) => update('description', t)}
-            placeholder="Optional notes, context, serving ideas…"
+            placeholder="Optional comments, context, serving ideas…"
             placeholderTextColor={styles.placeholder.color}
             multiline
             style={[styles.input, styles.textarea]}
             editable={!isSubmitting}
             autoCapitalize="sentences"
           />
-        </View>
-      </View>
-
-      {/* Attachments */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Attachments</Text>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>PDFs</Text>
-          <Text style={styles.helperText}>
-            {`Free plan: 5 PDFs, 50 MB total. ${formatBytes(
-              pdfUsage.totalBytes + totalPendingBytes
-            )} used.`}
-          </Text>
-
-          <View style={styles.attachmentsList}>
-            {(existingPdfAttachments ?? []).map((attachment) => (
-              <View key={attachment.id} style={styles.attachmentRow}>
-                <View style={styles.attachmentInfo}>
-                  <Feather name="file-text" size={16} color={styles.attachmentIcon.color} />
-                  <View style={styles.attachmentTextWrap}>
-                    <Text style={styles.attachmentName} numberOfLines={1}>
-                      {attachment.fileName}
-                    </Text>
-                    <Text style={styles.attachmentMeta}>
-                      {formatBytes(attachment.fileSize)}
-                    </Text>
-                  </View>
-                </View>
-                <Text
-                  style={styles.attachmentRemove}
-                  onPress={() => handleRemoveExistingPdf(attachment.id)}
-                  accessibilityRole="button"
-                >
-                  Remove
-                </Text>
-              </View>
-            ))}
-
-            {pendingPdfs.map((attachment) => (
-              <View key={attachment.uri} style={styles.attachmentRow}>
-                <View style={styles.attachmentInfo}>
-                  <Feather name="file-text" size={16} color={styles.attachmentIcon.color} />
-                  <View style={styles.attachmentTextWrap}>
-                    <Text style={styles.attachmentName} numberOfLines={1}>
-                      {attachment.name}
-                    </Text>
-                    <Text style={styles.attachmentMeta}>
-                      {formatBytes(attachment.size)} · Pending
-                    </Text>
-                  </View>
-                </View>
-                <Text
-                  style={styles.attachmentRemove}
-                  onPress={() => removePendingPdf(attachment.uri)}
-                  accessibilityRole="button"
-                >
-                  Remove
-                </Text>
-              </View>
-            ))}
-
-            {!existingPdfAttachments?.length && !pendingPdfs.length ? (
-              <Text style={styles.emptyAttachments}>No PDFs yet.</Text>
-            ) : null}
-          </View>
-
-          <Button
-            variant="ghost"
-            size="md"
-            onPress={handlePickPdf}
-            disabled={isSubmitting || isPickingPdf}
-            style={styles.addStepButton}
-            textStyle={styles.addStepText}
-          >
-            {isPickingPdf ? 'Adding…' : 'Add PDF'}
-          </Button>
         </View>
       </View>
 
@@ -1031,7 +838,7 @@ const styles = createThemedStyles((theme) => ({
   field: { gap: theme.spacing.xs },
   label: {
     fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.sm,
     color: theme.colors.mutedForeground,
   },
@@ -1145,60 +952,6 @@ const styles = createThemedStyles((theme) => ({
     width: 'auto',
   },
 
-  helperText: {
-    marginTop: theme.spacing.xs,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.mutedForeground,
-  },
-  attachmentsList: {
-    marginTop: theme.spacing.md,
-    gap: theme.spacing.sm,
-  },
-  attachmentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
-    borderRadius: theme.radii.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
-  },
-  attachmentInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: theme.spacing.sm,
-  },
-  attachmentIcon: {
-    color: theme.colors.mutedForeground,
-  },
-  attachmentTextWrap: {
-    flex: 1,
-  },
-  attachmentName: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    color: theme.colors.foreground,
-  },
-  attachmentMeta: {
-    marginTop: 2,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.mutedForeground,
-  },
-  attachmentRemove: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.terracotta,
-  },
-  emptyAttachments: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.mutedForeground,
-  },
 
   stepsStack: { gap: theme.spacing.sm },
   ingredientRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
@@ -1223,7 +976,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
   addStepButton: { alignSelf: 'flex-start', paddingHorizontal: 0 },
-  addStepText: { fontSize: theme.fontSize.sm },
+  addStepText: { fontSize: theme.fontSize.base },
   tagInputRow: { flexDirection: 'row', gap: theme.spacing.sm, alignItems: 'center' },
   folderEmojiInput: {
     width: 56,
@@ -1234,6 +987,7 @@ const styles = createThemedStyles((theme) => ({
     width: 'auto',
     alignSelf: 'flex-start',
     paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
   },
   tagAddText: { fontSize: theme.fontSize.sm },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm },

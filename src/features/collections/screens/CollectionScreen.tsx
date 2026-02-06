@@ -168,7 +168,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   const fabLabel =
     segment === 'recipes'
       ? recipeSegment === 'documents'
-        ? 'Import PDF'
+        ? 'Import file'
         : 'Create folder'
       : 'Create collection'
 
@@ -254,7 +254,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
           <View style={styles.successContent}>
             <Feather name="check-circle" size={18} color={styles.successIcon.color} />
             <Text style={styles.successText}>
-              Your recipe PDF has been successfully uploaded.
+              Your recipe file has been successfully uploaded.
             </Text>
           </View>
           <Pressable

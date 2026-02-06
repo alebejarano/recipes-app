@@ -19,7 +19,7 @@ type TabDef = {
 
 const TABS: TabDef[] = [
   { key: 'folders', label: 'Folders', icon: 'folder' },
-  { key: 'documents', label: 'PDF Imports', icon: 'file-text' },
+  { key: 'documents', label: 'Imports', icon: 'file-text' },
 ]
 
 export default function RecipeSegmentedTabs({ value, onChange }: RecipeSegmentedTabsProps) {
