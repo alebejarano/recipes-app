@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons'
 import { File } from 'expo-file-system'
+import { getContentUriAsync } from 'expo-file-system/legacy'
 import * as IntentLauncher from 'expo-intent-launcher'
 import * as Linking from 'expo-linking'
 import { router, useLocalSearchParams } from 'expo-router'
@@ -94,37 +95,72 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
     }
 
     try {
-      // Create file instance
-      const file = new File(document.fileUri)
-      
-      // Check if file exists
-      if (!file.exists) {
-        Alert.alert(
-          'File Not Found',
-          'The file could not be found. It may have been moved or deleted.'
-        )
-        return
-      }
+      console.log('[RecipeDocumentDetailScreen] open file request', {
+        platform: Platform.OS,
+        documentId,
+        fileUri: document.fileUri,
+      })
 
       if (Platform.OS === 'android') {
-        // Android: Use the File's contentUri property (new API)
-        const contentUri = file.contentUri
-        
-        if (!contentUri) {
-          Alert.alert(
-            'Error',
-            'Unable to generate content URI for this file.'
-          )
+        const rawUri = document.fileUri.trim()
+        const normalizedUri = rawUri.startsWith('/') ? `file://${rawUri}` : rawUri
+        let openUri = rawUri
+
+        if (normalizedUri.startsWith('file://')) {
+          const file = new File(normalizedUri)
+          if (!file.exists) {
+            Alert.alert(
+              'File Not Found',
+              'The file could not be found. It may have been moved or deleted.'
+            )
+            return
+          }
+
+          let contentUri = file.contentUri
+          if (!contentUri) {
+            try {
+              contentUri = await getContentUriAsync(normalizedUri)
+            } catch {
+              contentUri = ''
+            }
+          }
+
+          if (!contentUri) {
+            Alert.alert('Error', 'Unable to generate content URI for this file.')
+            return
+          }
+          openUri = contentUri
+        } else if (!normalizedUri.startsWith('content://') && !normalizedUri.startsWith('http')) {
+          Alert.alert('Unable to Open File', 'Unsupported file URI format.')
           return
+        } else {
+          openUri = normalizedUri
         }
 
+        console.log('[RecipeDocumentDetailScreen] android open uri', {
+          rawUri,
+          normalizedUri,
+          openUri,
+          mimeType: fileInfo.mimeType,
+        })
+
         await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
-          data: contentUri,
+          data: openUri,
           flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
           type: fileInfo.mimeType,
         })
       } else {
-        // iOS: Use the file URI directly
+        const file = new File(document.fileUri)
+
+        // iOS: use the local file URI directly
+        if (file.uri.startsWith('file://') && !file.exists) {
+          Alert.alert(
+            'File Not Found',
+            'The file could not be found. It may have been moved or deleted.'
+          )
+          return
+        }
+
         const canOpen = await Linking.canOpenURL(file.uri)
 
         if (!canOpen) {
@@ -162,7 +198,7 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
         Alert.alert('Unable to Open File', errorMessage)
       }
     }
-  }, [document?.fileUri, fileInfo])
+  }, [document?.fileUri, documentId, fileInfo])
 
   // Delete handler
   const handleDeleteFile = useCallback(() => {
