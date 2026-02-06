@@ -39,44 +39,66 @@ export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps
     }, [refreshShoppingListStatus])
   )
 
-  const groupPath = `/(${group})`
-
   const handleCreateRecipe = useCallback(() => {
     if (group === 'public') {
-      router.push(`/(public)/recipes/create`)
+      router.push('/(public)/recipes/create')
       return
     }
 
     router.push({
-      pathname: `${groupPath}/recipes/create`,
+      pathname: group === 'dev' ? '/(dev)/recipes/create' : '/(auth)/recipes/create',
       params: { variant: 'app' },
     })
-  }, [group, groupPath])
+  }, [group])
 
   const handleCreateNote = useCallback(() => {
-    router.push(`${groupPath}/notes/create`)
-  }, [groupPath])
+    router.push(
+      group === 'public'
+        ? '/(public)/notes/create'
+        : group === 'dev'
+          ? '/(dev)/notes/create'
+          : '/(auth)/notes/create'
+    )
+  }, [group])
 
   const handleShoppingList = useCallback(async () => {
-    // Keep your existing behavior: if already created, do nothing.
-    if (hasShoppingList) return
+    if (hasShoppingList) {
+      router.push(
+        group === 'public'
+          ? '/(public)/shopping-list'
+          : group === 'dev'
+            ? '/(dev)/shopping-list'
+            : '/(auth)/shopping-list'
+      )
+      return
+    }
 
     setIsCreatingList(true)
     try {
       await ensureShoppingList()
       await refreshShoppingListStatus()
-      router.push(`${groupPath}/shopping-list`)
+      router.push(
+        group === 'public'
+          ? '/(public)/shopping-list'
+          : group === 'dev'
+            ? '/(dev)/shopping-list'
+            : '/(auth)/shopping-list'
+      )
     } finally {
       setIsCreatingList(false)
     }
-  }, [groupPath, hasShoppingList, refreshShoppingListStatus])
+  }, [group, hasShoppingList, refreshShoppingListStatus])
 
   const shoppingSubtitle = useMemo(() => {
     if (isLoading) return 'Checking…'
-    return hasShoppingList ? 'Already created' : 'Plan your grocery run'
+    return hasShoppingList ? 'Tap to view or edit.' : 'Plan your grocery run'
   }, [hasShoppingList, isLoading])
 
-  const shoppingDisabled = hasShoppingList || isLoading || isCreatingList
+  const shoppingTitle = useMemo(() => {
+    return hasShoppingList ? 'Shopping List already created' : 'Shopping List'
+  }, [hasShoppingList])
+
+  const shoppingDisabled = isLoading || isCreatingList
 
   const shoppingIcon = useMemo(() => {
     if (isCreatingList) return <ActivityIndicator />
@@ -120,7 +142,7 @@ export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps
           />
 
           <CreateActionCard
-            title="Shopping List"
+            title={shoppingTitle}
             subtitle={shoppingSubtitle}
             tone="neutral"
             disabled={shoppingDisabled}

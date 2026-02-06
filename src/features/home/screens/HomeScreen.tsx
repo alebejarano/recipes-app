@@ -55,6 +55,17 @@ type HomeNote = {
   updatedAt: string;
 };
 
+const MIN_FEATURED_COLLECTION_RECIPES = 2;
+
+function getWeekKey(date: Date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
 export default function HomeScreen({
   showAccountSuccessBanner,
   showRecipeSuccessBanner,
@@ -83,15 +94,6 @@ export default function HomeScreen({
     const clamped = Math.min(Math.max(ideal, MIN_CARD_WIDTH), MAX_CARD_WIDTH);
     return Math.floor(clamped);
   }, [screenWidth, PAGE_PADDING, CARD_GAP]);
-
-  const getWeekKey = (date: Date) => {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-    return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
-  };
 
   const recipesQuery = useRecipesList({ limit: 50, enabled: !isPublic });
   const notesQuery = useNotesList({ limit: 50, enabled: !isPublic });
@@ -134,22 +136,22 @@ export default function HomeScreen({
     );
   }, [isPublic, localRecipesQuery.data, recipesQuery.data]);
 
-  const recipeCollectionsKey = useMemo(
-    () => recipeCollections.map((item) => item.key).join('|'),
-    [recipeCollections]
-  );
-
   const featuredCollection = useMemo(() => {
-    if (recipeCollections.length === 0) return null;
+    const eligibleCollections = recipeCollections.filter(
+      (collection) => collection.count >= MIN_FEATURED_COLLECTION_RECIPES
+    );
+    if (eligibleCollections.length === 0) return null;
+
+    const eligibleCollectionsKey = eligibleCollections.map((collection) => collection.key).join('|');
     const weekKey = getWeekKey(new Date());
     let hash = 0;
-    const seed = `${weekKey}|${recipeCollectionsKey}`;
+    const seed = `${weekKey}|${eligibleCollectionsKey}`;
     for (let i = 0; i < seed.length; i += 1) {
       hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
     }
-    const index = hash % recipeCollections.length;
-    return recipeCollections[index] ?? null;
-  }, [recipeCollections, recipeCollectionsKey]);
+    const index = hash % eligibleCollections.length;
+    return eligibleCollections[index] ?? null;
+  }, [recipeCollections]);
 
   const featuredCollectionRecipes = useMemo(() => {
     if (!featuredCollection) return [];
@@ -230,8 +232,35 @@ export default function HomeScreen({
 
   const shoppingListVisible = (shoppingList?.totalCount ?? 0) > 0;
   const activeShoppingList = shoppingListVisible ? shoppingList : null;
+  const recipeCount = recipes.length;
+  const isVeryFewRecipes = recipeCount < 5;
+  const isMediumRecipeLibrary = recipeCount >= 5 && recipeCount < 20;
+  const isLargeRecipeLibrary = recipeCount >= 20;
 
-  const dinnerTonightVisible = !shoppingListVisible && !isEmpty;
+  const weeklyDinnerIdeas = useMemo(() => {
+    if (!isLargeRecipeLibrary) return [];
+    const sortedByLeastRecent = [...recipes].sort((a, b) => {
+      const aTime = new Date(a.updatedAt ?? a.createdAt).getTime();
+      const bTime = new Date(b.updatedAt ?? b.createdAt).getTime();
+      return aTime - bTime;
+    });
+    if (sortedByLeastRecent.length === 0) return [];
+
+    const weekKey = getWeekKey(new Date());
+    let hash = 0;
+    const seed = `${weekKey}|${sortedByLeastRecent.map((recipe) => recipe.id).join('|')}`;
+    for (let i = 0; i < seed.length; i += 1) {
+      hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+    }
+
+    const startIndex = hash % sortedByLeastRecent.length;
+    const count = Math.min(2, sortedByLeastRecent.length);
+    const picks: HomeRecipe[] = [];
+    for (let i = 0; i < count; i += 1) {
+      picks.push(sortedByLeastRecent[(startIndex + i) % sortedByLeastRecent.length]);
+    }
+    return picks;
+  }, [isLargeRecipeLibrary, recipes]);
 
   const greeting = useMemo(() => {
     const meal = getMealTime(new Date());
@@ -361,7 +390,16 @@ export default function HomeScreen({
         <View style={styles.localOnlyCard}>
           <Text style={styles.localOnlyTitle}>Local-only for now</Text>
           <Text style={styles.localOnlyBody}>
-            Everything stays on this device. Create an account anytime to sync and back up your data.
+            Everything stays on this device.{' '}
+            <Text
+              style={styles.localOnlyLink}
+              onPress={() => {
+                router.push('/(public)/register');
+              }}
+            >
+              Create an account
+            </Text>{' '}
+            anytime to sync and back up your data.
           </Text>
         </View>
       ) : null}
@@ -432,15 +470,48 @@ export default function HomeScreen({
                 router.push(shoppingListPath);
               }}
             />
+          ) : (
+            <ActionCard
+              title="Shopping List"
+              meta="No items yet. Tap to add your first item."
+              leftIcon={<Feather name="shopping-cart" size={18} color={theme.colors.mutedForeground} />}
+              onPress={() => {
+                router.push(shoppingListPath);
+              }}
+            />
+          )}
+
+          {isVeryFewRecipes ? (
+            <ActionCard
+              title="Add your first staples"
+              meta="Save 3-5 recipes you cook often"
+              leftIcon={<Feather name="plus-circle" size={18} color={theme.colors.mutedForeground} />}
+              onPress={handlePrimaryCta}
+            />
           ) : null}
 
-          {dinnerTonightVisible ? (
+          {isMediumRecipeLibrary ? (
             <ActionCard
-              title="Dinner tonight"
-              meta="Get inspired"
+              title="What's for dinner this week?"
+              meta="Pick a recipe and add ingredients to your list"
               leftIcon={<Feather name="star" size={18} color={theme.colors.mutedForeground} />}
               onPress={() => {
-                // TODO: open dinner tonight
+                router.push(collectionsPath);
+              }}
+            />
+          ) : null}
+
+          {isLargeRecipeLibrary ? (
+            <ActionCard
+              title="Dinner ideas for this week"
+              meta={
+                weeklyDinnerIdeas.length > 0
+                  ? `Try: ${weeklyDinnerIdeas.map((recipe) => recipe.title).join(' or ')}`
+                  : 'Choose a recipe to plan your week'
+              }
+              leftIcon={<Feather name="star" size={18} color={theme.colors.mutedForeground} />}
+              onPress={() => {
+                router.push(collectionsPath);
               }}
             />
           ) : null}
@@ -533,5 +604,12 @@ const styles = createThemedStyles((theme) => ({
     lineHeight: theme.lineHeight.base,
     fontFamily: theme.fontFamily.regular,
     color: theme.colors.mutedForeground,
+  },
+  localOnlyLink: {
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.semibold,
+    color: theme.colors.foreground,
+    textDecorationLine: 'underline',
   },
 }));
