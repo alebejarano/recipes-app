@@ -10,7 +10,8 @@ type Props = {
   meta?: string;
   kicker?: string;
   leftIcon?: React.ReactNode;
-  variant?: 'default' | 'highlight';
+  variant?: 'default' | 'highlight' | 'shoppingEmpty' | 'shoppingActive' | 'nextAction';
+  noTopMargin?: boolean;
   onPress?: () => void;
 };
 
@@ -20,17 +21,37 @@ export default function ActionCard({
   kicker,
   leftIcon,
   variant = 'default',
+  noTopMargin = false,
   onPress,
 }: Props) {
+  const isHighlight = variant === 'highlight';
+  const isShoppingEmpty = variant === 'shoppingEmpty';
+  const isShoppingActive = variant === 'shoppingActive';
+  const isNextAction = variant === 'nextAction';
+
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.card, variant === 'highlight' ? styles.highlight : null]}
+      style={[
+        styles.card,
+        noTopMargin ? styles.noTopMargin : null,
+        isHighlight ? styles.highlight : null,
+        isShoppingEmpty ? styles.shoppingEmpty : null,
+        isShoppingActive ? styles.shoppingActive : null,
+      ]}
       accessibilityRole="button"
       accessibilityLabel={title}
     >
       <View style={styles.left}>
-        <View style={[styles.iconCircle, variant === 'highlight' ? styles.iconCircleHighlight : null]}>
+        <View
+          style={[
+            styles.iconCircle,
+            isHighlight ? styles.iconCircleHighlight : null,
+            isShoppingEmpty ? styles.shoppingIconCircle : null,
+            isShoppingActive ? styles.shoppingIconCircleActive : null,
+            isNextAction ? styles.nextActionIconCircle : null,
+          ]}
+        >
           {leftIcon}
         </View>
 
@@ -40,14 +61,24 @@ export default function ActionCard({
             {title}
           </Text>
           {meta ? (
-            <Text style={styles.meta} numberOfLines={1}>
+            <Text
+              style={[
+                styles.meta,
+                isShoppingEmpty || isShoppingActive ? styles.shoppingMeta : null,
+              ]}
+              numberOfLines={1}
+            >
               {meta}
             </Text>
           ) : null}
         </View>
       </View>
 
-      <Feather name="chevron-right" size={22} color={theme.colors.mutedForeground} />
+      <Feather
+        name="chevron-right"
+        size={22}
+        color={isShoppingActive ? theme.colors.sage : theme.colors.mutedForeground}
+      />
     </Pressable>
   );
 }
@@ -64,8 +95,20 @@ const styles = createThemedStyles((theme) => ({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  noTopMargin: {
+    marginTop: 0,
+  },
   highlight: {
     backgroundColor: theme.colors.terracottaLight,
+  },
+  shoppingEmpty: {
+    borderStyle: 'dashed',
+    borderColor: theme.colors.sageLight,
+    backgroundColor: theme.colors.card,
+  },
+  shoppingActive: {
+    borderColor: theme.colors.sageLight,
+    backgroundColor: theme.colors.sageLight,
   },
   left: {
     flexDirection: 'row',
@@ -74,8 +117,8 @@ const styles = createThemedStyles((theme) => ({
     flex: 1,
   },
   iconCircle: {
-    width: 52,
-    height: 52,
+    width: 48,
+    height: 48,
     borderRadius: theme.radii.full,
     backgroundColor: theme.colors.muted,
     alignItems: 'center',
@@ -83,6 +126,24 @@ const styles = createThemedStyles((theme) => ({
   },
   iconCircleHighlight: {
     backgroundColor: theme.colors.card,
+  },
+  shoppingIconCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: theme.radii.lg,
+    backgroundColor: theme.colors.muted,
+  },
+  shoppingIconCircleActive: {
+    width: 50,
+    height: 50,
+    borderRadius: theme.radii.lg,
+    backgroundColor: theme.colors.muted,
+  },
+  nextActionIconCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: theme.radii.lg,
+    backgroundColor: theme.colors.secondary,
   },
   textBlock: { flex: 1 },
   kicker: {
@@ -104,5 +165,10 @@ const styles = createThemedStyles((theme) => ({
     lineHeight: theme.lineHeight.base,
     fontFamily: theme.fontFamily.regular,
     color: theme.colors.mutedForeground,
+  },
+  shoppingMeta: {
+    marginTop: 0,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.xl,
   },
 }));

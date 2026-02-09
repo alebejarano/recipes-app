@@ -45,6 +45,8 @@ type HomeRecipe = {
   imageUrl?: string | null;
   folders?: { id: string; name: string; emoji: string }[];
   mealTimes?: string[];
+  prepTimeMinutes?: number | null;
+  cookTimeMinutes?: number | null;
   createdAt: string;
   updatedAt?: string;
 };
@@ -119,6 +121,8 @@ export default function HomeScreen({
         emoji: recipe.emoji ?? null,
         imageUrl: recipe.imageUrl ?? null,
         folders: recipe.folders ?? [],
+        prepTimeMinutes: recipe.prepTimeMinutes ?? null,
+        cookTimeMinutes: recipe.cookTimeMinutes ?? null,
         createdAt: recipe.createdAt,
         updatedAt: recipe.updatedAt ?? recipe.createdAt,
       }));
@@ -211,19 +215,23 @@ export default function HomeScreen({
     : 'Add a recipe or a note. Home will show recent activity and quick access once you do.';
 
   const handlePrimaryCta = () => {
-    if (isPublic) {
-      router.push('/(public)/recipes/create');
-      return;
-    }
-    router.push('/create');
+    router.push(
+      resolvedMode === 'public'
+        ? '/(public)/create'
+        : resolvedMode === 'dev'
+          ? '/(dev)/create'
+          : '/(auth)/create'
+    );
   };
 
   const handleSecondaryCta = () => {
-    if (isPublic) {
-      router.push('/(public)/notes/create');
-      return;
-    }
-    router.push(collectionsPath);
+    router.push(
+      resolvedMode === 'public'
+        ? '/(public)/notes/create'
+        : resolvedMode === 'dev'
+          ? '/(dev)/notes/create'
+          : '/(auth)/notes/create'
+    );
   };
 
   const totalItems = recipes.length + notes.length;
@@ -307,6 +315,14 @@ export default function HomeScreen({
   );
 
   const firstRecentNote = useMemo(() => sortMostRecent(notes)[0], [notes]);
+
+  const formatRecipeDuration = (recipe: HomeRecipe) => {
+    const prep = recipe.prepTimeMinutes ?? 0;
+    const cook = recipe.cookTimeMinutes ?? 0;
+    const total = prep + cook;
+    if (total > 0) return `${total} min`;
+    return 'Quick recipe';
+  };
 
   const root =
     resolvedMode === 'dev' ? '(dev)' : resolvedMode === 'public' ? '(public)' : '(auth)';
@@ -458,23 +474,24 @@ export default function HomeScreen({
 
       {!isEmpty ? (
         <View style={styles.section}>
-          <Text style={styles.sectionSubtitleLarge}>This week</Text>
+          <Text style={styles.sectionSubtitleLarge}>This Week</Text>
 
           {activeShoppingList ? (
             <ActionCard
               title="Shopping List"
               meta={`${activeShoppingList.checkedCount}/${activeShoppingList.totalCount} items checked`}
-              variant="highlight"
-              leftIcon={<Feather name="shopping-cart" size={18} color={theme.colors.mutedForeground} />}
+              variant="shoppingActive"
+              leftIcon={<Feather name="shopping-cart" size={24} color={theme.colors.sage} />}
               onPress={() => {
                 router.push(shoppingListPath);
               }}
             />
           ) : (
             <ActionCard
-              title="Shopping List"
-              meta="No items yet. Tap to add your first item."
-              leftIcon={<Feather name="shopping-cart" size={18} color={theme.colors.mutedForeground} />}
+              title="Start a shopping list"
+              meta="Keep track of ingredients"
+              variant="shoppingEmpty"
+              leftIcon={<Feather name="plus" size={28} color={theme.colors.sage} />}
               onPress={() => {
                 router.push(shoppingListPath);
               }}
@@ -485,16 +502,18 @@ export default function HomeScreen({
             <ActionCard
               title="Add your first staples"
               meta="Save 3-5 recipes you cook often"
-              leftIcon={<Feather name="plus-circle" size={18} color={theme.colors.mutedForeground} />}
+              variant="nextAction"
+              leftIcon={<Text style={styles.actionEmoji}>⭐️</Text>}
               onPress={handlePrimaryCta}
             />
           ) : null}
 
           {isMediumRecipeLibrary ? (
             <ActionCard
-              title="What's for dinner this week?"
+              title="What's cooking this week?"
               meta="Pick a recipe and add ingredients to your list"
-              leftIcon={<Feather name="star" size={18} color={theme.colors.mutedForeground} />}
+              variant="nextAction"
+              leftIcon={<Text style={styles.actionEmoji}>🍽️</Text>}
               onPress={() => {
                 router.push(collectionsPath);
               }}
@@ -502,18 +521,26 @@ export default function HomeScreen({
           ) : null}
 
           {isLargeRecipeLibrary ? (
-            <ActionCard
-              title="Dinner ideas for this week"
-              meta={
-                weeklyDinnerIdeas.length > 0
-                  ? `Try: ${weeklyDinnerIdeas.map((recipe) => recipe.title).join(' or ')}`
-                  : 'Choose a recipe to plan your week'
-              }
-              leftIcon={<Feather name="star" size={18} color={theme.colors.mutedForeground} />}
-              onPress={() => {
-                router.push(collectionsPath);
-              }}
-            />
+            <View style={styles.ideasSection}>
+              <Text style={styles.ideasTitle}>Ideas for this week</Text>
+              <Text style={styles.ideasMeta}>A couple of recipes to keep in mind</Text>
+
+              <View style={styles.ideasRow}>
+                {weeklyDinnerIdeas.slice(0, 2).map((recipe) => (
+                  <View key={recipe.id} style={styles.ideaCardWrap}>
+                    <ActionCard
+                      title={recipe.title}
+                      meta={formatRecipeDuration(recipe)}
+                      noTopMargin
+                      leftIcon={<Text style={styles.actionEmoji}>{recipe.emoji ?? '🍽️'}</Text>}
+                      onPress={() => {
+                        router.push({ pathname: recipeDetailPath, params: { id: recipe.id } });
+                      }}
+                    />
+                  </View>
+                ))}
+              </View>
+            </View>
           ) : null}
 
           {!isPublic && featuredCollection && featuredCollectionChips.length > 0 ? (
@@ -572,6 +599,29 @@ const styles = createThemedStyles((theme) => ({
   },
   actionEmoji: {
     fontSize: 20,
+  },
+  ideasSection: {
+    gap: theme.spacing.sm,
+  },
+  ideasTitle: {
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
+    fontFamily: theme.fontFamily.regular,
+    color: theme.colors.foreground,
+  },
+  ideasMeta: {
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.regular,
+    color: theme.colors.mutedForeground,
+    marginBottom: theme.spacing.xs,
+  },
+  ideasRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+  },
+  ideaCardWrap: {
+    flex: 1,
   },
   loadingState: {
     alignItems: 'center',
