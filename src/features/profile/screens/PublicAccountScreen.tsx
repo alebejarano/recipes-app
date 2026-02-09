@@ -6,32 +6,23 @@ import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
-import DietaryPreferencesSection from '@/features/profile/components/DietaryPreferencesSection'
 import ProfileHeader from '@/features/profile/components/ProfileHeader'
 import ProfileUserCard from '@/features/profile/components/ProfileUserCard'
 import SettingsSection from '@/features/profile/components/SettingsSection'
 
 import {
-  DEFAULT_DIETARY_PREFERENCES,
-  DIETARY_OPTIONS,
   PREFERENCES_ITEMS,
   SUPPORT_ITEMS,
-  type DietaryId,
   type PreferenceToggles,
 } from '@/features/profile/data/profileMockData'
 
 export default function PublicAccountScreen() {
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
 
-  const [dietary, setDietary] = useState<DietaryId[]>(DEFAULT_DIETARY_PREFERENCES)
   const [toggles, setToggles] = useState<PreferenceToggles>({
     pushNotifications: true,
     emailUpdates: false,
   })
-
-  const onToggleDietary = (id: DietaryId) => {
-    setDietary((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-  }
 
   const accountItems = useMemo(
     () => [
@@ -80,14 +71,6 @@ export default function PublicAccountScreen() {
         onPressEdit={() => {
           router.push('/(public)/get-started')
         }}
-      />
-
-      <DietaryPreferencesSection
-        title="Dietary Preferences"
-        optional
-        options={DIETARY_OPTIONS}
-        value={dietary}
-        onToggle={onToggleDietary}
       />
 
       <SettingsSection

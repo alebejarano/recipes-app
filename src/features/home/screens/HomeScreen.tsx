@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { router, useSegments } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Text, View, useWindowDimensions } from 'react-native';
@@ -503,7 +503,7 @@ export default function HomeScreen({
               title="Add your first staples"
               meta="Save 3-5 recipes you cook often"
               variant="nextAction"
-              leftIcon={<Text style={styles.actionEmoji}>⭐️</Text>}
+              leftIcon={<Ionicons name="star" size={22} color="#F49D0C" />}
               onPress={handlePrimaryCta}
             />
           ) : null}

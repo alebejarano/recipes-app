@@ -7,18 +7,14 @@ import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
-import DietaryPreferencesSection from '@/features/profile/components/DietaryPreferencesSection'
 import ProfileHeader from '@/features/profile/components/ProfileHeader'
 import ProfileUserCard from '@/features/profile/components/ProfileUserCard'
 import SettingsSection from '@/features/profile/components/SettingsSection'
 
 import {
-  DEFAULT_DIETARY_PREFERENCES,
-  DIETARY_OPTIONS,
   PREFERENCES_ITEMS,
   SUPPORT_ITEMS,
   buildAccountItems,
-  type DietaryId,
   type PreferenceToggles,
 } from '@/features/profile/data/profileMockData'
 
@@ -37,16 +33,10 @@ export default function ProfileScreen() {
     return email.split('@')[0] || 'Account'
   }, [user?.email])
 
-  const [dietary, setDietary] = useState<DietaryId[]>(DEFAULT_DIETARY_PREFERENCES)
-
   const [toggles, setToggles] = useState<PreferenceToggles>({
     pushNotifications: true,
     emailUpdates: false,
   })
-
-  const onToggleDietary = (id: DietaryId) => {
-    setDietary((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-  }
 
   const onLogoutPress = useCallback(async () => {
   if (isLoggingOut) return
@@ -63,21 +53,41 @@ export default function ProfileScreen() {
   }
   }, [isLoggingOut, logout])
 
+  const onDeleteAccountPress = useCallback(() => {
+    Alert.alert(
+      'Delete account',
+      'This will permanently remove your data. Delete account flow is not connected yet.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+        },
+      ]
+    )
+  }, [])
+
 
   const accountItems = useMemo(
     () =>
       buildAccountItems({
         isLoggingOut,
         onLogoutPress,
+        onDeleteAccountPress,
       }).map((item) =>
-        item.id === 'privacy'
+        item.id === 'premium'
           ? {
               ...item,
-              onPress: () => router.push('/privacy'),
+              onPress: () => router.push('/premium'),
             }
-          : item
+          : item.id === 'privacy'
+            ? {
+                ...item,
+                onPress: () => router.push('/privacy'),
+              }
+            : item
       ),
-    [isLoggingOut, onLogoutPress]
+    [isLoggingOut, onDeleteAccountPress, onLogoutPress]
   )
 
   return (
@@ -96,14 +106,6 @@ export default function ProfileScreen() {
         onPressEdit={() => {
           // TODO later
         }}
-      />
-
-      <DietaryPreferencesSection
-        title="Dietary Preferences"
-        optional
-        options={DIETARY_OPTIONS}
-        value={dietary}
-        onToggle={onToggleDietary}
       />
 
       <SettingsSection

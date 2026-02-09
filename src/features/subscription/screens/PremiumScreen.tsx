@@ -1,269 +1,300 @@
-// src/features/subscription/screens/PremiumScreen.tsx
-import React from 'react';
-import {
-    View,
-    Text,
-    ScrollView,
-} from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Button from '@/components/Button';
-import { createThemedStyles } from '@/styles/createStyles';
+import { Feather } from '@expo/vector-icons'
+import React from 'react'
+import { Text, TouchableOpacity, View } from 'react-native'
+
+import Button from '@/components/Button'
+import Screen from '@/components/Screen'
+import { createThemedStyles } from '@/styles/createStyles'
 
 type PremiumScreenProps = {
-    onUpgrade: () => void;
-    onMaybeLater?: () => void;
-};
-
-const premiumBenefits = [
-    'Unlimited recipes and collections',
-    'Advanced filters and search',
-    'Import from more sources (web, screenshots, etc.)',
-    'Smart notes for ingredients and anti-inflammatory lists',
-    'Priority backup and sync across devices',
-];
-
-export default function PremiumScreen({
-                                          onUpgrade,
-                                          onMaybeLater,
-                                      }: PremiumScreenProps) {
-    return (
-        <SafeAreaView style={styles.safeArea}>
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                bounces
-            >
-                <View style={styles.container}>
-                    {/* Badge / header */}
-                    <View style={styles.badge}>
-                        <Feather
-                            name="star"
-                            size={18}
-                            style={styles.badgeIcon}
-                        />
-                        <Text style={styles.badgeText}>Premium</Text>
-                    </View>
-
-                    <Text style={styles.title}>
-                        Keep your recipes organized for good
-                    </Text>
-                    <Text style={styles.subtitle}>
-                        You’ve reached the free limit. Upgrade to Premium to keep adding
-                        recipes, create more collections, and unlock powerful organization
-                        tools.
-                    </Text>
-
-                    {/* Pricing card */}
-                    <View style={styles.card}>
-                        <Text style={styles.cardTitle}>What you get</Text>
-
-                        <View style={styles.benefitsList}>
-                            {premiumBenefits.map((item, index) => (
-                                <View key={index} style={styles.benefitRow}>
-                                    <View style={styles.benefitIconWrapper}>
-                                        <Feather
-                                            name="check"
-                                            size={16}
-                                            style={styles.benefitIcon}
-                                        />
-                                    </View>
-                                    <Text style={styles.benefitText}>{item}</Text>
-                                </View>
-                            ))}
-                        </View>
-
-                        <View style={styles.priceRow}>
-                            <Text style={styles.priceMain}>€X.XX</Text>
-                            <Text style={styles.pricePeriod}> / month</Text>
-                        </View>
-                        <Text style={styles.priceNote}>
-                            Cancel anytime. Your recipes stay safe.
-                        </Text>
-
-                        <Button
-                            onPress={onUpgrade}
-                            size="lg"
-                            style={styles.upgradeButton}
-                            textStyle={styles.upgradeButtonText}
-                        >
-                            Upgrade to Premium
-                        </Button>
-
-                        {onMaybeLater && (
-                            <Button
-                                onPress={onMaybeLater}
-                                variant="soft"
-                                size="lg"
-                                style={styles.maybeLaterButton}
-                                textStyle={styles.maybeLaterButtonText}
-                            >
-                                Maybe later
-                            </Button>
-                        )}
-                    </View>
-
-                    <Text style={styles.footerText}>
-                        You can always find this page again from your Account tab.
-                    </Text>
-                </View>
-            </ScrollView>
-        </SafeAreaView>
-    );
+  onUpgrade: () => void
+  onMaybeLater?: () => void
 }
 
-const styles = createThemedStyles(theme => ({
-    safeArea: {
-        flex: 1,
-        backgroundColor: theme.colors.background,
-    },
-    scrollContent: {
-        flexGrow: 1,
-        paddingHorizontal: theme.spacing.lg,
-        paddingVertical: theme.spacing.xl,
-    },
-    container: {
-        flex: 1,
-        alignItems: 'center',
-    },
+const premiumItems = [
+  {
+    id: 'backup',
+    icon: 'cloud' as const,
+    title: 'Cloud backup & sync',
+    subtitle: 'Recipes, notes, and imports',
+  },
+  {
+    id: 'devices',
+    icon: 'monitor' as const,
+    title: 'Access on all your devices',
+  },
+  {
+    id: 'recipes',
+    icon: 'book-open' as const,
+    title: 'Unlimited recipes',
+  },
+  {
+    id: 'imports',
+    icon: 'file-plus' as const,
+    title: 'Unlimited imports',
+  },
+]
 
-    badge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.xs,
-        borderRadius: 999,
-        backgroundColor: theme.colors.terracottaLight,
-        marginBottom: theme.spacing.md,
-    },
-    badgeIcon: {
-        color: theme.colors.terracotta,
-        marginRight: theme.spacing.xs,
-    },
-    badgeText: {
-        fontFamily: theme.fontFamily.medium,
-        fontSize: theme.fontSize.sm,
-        color: theme.colors.terracotta,
-    },
+export default function PremiumScreen({ onUpgrade, onMaybeLater }: PremiumScreenProps) {
+  return (
+    <Screen scroll contentStyle={styles.content}>
+      {!!onMaybeLater && (
+        <TouchableOpacity style={styles.backRow} onPress={onMaybeLater} activeOpacity={0.75}>
+          <Feather name="chevron-left" size={18} style={styles.backIcon} />
+          <Text style={styles.backText}>Back</Text>
+        </TouchableOpacity>
+      )}
 
-    title: {
-        textAlign: 'center',
-        fontFamily: theme.fontFamily.semibold,
-        fontSize: theme.fontSize.display,
-        lineHeight: theme.lineHeight.display,
-        color: theme.colors.foreground,
-        marginBottom: theme.spacing.sm,
-    },
-    subtitle: {
-        textAlign: 'center',
-        fontFamily: theme.fontFamily.regular,
-        fontSize: theme.fontSize.base,
-        lineHeight: theme.lineHeight.base,
-        color: theme.colors.mutedForeground,
-        marginBottom: theme.spacing.xl,
-        maxWidth: 380,
-    },
+      <View style={styles.heroIconWrap}>
+        <View style={styles.heroIconCircle}>
+          <Feather name="shield" size={28} style={styles.heroIcon} />
+        </View>
+        <View style={styles.heroCheckBubble}>
+          <Feather name="check" size={13} style={styles.heroCheckIcon} />
+        </View>
+      </View>
 
-    card: {
-        width: '100%',
-        maxWidth: 380,
-        padding: theme.spacing.xl,
-        borderRadius: theme.radii.lg,
-        backgroundColor: theme.colors.card,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-        ...theme.shadows.soft,
-    },
-    cardTitle: {
-        fontFamily: theme.fontFamily.semibold,
-        fontSize: theme.fontSize.xl,
-        lineHeight: theme.lineHeight.xl,
-        color: theme.colors.foreground,
-        marginBottom: theme.spacing.md,
-    },
+      <Text style={styles.title}>Go Premium</Text>
+      <Text style={styles.subtitle}>
+        Your recipes deserve a safe home. Sync everywhere, lose nothing.
+      </Text>
 
-    benefitsList: {
-        marginBottom: theme.spacing.lg,
-    },
-    benefitRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: theme.spacing.sm,
-    },
-    benefitIconWrapper: {
-        width: 28,
-        height: 28,
-        borderRadius: theme.radii.lg,
-        backgroundColor: theme.colors.sageLight,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: theme.spacing.md,
-    },
-    benefitIcon: {
-        color: theme.colors.sage,
-    },
-    benefitText: {
-        flex: 1,
-        fontFamily: theme.fontFamily.regular,
-        fontSize: theme.fontSize.base,
-        lineHeight: theme.lineHeight.base,
-        color: theme.colors.mutedForeground,
-    },
+      <View style={styles.card}>
+        <Text style={styles.cardLabel}>EVERYTHING INCLUDED</Text>
+        <View style={styles.featuresList}>
+          {premiumItems.map((item) => (
+            <View key={item.id} style={styles.featureRow}>
+              <View style={styles.featureLeft}>
+                <Feather name={item.icon} size={20} style={styles.featureIcon} />
+                <View style={styles.featureTextWrap}>
+                  <Text style={styles.featureTitle}>{item.title}</Text>
+                  {!!item.subtitle && <Text style={styles.featureSubtitle}>{item.subtitle}</Text>}
+                </View>
+              </View>
+              <Feather name="check" size={20} style={styles.featureCheck} />
+            </View>
+          ))}
+        </View>
+      </View>
 
-    priceRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        marginBottom: theme.spacing.xs,
-    },
-    priceMain: {
-        fontFamily: theme.fontFamily.semibold,
-        fontSize: theme.fontSize.hero,
-        lineHeight: theme.lineHeight.hero,
-        color: theme.colors.foreground,
-    },
-    pricePeriod: {
-        marginLeft: theme.spacing.xs,
-        fontFamily: theme.fontFamily.regular,
-        fontSize: theme.fontSize.base,
-        lineHeight: theme.lineHeight.base,
-        color: theme.colors.mutedForeground,
-        marginBottom: 4,
-    },
-    priceNote: {
-        fontFamily: theme.fontFamily.regular,
-        fontSize: theme.fontSize.sm,
-        lineHeight: theme.lineHeight.base,
-        color: theme.colors.mutedForeground,
-        marginBottom: theme.spacing.lg,
-    },
+      <View style={styles.priceRow}>
+        <View style={styles.pricePill}>
+          <Text style={styles.priceValue}>5 €</Text>
+          <Text style={styles.pricePeriod}>/ month</Text>
+        </View>
+        <Text style={styles.cancelText}>· Cancel anytime</Text>
+      </View>
 
-    upgradeButton: {
-        width: '100%',
-        borderRadius: 999,
-        marginBottom: theme.spacing.sm,
-        backgroundColor: theme.colors.primary,
-    },
-    upgradeButtonText: {
-        fontFamily: theme.fontFamily.medium,
-        fontSize: theme.fontSize.base,
-        color: theme.colors.primaryForeground,
-    },
-    maybeLaterButton: {
-        width: '100%',
-        borderRadius: 999,
-        backgroundColor: theme.colors.secondary,
-    },
-    maybeLaterButtonText: {
-        fontFamily: theme.fontFamily.medium,
-        fontSize: theme.fontSize.base,
-        color: theme.colors.secondaryForeground,
-    },
+      <Button onPress={onUpgrade} style={styles.ctaButton} textStyle={styles.ctaText}>
+        Start Premium
+      </Button>
 
-    footerText: {
-        marginTop: theme.spacing.lg,
-        textAlign: 'center',
-        fontFamily: theme.fontFamily.regular,
-        fontSize: theme.fontSize.xs,
-        lineHeight: theme.lineHeight.sm,
-        color: theme.colors.mutedForeground,
-    },
-}));
+      {!!onMaybeLater && (
+        <TouchableOpacity style={styles.notNowButton} onPress={onMaybeLater} activeOpacity={0.8}>
+          <Text style={styles.notNowText}>Not now</Text>
+        </TouchableOpacity>
+      )}
+
+      <Text style={styles.footer}>
+        Your data stays private. Premium simply keeps it safe in the cloud.
+      </Text>
+    </Screen>
+  )
+}
+
+const styles = createThemedStyles((theme) => ({
+  content: {
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing['3xl'],
+    alignItems: 'center',
+  },
+  backRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  backIcon: {
+    color: theme.colors.mutedForeground,
+  },
+  backText: {
+    marginLeft: theme.spacing.xs,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
+  },
+  heroIconWrap: {
+    marginTop: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
+  },
+  heroIconCircle: {
+    width: 82,
+    height: 82,
+    borderRadius: theme.radii.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.muted,
+  },
+  heroIcon: {
+    color: theme.colors.sage,
+  },
+  heroCheckBubble: {
+    position: 'absolute',
+    right: -6,
+    top: -5,
+    width: 34,
+    height: 34,
+    borderRadius: theme.radii.full,
+    backgroundColor: theme.colors.sage,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: theme.colors.background,
+  },
+  heroCheckIcon: {
+    color: theme.colors.primaryForeground,
+  },
+  title: {
+    textAlign: 'center',
+    fontFamily: theme.fontFamily.bold,
+    fontSize: theme.fontSize.hero,
+    lineHeight: theme.lineHeight.hero,
+    color: theme.colors.foreground,
+    marginBottom: theme.spacing.sm,
+  },
+  subtitle: {
+    textAlign: 'center',
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    color: theme.colors.mutedForeground,
+    maxWidth: 360,
+    marginBottom: theme.spacing['2xl'],
+  },
+  card: {
+    width: '100%',
+    maxWidth: 390,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.card,
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.xl,
+    marginBottom: theme.spacing['2xl'],
+  },
+  cardLabel: {
+    fontFamily: theme.fontFamily.bold,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    letterSpacing: 0.8,
+    color: theme.colors.warmGray,
+    marginBottom: theme.spacing.lg,
+  },
+  featuresList: {
+    gap: theme.spacing.lg,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  featureLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: theme.spacing.md,
+  },
+  featureIcon: {
+    color: theme.colors.sage,
+    marginRight: theme.spacing.lg,
+  },
+  featureTextWrap: {
+    flex: 1,
+  },
+  featureTitle: {
+    fontFamily: theme.fontFamily.semibold,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    color: theme.colors.foreground,
+  },
+  featureSubtitle: {
+    marginTop: theme.spacing.xxs,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
+  },
+  featureCheck: {
+    color: theme.colors.sage,
+  },
+  priceRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing['2xl'],
+  },
+  pricePill: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    borderRadius: theme.radii.xxl,
+    backgroundColor: theme.colors.secondary,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.xl,
+    marginRight: theme.spacing.md,
+  },
+  priceValue: {
+    fontFamily: theme.fontFamily.bold,
+    fontSize: theme.fontSize.hero,
+    lineHeight: theme.lineHeight.hero,
+    color: theme.colors.foreground,
+  },
+  pricePeriod: {
+    marginLeft: theme.spacing.xs,
+    marginBottom: theme.spacing.xs,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    color: theme.colors.mutedForeground,
+  },
+  cancelText: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    color: theme.colors.mutedForeground,
+  },
+  ctaButton: {
+    width: '100%',
+    maxWidth: 390,
+    borderRadius: theme.radii.xxl,
+    backgroundColor: theme.colors.primary,
+    paddingVertical: theme.spacing.lg,
+  },
+  ctaText: {
+    fontFamily: theme.fontFamily.bold,
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
+    color: theme.colors.primaryForeground,
+  },
+  notNowButton: {
+    marginTop: theme.spacing.xl,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  notNowText: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
+    color: theme.colors.mutedForeground,
+  },
+  footer: {
+    marginTop: theme.spacing['2xl'],
+    textAlign: 'center',
+    maxWidth: 340,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.border,
+  },
+}))
