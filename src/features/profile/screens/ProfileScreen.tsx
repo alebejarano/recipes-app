@@ -103,9 +103,6 @@ export default function ProfileScreen() {
       <ProfileUserCard
         name={displayName}
         email={user?.email ?? ''}
-        onPressEdit={() => {
-          // TODO later
-        }}
       />
 
       <SettingsSection

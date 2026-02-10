@@ -12,7 +12,7 @@ type SubscriptionContextValue = {
 export const SubscriptionContext = createContext<SubscriptionContextValue>({
     plan: 'free',
     recipesCount: 0,
-    maxFreeRecipes: 5,
+    maxFreeRecipes: 100,
 });
 
 type Props = {
@@ -26,7 +26,7 @@ export function SubscriptionProvider({
                                          children,
                                          plan,
                                          recipesCount,
-                                         maxFreeRecipes = 5,
+                                         maxFreeRecipes = 100,
                                      }: Props) {
     const value = useMemo(
         () => ({ plan, recipesCount, maxFreeRecipes }),

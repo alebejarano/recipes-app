@@ -1,15 +1,14 @@
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { createThemedStyles } from '@/styles/createStyles';
 
 type Props = {
   name: string;
   email: string;
-  onPressEdit?: () => void;
 };
 
-export default function ProfileUserCard({ name, email, onPressEdit }: Props) {
+export default function ProfileUserCard({ name, email }: Props) {
   return (
     <View style={styles.card}>
       <View style={styles.avatar}>
@@ -20,10 +19,6 @@ export default function ProfileUserCard({ name, email, onPressEdit }: Props) {
         <Text style={styles.name}>{name}</Text>
         <Text style={styles.email}>{email}</Text>
       </View>
-
-      <TouchableOpacity onPress={onPressEdit} activeOpacity={0.85} style={styles.editButton}>
-        <Text style={styles.editText}>Edit</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -67,17 +62,5 @@ const styles = createThemedStyles((theme) => ({
     fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.base,
     color: theme.colors.mutedForeground,
-  },
-  editButton: {
-    paddingLeft: theme.spacing.md,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  editText: {
-    textAlign: 'right',
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    color: theme.colors.foreground,
   },
 }));

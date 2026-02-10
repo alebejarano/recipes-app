@@ -293,8 +293,8 @@ const styles = createThemedStyles((theme) => ({
     textAlign: 'center',
     maxWidth: 340,
     fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.sm,
-    color: theme.colors.border,
+    color: theme.colors.foreground,
   },
 }))

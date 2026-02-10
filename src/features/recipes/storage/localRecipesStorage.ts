@@ -4,6 +4,7 @@ import type { RecipeFormSubmitValues } from '@/features/recipes/components/Recip
 import { deleteRecipePdfAttachmentsForRecipe } from '@/features/recipes/storage/recipePdfStorage'
 
 const STORAGE_KEY = 'recipes:local'
+const MAX_LOCAL_RECIPES = 100
 
 export type LocalRecipeIngredient = {
   id: string
@@ -156,6 +157,11 @@ export async function getLocalRecipe(id: string): Promise<LocalRecipe | null> {
 export async function createLocalRecipe(
   values: RecipeFormSubmitValues
 ): Promise<LocalRecipe> {
+  const items = await readAll()
+  if (items.length >= MAX_LOCAL_RECIPES) {
+    throw new Error('Local plan limit reached. You can save up to 100 recipes on this device.')
+  }
+
   const now = new Date().toISOString()
   const recipe: LocalRecipeRow = {
     id: makeId(),
@@ -178,7 +184,6 @@ export async function createLocalRecipe(
     last_synced_at: null,
   }
 
-  const items = await readAll()
   await writeAll([recipe, ...items])
   return toRecipeView(recipe)
 }

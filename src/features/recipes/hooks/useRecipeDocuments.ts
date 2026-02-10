@@ -28,10 +28,11 @@ export function useRecipeDocument(id: string) {
   })
 }
 
-export function useRecipeDocumentUsageSummary() {
+export function useRecipeDocumentUsageSummary(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: USAGE_KEY,
     queryFn: getRecipeDocumentUsageSummary,
+    enabled: options?.enabled,
   })
 }
 

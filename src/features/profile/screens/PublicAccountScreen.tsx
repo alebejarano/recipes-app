@@ -55,6 +55,22 @@ export default function PublicAccountScreen() {
     []
   )
 
+  const preferenceItems = useMemo(
+    () =>
+      PREFERENCES_ITEMS({
+        toggles,
+        setToggles,
+      }).map((item) =>
+        item.id === 'email'
+          ? {
+              ...item,
+              disabled: true,
+            }
+          : item
+      ),
+    [toggles]
+  )
+
   return (
     <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
       <ProfileHeader
@@ -65,20 +81,11 @@ export default function PublicAccountScreen() {
         }}
       />
 
-      <ProfileUserCard
-        name="Guest"
-        email="Not signed in"
-        onPressEdit={() => {
-          router.push('/(public)/get-started')
-        }}
-      />
+      <ProfileUserCard name="Guest" email="Not signed in" />
 
       <SettingsSection
         title="Preferences"
-        items={PREFERENCES_ITEMS({
-          toggles,
-          setToggles,
-        })}
+        items={preferenceItems}
       />
 
       <SettingsSection title="Account" items={accountItems} />

@@ -34,7 +34,6 @@ type Props = {
   onSubmit: (values: RecipeDocumentFormValues, file: PendingRecipeDocument) => Promise<void> | void
 }
 
-const MAX_COUNT = 5
 const MAX_TOTAL_BYTES = 50 * 1024 * 1024
 const MAX_FILE_BYTES = 20 * 1024 * 1024
 const METADATA_READ_LIMIT = 2 * 1024 * 1024
@@ -164,15 +163,10 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
         }
       }
 
-      const totalCount = usage.totalCount
       const totalBytes = usage.totalBytes
 
       if (size > MAX_FILE_BYTES) {
         Alert.alert('File too large', 'Each file must be 20 MB or smaller.')
-        return
-      }
-      if (totalCount >= MAX_COUNT) {
-        Alert.alert('File limit reached', 'Free accounts can save up to 5 files.')
         return
       }
       if (totalBytes + size > MAX_TOTAL_BYTES) {
@@ -188,7 +182,7 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
     } finally {
       setIsPicking(false)
     }
-  }, [isPicking, usage.totalBytes, usage.totalCount])
+  }, [isPicking, usage.totalBytes])
 
   useImperativeHandle(
     ref,
@@ -205,9 +199,7 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
   )
 
   const helperText = useMemo(() => {
-    return `Free plan: ${MAX_COUNT} files (PDF, JPG, PNG), 50 MB total. ${formatBytes(
-      usage.totalBytes
-    )} used.`
+    return `Free plan: PDF, JPG, PNG up to 50 MB total. ${formatBytes(usage.totalBytes)} used.`
   }, [usage.totalBytes])
 
   React.useEffect(() => {
