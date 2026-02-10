@@ -1,6 +1,6 @@
 // src/features/notes/screens/NoteEditorScreen.tsx
 import { Feather } from '@expo/vector-icons'
-import { router, useLocalSearchParams } from 'expo-router'
+import { router, useLocalSearchParams, useSegments } from 'expo-router'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
@@ -17,10 +17,12 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import Button from '@/components/Button'
 import { createThemedStyles } from '@/styles/createStyles'
 
-import { useCreateNote } from '@/features/notes/hooks/useCreateNote'
-import { useDeleteNote } from '@/features/notes/hooks/useDeleteNote'
-import { useNote } from '@/features/notes/hooks/useNote'
-import { useUpdateNote } from '@/features/notes/hooks/useUpdateNote'
+import {
+  useStrategyCreateNote,
+  useStrategyDeleteNote,
+  useStrategyNote,
+  useStrategyUpdateNote,
+} from '@/features/notes/hooks/useStrategyNotes'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 const FOOTER_HEIGHT = 72
@@ -33,14 +35,16 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
   const insets = useSafeAreaInsets()
   const isEditing = Boolean(noteId)
   const resolvedNoteId = noteId ?? ''
+  const segments = useSegments()
+  const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
   const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
 
-  const noteQuery = useNote(resolvedNoteId)
-  const createMutation = useCreateNote()
-  const updateMutation = useUpdateNote(resolvedNoteId)
-  const deleteMutation = useDeleteNote()
+  const noteQuery = useStrategyNote(resolvedNoteId, routeMode)
+  const createMutation = useStrategyCreateNote(routeMode)
+  const updateMutation = useStrategyUpdateNote(resolvedNoteId, routeMode)
+  const deleteMutation = useStrategyDeleteNote(routeMode)
 
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')

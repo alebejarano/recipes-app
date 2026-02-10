@@ -209,7 +209,6 @@ export default function PublicEditRecipeScreen() {
               onSubmit={handleSubmit}
               showActions={false}
               suggestedFolders={folderSuggestions}
-              allowFolderCreation
               onCreateFolder={handleCreateFolder}
               imageUploadMode="local"
             />

@@ -1,13 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 
-import type { Folder } from '../api/foldersRepo'
-import { listFolders } from '../api/foldersRepo'
+import type { Folder } from '../api/foldersCloudRepo'
+import { listFolders } from '../api/foldersCloudRepo'
 
 type FoldersListParams = {
   enabled?: boolean
 }
 
-export function useFoldersList(params?: FoldersListParams) {
+export function useCloudFoldersList(params?: FoldersListParams) {
   return useQuery<Folder[]>({
     queryKey: ['folders', 'list'],
     queryFn: () => listFolders(),

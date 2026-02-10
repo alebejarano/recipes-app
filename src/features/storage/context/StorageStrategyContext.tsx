@@ -1,0 +1,57 @@
+import React, { createContext, useContext, useMemo } from 'react'
+
+import { useAuth } from '@/features/auth/context/AuthContext'
+import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
+
+export type StorageStrategy =
+  | 'anonymous-local'
+  | 'account-local-migratable'
+  | 'cloud-sync-offline-cache'
+
+type StorageStrategyContextValue = {
+  strategy: StorageStrategy
+  isAnonymous: boolean
+  isAuthenticated: boolean
+  isPremium: boolean
+  localFirst: boolean
+  cloudSyncEnabled: boolean
+}
+
+const StorageStrategyContext = createContext<StorageStrategyContextValue>({
+  strategy: 'anonymous-local',
+  isAnonymous: true,
+  isAuthenticated: false,
+  isPremium: false,
+  localFirst: true,
+  cloudSyncEnabled: false,
+})
+
+export function StorageStrategyProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth()
+  const { plan } = useContext(SubscriptionContext)
+
+  const value = useMemo<StorageStrategyContextValue>(() => {
+    const isAuthenticated = Boolean(user)
+    const isPremium = isAuthenticated && plan === 'premium'
+    const strategy: StorageStrategy = !isAuthenticated
+      ? 'anonymous-local'
+      : isPremium
+        ? 'cloud-sync-offline-cache'
+        : 'account-local-migratable'
+
+    return {
+      strategy,
+      isAnonymous: !isAuthenticated,
+      isAuthenticated,
+      isPremium,
+      localFirst: strategy !== 'cloud-sync-offline-cache',
+      cloudSyncEnabled: strategy === 'cloud-sync-offline-cache',
+    }
+  }, [plan, user])
+
+  return <StorageStrategyContext.Provider value={value}>{children}</StorageStrategyContext.Provider>
+}
+
+export function useStorageStrategy() {
+  return useContext(StorageStrategyContext)
+}

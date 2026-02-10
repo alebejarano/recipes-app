@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const RECIPES_KEY = 'recipes:local'
 const NOTES_KEY = 'notes:local'
+const FOLDERS_KEY = 'folders:local'
 
 function nowIso() {
   return new Date().toISOString()
@@ -42,6 +43,8 @@ function migrateRecipes(raw: string): string {
       created_at: created,
       updated_at: updated,
       deleted_at: row.deleted_at ?? null,
+      owner_user_id: row.owner_user_id ?? null,
+      cloud_id: row.cloud_id ?? null,
       dirty: typeof row.dirty === 'number' ? row.dirty : 1,
       version: typeof row.version === 'number' ? row.version : 1,
       last_synced_at: row.last_synced_at ?? null,
@@ -71,6 +74,39 @@ function migrateNotes(raw: string): string {
       created_at: created,
       updated_at: updated,
       deleted_at: row.deleted_at ?? null,
+      owner_user_id: row.owner_user_id ?? null,
+      cloud_id: row.cloud_id ?? null,
+      dirty: typeof row.dirty === 'number' ? row.dirty : 1,
+      version: typeof row.version === 'number' ? row.version : 1,
+      last_synced_at: row.last_synced_at ?? null,
+    }
+  })
+
+  return JSON.stringify(next)
+}
+
+function migrateFolders(raw: string): string {
+  let parsed: any
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    return raw
+  }
+  if (!Array.isArray(parsed)) return raw
+
+  const next = parsed.map((row: any) => {
+    const created = row.created_at ?? row.createdAt ?? nowIso()
+    const updated = row.updated_at ?? row.updatedAt ?? created
+
+    return {
+      id: row.id,
+      name: row.name ?? '',
+      emoji: row.emoji ?? null,
+      created_at: created,
+      updated_at: updated,
+      deleted_at: row.deleted_at ?? null,
+      owner_user_id: row.owner_user_id ?? null,
+      cloud_id: row.cloud_id ?? null,
       dirty: typeof row.dirty === 'number' ? row.dirty : 1,
       version: typeof row.version === 'number' ? row.version : 1,
       last_synced_at: row.last_synced_at ?? null,
@@ -81,9 +117,10 @@ function migrateNotes(raw: string): string {
 }
 
 export async function runLocalMigrations() {
-  const [recipesRaw, notesRaw] = await Promise.all([
+  const [recipesRaw, notesRaw, foldersRaw] = await Promise.all([
     AsyncStorage.getItem(RECIPES_KEY),
     AsyncStorage.getItem(NOTES_KEY),
+    AsyncStorage.getItem(FOLDERS_KEY),
   ])
 
   const tasks: Promise<void>[] = []
@@ -99,6 +136,13 @@ export async function runLocalMigrations() {
     const migrated = migrateNotes(notesRaw)
     if (migrated !== notesRaw) {
       tasks.push(AsyncStorage.setItem(NOTES_KEY, migrated))
+    }
+  }
+
+  if (foldersRaw) {
+    const migrated = migrateFolders(foldersRaw)
+    if (migrated !== foldersRaw) {
+      tasks.push(AsyncStorage.setItem(FOLDERS_KEY, migrated))
     }
   }
 

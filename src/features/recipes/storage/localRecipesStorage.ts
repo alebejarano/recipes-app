@@ -31,6 +31,8 @@ type LocalRecipeRow = {
   created_at: string
   updated_at: string
   deleted_at?: string | null
+  owner_user_id?: string | null
+  cloud_id?: string | null
   dirty?: number
   version?: number
   last_synced_at?: string | null

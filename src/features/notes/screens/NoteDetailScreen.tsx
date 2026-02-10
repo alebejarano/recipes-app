@@ -1,6 +1,6 @@
 // src/features/notes/screens/NoteDetailScreen.tsx
 import { Feather } from '@expo/vector-icons'
-import { router, useLocalSearchParams } from 'expo-router'
+import { router, useLocalSearchParams, useSegments } from 'expo-router'
 import React, { useMemo } from 'react'
 import {
   ActivityIndicator,
@@ -14,8 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { createThemedStyles } from '@/styles/createStyles'
 
-import { useDeleteNote } from '@/features/notes/hooks/useDeleteNote'
-import { useNote } from '@/features/notes/hooks/useNote'
+import { useStrategyDeleteNote, useStrategyNote } from '@/features/notes/hooks/useStrategyNotes'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 const FALLBACK_TITLE = 'Untitled note'
@@ -25,11 +24,16 @@ type NoteDetailScreenProps = {
 }
 
 export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
+  const segments = useSegments()
+  const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
   const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
-  const { data: note, isLoading, isError } = useNote(noteId)
-  const deleteMutation = useDeleteNote()
+  const noteQuery = useStrategyNote(noteId, routeMode)
+  const note = noteQuery.data
+  const isLoading = noteQuery.isLoading
+  const isError = noteQuery.isError
+  const deleteMutation = useStrategyDeleteNote(routeMode)
 
   const title = useMemo(() => note?.title?.trim() || FALLBACK_TITLE, [note?.title])
   const content = useMemo(() => note?.content?.trim() ?? '', [note?.content])

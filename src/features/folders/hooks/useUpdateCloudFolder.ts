@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-import type { Folder } from '../api/foldersRepo'
-import { updateFolder } from '../api/foldersRepo'
+import type { Folder } from '../api/foldersCloudRepo'
+import { updateFolder } from '../api/foldersCloudRepo'
 
-export function useUpdateFolder() {
+export function useUpdateCloudFolder() {
   const qc = useQueryClient()
 
   return useMutation({

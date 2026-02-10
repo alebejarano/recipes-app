@@ -1,5 +1,5 @@
 import { router } from 'expo-router'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useContext, useMemo, useState } from 'react'
 import { Alert } from 'react-native'
 
 import Screen from '@/components/Screen'
@@ -15,16 +15,20 @@ import {
   PREFERENCES_ITEMS,
   SUPPORT_ITEMS,
   buildAccountItems,
+  type AccountPlan,
   type PreferenceToggles,
 } from '@/features/profile/data/profileMockData'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
+import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
 
 export default function ProfileScreen() {
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
 
   const { user, logout } = useAuth()
+  const { plan } = useContext(SubscriptionContext)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const accountPlan: AccountPlan = plan === 'premium' ? 'premium' : 'free'
 
   const displayName = useMemo(() => {
     // You can later pull this from profile table; for now use email prefix
@@ -39,18 +43,18 @@ export default function ProfileScreen() {
   })
 
   const onLogoutPress = useCallback(async () => {
-  if (isLoggingOut) return
+    if (isLoggingOut) return
 
-  setIsLoggingOut(true)
-  try {
-    await logout()
-    // No manual navigation needed:
-    // (auth)/_layout.tsx will redirect when session/user becomes null.
-  } catch (e: any) {
-    Alert.alert('Unable to log out', e?.message ?? 'Please try again.')
-  } finally {
-    setIsLoggingOut(false)
-  }
+    setIsLoggingOut(true)
+    try {
+      await logout()
+      // No manual navigation needed:
+      // (auth)/_layout.tsx will redirect when session/user becomes null.
+    } catch (e: any) {
+      Alert.alert('Unable to log out', e?.message ?? 'Please try again.')
+    } finally {
+      setIsLoggingOut(false)
+    }
   }, [isLoggingOut, logout])
 
   const onDeleteAccountPress = useCallback(() => {
@@ -67,34 +71,25 @@ export default function ProfileScreen() {
     )
   }, [])
 
-
   const accountItems = useMemo(
     () =>
       buildAccountItems({
+        plan: accountPlan,
+        onPremiumPress: () => router.push('/premium'),
+        onManagePlanPress: () => router.push('/premium'),
+        onPrivacyPress: () => router.push('/privacy'),
         isLoggingOut,
         onLogoutPress,
         onDeleteAccountPress,
-      }).map((item) =>
-        item.id === 'premium'
-          ? {
-              ...item,
-              onPress: () => router.push('/premium'),
-            }
-          : item.id === 'privacy'
-            ? {
-                ...item,
-                onPress: () => router.push('/privacy'),
-              }
-            : item
-      ),
-    [isLoggingOut, onDeleteAccountPress, onLogoutPress]
+      }),
+    [accountPlan, isLoggingOut, onDeleteAccountPress, onLogoutPress]
   )
 
   return (
     <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
       <ProfileHeader
-        title="Profile"
-        subtitle="Manage your account"
+        title="Account"
+        subtitle={accountPlan === 'premium' ? 'Premium plan' : 'Free plan, local-first'}
         onPressSettings={() => {
           // TODO later
         }}

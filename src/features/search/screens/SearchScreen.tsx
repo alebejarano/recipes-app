@@ -12,8 +12,7 @@ import SearchBar from '@/features/search/components/SearchBar';
 import SearchFilterPills from '@/features/search/components/SearchFilterPills';
 import SearchHeader from '@/features/search/components/SearchHeader';
 
-import { useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders';
-import { useFoldersList } from '@/features/folders/hooks/useFoldersList';
+import { useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders';
 import {
   SEARCH_FILTERS,
   type BrowseCategory,
@@ -31,9 +30,7 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
   const resolvedMode =
     mode ??
     (segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth');
-  const isPublic = resolvedMode === 'public';
-  const foldersQuery = useFoldersList({ enabled: !isPublic });
-  const localFoldersQuery = useLocalFoldersList();
+  const foldersQuery = useStrategyFoldersList(resolvedMode);
 
   const placeholder = useMemo(() => {
     switch (activeFilter) {
@@ -61,14 +58,14 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
     root === '(dev)' ? '/(dev)/(tabs)/search' : root === '(public)' ? '/(public)/(tabs)/search' : '/(auth)/(tabs)/search';
 
   const collectionCards = useMemo<BrowseCategory[]>(() => {
-    const source = isPublic ? localFoldersQuery.data ?? [] : foldersQuery.data ?? [];
+    const source = foldersQuery.data ?? [];
     return source.map((folder, index) => ({
       id: folder.name,
       label: folder.name,
       icon: 'folder',
       tone: index % 2 === 0 ? 'sage' : 'neutral',
     }));
-  }, [foldersQuery.data, localFoldersQuery.data, isPublic]);
+  }, [foldersQuery.data]);
 
   return (
     <Screen

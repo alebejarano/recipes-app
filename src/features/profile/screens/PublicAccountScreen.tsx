@@ -30,18 +30,18 @@ export default function PublicAccountScreen() {
         id: 'create-account',
         type: 'link' as const,
         title: 'Create an account',
-        subtitle: 'Sync and back up your recipes',
+        subtitle: 'Upgrade later to sync and back up your recipes',
         icon: 'user-plus' as const,
         tone: 'accent' as const,
-        onPress: () => router.push('/(public)/get-started'),
+        onPress: () => router.push('/(public)/register'),
       },
       {
-        id: 'local-only',
+        id: 'guest-plan',
         type: 'link' as const,
-        title: 'Local-only mode',
-        subtitle: 'Your data stays on this device',
+        title: 'Current plan',
+        subtitle: 'Guest mode, local only on this device',
         icon: 'hard-drive' as const,
-        onPress: () => router.push('/(public)/get-started'),
+        disabled: true,
       },
       {
         id: 'privacy',
@@ -75,7 +75,7 @@ export default function PublicAccountScreen() {
     <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
       <ProfileHeader
         title="Account"
-        subtitle="Local-only settings"
+        subtitle="No account, local only"
         onPressSettings={() => {
           // TODO later
         }}

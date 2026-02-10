@@ -2,13 +2,13 @@ import { Feather } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import React, { useMemo, useState } from 'react'
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -187,7 +187,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
             <Text style={styles.title}>{isLogin ? 'Welcome back' : 'Create account'}</Text>
 
             <Text style={styles.subtitle}>
-              {isLogin ? 'Sign in to access your recipes' : 'Start organizing your recipes today'}
+              {isLogin ? 'Sign in to access your recipes' : 'Create an account to upgrade and sync your recipes later'}
             </Text>
           </View>
 

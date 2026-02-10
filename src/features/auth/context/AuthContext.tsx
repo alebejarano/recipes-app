@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import type { AuthResponse, Session, User } from '@supabase/supabase-js'
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { usePostHog } from 'posthog-react-native'
+import { tagLocalDataAsMigratable } from '@/features/storage/localAccountLinking'
 
 type AuthContextValue = {
   session: Session | null
@@ -77,6 +78,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       lastIdentifiedUserId.current = userId
     }
   }, [posthog, session?.user?.id, session?.user?.email])
+
+  useEffect(() => {
+    const userId = session?.user?.id
+    if (!userId) return
+
+    tagLocalDataAsMigratable(userId).catch(() => {
+      // Keep auth resilient; tagging is best-effort metadata enrichment.
+    })
+  }, [session?.user?.id])
 
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })

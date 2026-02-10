@@ -22,7 +22,6 @@ import {
 
 import Button from '@/components/Button'
 import TagChip from '@/components/TagChip'
-import { useCreateFolder } from '@/features/folders/hooks/useCreateFolder'
 import { uploadRecipeImage } from '@/features/recipes/api/recipesRepo'
 import { createThemedStyles } from '@/styles/createStyles'
 
@@ -95,12 +94,11 @@ type Props = {
   submitLabel: string
   isSubmitting?: boolean
   onSubmit: (values: RecipeFormSubmitValues) => Promise<void> | void
+  onCreateFolder: (input: { name: string; emoji?: string | null }) => Promise<void>
   onCancel?: () => void
   showActions?: boolean
   suggestedFolders?: FolderSuggestion[]
   imageUploadMode?: 'cloud' | 'local'
-  allowFolderCreation?: boolean
-  onCreateFolder?: (input: { name: string; emoji?: string | null }) => Promise<void>
 }
 
 const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
@@ -109,12 +107,11 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     submitLabel,
     isSubmitting,
     onSubmit,
+    onCreateFolder,
     onCancel,
     showActions = true,
     suggestedFolders = [],
     imageUploadMode = 'cloud',
-    allowFolderCreation = true,
-    onCreateFolder,
   },
   ref
 ) {
@@ -126,7 +123,6 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   const [isEmojiModalOpen, setIsEmojiModalOpen] = useState(false)
   const [emojiDraft, setEmojiDraft] = useState('')
   const [isUploadingImage, setIsUploadingImage] = useState(false)
-  const createFolderMutation = useCreateFolder()
   const normalizedSuggestedFolders = useMemo(() => {
     if (!suggestedFolders.length) return []
     const selected = new Set(values.folders.map((folder) => folder.toLowerCase()))
@@ -223,18 +219,11 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
             "We’ll use the existing folder. Its emoji will not be changed here."
           )
         }
-      } else if (allowFolderCreation && !createFolderMutation.isPending) {
-        const createFolder = onCreateFolder
-          ? onCreateFolder({
-              name: nextFolder,
-              emoji: folderEmojiInput.trim() || null,
-            })
-          : createFolderMutation.mutateAsync({
-              name: nextFolder,
-              emoji: folderEmojiInput.trim() || null,
-            })
-
-        void createFolder.catch((error: any) => {
+      } else {
+        void onCreateFolder({
+          name: nextFolder,
+          emoji: folderEmojiInput.trim() || null,
+        }).catch((error: any) => {
           const code = error?.code ?? error?.cause?.code
           if (code === '23505') {
             Alert.alert(
@@ -250,11 +239,9 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       setFolderEmojiInput('')
     },
     [
-      allowFolderCreation,
       normalizeFolder,
       folderInput,
       folderEmojiInput,
-      createFolderMutation,
       suggestedFolders,
       onCreateFolder,
     ]

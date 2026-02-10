@@ -21,12 +21,11 @@ import PickCard from '@/features/home/components/PickCard';
 import RecipeCarousel, { type RecipePreview } from '@/features/home/components/RecipeCarousel';
 import SectionHeaderRow from '@/features/home/components/SectionHeaderRow';
 import SuccessBanner from '@/features/home/components/SuccessBanner';
-import { useLocalNotesList } from '@/features/notes/hooks/useLocalNotes';
-import { useNotesList } from '@/features/notes/hooks/useNotesList';
-import { useLocalRecipesList } from '@/features/recipes/hooks/useLocalRecipes';
 import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments';
-import { useRecipesList } from '@/features/recipes/hooks/useRecipesList';
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore';
+import { useStrategyNotesList } from '@/features/notes/hooks/useStrategyNotes';
+import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes';
+import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode';
 
 import {
   formatRelativeDay,
@@ -159,6 +158,7 @@ export default function HomeScreen({
     (segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth');
   const isPublic = resolvedMode === 'public';
   const isAuthenticated = Boolean(user);
+  const { shouldUseLocalData } = useStorageDataMode(resolvedMode);
 
   const { width: screenWidth } = useWindowDimensions();
 
@@ -177,10 +177,8 @@ export default function HomeScreen({
     return Math.floor(clamped);
   }, [screenWidth, PAGE_PADDING, CARD_GAP]);
 
-  const recipesQuery = useRecipesList({ limit: 50, enabled: !isPublic });
-  const notesQuery = useNotesList({ limit: 50, enabled: !isPublic });
-  const localRecipesQuery = useLocalRecipesList();
-  const localNotesQuery = useLocalNotesList();
+  const recipesQuery = useStrategyRecipesList({ limit: 50 }, resolvedMode);
+  const notesQuery = useStrategyNotesList({ limit: 50 }, resolvedMode);
   const importsUsageQuery = useRecipeDocumentUsageSummary({ enabled: isPublic && !isAuthenticated });
 
   const hydrateShopping = useShoppingListStore((s) => s.hydrate);
@@ -194,7 +192,7 @@ export default function HomeScreen({
 
   const recipes = useMemo<HomeRecipe[]>(
     () => {
-      const source = isPublic ? localRecipesQuery.data ?? [] : recipesQuery.data ?? [];
+      const source = recipesQuery.data ?? [];
       return source.map((recipe) => ({
         id: recipe.id,
         title: recipe.title,
@@ -208,18 +206,18 @@ export default function HomeScreen({
         updatedAt: recipe.updatedAt ?? recipe.createdAt,
       }));
     },
-    [isPublic, localRecipesQuery.data, recipesQuery.data]
+    [recipesQuery.data]
   );
 
   const recipeCollections = useMemo(() => {
     const items = buildCollectionsForSegment(
       'recipes',
-      (isPublic ? localRecipesQuery.data ?? [] : recipesQuery.data ?? []) as any
+      (recipesQuery.data ?? []) as any
     );
     return items.filter(
       (item) => item.kind === 'tag' && item.count > 0 && item.label !== 'Uncategorized'
     );
-  }, [isPublic, localRecipesQuery.data, recipesQuery.data]);
+  }, [recipesQuery.data]);
 
   const featuredCollection = useMemo(() => {
     const eligibleCollections = recipeCollections.filter(
@@ -240,7 +238,7 @@ export default function HomeScreen({
 
   const featuredCollectionRecipes = useMemo(() => {
     if (!featuredCollection) return [];
-    const list = isPublic ? localRecipesQuery.data ?? [] : recipesQuery.data ?? [];
+    const list = recipesQuery.data ?? [];
 
     if (featuredCollection.label === 'Uncategorized') {
       return list.filter((recipe) => (recipe.folders?.length ?? 0) === 0);
@@ -249,7 +247,7 @@ export default function HomeScreen({
     return list.filter((recipe) =>
       (recipe.folders ?? []).map((folder) => folder.name.trim()).includes(featuredCollection.label)
     );
-  }, [featuredCollection, isPublic, localRecipesQuery.data, recipesQuery.data]);
+  }, [featuredCollection, recipesQuery.data]);
 
   const featuredCollectionChips = useMemo(() => {
     const chips = featuredCollectionRecipes.slice(0, 2).map((recipe) => {
@@ -265,14 +263,14 @@ export default function HomeScreen({
 
   const notes = useMemo<HomeNote[]>(
     () => {
-      const source = isPublic ? localNotesQuery.data ?? [] : notesQuery.data ?? [];
+      const source = notesQuery.data ?? [];
       return source.map((note) => ({
         id: note.id,
         title: note.title?.trim() || 'Untitled note',
         updatedAt: note.updatedAt,
       }));
     },
-    [isPublic, localNotesQuery.data, notesQuery.data]
+    [notesQuery.data]
   );
 
   const shoppingList = useMemo(() => {
@@ -346,7 +344,7 @@ export default function HomeScreen({
   }, []);
 
   const isInitialLoading =
-    !isPublic &&
+    !shouldUseLocalData &&
     (recipesQuery.isLoading || notesQuery.isLoading) &&
     !recipesQuery.data &&
     !notesQuery.data;

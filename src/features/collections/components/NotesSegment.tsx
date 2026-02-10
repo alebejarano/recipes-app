@@ -4,8 +4,8 @@ import React, { useMemo } from 'react'
 import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native'
 
 import { formatRelativeDay } from '@/features/home/utils/homeFormatters'
-import { useLocalNotesList } from '@/features/notes/hooks/useLocalNotes'
-import { useNotesList } from '@/features/notes/hooks/useNotesList'
+import { useStrategyNotesList } from '@/features/notes/hooks/useStrategyNotes'
+import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
@@ -28,8 +28,8 @@ export default function NotesSegment({
   mode?: 'auth' | 'public' | 'dev'
 }) {
   const isPublic = mode === 'public'
-  const notesQuery = useNotesList({ limit: 50, enabled: !isPublic })
-  const localNotesQuery = useLocalNotesList()
+  const { shouldUseLocalData } = useStorageDataMode(mode)
+  const notesQuery = useStrategyNotesList({ limit: 50 }, mode)
   const returnTo = getSafeReturnTo(
     mode === 'dev'
       ? '/(dev)/(tabs)/collections?segment=notes'
@@ -40,20 +40,20 @@ export default function NotesSegment({
   const returnToParam = typeof returnTo === 'string' ? returnTo : undefined
 
   const data = useMemo<NoteItem[]>(() => {
-    const notes = isPublic ? localNotesQuery.data ?? [] : notesQuery.data ?? []
+    const notes = notesQuery.data ?? []
     return notes.map((note) => ({
       id: note.id,
       title: note.title?.trim() || FALLBACK_TITLE,
       preview: (note.content ?? '').trim().slice(0, PREVIEW_LIMIT) || 'No note content yet.',
       relativeDate: formatRelativeDay(note.updatedAt),
     }))
-  }, [isPublic, localNotesQuery.data, notesQuery.data])
+  }, [notesQuery.data])
 
   return (
     <View style={styles.wrap}>
       <Text style={styles.helper}>Your kitchen notes and ideas</Text>
 
-      {notesQuery.isLoading && !isPublic ? (
+      {notesQuery.isLoading && !shouldUseLocalData ? (
         <View style={styles.loadingState}>
           <ActivityIndicator size="small" color={styles.loadingText.color} />
           <Text style={styles.loadingText}>Loading notes…</Text>

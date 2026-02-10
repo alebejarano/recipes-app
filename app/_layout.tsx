@@ -8,8 +8,10 @@ import { AnalyticsConsentProvider, useAnalyticsConsent } from '@/features/analyt
 import { AuthProvider } from '@/features/auth/context/AuthContext'
 import { OnboardingProvider } from '@/features/onboarding/context/OnboardingContext'
 import { ensureRecipePdfStorageReady } from '@/features/recipes/storage/recipePdfStorage'
+import { StorageStrategyProvider } from '@/features/storage/context/StorageStrategyContext'
+import { SubscriptionProvider } from '@/features/subscription/context/SubscriptionContext'
 import { runLocalMigrations } from '@/lib/localMigrations'
-import QueryProviderComponent from '@/providers/QueryProvider'
+import QueryProvider from '@/providers/QueryProvider'
 import { useLoadFonts } from '@/styles/useLoadFonts'
 
 export default function RootLayout() {
@@ -34,13 +36,17 @@ export default function RootLayout() {
   }
 
   const content = (
-    <QueryProviderComponent>
+    <QueryProvider>
       <AuthProvider>
-        <OnboardingProvider>
-          <Slot />
-        </OnboardingProvider>
+        <SubscriptionProvider>
+          <StorageStrategyProvider>
+            <OnboardingProvider>
+              <Slot />
+            </OnboardingProvider>
+          </StorageStrategyProvider>
+        </SubscriptionProvider>
       </AuthProvider>
-    </QueryProviderComponent>
+    </QueryProvider>
   )
 
   return (

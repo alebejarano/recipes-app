@@ -36,6 +36,8 @@ export type PreferenceToggles = {
   // darkMode: boolean // TODO later
 }
 
+export type AccountPlan = 'free' | 'premium'
+
 export const PREFERENCES_ITEMS = ({
   toggles,
   setToggles,
@@ -66,57 +68,66 @@ export const PREFERENCES_ITEMS = ({
 ]
 
 /**
- * Static account items that don’t need runtime handlers yet.
- * Keep this list small and stable.
- */
-export const ACCOUNT_ITEMS_BASE: SettingsRowItem[] = [
-  {
-    id: 'premium',
-    type: 'link',
-    icon: 'award',
-    title: 'Premium',
-    subtitle: 'Unlock all features',
-    tone: 'accent',
-    onPress: () => {},
-  },
-  {
-    id: 'subscription',
-    type: 'link',
-    icon: 'credit-card',
-    title: 'Subscription',
-    subtitle: 'Manage your plan',
-    onPress: () => {},
-  },
-  {
-    id: 'privacy',
-    type: 'link',
-    icon: 'shield',
-    title: 'Privacy & Security',
-    subtitle: 'Manage your data',
-    onPress: () => {},
-  },
-]
-
-/**
  * Account section should include logout/delete (not Support).
  * We build it so ProfileScreen can inject real handlers.
  */
 export function buildAccountItems(args: {
+  plan: AccountPlan
+  onPremiumPress: () => void
+  onManagePlanPress: () => void
+  onPrivacyPress: () => void
   onLogoutPress: () => void
   onDeleteAccountPress?: () => void
   isLoggingOut?: boolean
   isDeletingAccount?: boolean
 }): SettingsRowItem[] {
   const {
+    plan,
+    onPremiumPress,
+    onManagePlanPress,
+    onPrivacyPress,
     onLogoutPress,
     onDeleteAccountPress,
     isLoggingOut = false,
     isDeletingAccount = false,
   } = args
 
-  const items: SettingsRowItem[] = [...ACCOUNT_ITEMS_BASE]
+  const isPremium = plan === 'premium'
 
-  // ✅ LOG OUT ROW — THIS IS WHERE YOUR SNIPPET GOES
+  const items: SettingsRowItem[] = [
+    {
+      id: 'premium',
+      type: 'link',
+      icon: 'award',
+      title: isPremium ? 'Premium active' : 'Upgrade to Premium',
+      subtitle: isPremium
+        ? 'Cloud sync and backup are enabled'
+        : 'Unlock cloud backup, sync, and unlimited saves',
+      tone: 'accent',
+      rightText: isPremium ? 'Active' : undefined,
+      onPress: onPremiumPress,
+    },
+    {
+      id: 'subscription',
+      type: 'link',
+      icon: 'credit-card',
+      title: isPremium ? 'Manage subscription' : 'Current plan',
+      subtitle: isPremium
+        ? 'Billing, renewals, and invoices'
+        : 'Free plan, local-first on this device',
+      rightText: isPremium ? 'Premium' : 'Free',
+      onPress: isPremium ? onManagePlanPress : onPremiumPress,
+    },
+    {
+      id: 'privacy',
+      type: 'link',
+      icon: 'shield',
+      title: 'Privacy & Security',
+      subtitle: 'Manage your data',
+      onPress: onPrivacyPress,
+    },
+  ]
+
   items.push({
     id: 'logout',
     type: 'link',
@@ -126,7 +137,6 @@ export function buildAccountItems(args: {
     onPress: isLoggingOut ? undefined : onLogoutPress,
   })
 
-  // ❗ Delete account keeps confirmation (later)
   if (onDeleteAccountPress) {
     items.push({
       id: 'delete',
@@ -141,7 +151,6 @@ export function buildAccountItems(args: {
 
   return items
 }
-
 
 export const SUPPORT_ITEMS: SettingsRowItem[] = [
   {

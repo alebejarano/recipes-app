@@ -1,7 +1,7 @@
 // src/features/recipes/screens/EditRecipeScreen.tsx
 
 import { Feather } from '@expo/vector-icons'
-import { router, useLocalSearchParams } from 'expo-router'
+import { router, useLocalSearchParams, useSegments } from 'expo-router'
 import React, { useCallback, useMemo, useRef } from 'react'
 import {
   ActivityIndicator,
@@ -23,9 +23,11 @@ import RecipeForm, {
   type RecipeFormValues,
 } from '@/features/recipes/components/RecipeForm'
 import type { Recipe } from '@/features/recipes/api/recipesRepo'
-import { useRecipe } from '@/features/recipes/hooks/useRecipe'
-import { useFoldersList } from '@/features/folders/hooks/useFoldersList'
-import { useUpdateRecipe } from '@/features/recipes/hooks/useUpdateRecipe'
+import { useCreateCloudFolder } from '@/features/folders/hooks/useCreateCloudFolder'
+import { useCloudFoldersList } from '@/features/folders/hooks/useCloudFoldersList'
+import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
+import { useStrategyRecipe, useStrategyUpdateRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
+import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 const FOOTER_HEIGHT = 72
@@ -63,17 +65,31 @@ export default function EditRecipeScreen() {
   const recipeId = id ?? ''
   const safeReturnTo = getSafeReturnTo(returnTo)
   const insets = useSafeAreaInsets()
+  const segments = useSegments()
+  const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
+  const { shouldUseLocalData } = useStorageDataMode(routeMode)
 
-  const { data: recipe, isLoading, isError } = useRecipe(recipeId)
-  const updateMutation = useUpdateRecipe(recipeId)
-  const foldersQuery = useFoldersList()
+  const recipeQuery = useStrategyRecipe(recipeId, routeMode)
+  const recipe = recipeQuery.data
+  const isLoading = recipeQuery.isLoading
+  const isError = recipeQuery.isError
+
+  const updateMutation = useStrategyUpdateRecipe(recipeId, routeMode)
+  const cloudFoldersQuery = useCloudFoldersList({ enabled: !shouldUseLocalData })
+  const localFoldersQuery = useLocalFoldersList()
+  const createLocalFolderMutation = useCreateLocalFolder()
+  const createCloudFolderMutation = useCreateCloudFolder()
   const folderSuggestions = useMemo(
-    () =>
-      (foldersQuery.data ?? []).map((folder) => ({
+    () => {
+      const source = shouldUseLocalData
+        ? localFoldersQuery.data ?? []
+        : cloudFoldersQuery.data ?? []
+      return source.map((folder) => ({
         label: folder.name,
         emoji: folder.emoji,
-      })),
-    [foldersQuery.data]
+      }))
+    },
+    [cloudFoldersQuery.data, localFoldersQuery.data, shouldUseLocalData]
   )
   const formRef = useRef<RecipeFormHandle>(null)
 
@@ -105,6 +121,17 @@ export default function EditRecipeScreen() {
     if (updateMutation.isPending) return
     formRef.current?.submit()
   }, [updateMutation.isPending])
+
+  const handleCreateFolder = useCallback(
+    async (input: { name: string; emoji?: string | null }) => {
+      if (shouldUseLocalData) {
+        await createLocalFolderMutation.mutateAsync(input)
+        return
+      }
+      await createCloudFolderMutation.mutateAsync(input)
+    },
+    [createCloudFolderMutation, createLocalFolderMutation, shouldUseLocalData]
+  )
 
   const keyboardVerticalOffset = Platform.select({
     ios: insets.top + 44,
@@ -180,6 +207,8 @@ export default function EditRecipeScreen() {
               onSubmit={handleSubmit}
               showActions={false}
               suggestedFolders={folderSuggestions}
+              onCreateFolder={handleCreateFolder}
+              imageUploadMode={shouldUseLocalData ? 'local' : 'cloud'}
             />
 
             {updateMutation.isError ? (

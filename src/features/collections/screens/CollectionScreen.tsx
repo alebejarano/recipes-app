@@ -31,11 +31,9 @@ import ShoppingSegment from '@/features/collections/components/ShoppingSegment'
 
 import type { CollectionItem, RecipeSegmentKey, SegmentKey } from '@/features/collections/types'
 import { buildCollectionsForSegment, pickVariant } from '@/features/collections/utils/collections'
-import { useCreateFolder } from '@/features/folders/hooks/useCreateFolder'
-import { useFoldersList } from '@/features/folders/hooks/useFoldersList'
-import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
-import { useLocalRecipesList } from '@/features/recipes/hooks/useLocalRecipes'
-import { useRecipesList } from '@/features/recipes/hooks/useRecipesList'
+import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
+import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
+import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 type CollectionsScreenProps = {
@@ -53,6 +51,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     mode ??
     (segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth')
   const isPublic = resolvedMode === 'public'
+  const { shouldUseLocalData } = useStorageDataMode(resolvedMode)
   const [segment, setSegment] = useState<SegmentKey>('recipes')
   const [recipeSegment, setRecipeSegment] = useState<RecipeSegmentKey>('folders')
   const [showDocSuccess, setShowDocSuccess] = useState(false)
@@ -60,12 +59,9 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   const [newFolderEmoji, setNewFolderEmoji] = useState('')
   const [newFolderName, setNewFolderName] = useState('')
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
-  const recipesQuery = useRecipesList({ limit: 200, enabled: !isPublic })
-  const localRecipesQuery = useLocalRecipesList()
-  const foldersQuery = useFoldersList({ enabled: !isPublic })
-  const localFoldersQuery = useLocalFoldersList()
-  const createFolderMutation = useCreateFolder()
-  const createLocalFolderMutation = useCreateLocalFolder()
+  const recipesQuery = useStrategyRecipesList({ limit: 200 }, resolvedMode)
+  const foldersQuery = useStrategyFoldersList(resolvedMode)
+  const createFolderMutation = useStrategyCreateFolder(resolvedMode)
   const returnTo = getSafeReturnTo(
     resolvedMode === 'dev'
       ? '/(dev)/(tabs)/collections?segment=recipes'
@@ -108,8 +104,8 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   }, [recipeSegment, showDocSuccess])
 
   const recipeData = useMemo(
-    () => (isPublic ? localRecipesQuery.data ?? [] : recipesQuery.data ?? []),
-    [isPublic, localRecipesQuery.data, recipesQuery.data]
+    () => recipesQuery.data ?? [],
+    [recipesQuery.data]
   )
 
   const folderCounts = useMemo(() => {
@@ -133,7 +129,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     const base = buildCollectionsForSegment(segment, recipeData)
     if (segment !== 'recipes') return base
 
-    const folderSource = isPublic ? localFoldersQuery.data ?? [] : foldersQuery.data ?? []
+    const folderSource = foldersQuery.data ?? []
 
     const folderItems: CollectionItem[] =
       folderSource.map((folder) => ({
@@ -158,7 +154,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     items.push({ key: 'new', label: 'Create folder', count: 0, kind: 'new' })
 
     return items
-  }, [segment, recipeData, foldersQuery.data, localFoldersQuery.data, folderCounts, isPublic])
+  }, [segment, recipeData, foldersQuery.data, folderCounts])
 
   const recipeHelperText =
     recipeSegment === 'documents'
@@ -193,10 +189,10 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     const emoji = newFolderEmoji.trim() || '📁'
 
     try {
-      if (isPublic) {
-        const folderCount = localFoldersQuery.data?.length ?? 0
-        await createLocalFolderMutation.mutateAsync({ name, emoji })
-        if (folderCount >= 2) {
+      if (shouldUseLocalData) {
+        const folderCount = foldersQuery.data?.length ?? 0
+        await createFolderMutation.mutateAsync({ name, emoji })
+        if (isPublic && folderCount >= 2) {
           Alert.alert(
             'Keep your folders safe',
             'Create an account to sync and back up your folders.',
@@ -280,7 +276,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
               bottomPadding={bottomPadding}
               mode={isPublic ? 'public' : resolvedMode}
             />
-          ) : recipesQuery.isLoading && !isPublic ? (
+          ) : recipesQuery.isLoading && !shouldUseLocalData ? (
             <View style={styles.loadingState}>
               <ActivityIndicator size="small" color={styles.loadingText.color} />
               <Text style={styles.loadingText}>Loading recipes…</Text>
@@ -380,7 +376,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
             <Text style={styles.modalSubtitle}>Add an emoji and a title.</Text>
             {isPublic ? (
               <Text style={styles.modalHelper}>
-                Folders are saved on this device. Create an account to sync them.
+                Folders are saved on this device.
               </Text>
             ) : null}
 

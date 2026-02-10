@@ -15,13 +15,11 @@ import {
 
 import Button from '@/components/Button'
 import RecipeRow from '@/features/recipes/components/RecipeRow'
-import { useRecipesList } from '@/features/recipes/hooks/useRecipesList'
+import { useStrategyDeleteFolder, useStrategyFoldersList, useStrategyUpdateFolder } from '@/features/folders/hooks/useStrategyFolders'
+import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
-import { useFoldersList } from '@/features/folders/hooks/useFoldersList'
-import { useUpdateFolder } from '@/features/folders/hooks/useUpdateFolder'
-import { useDeleteFolder } from '@/features/folders/hooks/useDeleteFolder'
 
 function isUncategorizedKey(key: string) {
   return key === 'uncategorized'
@@ -45,10 +43,10 @@ export default function CollectionDetailScreen() {
 
   const isUncategorized = isUncategorizedKey(key)
   const title = isUncategorized ? 'Uncategorized' : key
-  const recipesQuery = useRecipesList({ limit: 200 })
-  const foldersQuery = useFoldersList()
-  const updateFolderMutation = useUpdateFolder()
-  const deleteFolderMutation = useDeleteFolder()
+  const recipesQuery = useStrategyRecipesList({ limit: 200 }, 'dev')
+  const foldersQuery = useStrategyFoldersList('dev')
+  const updateFolderMutation = useStrategyUpdateFolder('dev')
+  const deleteFolderMutation = useStrategyDeleteFolder('dev')
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editName, setEditName] = useState(title)
   const [editEmoji, setEditEmoji] = useState('')
@@ -116,7 +114,7 @@ export default function CollectionDetailScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteFolderMutation.mutateAsync({ id: folderId })
+              await deleteFolderMutation.mutateAsync(folderId)
               if (safeReturnTo) {
                 router.replace(safeReturnTo)
               } else {

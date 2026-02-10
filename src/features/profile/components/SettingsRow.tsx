@@ -77,7 +77,7 @@ export default function SettingsRow({
       ) : (
         <View style={styles.right}>
           {!!item.rightText && <Text style={styles.rightText}>{item.rightText}</Text>}
-          <Feather name="chevron-right" size={18} style={styles.chevron} />
+          {!isDisabled && <Feather name="chevron-right" size={18} style={styles.chevron} />}
         </View>
       )}
     </>

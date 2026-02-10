@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-import { deleteFolderWithRecipes } from '../api/foldersRepo'
+import { deleteFolderWithRecipes } from '../api/foldersCloudRepo'
 
-export function useDeleteFolder() {
+export function useDeleteCloudFolder() {
   const qc = useQueryClient()
 
   return useMutation({

@@ -16,8 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { createThemedStyles } from '@/styles/createStyles'
 
-import { useDeleteRecipe } from '@/features/recipes/hooks/useDeleteRecipe'
-import { useRecipe } from '@/features/recipes/hooks/useRecipe'
+import { useStrategyDeleteRecipe, useStrategyRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 const FALLBACK_FOLDERS: string[] = []
@@ -37,8 +36,13 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
   const safeReturnTo = getSafeReturnTo(returnTo)
   const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
   const segments = useSegments()
-  const deleteMutation = useDeleteRecipe()
-  const { data: recipe, isLoading, isError, error } = useRecipe(recipeId)
+  const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
+  const deleteMutation = useStrategyDeleteRecipe(routeMode)
+  const recipeQuery = useStrategyRecipe(recipeId, routeMode)
+  const recipe = recipeQuery.data
+  const isLoading = recipeQuery.isLoading
+  const isError = recipeQuery.isError
+  const error = recipeQuery.error
 
   const ingredientLines = useMemo(
     () => buildIngredientLines(recipe?.ingredients),

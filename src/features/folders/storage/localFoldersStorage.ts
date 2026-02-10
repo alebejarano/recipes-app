@@ -9,6 +9,8 @@ type LocalFolderRow = {
   created_at: string
   updated_at: string
   deleted_at?: string | null
+  owner_user_id?: string | null
+  cloud_id?: string | null
   dirty?: number
   version?: number
   last_synced_at?: string | null
@@ -23,7 +25,9 @@ export type LocalFolder = {
 }
 
 function makeId() {
-  return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  const randomUuid = globalThis.crypto?.randomUUID?.()
+  if (randomUuid) return randomUuid
+  return `local_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
 }
 
 async function readAll(): Promise<LocalFolderRow[]> {

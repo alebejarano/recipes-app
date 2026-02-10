@@ -1,7 +1,7 @@
 // src/features/recipes/screens/CreateRecipeScreen.tsx
 
 import { Feather } from '@expo/vector-icons'
-import { router } from 'expo-router'
+import { router, useSegments } from 'expo-router'
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import {
   Alert,
@@ -25,9 +25,12 @@ import RecipeDocumentForm, {
   type RecipeDocumentFormHandle,
   type RecipeDocumentFormValues,
 } from '@/features/recipes/components/RecipeDocumentForm'
-import { useCreateRecipe } from '@/features/recipes/hooks/useCreateRecipe'
-import { useFoldersList } from '@/features/folders/hooks/useFoldersList'
+import { useCreateCloudFolder } from '@/features/folders/hooks/useCreateCloudFolder'
+import { useCloudFoldersList } from '@/features/folders/hooks/useCloudFoldersList'
+import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
 import { useAddRecipeDocument } from '@/features/recipes/hooks/useRecipeDocuments'
+import { useStrategyCreateRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
+import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
 
 export type CreateRecipeVariant = 'onboarding' | 'app'
 export type CreateRecipeEntry = 'scratch' | 'pdf'
@@ -48,21 +51,31 @@ export default function CreateRecipeScreen({
   onBack,
 }: CreateRecipeScreenProps) {
   const insets = useSafeAreaInsets()
+  const segments = useSegments()
+  const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
+  const { shouldUseLocalData } = useStorageDataMode(routeMode)
 
   const isOnboarding = variant === 'onboarding'
   const [entryMode, setEntryMode] = useState<CreateRecipeEntry | null>(
     isOnboarding ? 'scratch' : entry ?? null
   )
-  const createMutation = useCreateRecipe()
+  const createMutation = useStrategyCreateRecipe(routeMode)
   const documentMutation = useAddRecipeDocument()
-  const foldersQuery = useFoldersList()
+  const cloudFoldersQuery = useCloudFoldersList({ enabled: !shouldUseLocalData })
+  const localFoldersQuery = useLocalFoldersList()
+  const createLocalFolderMutation = useCreateLocalFolder()
+  const createCloudFolderMutation = useCreateCloudFolder()
   const folderSuggestions = useMemo(
-    () =>
-      (foldersQuery.data ?? []).map((folder) => ({
+    () => {
+      const source = shouldUseLocalData
+        ? localFoldersQuery.data ?? []
+        : cloudFoldersQuery.data ?? []
+      return source.map((folder) => ({
         label: folder.name,
         emoji: folder.emoji,
-      })),
-    [foldersQuery.data]
+      }))
+    },
+    [cloudFoldersQuery.data, localFoldersQuery.data, shouldUseLocalData]
   )
   const recipeFormRef = useRef<RecipeFormHandle>(null)
   const documentFormRef = useRef<RecipeDocumentFormHandle>(null)
@@ -128,6 +141,17 @@ export default function CreateRecipeScreen({
       }
     },
     [documentMutation]
+  )
+
+  const handleCreateFolder = useCallback(
+    async (input: { name: string; emoji?: string | null }) => {
+      if (shouldUseLocalData) {
+        await createLocalFolderMutation.mutateAsync(input)
+        return
+      }
+      await createCloudFolderMutation.mutateAsync(input)
+    },
+    [createCloudFolderMutation, createLocalFolderMutation, shouldUseLocalData]
   )
 
   const triggerSave = useCallback(() => {
@@ -206,6 +230,8 @@ export default function CreateRecipeScreen({
                     onSubmit={handleSubmit}
                     showActions={false}
                     suggestedFolders={folderSuggestions}
+                    onCreateFolder={handleCreateFolder}
+                    imageUploadMode={shouldUseLocalData ? 'local' : 'cloud'}
                   />
                 )}
               </>
