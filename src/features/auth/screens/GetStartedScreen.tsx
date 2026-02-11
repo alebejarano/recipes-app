@@ -15,10 +15,11 @@ type Benefit = {
 }
 
 const BENEFITS: Benefit[] = [
-  { id: 'collections', text: 'Save recipes and organize them into collections' },
-  { id: 'notes', text: 'Add notes, substitutions, and personal tweaks' },
-  { id: 'sync', text: 'Access everything across devices' },
+  { id: 'identity', text: 'Create your personal account' },
+  { id: 'upgrade', text: 'Upgrade anytime to enable sync and backup' },
+  { id: 'migration', text: 'Import your existing recipes when you upgrade' },
 ]
+
 
 export default function GetStartedScreen() {
   const router = useRouter()
@@ -31,11 +32,6 @@ export default function GetStartedScreen() {
     router.push('/(public)/login')
   }, [router])
 
-  // Optional: turn onboarding into an explicit “tour” (not a gate).
-  // const goToTour = useCallback(() => {
-  //   router.push('/onboarding') // resolves to (public)/onboarding/index.tsx
-  // }, [router])
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
@@ -46,28 +42,15 @@ export default function GetStartedScreen() {
         <Header />
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>With an account you can:</Text>
+          <Text style={styles.cardTitle}>An account lets you:</Text>
 
           <BenefitList benefits={BENEFITS} />
 
           <Actions onRegister={goToRegister} onLogin={goToLogin} />
 
           <Text style={styles.microCopy}>
-            No setup required. Create an account and start adding recipes right away.
+           Your recipes stay on this device until you upgrade to Premium.
           </Text>
-
-          {/* Optional “tour” link. Keep it subtle to avoid “welcome screen fatigue”. */}
-          {/*
-          <Button
-            onPress={goToTour}
-            variant="ghost"
-            size="lg"
-            style={styles.ghostButton}
-            textStyle={styles.ghostButtonText}
-          >
-            See how it works (1 min)
-          </Button>
-          */}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -87,11 +70,10 @@ function Header() {
         />
       </View>
 
-      <Text style={styles.title}>Save your recipes and notes</Text>
+     <Text style={styles.title}>Set up your account</Text>
 
       <Text style={styles.subtitle}>
-        Create an account to keep your recipes, personal notes, and favorites in one place—available
-        whenever you come back.
+        Create an account to unlock Premium features like sync and backup when you're ready.
       </Text>
     </View>
   )
@@ -186,7 +168,7 @@ const styles = createThemedStyles((theme) => ({
   subtitle: {
     textAlign: 'center',
     fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.base,
     color: theme.colors.mutedForeground,
     maxWidth: 380,
@@ -277,12 +259,9 @@ const styles = createThemedStyles((theme) => ({
   microCopy: {
     textAlign: 'center',
     fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.xs,
+    fontSize: theme.fontSize.sm,
     lineHeight: theme.lineHeight.sm,
     color: theme.colors.mutedForeground,
     marginTop: theme.spacing.xs,
   },
-
-  // ghostButton: { width: '100%', borderRadius: 999, marginTop: theme.spacing.sm },
-  // ghostButtonText: { fontFamily: theme.fontFamily.medium, fontSize: theme.fontSize.base, color: theme.colors.sage },
 }))

@@ -36,6 +36,10 @@ const premiumItems = [
 ]
 
 export default function PremiumScreen({ onUpgrade, onMaybeLater }: PremiumScreenProps) {
+  const [billingCycle, setBillingCycle] = React.useState<'month' | 'year'>('month')
+  const priceValue = billingCycle === 'month' ? '€5' : '€36'
+  const pricePeriod = billingCycle === 'month' ? '/month' : '/year'
+
   return (
     <Screen scroll contentStyle={styles.content}>
       {!!onMaybeLater && (
@@ -78,12 +82,45 @@ export default function PremiumScreen({ onUpgrade, onMaybeLater }: PremiumScreen
       </View>
 
       <View style={styles.priceRow}>
+        <View style={styles.billingToggle}>
+          <TouchableOpacity
+            style={[styles.billingOption, billingCycle === 'month' && styles.billingOptionActive]}
+            onPress={() => setBillingCycle('month')}
+            activeOpacity={0.85}
+          >
+            <Text
+              style={[
+                styles.billingOptionText,
+                billingCycle === 'month' && styles.billingOptionTextActive,
+              ]}
+            >
+              Monthly
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.billingOption, billingCycle === 'year' && styles.billingOptionActive]}
+            onPress={() => setBillingCycle('year')}
+            activeOpacity={0.85}
+          >
+            <Text
+              style={[
+                styles.billingOptionText,
+                billingCycle === 'year' && styles.billingOptionTextActive,
+              ]}
+            >
+              Yearly
+            </Text>
+          </TouchableOpacity>
+        </View>
         <View style={styles.pricePill}>
-          <Text style={styles.priceValue}>5 €</Text>
-          <Text style={styles.pricePeriod}>/ month</Text>
+          <Text style={styles.priceValue}>{priceValue}</Text>
+          <Text style={styles.pricePeriod}>{pricePeriod}</Text>
         </View>
         <Text style={styles.cancelText}>· Cancel anytime</Text>
       </View>
+      <Text style={styles.priceNote}>
+        It’s €5. Not €4.99. Yes, we rounded it — we cook honestly.
+      </Text>
 
       <Button onPress={onUpgrade} style={styles.ctaButton} textStyle={styles.ctaText}>
         Start Premium
@@ -230,10 +267,34 @@ const styles = createThemedStyles((theme) => ({
   },
   priceRow: {
     width: '100%',
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: theme.spacing['2xl'],
+  },
+  billingToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.muted,
+    borderRadius: theme.radii.xxl,
+    padding: theme.spacing.xxs,
+    marginBottom: theme.spacing.lg,
+  },
+  billingOption: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.radii.xxl,
+  },
+  billingOptionActive: {
+    backgroundColor: theme.colors.background,
+  },
+  billingOptionText: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
+  },
+  billingOptionTextActive: {
+    color: theme.colors.foreground,
   },
   pricePill: {
     flexDirection: 'row',
@@ -242,7 +303,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.secondary,
     paddingVertical: theme.spacing.md,
     paddingHorizontal: theme.spacing.xl,
-    marginRight: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
   },
   priceValue: {
     fontFamily: theme.fontFamily.bold,
@@ -260,8 +321,18 @@ const styles = createThemedStyles((theme) => ({
   },
   cancelText: {
     fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
+  },
+  priceNote: {
+    marginTop: -theme.spacing.lg,
+    marginBottom: theme.spacing['2xl'],
+    textAlign: 'center',
+    maxWidth: 360,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
     color: theme.colors.mutedForeground,
   },
   ctaButton: {
