@@ -33,7 +33,7 @@ export const lightColors = {
     ring: 'hsl(142 25% 45%)',
 
     sage: 'hsl(142 25% 45%)',
-    sageLight: 'hsl(142 20% 92%)',
+    sageLight: 'hsla(120,62%,89%, 0.50)',
     sageDark: 'hsl(142 30% 35%)',
 
     primarySoft: 'hsl(142 20% 92%)',
@@ -43,7 +43,7 @@ export const lightColors = {
     creamDark: 'hsl(35 25% 90%)',
 
     terracotta: 'hsl(25,100%,27%))',
-    terracottaLight: 'hsl(18 45% 85%)',
+    terracottaLight: 'hsl(29,87%,76%)',
 
     peach: 'hsl(25 60% 90%)',
     warmGray: 'hsl(30 10% 50%)',
