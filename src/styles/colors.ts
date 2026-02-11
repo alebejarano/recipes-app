@@ -18,10 +18,10 @@ export const lightColors = {
     secondary: 'hsl(35 30% 92%)',
     secondaryForeground: 'hsl(30 15% 30%)',
 
-    muted: 'hsl(142 15% 92%)',
+    muted: 'hsl(37, 32%, 92%)',
     mutedForeground: 'hsl(30 10% 50%)',
 
-    accent: 'hsl(18 50% 65%)',
+    accent: 'hsl(25,100%,27%)',
     accentForeground: 'hsl(45 30% 98%)',
 
     destructive: 'hsl(0 60% 55%)',
@@ -42,7 +42,7 @@ export const lightColors = {
     cream: 'hsla(37, 50%, 94%, 1.00)',
     creamDark: 'hsl(35 25% 90%)',
 
-    terracotta: 'hsl(18 50% 65%)',
+    terracotta: 'hsl(25,100%,27%))',
     terracottaLight: 'hsl(18 45% 85%)',
 
     peach: 'hsl(25 60% 90%)',

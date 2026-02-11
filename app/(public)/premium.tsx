@@ -11,7 +11,11 @@ export default function PremiumRoute() {
   }
 
   const handleMaybeLater = () => {
-    router.back()
+    if (router.canGoBack()) {
+      router.back()
+      return
+    }
+    router.replace('/(public)/(tabs)/profile')
   }
 
   return <PremiumScreen onUpgrade={handleUpgrade} onMaybeLater={handleMaybeLater} />

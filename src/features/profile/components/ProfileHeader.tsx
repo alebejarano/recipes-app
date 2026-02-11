@@ -26,7 +26,6 @@ const styles = createThemedStyles((theme) => ({
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     marginBottom: theme.spacing.lg,
-    marginTop: theme.spacing['3xl'],
   },
   left: {
     flex: 1,

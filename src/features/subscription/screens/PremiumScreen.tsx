@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons'
 import React from 'react'
-import { Text, TouchableOpacity, View } from 'react-native'
+import { Image, Text, TouchableOpacity, View } from 'react-native'
 
 import Button from '@/components/Button'
 import Screen from '@/components/Screen'
@@ -37,8 +37,9 @@ const premiumItems = [
 
 export default function PremiumScreen({ onUpgrade, onMaybeLater }: PremiumScreenProps) {
   const [billingCycle, setBillingCycle] = React.useState<'month' | 'year'>('month')
-  const priceValue = billingCycle === 'month' ? '€5' : '€36'
-  const pricePeriod = billingCycle === 'month' ? '/month' : '/year'
+  const priceValue = billingCycle === 'month' ? '5 €' : '36 €'
+  const pricePeriod = billingCycle === 'month' ? '/ month' : '/ year'
+  const sideLabel = billingCycle === 'month' ? ' Cancel anytime' : '40% saved'
 
   return (
     <Screen scroll contentStyle={styles.content}>
@@ -49,13 +50,12 @@ export default function PremiumScreen({ onUpgrade, onMaybeLater }: PremiumScreen
         </TouchableOpacity>
       )}
 
-      <View style={styles.heroIconWrap}>
-        <View style={styles.heroIconCircle}>
-          <Feather name="shield" size={28} style={styles.heroIcon} />
-        </View>
-        <View style={styles.heroCheckBubble}>
-          <Feather name="check" size={13} style={styles.heroCheckIcon} />
-        </View>
+      <View>
+          <Image
+            source={require('@assets/illustrations/premium-counter.png')}
+            style={styles.heroImage}
+            resizeMode="contain"
+          />
       </View>
 
       <Text style={styles.title}>Go Premium</Text>
@@ -112,11 +112,15 @@ export default function PremiumScreen({ onUpgrade, onMaybeLater }: PremiumScreen
             </Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.pricePill}>
-          <Text style={styles.priceValue}>{priceValue}</Text>
-          <Text style={styles.pricePeriod}>{pricePeriod}</Text>
+        <View style={styles.priceMetaRow}>
+          <View style={styles.pricePill}>
+            <Text style={styles.priceValue}>{priceValue}</Text>
+            <Text style={styles.pricePeriod}>{pricePeriod}</Text>
+          </View>
+          <Text style={[styles.sideLabel, billingCycle === 'year' && styles.sideLabelYearly]}>
+            {sideLabel}
+          </Text>
         </View>
-        <Text style={styles.cancelText}>· Cancel anytime</Text>
       </View>
       <Text style={styles.priceNote}>
         It’s €5. Not €4.99. Yes, we rounded it — we cook honestly.
@@ -161,36 +165,9 @@ const styles = createThemedStyles((theme) => ({
     lineHeight: theme.lineHeight.base,
     color: theme.colors.mutedForeground,
   },
-  heroIconWrap: {
-    marginTop: theme.spacing.sm,
-    marginBottom: theme.spacing.lg,
-  },
-  heroIconCircle: {
-    width: 82,
-    height: 82,
-    borderRadius: theme.radii.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.muted,
-  },
-  heroIcon: {
-    color: theme.colors.sage,
-  },
-  heroCheckBubble: {
-    position: 'absolute',
-    right: -6,
-    top: -5,
-    width: 34,
-    height: 34,
-    borderRadius: theme.radii.full,
-    backgroundColor: theme.colors.sage,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: theme.colors.background,
-  },
-  heroCheckIcon: {
-    color: theme.colors.primaryForeground,
+  heroImage: {
+    width: 250,
+    height: 150,
   },
   title: {
     textAlign: 'center',
@@ -289,27 +266,35 @@ const styles = createThemedStyles((theme) => ({
   },
   billingOptionText: {
     fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
     color: theme.colors.mutedForeground,
   },
   billingOptionTextActive: {
     color: theme.colors.foreground,
   },
+  priceMetaRow: {
+    width: '100%',
+    maxWidth: 390,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.md,
+  },
   pricePill: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     borderRadius: theme.radii.xxl,
-    backgroundColor: theme.colors.secondary,
+    backgroundColor: theme.colors.muted,
     paddingVertical: theme.spacing.md,
     paddingHorizontal: theme.spacing.xl,
-    marginBottom: theme.spacing.sm,
   },
   priceValue: {
     fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize.hero,
-    lineHeight: theme.lineHeight.hero,
+    fontSize: theme.fontSize.xxl,
+    lineHeight: theme.lineHeight.xxl,
     color: theme.colors.foreground,
+    fontWeight: theme.fontWeight.semibold
   },
   pricePeriod: {
     marginLeft: theme.spacing.xs,
@@ -319,11 +304,15 @@ const styles = createThemedStyles((theme) => ({
     lineHeight: theme.lineHeight.lg,
     color: theme.colors.mutedForeground,
   },
-  cancelText: {
+  sideLabel: {
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.base,
     color: theme.colors.mutedForeground,
+  },
+  sideLabelYearly: {
+    fontFamily: theme.fontFamily.medium,
+    color: theme.colors.sage,
   },
   priceNote: {
     marginTop: -theme.spacing.lg,

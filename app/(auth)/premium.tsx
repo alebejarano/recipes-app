@@ -42,7 +42,11 @@ export default function PremiumRoute() {
 
   const handleMaybeLater = () => {
     if (isUpgrading) return
-    router.back()
+    if (router.canGoBack()) {
+      router.back()
+      return
+    }
+    router.replace('/(auth)/(tabs)/profile')
   }
 
   return (
