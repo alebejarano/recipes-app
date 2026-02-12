@@ -17,4 +17,4 @@ export type CollectionItem = {
   emoji?: string;
 };
 
-export type CollectionTileVariant = 'sage' | 'mint' | 'warm' | 'pink' | 'butter';
+export type CollectionTileVariant = 'primary' | 'mint' | 'warm' | 'pink' | 'butter';

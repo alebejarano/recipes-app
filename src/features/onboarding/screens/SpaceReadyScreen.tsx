@@ -105,7 +105,7 @@ const styles = createThemedStyles(theme => ({
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     borderRadius: theme.radii.full,
-    backgroundColor: theme.colors.sageLight,
+    backgroundColor: theme.colors.primarySoft,
     marginBottom: theme.spacing.md,
     marginTop: theme.spacing.lg,
   },
@@ -120,7 +120,7 @@ const styles = createThemedStyles(theme => ({
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.sm,
     lineHeight: theme.lineHeight.sm,
-    color: theme.colors.sageDark,
+    color: theme.colors.primaryDark,
   },
 
   title: {

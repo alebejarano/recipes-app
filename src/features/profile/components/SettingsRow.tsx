@@ -131,7 +131,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   icon: { color: theme.colors.mutedForeground },
-  iconAccent: { color: theme.colors.terracotta },
+  iconAccent: { color: theme.colors.accent },
   iconDanger: { color: '#d13b3b' },
 
   textWrap: {
@@ -144,7 +144,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.foreground,
   },
   titleAccent: {
-    color: theme.colors.terracotta,
+    color: theme.colors.accent,
   },
   titleDanger: {
     color: '#d13b3b',

@@ -73,7 +73,7 @@ function Header() {
      <Text style={styles.title}>Set up your account</Text>
 
       <Text style={styles.subtitle}>
-        Create an account to unlock Premium features like sync and backup when you're ready.
+        Create an account to unlock Premium features like sync and backup when you&apos;re ready.
       </Text>
     </View>
   )
@@ -208,14 +208,14 @@ const styles = createThemedStyles((theme) => ({
     width: 28,
     height: 28,
     borderRadius: theme.radii.lg,
-    backgroundColor: theme.colors.sageLight,
+    backgroundColor: theme.colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: theme.spacing.md,
   },
 
   benefitIcon: {
-    color: theme.colors.sage,
+    color: theme.colors.primary,
   },
 
   benefitText: {

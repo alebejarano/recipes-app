@@ -63,7 +63,7 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
       id: folder.name,
       label: folder.name,
       icon: 'folder',
-      tone: index % 2 === 0 ? 'sage' : 'neutral',
+      tone: index % 2 === 0 ? 'primary' : 'neutral',
     }));
   }, [foldersQuery.data]);
 

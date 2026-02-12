@@ -150,13 +150,13 @@ const styles = createThemedStyles(theme => ({
         width: 64,
         height: 64,
         borderRadius: theme.radii.xl,
-        backgroundColor: theme.colors.sageLight,
+        backgroundColor: theme.colors.primarySoft,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: theme.spacing.md,
     },
     icon: {
-        color: theme.colors.sage,
+        color: theme.colors.primary,
     },
     title: {
         fontFamily: theme.fontFamily.semibold,

@@ -76,12 +76,12 @@ export function pickVariant(label: string, index: number): CollectionTileVariant
 
   if (normalized.includes('breakfast')) return 'warm';
   if (normalized.includes('dessert')) return 'pink';
-  if (normalized.includes('dinner')) return 'sage';
+  if (normalized.includes('dinner')) return 'primary';
   if (normalized.includes('lunch')) return 'mint';
   if (normalized.includes('vegan')) return 'mint';
   if (normalized.includes('quick')) return 'butter';
 
-  const fallback: CollectionTileVariant[] = ['sage', 'mint', 'warm', 'pink', 'butter'];
+  const fallback: CollectionTileVariant[] = ['primary', 'mint', 'warm', 'pink', 'butter'];
   return fallback[index % fallback.length];
 }
 
@@ -89,26 +89,26 @@ export function getVariantStyle(variant: CollectionTileVariant) {
   // Keep “design tokens” centralized here.
   // If you add more theme colors later, adjust only this function.
   switch (variant) {
-    case 'sage':
+    case 'primary':
       return {
-        backgroundColor: theme.colors.sageLight,
-        ghostColor: theme.colors.sage,
+        backgroundColor: theme.colors.primarySoft,
+        ghostColor: theme.colors.primary,
       };
     case 'mint':
       return {
         backgroundColor: theme.colors.muted,
-        ghostColor: theme.colors.sage,
+        ghostColor: theme.colors.primary,
       };
     case 'warm':
       return {
         backgroundColor: theme.colors.creamDark,
-        ghostColor: theme.colors.terracotta,
+        ghostColor: theme.colors.accent,
       };
     case 'pink':
       return {
         // If you have a dedicated soft pink/peach token, use it here.
         backgroundColor: theme.colors.creamDark,
-        ghostColor: theme.colors.terracotta,
+        ghostColor: theme.colors.accent,
       };
     case 'butter':
       return {

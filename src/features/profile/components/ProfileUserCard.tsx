@@ -39,7 +39,7 @@ const styles = createThemedStyles((theme) => ({
     width: 56,
     height: 56,
     borderRadius: theme.radii.full,
-    backgroundColor: theme.colors.sage,
+    backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: theme.spacing.md,

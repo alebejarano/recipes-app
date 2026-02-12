@@ -41,7 +41,7 @@ const styles = createThemedStyles((theme) => ({
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.colors.sage,
+    backgroundColor: theme.colors.primary,
 
     shadowColor: '#000',
     shadowOpacity: 0.1,

@@ -44,8 +44,8 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
   },
   chipSelected: {
-    backgroundColor: theme.colors.sage,
-    borderColor: theme.colors.sage,
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   chipDefault: {
     backgroundColor: theme.colors.card,

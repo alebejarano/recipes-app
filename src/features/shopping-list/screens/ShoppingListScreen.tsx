@@ -170,7 +170,7 @@ export default function ShoppingListScreen() {
                       pressed && styles.quickChipPressed,
                     ]}
                   >
-                    {isAdded ? <Feather name="check" size={14} color={theme.colors.sage} /> : null}
+                    {isAdded ? <Feather name="check" size={14} color={theme.colors.primary} /> : null}
                     <Text style={[styles.quickChipText, isAdded && styles.quickChipTextAdded]}>
                       {label}
                     </Text>
@@ -209,7 +209,7 @@ export default function ShoppingListScreen() {
                       hitSlop={8}
                     >
                       {item.checked ? (
-                        <Feather name="check-circle" size={18} color={theme.colors.sage} />
+                        <Feather name="check-circle" size={18} color={theme.colors.primary} />
                       ) : (
                         <Feather name="circle" size={18} color={theme.colors.mutedForeground} />
                       )}
@@ -375,7 +375,7 @@ const styles = createThemedStyles((theme) => ({
 
   quickChipPressed: { opacity: 0.95, transform: [{ scale: 0.99 }] },
 
-  quickChipAdded: { backgroundColor: theme.colors.sageLight, borderColor: theme.colors.sageLight },
+  quickChipAdded: { backgroundColor: theme.colors.primarySoft, borderColor: theme.colors.primarySoft },
 
   quickChipText: {
     fontFamily: theme.fontFamily.medium,
@@ -494,12 +494,12 @@ const styles = createThemedStyles((theme) => ({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: theme.colors.sageLight,
+    backgroundColor: theme.colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  completeIcon: { color: theme.colors.sage },
+  completeIcon: { color: theme.colors.primary },
 
   completeTitle: {
     fontFamily: theme.fontFamily.semibold,

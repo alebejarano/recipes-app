@@ -3,17 +3,16 @@
 export type ColorMode = 'light' | 'dark';
 
 export const lightColors = {
-    background: 'hsla(37, 50%, 94%, 1.00)',
+    background: 'hsl(37, 50%, 94%)',
     foreground: 'hsl(30 15% 20%)',
 
-    card: 'hsl(45 25% 99%)',
+    card: 'hsl(37, 50%, 98%)',
     cardForeground: 'hsl(30 15% 20%)',
-
-    popover: 'hsl(45 25% 99%)',
-    popoverForeground: 'hsl(30 15% 20%)',
 
     primary: 'hsl(142 25% 45%)',
     primaryForeground: 'hsl(45 30% 98%)',
+    primarySoft: 'hsla(142, 15%, 75%, 0.7)',
+    primaryDark: 'hsl(143, 39%, 25%)',
 
     secondary: 'hsl(35 30% 92%)',
     secondaryForeground: 'hsl(30 15% 30%)',
@@ -22,6 +21,7 @@ export const lightColors = {
     mutedForeground: 'hsl(30 10% 50%)',
 
     accent: 'hsl(25,100%,27%)',
+    accentLight: 'hsl(25 60% 90%)',
     accentForeground: 'hsl(45 30% 98%)',
 
     destructive: 'hsl(0 60% 55%)',
@@ -32,30 +32,11 @@ export const lightColors = {
     inputBackground: 'hsl(35 25% 90%)',
     ring: 'hsl(142 25% 45%)',
 
-    sage: 'hsl(142 25% 45%)',
-    sageLight: 'hsla(120,62%,89%, 0.50)',
-    sageDark: 'hsl(142 30% 35%)',
-
-    primarySoft: 'hsl(142 20% 92%)',
-    primaryDark: 'hsl(143, 39%, 25%)',
-
     cream: 'hsla(37, 50%, 94%, 1.00)',
     creamDark: 'hsl(35 25% 90%)',
 
-    terracotta: 'hsl(25,100%,27%))',
-    terracottaLight: 'hsl(29,87%,76%)',
-
-    peach: 'hsl(25 60% 90%)',
+    terracottaLight: 'hsla(16, 52%, 76%, 0.7)',
     warmGray: 'hsl(30 10% 50%)',
-
-    sidebarBackground: 'hsl(45 30% 97%)',
-    sidebarForeground: 'hsl(30 15% 20%)',
-    sidebarPrimary: 'hsl(142 25% 45%)',
-    sidebarPrimaryForeground: 'hsl(45 30% 98%)',
-    sidebarAccent: 'hsl(35 30% 92%)',
-    sidebarAccentForeground: 'hsl(30 15% 30%)',
-    sidebarBorder: 'hsl(35 20% 88%)',
-    sidebarRing: 'hsl(142 25% 45%)',
 
     success: 'hsl(81,95%,26%)',
 
@@ -68,11 +49,10 @@ export const darkColors = {
     card: 'hsl(30 15% 12%)',
     cardForeground: 'hsl(45 20% 92%)',
 
-    popover: 'hsl(30 15% 12%)',
-    popoverForeground: 'hsl(45 20% 92%)',
-
     primary: 'hsl(142 25% 55%)',
     primaryForeground: 'hsl(30 15% 10%)',
+    primarySoft: 'hsl(142 15% 20%)',
+    primaryDark: 'hsl(142 30% 65%)',
 
     secondary: 'hsl(30 15% 18%)',
     secondaryForeground: 'hsl(45 20% 92%)',
@@ -81,6 +61,7 @@ export const darkColors = {
     mutedForeground: 'hsl(45 15% 60%)',
 
     accent: 'hsl(18 45% 55%)',
+    accentLight: 'hsl(25 60% 90%)',
     accentForeground: 'hsl(45 30% 98%)',
 
     destructive: 'hsl(0 55% 45%)',
@@ -91,29 +72,12 @@ export const darkColors = {
     inputBackground: 'hsl(30 15% 18%)',
     ring: 'hsl(142 25% 55%)',
 
-    sage: 'hsl(142 25% 55%)',
-    sageLight: 'hsl(142 15% 20%)',
-    sageDark: 'hsl(142 30% 65%)',
-
-    primarySoft: 'hsl(142 15% 20%)',
-
     cream: 'hsl(30 15% 10%)',
     creamDark: 'hsl(30 15% 15%)',
 
-    terracotta: 'hsl(18 45% 55%)',
     terracottaLight: 'hsl(18 30% 25%)',
-
-    peach: 'hsl(25 40% 20%)',
     warmGray: 'hsl(30 10% 60%)',
 
-    sidebarBackground: 'hsl(30 15% 10%)',
-    sidebarForeground: 'hsl(45 20% 92%)',
-    sidebarPrimary: 'hsl(142 25% 55%)',
-    sidebarPrimaryForeground: 'hsl(30 15% 10%)',
-    sidebarAccent: 'hsl(30 15% 18%)',
-    sidebarAccentForeground: 'hsl(45 20% 92%)',
-    sidebarBorder: 'hsl(30 15% 22%)',
-    sidebarRing: 'hsl(142 25% 55%)',
 
     success: 'hsl(101,78%,41%)',
 } as const;

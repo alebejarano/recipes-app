@@ -128,7 +128,7 @@ export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps
           <CreateActionCard
             title="Add Recipe"
             subtitle="Save your favorite dishes"
-            tone="sage"
+            tone="primary"
             onPress={handleCreateRecipe}
             icon={<Feather name="coffee" size={22} color={styles.icon.color} />}
           />

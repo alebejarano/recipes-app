@@ -332,7 +332,7 @@ const styles = createThemedStyles((theme) => ({
     width: 64,
     height: 64,
     borderRadius: theme.radii.xl,
-    backgroundColor: theme.colors.sageLight,
+    backgroundColor: theme.colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: theme.spacing.md,
@@ -442,7 +442,7 @@ const styles = createThemedStyles((theme) => ({
   forgotText: {
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.sm,
-    color: theme.colors.sage,
+    color: theme.colors.primary,
   },
 
   /* Button */
@@ -479,7 +479,7 @@ const styles = createThemedStyles((theme) => ({
   toggleAction: {
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.sm,
-    color: theme.colors.sage,
+    color: theme.colors.primary,
   },
 
   /* Not now */

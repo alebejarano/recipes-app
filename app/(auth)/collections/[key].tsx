@@ -478,7 +478,7 @@ const styles = createThemedStyles(theme => ({
     backgroundColor: theme.colors.creamDark,
   },
   modalButtonPrimary: {
-    backgroundColor: theme.colors.sage,
+    backgroundColor: theme.colors.primary,
   },
   modalButtonText: {
     fontFamily: theme.fontFamily.medium,

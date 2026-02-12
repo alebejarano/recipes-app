@@ -11,7 +11,7 @@ type Props = {
   icon: React.ReactNode
   onPress?: () => void
   disabled?: boolean
-  tone?: 'sage' | 'peach' | 'neutral'
+  tone?: 'primary' | 'peach' | 'neutral'
 }
 
 export default function CreateActionCard({
@@ -23,15 +23,15 @@ export default function CreateActionCard({
   tone = 'neutral',
 }: Props) {
   const containerTone: ViewStyle =
-    tone === 'sage'
-      ? styles.toneSage
+    tone === 'primary'
+      ? styles.tonePrimary
       : tone === 'peach'
         ? styles.tonePeach
         : styles.toneNeutral
 
   const iconTone: ViewStyle =
-    tone === 'sage'
-      ? styles.iconTileSage
+    tone === 'primary'
+      ? styles.iconTilePrimary
       : tone === 'peach'
         ? styles.iconTilePeach
         : styles.iconTileNeutral
@@ -91,11 +91,11 @@ const styles = createThemedStyles((theme) => ({
   },
 
   // Soft “tinted” row backgrounds (like your screenshots)
-  toneSage: {
-    backgroundColor: theme.colors.sageLight,
+  tonePrimary: {
+    backgroundColor: theme.colors.primarySoft,
   },
   tonePeach: {
-    backgroundColor: theme.colors.peach,
+    backgroundColor: theme.colors.accentLight,
   },
   toneNeutral: {
     backgroundColor: theme.colors.creamDark,
@@ -112,7 +112,7 @@ const styles = createThemedStyles((theme) => ({
     borderColor: theme.colors.border,
   },
 
-  iconTileSage: {
+  iconTilePrimary: {
     backgroundColor: theme.colors.muted,
   },
   iconTilePeach: {

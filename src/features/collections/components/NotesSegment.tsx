@@ -212,7 +212,7 @@ const styles = createThemedStyles((theme) => ({
     paddingVertical: theme.spacing.sm,
     paddingHorizontal: theme.spacing.lg,
     borderRadius: theme.radii.lg,
-    backgroundColor: theme.colors.sage,
+    backgroundColor: theme.colors.primary,
   },
   emptyCtaText: {
     fontFamily: theme.fontFamily.medium,

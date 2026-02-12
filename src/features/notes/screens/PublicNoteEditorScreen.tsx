@@ -295,7 +295,7 @@ const styles = createThemedStyles((theme) => ({
   deleteText: {
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.sm,
-    color: theme.colors.terracotta,
+    color: theme.colors.accent,
   },
 
   scroll: {

@@ -7,7 +7,7 @@ import { createThemedStyles } from '@/styles/createStyles';
 type Props = {
   label: string;
   icon: React.ComponentProps<typeof Feather>['name'];
-  tone: 'neutral' | 'sage';
+  tone: 'neutral' | 'primary';
   onPress?: () => void;
 };
 
@@ -16,13 +16,13 @@ export default function BrowseCategoryCard({ label, icon, tone, onPress }: Props
     <TouchableOpacity
       activeOpacity={0.9}
       onPress={onPress}
-      style={[styles.card, tone === 'sage' ? styles.sageCard : styles.neutralCard]}
+      style={[styles.card, tone === 'primary' ? styles.primaryCard : styles.neutralCard]}
     >
       <View style={styles.iconBubble}>
         <Feather
           name={icon}
           size={22}
-          style={[styles.icon, tone === 'sage' ? styles.iconSage : styles.iconNeutral]}
+          style={[styles.icon, tone === 'primary' ? styles.iconPrimary : styles.iconNeutral]}
         />
       </View>
 
@@ -51,8 +51,8 @@ const styles = createThemedStyles((theme) => ({
   neutralCard: {
     backgroundColor: theme.colors.background,
   },
-  sageCard: {
-    backgroundColor: theme.colors.sageLight,
+  primaryCard: {
+    backgroundColor: theme.colors.primarySoft,
   },
 
   iconBubble: {
@@ -70,8 +70,8 @@ const styles = createThemedStyles((theme) => ({
   iconNeutral: {
     color: theme.colors.mutedForeground,
   },
-  iconSage: {
-    color: theme.colors.sageDark,
+  iconPrimary: {
+    color: theme.colors.primaryDark,
   },
 
   label: {

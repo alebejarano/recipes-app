@@ -33,7 +33,7 @@ const styles = createThemedStyles((theme) => ({
     paddingHorizontal: theme.spacing.lg,
     height: 44,
     borderRadius: theme.radii.full,
-    backgroundColor: theme.colors.sageLight,
+    backgroundColor: theme.colors.primarySoft,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
@@ -46,7 +46,7 @@ const styles = createThemedStyles((theme) => ({
     justifyContent: 'center',
   },
   icon: {
-    color: theme.colors.sageDark,
+    color: theme.colors.primaryDark,
   },
   text: {
     fontFamily: theme.fontFamily.medium,

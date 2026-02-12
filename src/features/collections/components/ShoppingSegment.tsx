@@ -71,7 +71,7 @@ export default function ShoppingSegment({
       >
         <View style={styles.currentTop}>
           <View style={styles.cartIconWrap}>
-            <Feather name="shopping-cart" size={22} color={theme.colors.sageDark} />
+            <Feather name="shopping-cart" size={22} color={theme.colors.primaryDark} />
           </View>
 
           <View style={styles.currentMain}>
@@ -169,7 +169,7 @@ const styles = createThemedStyles((theme) => ({
     borderRadius: theme.radii.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    backgroundColor: theme.colors.sageLight,
+    backgroundColor: theme.colors.primarySoft,
     padding: theme.spacing.lg,
     ...theme.shadows.soft,
   },
@@ -215,7 +215,7 @@ const styles = createThemedStyles((theme) => ({
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.sm,
     lineHeight: theme.lineHeight.sm,
-    color: theme.colors.sageDark,
+    color: theme.colors.primaryDark,
   },
 
   currentSub: {
@@ -237,7 +237,7 @@ const styles = createThemedStyles((theme) => ({
   progressFill: {
     height: '100%',
     borderRadius: 999,
-    backgroundColor: theme.colors.sage,
+    backgroundColor: theme.colors.primary,
   },
 
   pillsRow: {

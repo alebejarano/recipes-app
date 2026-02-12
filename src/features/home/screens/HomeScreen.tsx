@@ -829,7 +829,7 @@ export default function HomeScreen({
               title="Shopping List"
               meta={`${activeShoppingList.checkedCount}/${activeShoppingList.totalCount} items checked`}
               variant="shoppingActive"
-              leftIcon={<Feather name="shopping-cart" size={24} color={theme.colors.sage} />}
+              leftIcon={<Feather name="shopping-cart" size={24} color={theme.colors.primary} />}
               onPress={() => {
                 router.push(shoppingListPath);
               }}
@@ -839,7 +839,7 @@ export default function HomeScreen({
               title="Start a shopping list"
               meta="Keep track of ingredients"
               variant="shoppingEmpty"
-              leftIcon={<Feather name="plus" size={28} color={theme.colors.sage} />}
+              leftIcon={<Feather name="plus" size={28} color={theme.colors.primary} />}
               onPress={() => {
                 router.push(shoppingListPath);
               }}

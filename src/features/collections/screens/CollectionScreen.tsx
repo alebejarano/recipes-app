@@ -463,7 +463,7 @@ const styles = createThemedStyles((theme) => ({
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.colors.sage,
+    backgroundColor: theme.colors.primary,
     ...theme.shadows.soft,
   },
 
@@ -497,7 +497,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
   },
   successIcon: {
-    color: theme.colors.sage,
+    color: theme.colors.primary,
   },
   successText: {
     flex: 1,
@@ -576,7 +576,7 @@ const styles = createThemedStyles((theme) => ({
     paddingVertical: theme.spacing.sm,
     paddingHorizontal: theme.spacing.lg,
     borderRadius: theme.radii.xl,
-    backgroundColor: theme.colors.sage,
+    backgroundColor: theme.colors.primary,
   },
   emptyCtaText: {
     fontFamily: theme.fontFamily.medium,
@@ -662,7 +662,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.creamDark,
   },
   modalButtonPrimary: {
-    backgroundColor: theme.colors.sage,
+    backgroundColor: theme.colors.primary,
   },
   modalButtonText: {
     fontFamily: theme.fontFamily.medium,

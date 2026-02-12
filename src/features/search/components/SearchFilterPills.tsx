@@ -56,7 +56,7 @@ const styles = createThemedStyles((theme) => ({
     justifyContent: 'center',
   },
   pillActive: {
-    backgroundColor: theme.colors.sage,
+    backgroundColor: theme.colors.primary,
     shadowColor: '#000',
     shadowOpacity: 0.08,
     shadowRadius: 12,

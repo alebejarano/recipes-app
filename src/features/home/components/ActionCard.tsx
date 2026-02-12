@@ -77,7 +77,7 @@ export default function ActionCard({
       <Feather
         name="chevron-right"
         size={22}
-        color={isShoppingActive ? theme.colors.sage : theme.colors.mutedForeground}
+        color={isShoppingActive ? theme.colors.primary : theme.colors.mutedForeground}
       />
     </Pressable>
   );
@@ -103,12 +103,12 @@ const styles = createThemedStyles((theme) => ({
   },
   shoppingEmpty: {
     borderStyle: 'dashed',
-    borderColor: theme.colors.sageLight,
+    borderColor: theme.colors.primarySoft,
     backgroundColor: theme.colors.card,
   },
   shoppingActive: {
-    borderColor: theme.colors.sageLight,
-    backgroundColor: theme.colors.sageLight,
+    borderColor: theme.colors.primarySoft,
+    backgroundColor: theme.colors.primarySoft,
   },
   left: {
     flexDirection: 'row',

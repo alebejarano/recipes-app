@@ -220,7 +220,7 @@ const styles = createThemedStyles((theme) => ({
     marginRight: theme.spacing.md,
   },
   featureIcon: {
-    color: theme.colors.sage,
+    color: theme.colors.primary,
     marginRight: theme.spacing.lg,
   },
   featureTextWrap: {
@@ -240,7 +240,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
   featureCheck: {
-    color: theme.colors.sage,
+    color: theme.colors.primary,
   },
   priceRow: {
     width: '100%',
@@ -312,7 +312,7 @@ const styles = createThemedStyles((theme) => ({
   },
   sideLabelYearly: {
     fontFamily: theme.fontFamily.medium,
-    color: theme.colors.sage,
+    color: theme.colors.primary,
   },
   priceNote: {
     marginTop: -theme.spacing.lg,

@@ -146,7 +146,7 @@ const styles = createThemedStyles(theme => ({
     progressBar: {
         height: '100%',
         borderRadius: 999,
-        backgroundColor: theme.colors.sage,
+        backgroundColor: theme.colors.primary,
     },
 
     /* Body: where screens render */

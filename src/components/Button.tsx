@@ -136,7 +136,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: 'transparent',
   },
   premium: {
-    backgroundColor: theme.colors.terracotta,
+    backgroundColor: theme.colors.accent,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 12,
@@ -166,7 +166,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: 'transparent',
   },
   disabled_premium: {
-    backgroundColor: theme.colors.terracotta,
+    backgroundColor: theme.colors.accent,
     shadowOpacity: 0,
     elevation: 0,
     opacity: 0.85,

@@ -223,7 +223,7 @@ const styles = createThemedStyles(theme => ({
     },
     methodCardSelected: {
         borderColor: theme.colors.primary,
-        backgroundColor: theme.colors.sageLight,
+        backgroundColor: theme.colors.primarySoft,
         shadowColor: '#000',
         shadowOpacity: 0.05,
         shadowRadius: 12,
