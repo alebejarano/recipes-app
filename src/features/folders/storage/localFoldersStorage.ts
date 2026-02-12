@@ -1,6 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
-
-const STORAGE_KEY = 'folders:local'
+import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
+import { getAllAsync, getFirstAsync, runSqlAsync } from '@/lib/sqlite'
 
 type LocalFolderRow = {
   id: string
@@ -24,26 +23,36 @@ export type LocalFolder = {
   updatedAt: string
 }
 
+type LocalFoldersListParams = {
+  limit?: number
+  search?: string
+}
+
 function makeId() {
   const randomUuid = globalThis.crypto?.randomUUID?.()
   if (randomUuid) return randomUuid
   return `local_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
 }
 
-async function readAll(): Promise<LocalFolderRow[]> {
-  const raw = await AsyncStorage.getItem(STORAGE_KEY)
-  if (!raw) return []
-  try {
-    const parsed = JSON.parse(raw) as LocalFolderRow[]
-    if (!Array.isArray(parsed)) return []
-    return parsed
-  } catch {
-    return []
+async function readAll(params?: LocalFoldersListParams): Promise<LocalFolderRow[]> {
+  await ensureLocalSqliteMigrationReady()
+  const limit = params?.limit ?? 200
+  const search = params?.search?.trim()
+  if (search) {
+    return getAllAsync<LocalFolderRow>(
+      `SELECT * FROM local_folders
+       WHERE name LIKE ? COLLATE NOCASE
+       ORDER BY name ASC
+       LIMIT ?;`,
+      [`%${search}%`, limit]
+    )
   }
+  return getAllAsync<LocalFolderRow>('SELECT * FROM local_folders ORDER BY name ASC LIMIT ?;', [limit])
 }
 
-async function writeAll(rows: LocalFolderRow[]) {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(rows))
+async function getById(id: string): Promise<LocalFolderRow | null> {
+  await ensureLocalSqliteMigrationReady()
+  return getFirstAsync<LocalFolderRow>('SELECT * FROM local_folders WHERE id = ? LIMIT 1;', [id])
 }
 
 function toFolderView(row: LocalFolderRow): LocalFolder {
@@ -61,8 +70,8 @@ function toFolderView(row: LocalFolderRow): LocalFolder {
   }
 }
 
-export async function listLocalFolders(): Promise<LocalFolder[]> {
-  const rows = await readAll()
+export async function listLocalFolders(params?: LocalFoldersListParams): Promise<LocalFolder[]> {
+  const rows = await readAll(params)
   return rows.map(toFolderView)
 }
 
@@ -70,6 +79,7 @@ export async function createLocalFolder(input: {
   name: string
   emoji?: string | null
 }): Promise<LocalFolder> {
+  await ensureLocalSqliteMigrationReady()
   const now = new Date().toISOString()
   const row: LocalFolderRow = {
     id: makeId(),
@@ -83,9 +93,28 @@ export async function createLocalFolder(input: {
     last_synced_at: null,
   }
 
-  const rows = await readAll()
-  const nextRows = [row, ...rows]
-  await writeAll(nextRows)
+  await runSqlAsync(
+    `INSERT INTO local_folders
+      (
+        id, name, emoji, created_at, updated_at, deleted_at,
+        owner_user_id, cloud_id, dirty, version, last_synced_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+    [
+      row.id,
+      row.name,
+      row.emoji ?? null,
+      row.created_at,
+      row.updated_at,
+      row.deleted_at ?? null,
+      row.owner_user_id ?? null,
+      row.cloud_id ?? null,
+      row.dirty ?? 1,
+      row.version ?? 1,
+      row.last_synced_at ?? null,
+    ]
+  )
+
   return toFolderView(row)
 }
 
@@ -94,28 +123,28 @@ export async function updateLocalFolder(input: {
   name: string
   emoji?: string | null
 }): Promise<LocalFolder> {
-  const rows = await readAll()
-  const index = rows.findIndex((row) => row.id === input.id)
-  if (index < 0) throw new Error('Folder not found')
+  await ensureLocalSqliteMigrationReady()
 
-  const existing = rows[index]
-  const next: LocalFolderRow = {
-    ...existing,
-    name: input.name.trim(),
-    emoji: input.emoji ?? null,
-    updated_at: new Date().toISOString(),
-    dirty: 1,
-    version: (existing.version ?? 1) + 1,
-  }
+  const existing = await getById(input.id)
+  if (!existing) throw new Error('Folder not found')
 
-  const nextRows = [...rows]
-  nextRows[index] = next
-  await writeAll(nextRows)
+  const updatedAt = new Date().toISOString()
+  const nextVersion = (existing.version ?? 1) + 1
+
+  await runSqlAsync(
+    `UPDATE local_folders
+      SET name = ?, emoji = ?, updated_at = ?, dirty = ?, version = ?
+      WHERE id = ?;`,
+    [input.name.trim(), input.emoji ?? null, updatedAt, 1, nextVersion, input.id]
+  )
+
+  const next = await getById(input.id)
+  if (!next) throw new Error('Folder not found')
+
   return toFolderView(next)
 }
 
 export async function deleteLocalFolder(id: string): Promise<void> {
-  const rows = await readAll()
-  const nextRows = rows.filter((row) => row.id !== id)
-  await writeAll(nextRows)
+  await ensureLocalSqliteMigrationReady()
+  await runSqlAsync('DELETE FROM local_folders WHERE id = ?;', [id])
 }

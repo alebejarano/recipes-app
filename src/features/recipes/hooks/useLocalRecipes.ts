@@ -11,11 +11,15 @@ import {
 } from '@/features/recipes/storage/localRecipesStorage'
 
 const LIST_KEY = ['recipes', 'local', 'list']
+type LocalRecipesListParams = {
+  limit?: number
+  search?: string
+}
 
-export function useLocalRecipesList() {
+export function useLocalRecipesList(params?: LocalRecipesListParams) {
   return useQuery<LocalRecipe[]>({
-    queryKey: LIST_KEY,
-    queryFn: listLocalRecipes,
+    queryKey: [...LIST_KEY, params?.limit ?? 200, params?.search ?? ''],
+    queryFn: () => listLocalRecipes(params),
   })
 }
 

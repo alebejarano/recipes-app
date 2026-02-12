@@ -1,9 +1,9 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
+import { getAllAsync, getFirstAsync, runSqlAsync } from '@/lib/sqlite'
 
 import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
 import { deleteRecipePdfAttachmentsForRecipe } from '@/features/recipes/storage/recipePdfStorage'
 
-const STORAGE_KEY = 'recipes:local'
 const MAX_LOCAL_RECIPES = 100
 
 export type LocalRecipeIngredient = {
@@ -15,6 +15,12 @@ export type LocalRecipeIngredient = {
   position: number
 }
 
+type LocalRecipeFolder = {
+  id: string
+  name: string
+  emoji: string
+}
+
 type LocalRecipeRow = {
   id: string
   title: string
@@ -23,19 +29,19 @@ type LocalRecipeRow = {
   emoji: string | null
   image_url: string | null
   steps_text: string | null
-  ingredients: LocalRecipeIngredient[]
-  folders: { id: string; name: string; emoji: string }[]
+  ingredients_json: string
+  folders_json: string
   prep_time_minutes: number | null
   cook_time_minutes: number | null
   servings: number | null
   created_at: string
   updated_at: string
-  deleted_at?: string | null
-  owner_user_id?: string | null
-  cloud_id?: string | null
-  dirty?: number
-  version?: number
-  last_synced_at?: string | null
+  deleted_at: string | null
+  owner_user_id: string | null
+  cloud_id: string | null
+  dirty: number
+  version: number
+  last_synced_at: string | null
 }
 
 export type LocalRecipe = {
@@ -47,7 +53,7 @@ export type LocalRecipe = {
   imageUrl: string | null
   steps: string[]
   ingredients: LocalRecipeIngredient[]
-  folders: { id: string; name: string; emoji: string }[]
+  folders: LocalRecipeFolder[]
   prepTimeMinutes: number | null
   cookTimeMinutes: number | null
   servings: number | null
@@ -55,24 +61,13 @@ export type LocalRecipe = {
   updatedAt: string
 }
 
+type LocalRecipeListParams = {
+  limit?: number
+  search?: string
+}
+
 function makeId() {
   return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-}
-
-async function readAll(): Promise<LocalRecipeRow[]> {
-  const raw = await AsyncStorage.getItem(STORAGE_KEY)
-  if (!raw) return []
-  try {
-    const parsed = JSON.parse(raw) as LocalRecipeRow[]
-    if (!Array.isArray(parsed)) return []
-    return parsed
-  } catch {
-    return []
-  }
-}
-
-async function writeAll(recipes: LocalRecipeRow[]) {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(recipes))
 }
 
 function parseStepsText(value: string | null | undefined): string[] {
@@ -91,31 +86,32 @@ function serializeSteps(steps: string[] | null | undefined): string | null {
   return normalized.length ? normalized.join('\n') : null
 }
 
-function toRecipeView(row: LocalRecipeRow): LocalRecipe {
-  const legacyImageUrl =
-    typeof (row as any).imageUrl === 'string' ? ((row as any).imageUrl as string) : null
-  const legacySteps =
-    Array.isArray((row as any).steps) ? ((row as any).steps as string[]) : null
-  const legacyCreatedAt =
-    typeof (row as any).createdAt === 'string' ? ((row as any).createdAt as string) : null
-  const legacyUpdatedAt =
-    typeof (row as any).updatedAt === 'string' ? ((row as any).updatedAt as string) : null
+function parseJsonArray<T>(value: string | null | undefined): T[] {
+  if (!value) return []
+  try {
+    const parsed = JSON.parse(value) as unknown
+    return Array.isArray(parsed) ? (parsed as T[]) : []
+  } catch {
+    return []
+  }
+}
 
+function toRecipeView(row: LocalRecipeRow): LocalRecipe {
   return {
     id: row.id,
     title: row.title,
     subtitle: row.subtitle ?? null,
     description: row.description ?? null,
     emoji: row.emoji ?? null,
-    imageUrl: row.image_url ?? legacyImageUrl ?? null,
-    steps: legacySteps ?? parseStepsText(row.steps_text),
-    ingredients: row.ingredients ?? (Array.isArray((row as any).ingredients) ? (row as any).ingredients : []),
-    folders: row.folders ?? (Array.isArray((row as any).folders) ? (row as any).folders : []),
-    prepTimeMinutes: row.prep_time_minutes ?? (row as any).prepTimeMinutes ?? null,
-    cookTimeMinutes: row.cook_time_minutes ?? (row as any).cookTimeMinutes ?? null,
+    imageUrl: row.image_url ?? null,
+    steps: parseStepsText(row.steps_text),
+    ingredients: parseJsonArray<LocalRecipeIngredient>(row.ingredients_json),
+    folders: parseJsonArray<LocalRecipeFolder>(row.folders_json),
+    prepTimeMinutes: row.prep_time_minutes ?? null,
+    cookTimeMinutes: row.cook_time_minutes ?? null,
     servings: row.servings ?? null,
-    createdAt: row.created_at ?? legacyCreatedAt ?? new Date().toISOString(),
-    updatedAt: row.updated_at ?? legacyUpdatedAt ?? new Date().toISOString(),
+    createdAt: row.created_at ?? new Date().toISOString(),
+    updatedAt: row.updated_at ?? new Date().toISOString(),
   }
 }
 
@@ -133,7 +129,7 @@ function buildIngredients(values: RecipeFormSubmitValues): LocalRecipeIngredient
     .filter((item) => item.name.length > 0)
 }
 
-function buildFolders(values: RecipeFormSubmitValues) {
+function buildFolders(values: RecipeFormSubmitValues): LocalRecipeFolder[] {
   const list = values.folders ?? []
   return list
     .map((name) => name.trim())
@@ -145,27 +141,59 @@ function buildFolders(values: RecipeFormSubmitValues) {
     }))
 }
 
-export async function listLocalRecipes(): Promise<LocalRecipe[]> {
-  const rows = await readAll()
+async function listRecipeRows(params?: LocalRecipeListParams): Promise<LocalRecipeRow[]> {
+  await ensureLocalSqliteMigrationReady()
+  const limit = params?.limit ?? 200
+  const search = params?.search?.trim()
+  if (search) {
+    return getAllAsync<LocalRecipeRow>(
+      `SELECT * FROM local_recipes
+       WHERE title LIKE ? COLLATE NOCASE
+          OR subtitle LIKE ? COLLATE NOCASE
+          OR description LIKE ? COLLATE NOCASE
+       ORDER BY updated_at DESC
+       LIMIT ?;`,
+      [`%${search}%`, `%${search}%`, `%${search}%`, limit]
+    )
+  }
+  return getAllAsync<LocalRecipeRow>(
+    'SELECT * FROM local_recipes ORDER BY created_at DESC LIMIT ?;',
+    [limit]
+  )
+}
+
+async function getRecipeRow(id: string): Promise<LocalRecipeRow | null> {
+  await ensureLocalSqliteMigrationReady()
+  return getFirstAsync<LocalRecipeRow>(
+    'SELECT * FROM local_recipes WHERE id = ? LIMIT 1;',
+    [id]
+  )
+}
+
+export async function listLocalRecipes(params?: LocalRecipeListParams): Promise<LocalRecipe[]> {
+  const rows = await listRecipeRows(params)
   return rows.map(toRecipeView)
 }
 
 export async function getLocalRecipe(id: string): Promise<LocalRecipe | null> {
-  const items = await readAll()
-  const row = items.find((item) => item.id === id)
+  const row = await getRecipeRow(id)
   return row ? toRecipeView(row) : null
 }
 
 export async function createLocalRecipe(
   values: RecipeFormSubmitValues
 ): Promise<LocalRecipe> {
-  const items = await readAll()
-  if (items.length >= MAX_LOCAL_RECIPES) {
+  await ensureLocalSqliteMigrationReady()
+
+  const countRow = await getFirstAsync<{ count: number }>(
+    'SELECT COUNT(*) as count FROM local_recipes;'
+  )
+  if (Number(countRow?.count ?? 0) >= MAX_LOCAL_RECIPES) {
     throw new Error('Local plan limit reached. You can save up to 100 recipes on this device.')
   }
 
   const now = new Date().toISOString()
-  const recipe: LocalRecipeRow = {
+  const row: LocalRecipeRow = {
     id: makeId(),
     title: values.title,
     subtitle: values.subtitle ?? null,
@@ -173,59 +201,114 @@ export async function createLocalRecipe(
     emoji: values.emoji ?? null,
     image_url: values.imageUrl ?? null,
     steps_text: serializeSteps(values.steps),
-    ingredients: buildIngredients(values),
-    folders: buildFolders(values),
+    ingredients_json: JSON.stringify(buildIngredients(values)),
+    folders_json: JSON.stringify(buildFolders(values)),
     prep_time_minutes: values.prepTimeMinutes ?? null,
     cook_time_minutes: values.cookTimeMinutes ?? null,
     servings: values.servings ?? null,
     created_at: now,
     updated_at: now,
     deleted_at: null,
+    owner_user_id: null,
+    cloud_id: null,
     dirty: 1,
     version: 1,
     last_synced_at: null,
   }
 
-  await writeAll([recipe, ...items])
-  return toRecipeView(recipe)
+  await runSqlAsync(
+    `INSERT INTO local_recipes
+      (
+        id, title, subtitle, description, emoji, image_url, steps_text,
+        ingredients_json, folders_json, prep_time_minutes, cook_time_minutes,
+        servings, created_at, updated_at, deleted_at, owner_user_id, cloud_id,
+        dirty, version, last_synced_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+    [
+      row.id,
+      row.title,
+      row.subtitle,
+      row.description,
+      row.emoji,
+      row.image_url,
+      row.steps_text,
+      row.ingredients_json,
+      row.folders_json,
+      row.prep_time_minutes,
+      row.cook_time_minutes,
+      row.servings,
+      row.created_at,
+      row.updated_at,
+      row.deleted_at,
+      row.owner_user_id,
+      row.cloud_id,
+      row.dirty,
+      row.version,
+      row.last_synced_at,
+    ]
+  )
+
+  return toRecipeView(row)
 }
 
 export async function updateLocalRecipe(
   id: string,
   values: RecipeFormSubmitValues
 ): Promise<LocalRecipe> {
-  const items = await readAll()
-  const index = items.findIndex((item) => item.id === id)
-  if (index < 0) throw new Error('Recipe not found')
+  await ensureLocalSqliteMigrationReady()
 
-  const existing = items[index]
-  const next: LocalRecipeRow = {
-    ...existing,
-    title: values.title,
-    subtitle: values.subtitle ?? null,
-    description: values.description ?? null,
-    emoji: values.emoji ?? null,
-    image_url: values.imageUrl ?? null,
-    steps_text: serializeSteps(values.steps),
-    ingredients: buildIngredients(values),
-    folders: buildFolders(values),
-    prep_time_minutes: values.prepTimeMinutes ?? null,
-    cook_time_minutes: values.cookTimeMinutes ?? null,
-    servings: values.servings ?? null,
-    updated_at: new Date().toISOString(),
-    dirty: 1,
-    version: (existing.version ?? 1) + 1,
-  }
+  const existing = await getRecipeRow(id)
+  if (!existing) throw new Error('Recipe not found')
 
-  const nextItems = [...items]
-  nextItems[index] = next
-  await writeAll(nextItems)
+  const updatedAt = new Date().toISOString()
+  const nextVersion = (existing.version ?? 1) + 1
+
+  await runSqlAsync(
+    `UPDATE local_recipes
+      SET
+        title = ?,
+        subtitle = ?,
+        description = ?,
+        emoji = ?,
+        image_url = ?,
+        steps_text = ?,
+        ingredients_json = ?,
+        folders_json = ?,
+        prep_time_minutes = ?,
+        cook_time_minutes = ?,
+        servings = ?,
+        updated_at = ?,
+        dirty = ?,
+        version = ?
+      WHERE id = ?;`,
+    [
+      values.title,
+      values.subtitle ?? null,
+      values.description ?? null,
+      values.emoji ?? null,
+      values.imageUrl ?? null,
+      serializeSteps(values.steps),
+      JSON.stringify(buildIngredients(values)),
+      JSON.stringify(buildFolders(values)),
+      values.prepTimeMinutes ?? null,
+      values.cookTimeMinutes ?? null,
+      values.servings ?? null,
+      updatedAt,
+      1,
+      nextVersion,
+      id,
+    ]
+  )
+
+  const next = await getRecipeRow(id)
+  if (!next) throw new Error('Recipe not found')
+
   return toRecipeView(next)
 }
 
 export async function deleteLocalRecipe(id: string): Promise<void> {
-  const items = await readAll()
-  const nextItems = items.filter((item) => item.id !== id)
-  await writeAll(nextItems)
+  await ensureLocalSqliteMigrationReady()
+  await runSqlAsync('DELETE FROM local_recipes WHERE id = ?;', [id])
   await deleteRecipePdfAttachmentsForRecipe(id)
 }

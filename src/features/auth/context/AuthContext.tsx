@@ -13,6 +13,8 @@ type AuthContextValue = {
 
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string) => Promise<AuthResponse['data']>
+  updateProfileName: (name: string) => Promise<void>
+  updateEmailAddress: (email: string) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -72,8 +74,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (lastIdentifiedUserId.current !== userId) {
+      const identifyProps: { email?: string } = {}
+      if (session?.user?.email) {
+        identifyProps.email = session.user.email
+      }
       posthog.identify(userId, {
-        email: session?.user?.email ?? undefined,
+        ...identifyProps,
       })
       lastIdentifiedUserId.current = userId
     }
@@ -104,6 +110,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return data
   }
 
+  const updateProfileName = async (name: string) => {
+    const trimmed = name.trim()
+    if (!trimmed) throw new Error('Name is required')
+
+    const { data, error } = await supabase.auth.updateUser({
+      data: { display_name: trimmed },
+    })
+    if (error) throw error
+
+    if (data.user) {
+      setSession((prev) => (prev ? { ...prev, user: data.user } : prev))
+    }
+  }
+
+  const updateEmailAddress = async (email: string) => {
+    const normalized = email.trim().toLowerCase()
+    if (!normalized) throw new Error('Email is required')
+
+    const { data, error } = await supabase.auth.updateUser({
+      email: normalized,
+    })
+    if (error) throw error
+
+    if (data.user) {
+      setSession((prev) => (prev ? { ...prev, user: data.user } : prev))
+    }
+  }
+
   const logout = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
@@ -116,6 +150,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isLoading,
       login,
       register,
+      updateProfileName,
+      updateEmailAddress,
       logout,
     }),
     [session, isLoading]

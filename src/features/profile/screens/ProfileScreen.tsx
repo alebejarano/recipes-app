@@ -31,11 +31,14 @@ export default function ProfileScreen() {
   const accountPlan: AccountPlan = plan === 'premium' ? 'premium' : 'free'
 
   const displayName = useMemo(() => {
-    // You can later pull this from profile table; for now use email prefix
+    const metadataName = user?.user_metadata?.display_name
+    if (typeof metadataName === 'string' && metadataName.trim()) {
+      return metadataName.trim()
+    }
     const email = user?.email ?? ''
     if (!email) return 'Account'
     return email.split('@')[0] || 'Account'
-  }, [user?.email])
+  }, [user?.email, user?.user_metadata?.display_name])
 
   const [toggles, setToggles] = useState<PreferenceToggles>({
     pushNotifications: true,
@@ -98,6 +101,7 @@ export default function ProfileScreen() {
       <ProfileUserCard
         name={displayName}
         email={user?.email ?? ''}
+        onPressEdit={() => router.push('/(auth)/account/edit-profile')}
       />
 
       <SettingsSection

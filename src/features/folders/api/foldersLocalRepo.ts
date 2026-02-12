@@ -20,8 +20,11 @@ function toFolderShape(input: {
   }
 }
 
-export async function listLocalFoldersRepo(): Promise<Folder[]> {
-  const rows = await listLocalFolders()
+export async function listLocalFoldersRepo(params?: {
+  limit?: number
+  search?: string
+}): Promise<Folder[]> {
+  const rows = await listLocalFolders(params)
   return rows.map(toFolderShape)
 }
 

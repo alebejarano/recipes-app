@@ -11,13 +11,16 @@ import {
 import { useEntitlements } from '@/features/subscription/hooks/useEntitlements'
 import type { StorageScreenMode } from '@/features/storage/hooks/useStorageDataMode'
 
-export function useStrategyFoldersList(mode: StorageScreenMode = 'auth') {
+export function useStrategyFoldersList(
+  mode: StorageScreenMode = 'auth',
+  params?: { limit?: number; search?: string }
+) {
   const { canUseCloudSync } = useEntitlements()
   const target = resolveFolderStorageTarget({ mode, canUseCloudSync })
 
   return useQuery<Folder[]>({
-    queryKey: ['folders', target, 'list'],
-    queryFn: () => listFoldersForStrategy({ mode, canUseCloudSync }),
+    queryKey: ['folders', target, 'list', params?.limit ?? 200, params?.search ?? ''],
+    queryFn: () => listFoldersForStrategy({ mode, canUseCloudSync }, params),
   })
 }
 

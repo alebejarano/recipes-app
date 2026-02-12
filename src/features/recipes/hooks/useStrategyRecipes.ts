@@ -20,7 +20,7 @@ export function useStrategyRecipesList(params?: RecipesListParams, mode: Storage
     ...params,
     enabled: !shouldUseLocalData,
   })
-  const localQuery = useLocalRecipesList()
+  const localQuery = useLocalRecipesList(params)
   return shouldUseLocalData ? localQuery : cloudQuery
 }
 

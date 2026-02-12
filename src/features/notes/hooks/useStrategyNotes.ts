@@ -19,7 +19,7 @@ export function useStrategyNotesList(params?: NotesListParams, mode: StorageScre
     ...params,
     enabled: !shouldUseLocalData,
   })
-  const localQuery = useLocalNotesList()
+  const localQuery = useLocalNotesList(params)
   return shouldUseLocalData ? localQuery : cloudQuery
 }
 

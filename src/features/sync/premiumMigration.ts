@@ -1,56 +1,43 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
-
+import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
+import { getAllAsync, runSqlAsync } from '@/lib/sqlite'
 import { createNote } from '@/features/notes/api/notesRepo'
 import { createRecipe } from '@/features/recipes/api/recipesRepo'
 
-const RECIPES_KEY = 'recipes:local'
-const NOTES_KEY = 'notes:local'
-
 type LocalRecipeRow = {
   id: string
-  owner_user_id?: string | null
-  cloud_id?: string | null
-  title?: string | null
-  subtitle?: string | null
-  description?: string | null
-  emoji?: string | null
-  image_url?: string | null
-  steps_text?: string | null
-  ingredients?: { name?: string | null }[] | null
-  folders?: { name?: string | null }[] | null
-  prep_time_minutes?: number | null
-  cook_time_minutes?: number | null
-  servings?: number | null
-  deleted_at?: string | null
-  last_synced_at?: string | null
-  dirty?: number
+  owner_user_id: string | null
+  cloud_id: string | null
+  title: string | null
+  subtitle: string | null
+  description: string | null
+  emoji: string | null
+  image_url: string | null
+  steps_text: string | null
+  ingredients_json: string | null
+  folders_json: string | null
+  prep_time_minutes: number | null
+  cook_time_minutes: number | null
+  servings: number | null
+  deleted_at: string | null
+  last_synced_at: string | null
+  dirty: number | null
 }
 
 type LocalNoteRow = {
   id: string
-  owner_user_id?: string | null
-  cloud_id?: string | null
-  title?: string | null
-  content?: string | null
-  deleted_at?: string | null
-  last_synced_at?: string | null
-  dirty?: number
+  owner_user_id: string | null
+  cloud_id: string | null
+  title: string | null
+  content: string | null
+  deleted_at: string | null
+  last_synced_at: string | null
+  dirty: number | null
 }
 
 type MigrationSummary = {
   recipesUploaded: number
   notesUploaded: number
   failures: string[]
-}
-
-function parseRows<T>(raw: string | null): T[] {
-  if (!raw) return []
-  try {
-    const parsed = JSON.parse(raw) as unknown
-    return Array.isArray(parsed) ? (parsed as T[]) : []
-  } catch {
-    return []
-  }
 }
 
 function parseSteps(stepsText?: string | null) {
@@ -61,15 +48,25 @@ function parseSteps(stepsText?: string | null) {
     .filter(Boolean)
 }
 
-function parseIngredientNames(list: LocalRecipeRow['ingredients']) {
-  if (!Array.isArray(list)) return []
+function parseJsonArray<T>(raw: string | null | undefined): T[] {
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    return Array.isArray(parsed) ? (parsed as T[]) : []
+  } catch {
+    return []
+  }
+}
+
+function parseIngredientNames(raw: LocalRecipeRow['ingredients_json']) {
+  const list = parseJsonArray<{ name?: string | null }>(raw)
   return list
     .map((item) => (typeof item?.name === 'string' ? item.name.trim() : ''))
     .filter(Boolean)
 }
 
-function parseFolderNames(list: LocalRecipeRow['folders']) {
-  if (!Array.isArray(list)) return []
+function parseFolderNames(raw: LocalRecipeRow['folders_json']) {
+  const list = parseJsonArray<{ name?: string | null }>(raw)
   return list
     .map((item) => (typeof item?.name === 'string' ? item.name.trim() : ''))
     .filter(Boolean)
@@ -85,24 +82,19 @@ export async function migrateLocalDataToCloudOnPremium(userId: string): Promise<
     }
   }
 
-  const [recipesRaw, notesRaw] = await Promise.all([
-    AsyncStorage.getItem(RECIPES_KEY),
-    AsyncStorage.getItem(NOTES_KEY),
+  await ensureLocalSqliteMigrationReady()
+  const [recipes, notes] = await Promise.all([
+    getAllAsync<LocalRecipeRow>('SELECT * FROM local_recipes;'),
+    getAllAsync<LocalNoteRow>('SELECT * FROM local_notes;'),
   ])
-
-  const recipes = parseRows<LocalRecipeRow>(recipesRaw)
-  const notes = parseRows<LocalNoteRow>(notesRaw)
   const failures: string[] = []
 
   let recipesUploaded = 0
   let notesUploaded = 0
 
   const now = new Date().toISOString()
-  const nextRecipes: LocalRecipeRow[] = [...recipes]
-  const nextNotes: LocalNoteRow[] = [...notes]
 
-  for (let i = 0; i < nextRecipes.length; i += 1) {
-    const row = nextRecipes[i]
+  for (const row of recipes) {
     const belongsToUser = !row.owner_user_id || row.owner_user_id === ownerUserId
     const alreadySynced = Boolean(row.last_synced_at || row.cloud_id)
     const isDeleted = Boolean(row.deleted_at)
@@ -115,29 +107,27 @@ export async function migrateLocalDataToCloudOnPremium(userId: string): Promise<
         description: row.description ?? null,
         emoji: row.emoji ?? null,
         imageUrl: row.image_url ?? null,
-        ingredients: parseIngredientNames(row.ingredients),
+        ingredients: parseIngredientNames(row.ingredients_json),
         steps: parseSteps(row.steps_text),
-        folders: parseFolderNames(row.folders),
+        folders: parseFolderNames(row.folders_json),
         prepTimeMinutes: row.prep_time_minutes ?? null,
         cookTimeMinutes: row.cook_time_minutes ?? null,
         servings: row.servings ?? null,
       })
 
-      nextRecipes[i] = {
-        ...row,
-        owner_user_id: ownerUserId,
-        cloud_id: created.id,
-        dirty: 0,
-        last_synced_at: now,
-      }
+      await runSqlAsync(
+        `UPDATE local_recipes
+          SET owner_user_id = ?, cloud_id = ?, dirty = ?, last_synced_at = ?, updated_at = ?
+          WHERE id = ?;`,
+        [ownerUserId, created.id, 0, now, now, row.id]
+      )
       recipesUploaded += 1
     } catch (error: any) {
       failures.push(`Recipe "${row.title ?? row.id}": ${error?.message ?? 'unknown error'}`)
     }
   }
 
-  for (let i = 0; i < nextNotes.length; i += 1) {
-    const row = nextNotes[i]
+  for (const row of notes) {
     const belongsToUser = !row.owner_user_id || row.owner_user_id === ownerUserId
     const alreadySynced = Boolean(row.last_synced_at || row.cloud_id)
     const isDeleted = Boolean(row.deleted_at)
@@ -149,23 +139,17 @@ export async function migrateLocalDataToCloudOnPremium(userId: string): Promise<
         content: row.content?.trim() ?? '',
       })
 
-      nextNotes[i] = {
-        ...row,
-        owner_user_id: ownerUserId,
-        cloud_id: created.id,
-        dirty: 0,
-        last_synced_at: now,
-      }
+      await runSqlAsync(
+        `UPDATE local_notes
+          SET owner_user_id = ?, cloud_id = ?, dirty = ?, last_synced_at = ?, updated_at = ?
+          WHERE id = ?;`,
+        [ownerUserId, created.id, 0, now, now, row.id]
+      )
       notesUploaded += 1
     } catch (error: any) {
       failures.push(`Note "${row.title ?? row.id}": ${error?.message ?? 'unknown error'}`)
     }
   }
-
-  await Promise.all([
-    AsyncStorage.setItem(RECIPES_KEY, JSON.stringify(nextRecipes)),
-    AsyncStorage.setItem(NOTES_KEY, JSON.stringify(nextNotes)),
-  ])
 
   return {
     recipesUploaded,

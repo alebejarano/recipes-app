@@ -41,10 +41,21 @@ export function resolveFolderStorageTarget({
 }
 
 export async function listFoldersForStrategy(
-  context: FolderServiceContext
+  context: FolderServiceContext,
+  params?: { limit?: number; search?: string }
 ): Promise<Folder[]> {
   const target = resolveFolderStorageTarget(context)
-  return target === 'cloud' ? listCloudFolders() : listLocalFoldersRepo()
+  if (target === 'local') {
+    return listLocalFoldersRepo(params)
+  }
+
+  const all = await listCloudFolders()
+  const search = params?.search?.trim().toLowerCase()
+  const filtered = search
+    ? all.filter((folder) => folder.name.toLowerCase().includes(search))
+    : all
+  const limit = params?.limit
+  return typeof limit === 'number' ? filtered.slice(0, limit) : filtered
 }
 
 export async function createFolderForStrategy(

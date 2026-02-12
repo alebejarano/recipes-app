@@ -14,12 +14,11 @@ export type BrowseCategory = {
   id: string;
   label: string;
   icon: FeatherIconName;
-  tone: 'neutral' | 'primary';
 };
 
 export const BROWSE_CATEGORIES: BrowseCategory[] = [
-  { id: 'quick-easy', label: 'Quick &\nEasy', icon: 'clock', tone: 'neutral' },
-  { id: 'healthy', label: 'Healthy', icon: 'heart', tone: 'primary' },
-  { id: 'comfort', label: 'Comfort\nFood', icon: 'coffee', tone: 'neutral' },
-  { id: 'new-ideas', label: 'New\nIdeas', icon: 'star', tone: 'primary' },
+  { id: 'quick-easy', label: 'Quick &\nEasy', icon: 'clock' },
+  { id: 'healthy', label: 'Healthy', icon: 'heart' },
+  { id: 'comfort', label: 'Comfort\nFood', icon: 'coffee' },
+  { id: 'new-ideas', label: 'New\nIdeas', icon: 'star' },
 ];

@@ -10,11 +10,15 @@ import {
 } from '@/features/notes/storage/localNotesStorage'
 
 const LIST_KEY = ['notes', 'local', 'list']
+type LocalNotesListParams = {
+  limit?: number
+  search?: string
+}
 
-export function useLocalNotesList() {
+export function useLocalNotesList(params?: LocalNotesListParams) {
   return useQuery<LocalNote[]>({
-    queryKey: LIST_KEY,
-    queryFn: listLocalNotes,
+    queryKey: [...LIST_KEY, params?.limit ?? 200, params?.search ?? ''],
+    queryFn: () => listLocalNotes(params),
   })
 }
 

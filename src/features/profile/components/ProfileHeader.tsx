@@ -5,16 +5,14 @@ import { createThemedStyles } from '@/styles/createStyles';
 
 type Props = {
   title: string;
-  subtitle?: string;
   onPressSettings?: () => void;
 };
 
-export default function ProfileHeader({ title, subtitle, onPressSettings }: Props) {
+export default function ProfileHeader({ title, onPressSettings }: Props) {
   return (
     <View style={styles.wrap}>
       <View style={styles.left}>
         <Text style={styles.title}>{title}</Text>
-        {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       </View>
     </View>
   );

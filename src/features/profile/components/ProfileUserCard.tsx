@@ -1,14 +1,15 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { createThemedStyles } from '@/styles/createStyles';
 
 type Props = {
   name: string;
   email: string;
+  onPressEdit?: () => void;
 };
 
-export default function ProfileUserCard({ name, email }: Props) {
+export default function ProfileUserCard({ name, email, onPressEdit }: Props) {
   return (
     <View style={styles.card}>
       <View style={styles.avatar}>
@@ -19,6 +20,15 @@ export default function ProfileUserCard({ name, email }: Props) {
         <Text style={styles.name}>{name}</Text>
         <Text style={styles.email}>{email}</Text>
       </View>
+
+      <Pressable
+        onPress={onPressEdit}
+        style={({ pressed }) => [styles.editAction, pressed && styles.pressed]}
+        accessibilityRole="button"
+        accessibilityLabel="Edit profile"
+      >
+        <Text style={styles.editText}>Edit</Text>
+      </Pressable>
     </View>
   );
 }
@@ -62,5 +72,19 @@ const styles = createThemedStyles((theme) => ({
     fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.base,
     color: theme.colors.mutedForeground,
+  },
+  editAction: {
+    marginLeft: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.sm,
+  },
+  editText: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.primary,
+  },
+  pressed: {
+    opacity: 0.8,
   },
 }));

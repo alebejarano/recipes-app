@@ -11,11 +11,13 @@ import { ensureRecipePdfStorageReady } from '@/features/recipes/storage/recipePd
 import { StorageStrategyProvider } from '@/features/storage/context/StorageStrategyContext'
 import { SubscriptionProvider } from '@/features/subscription/context/SubscriptionContext'
 import { runLocalMigrations } from '@/lib/localMigrations'
+import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
 import QueryProvider from '@/providers/QueryProvider'
 import { useLoadFonts } from '@/styles/useLoadFonts'
 
 export default function RootLayout() {
   const fontsLoaded = useLoadFonts()
+  const posthogEnabled = process.env.EXPO_PUBLIC_ENABLE_POSTHOG === '1'
   const posthogApiKey = process.env.EXPO_PUBLIC_POSTHOG_API_KEY
   const posthogHost = process.env.EXPO_PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com'
 
@@ -25,7 +27,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded) {
-      void runLocalMigrations()
+      void runLocalMigrations().then(() => ensureLocalSqliteMigrationReady())
       void ensureRecipePdfStorageReady()
       SplashScreen.hideAsync()
     }
@@ -51,7 +53,7 @@ export default function RootLayout() {
 
   return (
     <AnalyticsConsentProvider>
-      <PostHogGate apiKey={posthogApiKey} host={posthogHost}>
+      <PostHogGate enabled={posthogEnabled} apiKey={posthogApiKey} host={posthogHost}>
         {content}
       </PostHogGate>
     </AnalyticsConsentProvider>
@@ -59,18 +61,20 @@ export default function RootLayout() {
 }
 
 function PostHogGate({
+  enabled,
   apiKey,
   host,
   children,
 }: {
+  enabled: boolean
   apiKey?: string
   host: string
   children: React.ReactNode
 }) {
     const { analyticsEnabled, isLoaded } = useAnalyticsConsent()
 
-  // If analytics is off (or not ready), do not initialize PostHog at all.
-  if (!apiKey || !isLoaded || !analyticsEnabled) {
+  // For MVP, keep analytics infra but allow a hard off-switch via env.
+  if (!enabled || !apiKey || !isLoaded || !analyticsEnabled) {
     return <>{children}</>
   }
 
