@@ -332,7 +332,7 @@ const styles = createThemedStyles((theme) => ({
     width: 64,
     height: 64,
     borderRadius: theme.radii.xl,
-    backgroundColor: theme.colors.primarySoft,
+    backgroundColor: theme.colors.creamDark,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: theme.spacing.md,

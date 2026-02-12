@@ -30,7 +30,7 @@ import RecipeDocumentsSegment from '@/features/collections/components/RecipeDocu
 import ShoppingSegment from '@/features/collections/components/ShoppingSegment'
 
 import type { CollectionItem, RecipeSegmentKey, SegmentKey } from '@/features/collections/types'
-import { buildCollectionsForSegment, pickVariant } from '@/features/collections/utils/collections'
+import { buildCollectionsForSegment } from '@/features/collections/utils/collections'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
 import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
@@ -313,7 +313,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
               columnWrapperStyle={styles.row}
               contentContainerStyle={[styles.grid, { paddingBottom: bottomPadding }]}
               showsVerticalScrollIndicator={false}
-              renderItem={({ item, index }) => {
+              renderItem={({ item }) => {
                 if (item.kind === 'new')
                   return <NewCollectionTile onPress={() => setIsCreateFolderOpen(true)} />
 
@@ -321,7 +321,6 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
                   <CollectionTile
                     label={item.label}
                     count={item.count}
-                    variant={pickVariant(item.label, index)}
                     emoji={item.emoji}
                     onPress={() => {
                       if (item.label === 'Uncategorized') {

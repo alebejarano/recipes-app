@@ -241,7 +241,6 @@ const styles = createThemedStyles(theme => ({
         shadowColor: '#000',
         shadowOpacity: 0.05,
         shadowRadius: 12,
-        elevation: 2,
     },
 
     optionIconWrapper: {

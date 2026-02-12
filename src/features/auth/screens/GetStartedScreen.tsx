@@ -215,7 +215,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   benefitIcon: {
-    color: theme.colors.primary,
+    color: theme.colors.primaryDark,
   },
 
   benefitText: {

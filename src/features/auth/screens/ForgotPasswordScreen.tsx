@@ -1,18 +1,18 @@
 // src/features/auth/screens/ForgotPasswordScreen.tsx
 
+import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    View,
-    Text,
-    TextInput,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
+    Text,
+    TextInput,
     TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 
 import Button from '@/components/Button';
 import { createThemedStyles } from '@/styles/createStyles';
@@ -150,7 +150,7 @@ const styles = createThemedStyles(theme => ({
         width: 64,
         height: 64,
         borderRadius: theme.radii.xl,
-        backgroundColor: theme.colors.primarySoft,
+        backgroundColor: theme.colors.creamDark,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: theme.spacing.md,

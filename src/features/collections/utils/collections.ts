@@ -1,5 +1,4 @@
-import { theme } from '@/styles/theme';
-import type { CollectionItem, CollectionTileVariant, Recipe, SegmentKey } from '../types';
+import type { CollectionItem, Recipe, SegmentKey } from '../types';
 
 export function buildCollectionsForSegment(
   segment: SegmentKey,
@@ -65,55 +64,4 @@ export function pickEmoji(label: string): string {
   if (s.includes('vegan')) return '🌱';
   if (s.includes('quick')) return '⚡️';
   return '🥣';
-}
-
-/**
- * Soft tint mapping similar to your screenshots.
- * Adjust this mapping any time without touching UI components.
- */
-export function pickVariant(label: string, index: number): CollectionTileVariant {
-  const normalized = label.toLowerCase();
-
-  if (normalized.includes('breakfast')) return 'warm';
-  if (normalized.includes('dessert')) return 'pink';
-  if (normalized.includes('dinner')) return 'primary';
-  if (normalized.includes('lunch')) return 'mint';
-  if (normalized.includes('vegan')) return 'mint';
-  if (normalized.includes('quick')) return 'butter';
-
-  const fallback: CollectionTileVariant[] = ['primary', 'mint', 'warm', 'pink', 'butter'];
-  return fallback[index % fallback.length];
-}
-
-export function getVariantStyle(variant: CollectionTileVariant) {
-  // Keep “design tokens” centralized here.
-  // If you add more theme colors later, adjust only this function.
-  switch (variant) {
-    case 'primary':
-      return {
-        backgroundColor: theme.colors.primarySoft,
-        ghostColor: theme.colors.primary,
-      };
-    case 'mint':
-      return {
-        backgroundColor: theme.colors.muted,
-        ghostColor: theme.colors.primary,
-      };
-    case 'warm':
-      return {
-        backgroundColor: theme.colors.creamDark,
-        ghostColor: theme.colors.accent,
-      };
-    case 'pink':
-      return {
-        // If you have a dedicated soft pink/peach token, use it here.
-        backgroundColor: theme.colors.creamDark,
-        ghostColor: theme.colors.accent,
-      };
-    case 'butter':
-      return {
-        backgroundColor: theme.colors.creamDark,
-        ghostColor: theme.colors.accent,
-      };
-  }
 }

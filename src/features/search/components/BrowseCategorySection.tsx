@@ -22,7 +22,6 @@ export default function BrowseCategorySection({ title, items, onPressItem }: Pro
             <BrowseCategoryCard
               label={item.label}
               icon={item.icon}
-              tone={item.tone}
               onPress={onPressItem ? () => onPressItem(item.id) : undefined}
             />
           </View>

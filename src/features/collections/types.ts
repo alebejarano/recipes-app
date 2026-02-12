@@ -16,5 +16,3 @@ export type CollectionItem = {
   kind: CollectionKind;
   emoji?: string;
 };
-
-export type CollectionTileVariant = 'primary' | 'mint' | 'warm' | 'pink' | 'butter';

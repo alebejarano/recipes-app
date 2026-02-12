@@ -1,13 +1,13 @@
 // src/features/onboarding/screens/AddRecipeScreen.tsx
+import { Feather, Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-    View,
+    ScrollView,
     Text,
     TouchableOpacity,
-    ScrollView,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather, Ionicons } from '@expo/vector-icons';
 
 import Button from '@/components/Button';
 import { createThemedStyles } from '@/styles/createStyles';
@@ -227,7 +227,6 @@ const styles = createThemedStyles(theme => ({
         shadowColor: '#000',
         shadowOpacity: 0.05,
         shadowRadius: 12,
-        elevation: 2,
     },
     methodCardDisabled: {
         borderColor: theme.colors.border,

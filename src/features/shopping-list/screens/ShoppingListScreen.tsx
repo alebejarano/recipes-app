@@ -170,7 +170,7 @@ export default function ShoppingListScreen() {
                       pressed && styles.quickChipPressed,
                     ]}
                   >
-                    {isAdded ? <Feather name="check" size={14} color={theme.colors.primary} /> : null}
+                    {isAdded ? <Feather name="check" size={14} color={theme.colors.primaryDark} /> : null}
                     <Text style={[styles.quickChipText, isAdded && styles.quickChipTextAdded]}>
                       {label}
                     </Text>
