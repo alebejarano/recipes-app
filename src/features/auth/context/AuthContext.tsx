@@ -175,12 +175,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const deleteAccount = useCallback(async () => {
     // Refresh first so invoke() sends a fresh access token.
-    const { error: refreshError } = await supabase.auth.refreshSession()
+    const { data: refreshedData, error: refreshError } = await supabase.auth.refreshSession()
     if (refreshError) throw refreshError
 
-    const { data, error } = await supabase.functions.invoke('delete-account')
+    const accessToken =
+      refreshedData.session?.access_token ??
+      (await supabase.auth.getSession()).data.session?.access_token ??
+      null
+    if (!accessToken) {
+      throw new Error('Your session has expired. Please log in again.')
+    }
+
+    const { data, error } = await supabase.functions.invoke('delete-account', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
     if (error) {
-      throw new Error(`Delete account failed: ${error.message}`)
+      const context = (error as { context?: { status?: number; text?: () => Promise<string> } }).context
+      let details = ''
+      if (context?.text) {
+        try {
+          const raw = await context.text()
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw) as { error?: string; message?: string }
+              details = parsed.error ?? parsed.message ?? raw
+            } catch {
+              details = raw
+            }
+          }
+        } catch {
+          // Ignore response parsing errors and fall back to generic message.
+        }
+      }
+      const statusLabel = typeof context?.status === 'number' ? ` (${context.status})` : ''
+      const message = details || error.message
+      throw new Error(`Delete account failed${statusLabel}: ${message}`)
     }
     if (!data || (typeof data === 'object' && data !== null && 'success' in data && !(data as any).success)) {
       throw new Error('Delete account request failed.')

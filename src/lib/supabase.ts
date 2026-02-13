@@ -5,7 +5,13 @@ import { AppState, Platform } from 'react-native'
 import 'react-native-url-polyfill/auto'
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!
+const supabasePublishableKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+const supabaseLegacyAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+const supabaseClientKey = supabasePublishableKey ?? supabaseLegacyAnonKey
+
+if (!supabaseClientKey) {
+  throw new Error('Missing Supabase client key. Set EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY (preferred).')
+}
 
 const ExpoSecureStoreAdapter = {
   getItem: (key: string) => SecureStore.getItemAsync(key) as Promise<string | null>,
@@ -28,7 +34,7 @@ declare global {
 }
 
 function createSupabaseClient() {
-  return createClient(supabaseUrl, supabaseAnonKey, {
+  return createClient(supabaseUrl, supabaseClientKey, {
     auth: {
       ...(Platform.OS !== 'web' ? { storage: ExpoSecureStoreAdapter } : {}),
       autoRefreshToken: true,

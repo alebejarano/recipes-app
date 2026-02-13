@@ -25,6 +25,7 @@ serve(async (req) => {
 
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
+      console.error('delete-account: missing Authorization header')
       return json({ error: 'Missing authorization header' }, 401)
     }
 
@@ -40,6 +41,7 @@ serve(async (req) => {
       error: authError,
     } = await authClient.auth.getUser()
     if (authError || !user) {
+      console.error('delete-account: auth.getUser failed', authError)
       return json({ error: 'Unauthorized' }, 401)
     }
 
@@ -51,12 +53,17 @@ serve(async (req) => {
     })
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(user.id)
     if (deleteError) {
+      console.error('delete-account: admin.deleteUser failed', {
+        userId: user.id,
+        error: deleteError.message,
+      })
       return json({ error: `Failed to delete user: ${deleteError.message}` }, 400)
     }
 
     return json({ success: true })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unexpected server error'
+    console.error('delete-account: unhandled error', error)
     return json({ error: `Server error: ${message}` }, 500)
   }
 })
