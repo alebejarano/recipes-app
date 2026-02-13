@@ -19,7 +19,7 @@ export default function EditProfileScreen() {
     const email = user?.email ?? ''
     return email ? (email.split('@')[0] || '') : ''
   }, [user?.email, user?.user_metadata?.display_name])
-  const initialEmail = useMemo(() => user?.email ?? '', [user?.email])
+  const initialEmail = useMemo(() => user?.new_email ?? user?.email ?? '', [user?.email, user?.new_email])
 
   const [name, setName] = useState(initialName)
   const [email, setEmail] = useState(initialEmail)
@@ -56,8 +56,12 @@ export default function EditProfileScreen() {
         await updateProfileName(trimmedName)
       }
       if (emailChanged) {
-        await updateEmailAddress(normalizedEmail)
-        Alert.alert('Email update requested', 'Check your inbox to confirm this email change.')
+        const { pendingEmail } = await updateEmailAddress(normalizedEmail)
+        if (pendingEmail) {
+          Alert.alert('Email update requested', `Check your inbox at ${pendingEmail} to confirm this email change.`)
+        } else {
+          Alert.alert('Profile updated', 'Your email has been updated.')
+        }
       }
       router.replace(profileRoute)
     } catch (error: any) {

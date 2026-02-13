@@ -2,7 +2,7 @@
 
 import { supabase } from '@/lib/supabase'
 import type { AuthResponse, Session, User } from '@supabase/supabase-js'
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { usePostHog } from 'posthog-react-native'
 import { tagLocalDataAsMigratable } from '@/features/storage/localAccountLinking'
 
@@ -14,7 +14,8 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string) => Promise<AuthResponse['data']>
   updateProfileName: (name: string) => Promise<void>
-  updateEmailAddress: (email: string) => Promise<void>
+  updateEmailAddress: (email: string) => Promise<{ pendingEmail: string | null }>
+  deleteAccount: () => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -124,24 +125,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const updateEmailAddress = async (email: string) => {
+  const updateEmailAddress = useCallback(async (email: string) => {
     const normalized = email.trim().toLowerCase()
     if (!normalized) throw new Error('Email is required')
+    const currentEmail = session?.user?.email?.trim().toLowerCase() ?? null
 
     const { data, error } = await supabase.auth.updateUser({
       email: normalized,
     })
-    if (error) throw error
+
+    const pendingEmail = data.user?.new_email?.trim().toLowerCase() ?? null
+    const isRequestedEmailPending = pendingEmail === normalized
+    const errorMessage = error?.message ?? ''
+    const isOldEmailValidationError =
+      !!currentEmail &&
+      normalized !== currentEmail &&
+      errorMessage.includes(`"${currentEmail}"`) &&
+      /invalid/i.test(errorMessage)
+
+    // Supabase can report an error while still queueing the email-change confirmation.
+    if (error && !isRequestedEmailPending && !isOldEmailValidationError) throw error
 
     if (data.user) {
       setSession((prev) => (prev ? { ...prev, user: data.user } : prev))
+    } else if (isOldEmailValidationError) {
+      // Keep UI in sync when Supabase accepted the new email request but failed notifying old email.
+      setSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              user: {
+                ...prev.user,
+                new_email: normalized,
+              },
+            }
+          : prev
+      )
     }
-  }
+
+    return {
+      pendingEmail: isRequestedEmailPending || isOldEmailValidationError ? normalized : null,
+    }
+  }, [session?.user?.email])
 
   const logout = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
   }
+
+  const deleteAccount = useCallback(async () => {
+    // Refresh first so invoke() sends a fresh access token.
+    const { error: refreshError } = await supabase.auth.refreshSession()
+    if (refreshError) throw refreshError
+
+    const { data, error } = await supabase.functions.invoke('delete-account')
+    if (error) {
+      throw new Error(`Delete account failed: ${error.message}`)
+    }
+    if (!data || (typeof data === 'object' && data !== null && 'success' in data && !(data as any).success)) {
+      throw new Error('Delete account request failed.')
+    }
+
+    setSession(null)
+    await supabase.auth.signOut({ scope: 'local' })
+  }, [])
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -152,9 +199,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       register,
       updateProfileName,
       updateEmailAddress,
+      deleteAccount,
       logout,
     }),
-    [session, isLoading]
+    [session, isLoading, updateEmailAddress, deleteAccount]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

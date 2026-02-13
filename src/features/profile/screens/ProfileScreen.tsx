@@ -25,9 +25,10 @@ import { SubscriptionContext } from '@/features/subscription/context/Subscriptio
 export default function ProfileScreen() {
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
 
-  const { user, logout } = useAuth()
+  const { user, logout, deleteAccount } = useAuth()
   const { plan } = useContext(SubscriptionContext)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const accountPlan: AccountPlan = plan === 'premium' ? 'premium' : 'free'
 
   const displayName = useMemo(() => {
@@ -60,19 +61,35 @@ export default function ProfileScreen() {
     }
   }, [isLoggingOut, logout])
 
+  const performDeleteAccount = useCallback(async () => {
+    if (isDeletingAccount) return
+
+    setIsDeletingAccount(true)
+    try {
+      await deleteAccount()
+    } catch (e: any) {
+      Alert.alert('Unable to delete account', e?.message ?? 'Please try again.')
+    } finally {
+      setIsDeletingAccount(false)
+    }
+  }, [deleteAccount, isDeletingAccount])
+
   const onDeleteAccountPress = useCallback(() => {
     Alert.alert(
       'Delete account',
-      'This will permanently remove your data. Delete account flow is not connected yet.',
+      'This permanently deletes your account and cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
+          onPress: () => {
+            void performDeleteAccount()
+          },
         },
       ]
     )
-  }, [])
+  }, [performDeleteAccount])
 
   const accountItems = useMemo(
     () =>
@@ -82,10 +99,11 @@ export default function ProfileScreen() {
         onManagePlanPress: () => router.push('/premium'),
         onPrivacyPress: () => router.push('/privacy'),
         isLoggingOut,
+        isDeletingAccount,
         onLogoutPress,
         onDeleteAccountPress,
       }),
-    [accountPlan, isLoggingOut, onDeleteAccountPress, onLogoutPress]
+    [accountPlan, isDeletingAccount, isLoggingOut, onDeleteAccountPress, onLogoutPress]
   )
 
   return (
@@ -100,7 +118,7 @@ export default function ProfileScreen() {
 
       <ProfileUserCard
         name={displayName}
-        email={user?.email ?? ''}
+        email={user?.new_email ?? user?.email ?? ''}
         onPressEdit={() => router.push('/(auth)/account/edit-profile')}
       />
 
