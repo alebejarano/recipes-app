@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
+import { FREE_PLAN_MAX_RECIPES } from '@/features/subscription/constants/limits'
 
 export type Plan = 'free' | 'premium'
 
@@ -13,14 +14,13 @@ type SubscriptionContextValue = {
   setPlan: (nextPlan: Plan) => Promise<void>
 }
 
-const DEFAULT_MAX_FREE_RECIPES = 100
 const PLAN_KEY_PREFIX = 'subscription:plan:user:'
 
 export const SubscriptionContext = createContext<SubscriptionContextValue>({
   plan: 'free',
   isLoaded: false,
   recipesCount: 0,
-  maxFreeRecipes: DEFAULT_MAX_FREE_RECIPES,
+  maxFreeRecipes: FREE_PLAN_MAX_RECIPES,
   setPlan: async () => {},
 })
 
@@ -31,7 +31,7 @@ type Props = {
 
 export function SubscriptionProvider({
   children,
-  maxFreeRecipes = DEFAULT_MAX_FREE_RECIPES,
+  maxFreeRecipes = FREE_PLAN_MAX_RECIPES,
 }: Props) {
   const { user } = useAuth()
   const [plan, setPlanState] = useState<Plan>('free')

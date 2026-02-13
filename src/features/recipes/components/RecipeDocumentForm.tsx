@@ -19,6 +19,11 @@ import {
   type RecipeDocumentUsageSummary,
 } from '@/features/recipes/storage/recipeDocumentStorage'
 import { getRecipeDocumentUsageSummary } from '@/features/recipes/storage/recipeDocumentStorage'
+import {
+  FREE_PLAN_MAX_IMPORT_FILE_BYTES,
+  FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
+  IMPORT_ALLOWED_MIME_TYPES,
+} from '@/features/subscription/constants/limits'
 
 export type RecipeDocumentFormValues = {
   title: string
@@ -34,10 +39,7 @@ type Props = {
   onSubmit: (values: RecipeDocumentFormValues, file: PendingRecipeDocument) => Promise<void> | void
 }
 
-const MAX_TOTAL_BYTES = 50 * 1024 * 1024
-const MAX_FILE_BYTES = 20 * 1024 * 1024
 const METADATA_READ_LIMIT = 2 * 1024 * 1024
-const ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
 
 function titleFromFilename(name: string) {
   const trimmed = name.trim()
@@ -87,6 +89,21 @@ async function tryExtractPdfTitle(uri: string, size: number) {
     return null
   }
   return null
+}
+
+async function assertPdfNotEncrypted(uri: string, size: number) {
+  if (size <= 0) return
+  try {
+    const content = await new File(uri).text()
+    if (/\/Encrypt\b/i.test(content)) {
+      throw new Error('Encrypted PDF')
+    }
+  } catch (error: any) {
+    if (error?.message === 'Encrypted PDF') {
+      throw error
+    }
+    // If we fail to read the file, keep import flow behavior unchanged.
+  }
 }
 
 function isPdfFile(name: string, mimeType?: string | null) {
@@ -144,7 +161,7 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
     setIsPicking(true)
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ALLOWED_MIME_TYPES,
+        type: [...IMPORT_ALLOWED_MIME_TYPES],
         copyToCacheDirectory: true,
         multiple: false,
       })
@@ -165,17 +182,28 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
 
       const totalBytes = usage.totalBytes
 
-      if (size > MAX_FILE_BYTES) {
-        Alert.alert('File too large', 'Each file must be 20 MB or smaller.')
+      if (size > FREE_PLAN_MAX_IMPORT_FILE_BYTES) {
+        Alert.alert('File too large', 'Each file must be 10 MB or smaller.')
         return
       }
-      if (totalBytes + size > MAX_TOTAL_BYTES) {
+      if (totalBytes + size > FREE_PLAN_MAX_IMPORT_TOTAL_BYTES) {
         Alert.alert('Storage limit reached', 'Free accounts can save up to 50 MB of files.')
         return
       }
 
       const name = asset.name ?? inferFallbackName(asset.mimeType)
       const isPdf = isPdfFile(name, asset.mimeType)
+      if (isPdf) {
+        try {
+          await assertPdfNotEncrypted(asset.uri, size)
+        } catch {
+          Alert.alert(
+            'Unsupported PDF',
+            'Password-protected or encrypted PDFs are not supported.'
+          )
+          return
+        }
+      }
       setFile({ uri: asset.uri, name, size })
       const suggestedTitle = await buildBestTitle({ uri: asset.uri, name, size, isPdf })
       setTitle((prev) => (prev.trim() ? prev : suggestedTitle))

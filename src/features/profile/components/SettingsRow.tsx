@@ -23,6 +23,7 @@ type LinkRow = RowBase & {
   type: 'link'
   rightText?: string
   onPress?: () => void
+  showChevron?: boolean
 }
 
 export type SettingsRowItem = ToggleRow | LinkRow
@@ -37,6 +38,9 @@ export default function SettingsRow({
   const tone = item.tone ?? 'default'
   const isDisabled = item.disabled ?? false
   const rowStyle = [styles.row, !isLast && styles.rowDivider, isDisabled && styles.rowDisabled]
+
+  const showChevron = item.type === 'link' ? (item.showChevron ?? true) : false
+  const isPressableLink = item.type === 'link' && !isDisabled && Boolean(item.onPress)
 
   const content = (
     <>
@@ -77,7 +81,7 @@ export default function SettingsRow({
       ) : (
         <View style={styles.right}>
           {!!item.rightText && <Text style={styles.rightText}>{item.rightText}</Text>}
-          {!isDisabled && <Feather name="chevron-right" size={18} style={styles.chevron} />}
+          {!isDisabled && showChevron && <Feather name="chevron-right" size={18} style={styles.chevron} />}
         </View>
       )}
     </>
@@ -86,8 +90,8 @@ export default function SettingsRow({
   if (item.type === 'link') {
     return (
       <TouchableOpacity
-        activeOpacity={isDisabled ? 1 : 0.85}
-        onPress={isDisabled ? undefined : item.onPress}
+        activeOpacity={isPressableLink ? 0.85 : 1}
+        onPress={isPressableLink ? item.onPress : undefined}
         style={rowStyle}
       >
         {content}

@@ -2,6 +2,15 @@ import { Directory, File, Paths } from 'expo-file-system'
 import { Platform } from 'react-native'
 
 import { getAllAsync, getFirstAsync, runSqlAsync, runSqlBatchAsync } from '@/lib/sqlite'
+import {
+  assertCanAddImport,
+  ensureImportsStorageReady,
+  getImportsUsageSummary,
+  type ImportPlan,
+  registerImport,
+  resolveImportBytes,
+  removeImportByUri,
+} from '@/features/recipes/storage/importsStorage'
 
 export type RecipeDocument = {
   id: string
@@ -45,12 +54,35 @@ const MIGRATION_STATEMENTS = [
 ]
 
 let migrationsPromise: Promise<void> | null = null
+let importsBackfillPromise: Promise<void> | null = null
 
 export function ensureRecipeDocumentStorageReady() {
   if (!migrationsPromise) {
     migrationsPromise = runSqlBatchAsync(MIGRATION_STATEMENTS)
   }
   return migrationsPromise
+}
+
+async function backfillLegacyDocumentImports() {
+  await ensureRecipeDocumentStorageReady()
+  await ensureImportsStorageReady()
+  await runSqlAsync(
+    `INSERT INTO imports (id, kind, file_name, file_uri, bytes, created_at, deleted_at)
+     SELECT lower(hex(randomblob(16))), 'document', rd.file_name, rd.file_uri, rd.file_size, rd.created_at, NULL
+     FROM recipe_documents rd
+     WHERE NOT EXISTS (
+       SELECT 1
+       FROM imports i
+       WHERE i.kind = 'document' AND i.file_uri = rd.file_uri AND i.deleted_at IS NULL
+     );`
+  )
+}
+
+async function ensureDocumentImportsBackfilled() {
+  if (!importsBackfillPromise) {
+    importsBackfillPromise = backfillLegacyDocumentImports()
+  }
+  await importsBackfillPromise
 }
 
 function makeId() {
@@ -111,17 +143,19 @@ export async function getRecipeDocument(id: string): Promise<RecipeDocument | nu
 }
 
 export async function getRecipeDocumentUsageSummary(): Promise<RecipeDocumentUsageSummary> {
-  await ensureRecipeDocumentStorageReady()
-  const row = await getFirstAsync<{
-    totalCount: number
-    totalBytes: number
-  }>(
-    'SELECT COUNT(*) as totalCount, COALESCE(SUM(file_size), 0) as totalBytes FROM recipe_documents;'
-  )
-  return {
-    totalCount: Number(row?.totalCount ?? 0),
-    totalBytes: Number(row?.totalBytes ?? 0),
-  }
+  await ensureDocumentImportsBackfilled()
+  return getImportsUsageSummary()
+}
+
+export async function assertCanAddRecipeDocument(params: {
+  plan: ImportPlan
+  incomingBytes: number
+}) {
+  await ensureDocumentImportsBackfilled()
+  await assertCanAddImport({
+    plan: params.plan,
+    incomingBytes: params.incomingBytes,
+  })
 }
 
 export async function addRecipeDocument(input: {
@@ -129,8 +163,18 @@ export async function addRecipeDocument(input: {
   uri: string
   name: string
   size: number
+  plan?: ImportPlan
 }): Promise<RecipeDocument> {
   await ensureRecipeDocumentStorageReady()
+  await ensureDocumentImportsBackfilled()
+  const resolvedSize = await resolveImportBytes({
+    incomingBytes: input.size,
+    fileUri: input.uri,
+  })
+  await assertCanAddRecipeDocument({
+    plan: input.plan ?? 'free',
+    incomingBytes: resolvedSize,
+  })
   await ensureDir()
 
   const id = makeId()
@@ -144,7 +188,7 @@ export async function addRecipeDocument(input: {
   }
 
   const fileUri = Platform.OS === 'web' ? input.uri : destination
-  const fileSize = input.size
+  const fileSize = resolvedSize
 
   await runSqlAsync(
     `INSERT INTO recipe_documents
@@ -152,6 +196,12 @@ export async function addRecipeDocument(input: {
       VALUES (?, ?, ?, ?, ?, ?);`,
     [id, input.title ?? null, input.name, fileUri, fileSize, createdAt]
   )
+  await registerImport({
+    kind: 'document',
+    fileName: input.name,
+    fileUri,
+    bytes: fileSize,
+  })
 
   return {
     id,
@@ -169,15 +219,8 @@ export async function deleteRecipeDocument(id: string): Promise<void> {
     'SELECT file_uri as fileUri FROM recipe_documents WHERE id = ?;',
     [id]
   )
-  if (row?.fileUri && !row.fileUri.startsWith('http')) {
-    try {
-      const file = new File(row.fileUri)
-      if (file.exists) {
-        file.delete()
-      }
-    } catch {
-      // ignore delete errors for stale files
-    }
+  if (row?.fileUri) {
+    await removeImportByUri(row.fileUri)
   }
   await runSqlAsync('DELETE FROM recipe_documents WHERE id = ?;', [id])
 }

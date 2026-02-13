@@ -6,13 +6,14 @@ import { createThemedStyles } from '@/styles/createStyles';
 import ProfileHeader from '@/features/profile/components/ProfileHeader';
 import SettingsSection from '@/features/profile/components/SettingsSection';
 
-import { usePdfUsageSummary } from '@/features/recipes/hooks/useRecipePdfAttachments';
+import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments';
+import { FREE_PLAN_MAX_IMPORT_TOTAL_BYTES } from '@/features/subscription/constants/limits';
 
 export default function PrivacySettingsScreen() {
-  const pdfUsageQuery = usePdfUsageSummary();
+  const importsUsageQuery = useRecipeDocumentUsageSummary();
 
-  const totalBytes = pdfUsageQuery.data?.totalBytes ?? 0;
-  const maxBytes = 50 * 1024 * 1024;
+  const totalBytes = importsUsageQuery.data?.totalBytes ?? 0;
+  const maxBytes = FREE_PLAN_MAX_IMPORT_TOTAL_BYTES;
   const usedMB = totalBytes / (1024 * 1024);
   const maxMB = maxBytes / (1024 * 1024);
   const usageLabel = `${usedMB.toFixed(1)} / ${maxMB.toFixed(0)} MB`;
@@ -25,18 +26,16 @@ export default function PrivacySettingsScreen() {
 
       <SettingsSection
         title="Storage"
-        subtitle="PDF storage usage"
+        subtitle="Imports storage usage"
         rightPillText={usageLabel}
         items={[
           {
-            id: 'pdf-usage',
-            type: 'toggle',
+            id: 'imports-usage',
+            type: 'link',
             icon: 'hard-drive',
-            title: 'Recipe PDFs',
-            subtitle: 'Free plan cap: 5 PDFs • 50 MB total',
-            value: true,
-            onValueChange: () => {},
-            disabled: true,
+            title: 'Recipe Imports',
+            subtitle: 'Free plan cap: 10 MB per file • 50 MB total',
+            showChevron: false,
           },
         ]}
       />

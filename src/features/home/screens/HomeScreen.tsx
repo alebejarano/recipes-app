@@ -26,6 +26,10 @@ import { useShoppingListStore } from '@/features/shopping-list/store/useShopping
 import { useStrategyNotesList } from '@/features/notes/hooks/useStrategyNotes';
 import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes';
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode';
+import {
+  FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
+  FREE_PLAN_MAX_RECIPES,
+} from '@/features/subscription/constants/limits';
 
 import {
   formatRelativeDay,
@@ -66,9 +70,6 @@ const STORAGE_RISK_BANNER_DISMISSED_EVENT_KEY = 'storage_risk_banner_dismissed_e
 const STORAGE_CONVERSION_BANNER_SEEN_TRIGGERS_KEY = 'storage_conversion_banner_seen_triggers';
 const STORAGE_DEVICE_MARKER_CACHE_KEY = 'storage_device_marker_cache';
 const SECURE_DEVICE_MARKER_KEY = 'storage_device_marker_secure';
-const FREE_RECIPES_CAP = 100;
-const FREE_IMPORT_CAP_BYTES = 50 * 1024 * 1024;
-
 type ConversionBannerTrigger = {
   id: string;
   title: string;
@@ -97,11 +98,11 @@ function getConversionBannerTrigger(params: {
   importsTotalBytes: number;
 }): ConversionBannerTrigger | null {
   const { recipesCount, notesCount, importsCount, importsTotalBytes } = params;
-  const recipeUsageRatio = recipesCount / FREE_RECIPES_CAP;
-  const importUsageRatio = importsTotalBytes / FREE_IMPORT_CAP_BYTES;
+  const recipeUsageRatio = recipesCount / FREE_PLAN_MAX_RECIPES;
+  const importUsageRatio = importsTotalBytes / FREE_PLAN_MAX_IMPORT_TOTAL_BYTES;
   const totalInvestmentScore = recipesCount + notesCount + importsCount;
 
-  if (recipesCount >= FREE_RECIPES_CAP) {
+  if (recipesCount >= FREE_PLAN_MAX_RECIPES) {
     return {
       id: 'recipes-100',
       title: 'You reached the free recipe limit',

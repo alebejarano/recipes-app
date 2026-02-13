@@ -1,5 +1,6 @@
 // src/features/recipes/components/RecipeForm.tsx
 import { Feather } from '@expo/vector-icons'
+import { File } from 'expo-file-system'
 import * as ImagePicker from 'expo-image-picker'
 import React, {
   forwardRef,
@@ -23,6 +24,15 @@ import {
 import Button from '@/components/Button'
 import TagChip from '@/components/TagChip'
 import { uploadRecipeImage } from '@/features/recipes/api/recipesRepo'
+import {
+  getActiveImportBytesByUri,
+  getImportsUsageSummary,
+  isManagedLocalImportImageUri,
+} from '@/features/recipes/storage/importsStorage'
+import {
+  FREE_PLAN_MAX_IMPORT_FILE_BYTES,
+  FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
+} from '@/features/subscription/constants/limits'
 import { createThemedStyles } from '@/styles/createStyles'
 
 export type RecipeFormValues = {
@@ -370,14 +380,41 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     async (asset: ImagePicker.ImagePickerAsset) => {
       try {
         setIsUploadingImage(true)
-        const url =
-          imageUploadMode === 'local'
-            ? asset.uri
-            : await uploadRecipeImage({
-                uri: asset.uri,
-                fileName: asset.fileName ?? null,
-                mimeType: asset.mimeType ?? null,
-              })
+        let url = asset.uri
+        if (imageUploadMode === 'local') {
+          let size = typeof asset.fileSize === 'number' ? asset.fileSize : 0
+          if (!size) {
+            try {
+              const info = await new File(asset.uri).info()
+              size = info.exists && 'size' in info && typeof info.size === 'number' ? info.size : 0
+            } catch {
+              size = 0
+            }
+          }
+
+          if (size > FREE_PLAN_MAX_IMPORT_FILE_BYTES) {
+            Alert.alert('File too large', 'Each file must be 10 MB or smaller.')
+            return
+          }
+
+          const usage = await getImportsUsageSummary()
+          const replacingBytes = isManagedLocalImportImageUri(values.imageUrl)
+            ? await getActiveImportBytesByUri(values.imageUrl ?? '')
+            : 0
+          if (
+            usage.totalBytes - replacingBytes + size > FREE_PLAN_MAX_IMPORT_TOTAL_BYTES
+          ) {
+            Alert.alert('Storage limit reached', 'Free accounts can save up to 50 MB of files.')
+            return
+          }
+        } else {
+          url = await uploadRecipeImage({
+            uri: asset.uri,
+            fileName: asset.fileName ?? null,
+            mimeType: asset.mimeType ?? null,
+          })
+        }
+
         update('imageUrl', url)
         update('emoji', '')
       } catch (error: any) {
@@ -386,7 +423,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         setIsUploadingImage(false)
       }
     },
-    [imageUploadMode, update]
+    [imageUploadMode, update, values.imageUrl]
   )
 
   const handlePickImage = useCallback(async () => {

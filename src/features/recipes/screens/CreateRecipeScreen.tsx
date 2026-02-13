@@ -28,6 +28,7 @@ import RecipeDocumentForm, {
 import { useCreateCloudFolder } from '@/features/folders/hooks/useCreateCloudFolder'
 import { useCloudFoldersList } from '@/features/folders/hooks/useCloudFoldersList'
 import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
+import { uploadPremiumImport } from '@/features/recipes/api/importsRepo'
 import { useAddRecipeDocument } from '@/features/recipes/hooks/useRecipeDocuments'
 import { useStrategyCreateRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
@@ -44,6 +45,14 @@ interface CreateRecipeScreenProps {
 
 const FOOTER_HEIGHT = 72
 
+function inferImportMimeType(fileName: string) {
+  const lower = fileName.trim().toLowerCase()
+  if (lower.endsWith('.pdf')) return 'application/pdf'
+  if (lower.endsWith('.png')) return 'image/png'
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg'
+  return 'application/octet-stream'
+}
+
 export default function CreateRecipeScreen({
   variant = 'app',
   entry,
@@ -59,6 +68,7 @@ export default function CreateRecipeScreen({
   const [entryMode, setEntryMode] = useState<CreateRecipeEntry | null>(
     isOnboarding ? 'scratch' : entry ?? null
   )
+  const [isUploadingPremiumImport, setIsUploadingPremiumImport] = useState(false)
   const createMutation = useStrategyCreateRecipe(routeMode)
   const documentMutation = useAddRecipeDocument()
   const cloudFoldersQuery = useCloudFoldersList({ enabled: !shouldUseLocalData })
@@ -95,7 +105,9 @@ export default function CreateRecipeScreen({
     [entryMode, isOnboarding]
   )
 
-  const isSaving = entryMode === 'pdf' ? documentMutation.isPending : createMutation.isPending
+  const isSaving = entryMode === 'pdf'
+    ? documentMutation.isPending || isUploadingPremiumImport
+    : createMutation.isPending
 
   const handleBack = useCallback(() => {
     if (isSaving) return
@@ -127,7 +139,19 @@ export default function CreateRecipeScreen({
   const handleDocumentSubmit = useCallback(
     async (values: RecipeDocumentFormValues, file: { uri: string; name: string; size: number }) => {
       try {
-        await documentMutation.mutateAsync({ title: values.title, file })
+        if (!shouldUseLocalData) {
+          setIsUploadingPremiumImport(true)
+          await uploadPremiumImport({
+            uri: file.uri,
+            fileName: file.name,
+            mimeType: inferImportMimeType(file.name),
+          })
+        }
+        await documentMutation.mutateAsync({
+          title: values.title,
+          file,
+          plan: shouldUseLocalData ? 'free' : 'premium',
+        })
         router.replace({
           pathname: '/(auth)/(tabs)/collections',
           params: {
@@ -138,9 +162,11 @@ export default function CreateRecipeScreen({
         })
       } catch (error: any) {
         Alert.alert('Save failed', error?.message ?? 'Please try again.')
+      } finally {
+        setIsUploadingPremiumImport(false)
       }
     },
-    [documentMutation]
+    [documentMutation, shouldUseLocalData]
   )
 
   const handleCreateFolder = useCallback(

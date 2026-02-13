@@ -1,6 +1,10 @@
 // src/features/recipes/api/recipesRepo.ts
 import { fetch } from 'expo/fetch'
 import { supabase } from '@/lib/supabase'
+import {
+  FREE_PLAN_MAX_IMPORT_FILE_BYTES,
+  IMPORT_ALLOWED_IMAGE_MIME_TYPES,
+} from '@/features/subscription/constants/limits'
 import type { RecipeFormSubmitValues } from '../components/RecipeForm'
 
 const REQUEST_TIMEOUT_MS = 10000
@@ -168,6 +172,7 @@ type UploadRecipeImageInput = {
 }
 
 const RECIPE_IMAGES_BUCKET = 'recipe-images'
+const ALLOWED_IMAGE_MIME_TYPES = new Set<string>(IMPORT_ALLOWED_IMAGE_MIME_TYPES)
 
 export async function uploadRecipeImage(input: UploadRecipeImageInput): Promise<string> {
   const user = await requireAuth()
@@ -178,11 +183,18 @@ export async function uploadRecipeImage(input: UploadRecipeImageInput): Promise<
   const response = await fetch(input.uri)
   const arrayBuffer = await response.arrayBuffer()
   const bytes = new Uint8Array(arrayBuffer)
+  const normalizedMimeType = (input.mimeType ?? 'image/jpeg').toLowerCase()
+  if (!ALLOWED_IMAGE_MIME_TYPES.has(normalizedMimeType)) {
+    throw new Error('Unsupported file type. Use JPG or PNG.')
+  }
+  if (bytes.byteLength > FREE_PLAN_MAX_IMPORT_FILE_BYTES) {
+    throw new Error('This file is too large. Max 10 MB per file.')
+  }
 
   const { error: uploadError } = await supabase.storage
     .from(RECIPE_IMAGES_BUCKET)
     .upload(path, bytes, {
-      contentType: input.mimeType ?? 'image/jpeg',
+      contentType: normalizedMimeType,
       upsert: false,
     })
 

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import type { ImportPlan } from '@/features/recipes/storage/importsStorage'
 import {
   addRecipeDocument,
   deleteRecipeDocument,
@@ -39,12 +40,13 @@ export function useRecipeDocumentUsageSummary(options?: { enabled?: boolean }) {
 export function useAddRecipeDocument() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (input: { title?: string | null; file: PendingRecipeDocument }) =>
+    mutationFn: (input: { title?: string | null; file: PendingRecipeDocument; plan?: ImportPlan }) =>
       addRecipeDocument({
         title: input.title,
         uri: input.file.uri,
         name: input.file.name,
         size: input.file.size,
+        plan: input.plan,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: DOCS_KEY })

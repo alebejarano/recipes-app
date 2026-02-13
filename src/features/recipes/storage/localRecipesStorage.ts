@@ -1,10 +1,15 @@
 import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
 import { getAllAsync, getFirstAsync, runSqlAsync } from '@/lib/sqlite'
+import { File } from 'expo-file-system'
 
 import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
 import { deleteRecipePdfAttachmentsForRecipe } from '@/features/recipes/storage/recipePdfStorage'
-
-const MAX_LOCAL_RECIPES = 100
+import {
+  importLocalImage,
+  isManagedLocalImportImageUri,
+  removeImportByUri,
+} from '@/features/recipes/storage/importsStorage'
+import { FREE_PLAN_MAX_RECIPES } from '@/features/subscription/constants/limits'
 
 export type LocalRecipeIngredient = {
   id: string
@@ -94,6 +99,46 @@ function parseJsonArray<T>(value: string | null | undefined): T[] {
   } catch {
     return []
   }
+}
+
+function isRemoteUri(uri: string) {
+  return /^https?:\/\//i.test(uri)
+}
+
+function inferNameFromUri(uri: string) {
+  const raw = uri.split('/').pop() ?? ''
+  const cleaned = raw.split('?')[0]?.trim() ?? ''
+  return cleaned || 'recipe.jpg'
+}
+
+async function getLocalFileSize(uri: string): Promise<number> {
+  try {
+    const info = await new File(uri).info()
+    return info.exists && 'size' in info && typeof info.size === 'number' ? info.size : 0
+  } catch {
+    return 0
+  }
+}
+
+async function resolveLocalRecipeImageUrl(params: {
+  imageUrl: string | null | undefined
+  replacingFileUri?: string | null
+}): Promise<string | null> {
+  const { imageUrl, replacingFileUri } = params
+  const nextImageUrl = imageUrl?.trim() ?? ''
+  if (!nextImageUrl) return null
+  if (isRemoteUri(nextImageUrl)) return nextImageUrl
+  if (isManagedLocalImportImageUri(nextImageUrl)) return nextImageUrl
+
+  const size = await getLocalFileSize(nextImageUrl)
+  const imported = await importLocalImage({
+    plan: 'free',
+    uri: nextImageUrl,
+    name: inferNameFromUri(nextImageUrl),
+    size,
+    replacingFileUri: replacingFileUri ?? null,
+  })
+  return imported.uri
 }
 
 function toRecipeView(row: LocalRecipeRow): LocalRecipe {
@@ -188,18 +233,23 @@ export async function createLocalRecipe(
   const countRow = await getFirstAsync<{ count: number }>(
     'SELECT COUNT(*) as count FROM local_recipes;'
   )
-  if (Number(countRow?.count ?? 0) >= MAX_LOCAL_RECIPES) {
-    throw new Error('Local plan limit reached. You can save up to 100 recipes on this device.')
+  if (Number(countRow?.count ?? 0) >= FREE_PLAN_MAX_RECIPES) {
+    throw new Error(
+      `Local plan limit reached. You can save up to ${FREE_PLAN_MAX_RECIPES} recipes on this device.`
+    )
   }
 
   const now = new Date().toISOString()
+  const resolvedImageUrl = await resolveLocalRecipeImageUrl({
+    imageUrl: values.imageUrl ?? null,
+  })
   const row: LocalRecipeRow = {
     id: makeId(),
     title: values.title,
     subtitle: values.subtitle ?? null,
     description: values.description ?? null,
     emoji: values.emoji ?? null,
-    image_url: values.imageUrl ?? null,
+    image_url: resolvedImageUrl,
     steps_text: serializeSteps(values.steps),
     ingredients_json: JSON.stringify(buildIngredients(values)),
     folders_json: JSON.stringify(buildFolders(values)),
@@ -263,6 +313,21 @@ export async function updateLocalRecipe(
 
   const updatedAt = new Date().toISOString()
   const nextVersion = (existing.version ?? 1) + 1
+  const resolvedImageUrl = await resolveLocalRecipeImageUrl({
+    imageUrl: values.imageUrl ?? null,
+    replacingFileUri:
+      existing.image_url && isManagedLocalImportImageUri(existing.image_url)
+        ? existing.image_url
+        : null,
+  })
+
+  if (
+    existing.image_url &&
+    isManagedLocalImportImageUri(existing.image_url) &&
+    existing.image_url !== resolvedImageUrl
+  ) {
+    await removeImportByUri(existing.image_url)
+  }
 
   await runSqlAsync(
     `UPDATE local_recipes
@@ -287,7 +352,7 @@ export async function updateLocalRecipe(
       values.subtitle ?? null,
       values.description ?? null,
       values.emoji ?? null,
-      values.imageUrl ?? null,
+      resolvedImageUrl,
       serializeSteps(values.steps),
       JSON.stringify(buildIngredients(values)),
       JSON.stringify(buildFolders(values)),
@@ -309,6 +374,10 @@ export async function updateLocalRecipe(
 
 export async function deleteLocalRecipe(id: string): Promise<void> {
   await ensureLocalSqliteMigrationReady()
+  const existing = await getRecipeRow(id)
+  if (existing?.image_url && isManagedLocalImportImageUri(existing.image_url)) {
+    await removeImportByUri(existing.image_url)
+  }
   await runSqlAsync('DELETE FROM local_recipes WHERE id = ?;', [id])
   await deleteRecipePdfAttachmentsForRecipe(id)
 }
