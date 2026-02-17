@@ -268,8 +268,8 @@ const styles = createThemedStyles((theme) => ({
   },
   supportTitle: {
     fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize['2xl'],
-    lineHeight: theme.lineHeight['2xl'],
+    fontSize: theme.fontSize.xxl,
+    lineHeight: theme.lineHeight.xxl,
     color: theme.colors.foreground,
     textAlign: 'center',
   },
@@ -292,8 +292,8 @@ const styles = createThemedStyles((theme) => ({
   },
   supportButtonText: {
     fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize['2xl'],
-    lineHeight: theme.lineHeight['2xl'],
+    fontSize: theme.fontSize.xxl,
+    lineHeight: theme.lineHeight.xxl,
     color: theme.colors.primaryForeground,
   },
 }))
