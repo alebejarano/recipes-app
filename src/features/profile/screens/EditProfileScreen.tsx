@@ -5,11 +5,8 @@ import { Alert, Pressable, Text, TextInput, View } from 'react-native'
 
 import Screen from '@/components/Screen'
 import { useAuth } from '@/features/auth/context/AuthContext'
+import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import { createThemedStyles } from '@/styles/createStyles'
-
-function isValidEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-}
 
 export default function EditProfileScreen() {
   const { user, updateEmailAddress, updateProfileName } = useAuth()
@@ -28,7 +25,7 @@ export default function EditProfileScreen() {
 
   const onSave = async () => {
     const trimmedName = name.trim()
-    const normalizedEmail = email.trim().toLowerCase()
+    const normalizedEmail = normalizeEmail(email)
 
     if (!trimmedName) {
       Alert.alert('Name required', 'Please enter your name.')
@@ -44,7 +41,7 @@ export default function EditProfileScreen() {
     }
 
     const nameChanged = trimmedName !== initialName
-    const emailChanged = normalizedEmail !== initialEmail.trim().toLowerCase()
+    const emailChanged = normalizedEmail !== normalizeEmail(initialEmail)
     if (!nameChanged && !emailChanged) {
       router.replace(profileRoute)
       return

@@ -8,6 +8,7 @@ import { AnalyticsConsentProvider, useAnalyticsConsent } from '@/features/analyt
 import { AuthProvider } from '@/features/auth/context/AuthContext'
 import { OnboardingProvider } from '@/features/onboarding/context/OnboardingContext'
 import { ensureRecipePdfStorageReady } from '@/features/recipes/storage/recipePdfStorage'
+import RecipeSyncBootstrap from '@/features/recipes/sync/RecipeSyncBootstrap'
 import { StorageStrategyProvider } from '@/features/storage/context/StorageStrategyContext'
 import { SubscriptionProvider } from '@/features/subscription/context/SubscriptionContext'
 import { runLocalMigrations } from '@/lib/localMigrations'
@@ -42,6 +43,7 @@ export default function RootLayout() {
       <AuthProvider>
         <SubscriptionProvider>
           <StorageStrategyProvider>
+            <RecipeSyncBootstrap />
             <OnboardingProvider>
               <Slot />
             </OnboardingProvider>

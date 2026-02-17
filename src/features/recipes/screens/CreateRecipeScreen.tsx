@@ -31,6 +31,7 @@ import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/ho
 import { uploadPremiumImport } from '@/features/recipes/api/importsRepo'
 import { useAddRecipeDocument } from '@/features/recipes/hooks/useRecipeDocuments'
 import { useStrategyCreateRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
+import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
 
 export type CreateRecipeVariant = 'onboarding' | 'app'
@@ -62,7 +63,9 @@ export default function CreateRecipeScreen({
   const insets = useSafeAreaInsets()
   const segments = useSegments()
   const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
-  const { shouldUseLocalData } = useStorageDataMode(routeMode)
+  const { shouldUseLocalData: baseLocalMode } = useStorageDataMode(routeMode)
+  const { cloudSyncEnabled } = useStorageStrategy()
+  const shouldUseLocalData = baseLocalMode || (routeMode === 'auth' && cloudSyncEnabled)
 
   const isOnboarding = variant === 'onboarding'
   const [entryMode, setEntryMode] = useState<CreateRecipeEntry | null>(

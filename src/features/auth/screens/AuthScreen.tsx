@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import Button from '@/components/Button'
 import OAuthButtons from '@/features/auth/components/OAuthButtons'
 import { useAuth } from '@/features/auth/context/AuthContext'
+import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import { createThemedStyles } from '@/styles/createStyles'
 
 export type AuthMode = 'login' | 'register'
@@ -46,7 +47,9 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
   const isLogin = mode === 'login'
 
   const canSubmit = useMemo(() => {
-    if (!email.trim()) return false
+    const normalizedEmail = normalizeEmail(email)
+    if (!normalizedEmail) return false
+    if (!isLogin && !isValidEmail(normalizedEmail)) return false
     if (!password) return false
     if (!isLogin) {
       if (!confirmPassword) return false
@@ -62,9 +65,15 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
   const handleSubmit = async () => {
     resetTransientState()
+    const normalizedEmail = normalizeEmail(email)
 
     // Basic client-side validation (keep it simple; Supabase will validate too)
-    if (!email.trim() || !password) return
+    if (!normalizedEmail || !password) return
+
+    if (!isLogin && !isValidEmail(normalizedEmail)) {
+      setError({ title: 'Invalid email', message: 'Please enter a valid email address.' })
+      return
+    }
 
     if (!isLogin && !confirmPassword) {
       setError({ title: 'Missing field', message: 'Please confirm your password.' })
@@ -80,7 +89,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
     try {
       if (isLogin) {
-        await login(email.trim(), password)
+        await login(normalizedEmail, password)
         // Do NOT hard-redirect here if you rely on layout guards.
         // But it is fine to route immediately for snappier UX.
         router.replace('/(auth)/(tabs)')
@@ -88,7 +97,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
       }
 
       // Register
-      const data = await register(email.trim(), password)
+      const data = await register(normalizedEmail, password)
 
       // If email confirmations are enabled, session may be null.
       if (!data.session) {

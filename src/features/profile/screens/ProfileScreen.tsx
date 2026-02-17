@@ -132,7 +132,17 @@ export default function ProfileScreen() {
 
       <SettingsSection title="Account" items={accountItems} />
 
-      <SettingsSection title="Support" items={SUPPORT_ITEMS} />
+      <SettingsSection
+        title="Support"
+        items={SUPPORT_ITEMS.map((item) =>
+          item.id === 'help'
+            ? {
+                ...item,
+                onPress: () => router.push('/faq'),
+              }
+            : item
+        )}
+      />
     </Screen>
   )
 }

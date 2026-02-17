@@ -9,6 +9,7 @@ import {
   listLocalRecipes,
   updateLocalRecipe,
 } from '@/features/recipes/storage/localRecipesStorage'
+import { triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
 
 const LIST_KEY = ['recipes', 'local', 'list']
 type LocalRecipesListParams = {
@@ -37,6 +38,7 @@ export function useCreateLocalRecipe() {
     mutationFn: (values: RecipeFormSubmitValues) => createLocalRecipe(values),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: LIST_KEY })
+      void triggerRecipeSync()
     },
   })
 }
@@ -48,6 +50,7 @@ export function useUpdateLocalRecipe(id: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: LIST_KEY })
       qc.invalidateQueries({ queryKey: ['recipes', 'local', 'detail', id] })
+      void triggerRecipeSync()
     },
   })
 }
@@ -56,8 +59,10 @@ export function useDeleteLocalRecipe() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteLocalRecipe(id),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      qc.removeQueries({ queryKey: ['recipes', 'local', 'detail', id] })
       qc.invalidateQueries({ queryKey: LIST_KEY })
+      void triggerRecipeSync()
     },
   })
 }

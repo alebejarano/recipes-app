@@ -11,10 +11,6 @@ export default function PremiumRoute() {
   }
 
   const handleMaybeLater = () => {
-    if (router.canGoBack()) {
-      router.back()
-      return
-    }
     router.replace('/(dev)/(tabs)/profile')
   }
 

@@ -2,6 +2,7 @@ import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
 import { getAllAsync, getFirstAsync, runSqlAsync } from '@/lib/sqlite'
 import { File } from 'expo-file-system'
 
+import type { Recipe } from '@/features/recipes/api/recipesRepo'
 import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
 import { deleteRecipePdfAttachmentsForRecipe } from '@/features/recipes/storage/recipePdfStorage'
 import {
@@ -47,6 +48,24 @@ type LocalRecipeRow = {
   dirty: number
   version: number
   last_synced_at: string | null
+}
+
+export type LocalRecipeSyncRow = {
+  id: string
+  ownerUserId: string | null
+  cloudId: string | null
+  title: string
+  subtitle: string | null
+  description: string | null
+  emoji: string | null
+  imageUrl: string | null
+  stepsText: string | null
+  ingredientsJson: string
+  foldersJson: string
+  prepTimeMinutes: number | null
+  cookTimeMinutes: number | null
+  servings: number | null
+  deletedAt: string | null
 }
 
 export type LocalRecipe = {
@@ -193,24 +212,28 @@ async function listRecipeRows(params?: LocalRecipeListParams): Promise<LocalReci
   if (search) {
     return getAllAsync<LocalRecipeRow>(
       `SELECT * FROM local_recipes
-       WHERE title LIKE ? COLLATE NOCASE
+       WHERE deleted_at IS NULL
+         AND (
+              title LIKE ? COLLATE NOCASE
           OR subtitle LIKE ? COLLATE NOCASE
           OR description LIKE ? COLLATE NOCASE
+         )
        ORDER BY updated_at DESC
        LIMIT ?;`,
       [`%${search}%`, `%${search}%`, `%${search}%`, limit]
     )
   }
   return getAllAsync<LocalRecipeRow>(
-    'SELECT * FROM local_recipes ORDER BY created_at DESC LIMIT ?;',
+    'SELECT * FROM local_recipes WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT ?;',
     [limit]
   )
 }
 
-async function getRecipeRow(id: string): Promise<LocalRecipeRow | null> {
+async function getRecipeRow(id: string, includeDeleted = false): Promise<LocalRecipeRow | null> {
   await ensureLocalSqliteMigrationReady()
+  const deletedFilter = includeDeleted ? '' : ' AND deleted_at IS NULL'
   return getFirstAsync<LocalRecipeRow>(
-    'SELECT * FROM local_recipes WHERE id = ? LIMIT 1;',
+    `SELECT * FROM local_recipes WHERE id = ?${deletedFilter} LIMIT 1;`,
     [id]
   )
 }
@@ -231,7 +254,7 @@ export async function createLocalRecipe(
   await ensureLocalSqliteMigrationReady()
 
   const countRow = await getFirstAsync<{ count: number }>(
-    'SELECT COUNT(*) as count FROM local_recipes;'
+    'SELECT COUNT(*) as count FROM local_recipes WHERE deleted_at IS NULL;'
   )
   if (Number(countRow?.count ?? 0) >= FREE_PLAN_MAX_RECIPES) {
     throw new Error(
@@ -374,10 +397,221 @@ export async function updateLocalRecipe(
 
 export async function deleteLocalRecipe(id: string): Promise<void> {
   await ensureLocalSqliteMigrationReady()
-  const existing = await getRecipeRow(id)
+  const existing = await getRecipeRow(id, true)
+  if (!existing) return
+
   if (existing?.image_url && isManagedLocalImportImageUri(existing.image_url)) {
     await removeImportByUri(existing.image_url)
   }
-  await runSqlAsync('DELETE FROM local_recipes WHERE id = ?;', [id])
+
+  const shouldSoftDeleteForSync = Boolean(existing.cloud_id || existing.owner_user_id)
+  if (shouldSoftDeleteForSync) {
+    const now = new Date().toISOString()
+    await runSqlAsync(
+      `UPDATE local_recipes
+        SET deleted_at = ?, updated_at = ?, dirty = ?, version = ?
+        WHERE id = ?;`,
+      [now, now, 1, (existing.version ?? 1) + 1, id]
+    )
+  } else {
+    await runSqlAsync('DELETE FROM local_recipes WHERE id = ?;', [id])
+  }
+
   await deleteRecipePdfAttachmentsForRecipe(id)
+}
+
+function toSyncRow(row: LocalRecipeRow): LocalRecipeSyncRow {
+  return {
+    id: row.id,
+    ownerUserId: row.owner_user_id ?? null,
+    cloudId: row.cloud_id ?? null,
+    title: row.title,
+    subtitle: row.subtitle ?? null,
+    description: row.description ?? null,
+    emoji: row.emoji ?? null,
+    imageUrl: row.image_url ?? null,
+    stepsText: row.steps_text ?? null,
+    ingredientsJson: row.ingredients_json,
+    foldersJson: row.folders_json,
+    prepTimeMinutes: row.prep_time_minutes ?? null,
+    cookTimeMinutes: row.cook_time_minutes ?? null,
+    servings: row.servings ?? null,
+    deletedAt: row.deleted_at ?? null,
+  }
+}
+
+export async function listDirtyLocalRecipeRowsForSync(limit = 100): Promise<LocalRecipeSyncRow[]> {
+  await ensureLocalSqliteMigrationReady()
+  const rows = await getAllAsync<LocalRecipeRow>(
+    `SELECT * FROM local_recipes
+      WHERE dirty = 1
+      ORDER BY updated_at ASC
+      LIMIT ?;`,
+    [limit]
+  )
+  return rows.map(toSyncRow)
+}
+
+export async function markLocalRecipeSynced(params: {
+  localId: string
+  ownerUserId: string
+  cloudId: string
+}) {
+  await ensureLocalSqliteMigrationReady()
+  const now = new Date().toISOString()
+  await runSqlAsync(
+    `UPDATE local_recipes
+      SET owner_user_id = ?, cloud_id = ?, dirty = ?, deleted_at = ?, last_synced_at = ?, updated_at = ?
+      WHERE id = ?;`,
+    [params.ownerUserId, params.cloudId, 0, null, now, now, params.localId]
+  )
+}
+
+function serializeCloudIngredients(recipe: Recipe): string {
+  return JSON.stringify(
+    (recipe.ingredients ?? []).map((ingredient, index) => ({
+      id: ingredient.id || `${recipe.id}_ingredient_${index + 1}`,
+      name: ingredient.name ?? '',
+      quantity: ingredient.quantity ?? null,
+      unit: ingredient.unit ?? null,
+      notes: ingredient.notes ?? null,
+      position: ingredient.position ?? index + 1,
+    }))
+  )
+}
+
+function serializeCloudFolders(recipe: Recipe): string {
+  return JSON.stringify(
+    (recipe.folders ?? []).map((folder) => ({
+      id: folder.id,
+      name: folder.name,
+      emoji: folder.emoji ?? '📁',
+    }))
+  )
+}
+
+export async function mergeCloudRecipesIntoLocal(params: {
+  ownerUserId: string
+  cloudRecipes: Recipe[]
+}) {
+  await ensureLocalSqliteMigrationReady()
+
+  const ownerUserId = params.ownerUserId.trim()
+  if (!ownerUserId) return
+
+  const cloudRecipes = params.cloudRecipes
+  const now = new Date().toISOString()
+  const cloudIds = new Set(cloudRecipes.map((recipe) => recipe.id))
+  const existingRows = await getAllAsync<LocalRecipeRow>(
+    'SELECT * FROM local_recipes WHERE owner_user_id = ? OR owner_user_id IS NULL;',
+    [ownerUserId]
+  )
+
+  const byCloudId = new Map<string, LocalRecipeRow>()
+  for (const row of existingRows) {
+    if (row.cloud_id) {
+      byCloudId.set(row.cloud_id, row)
+    }
+  }
+
+  for (const cloudRecipe of cloudRecipes) {
+    const existing = byCloudId.get(cloudRecipe.id)
+    if (existing) {
+      if (existing.dirty === 1) continue
+
+      await runSqlAsync(
+        `UPDATE local_recipes
+          SET
+            title = ?,
+            subtitle = ?,
+            description = ?,
+            emoji = ?,
+            image_url = ?,
+            steps_text = ?,
+            ingredients_json = ?,
+            folders_json = ?,
+            prep_time_minutes = ?,
+            cook_time_minutes = ?,
+            servings = ?,
+            created_at = ?,
+            updated_at = ?,
+            deleted_at = ?,
+            owner_user_id = ?,
+            cloud_id = ?,
+            dirty = ?,
+            last_synced_at = ?
+          WHERE id = ?;`,
+        [
+          cloudRecipe.title,
+          cloudRecipe.subtitle ?? null,
+          cloudRecipe.description ?? null,
+          cloudRecipe.emoji ?? null,
+          cloudRecipe.imageUrl ?? null,
+          serializeSteps(cloudRecipe.steps),
+          serializeCloudIngredients(cloudRecipe),
+          serializeCloudFolders(cloudRecipe),
+          cloudRecipe.prepTimeMinutes ?? null,
+          cloudRecipe.cookTimeMinutes ?? null,
+          cloudRecipe.servings ?? null,
+          cloudRecipe.createdAt ?? now,
+          cloudRecipe.updatedAt ?? cloudRecipe.createdAt ?? now,
+          null,
+          ownerUserId,
+          cloudRecipe.id,
+          0,
+          now,
+          existing.id,
+        ]
+      )
+      continue
+    }
+
+    const localId = `cloud_${cloudRecipe.id}`
+    await runSqlAsync(
+      `INSERT INTO local_recipes
+        (
+          id, title, subtitle, description, emoji, image_url, steps_text,
+          ingredients_json, folders_json, prep_time_minutes, cook_time_minutes,
+          servings, created_at, updated_at, deleted_at, owner_user_id, cloud_id,
+          dirty, version, last_synced_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      [
+        localId,
+        cloudRecipe.title,
+        cloudRecipe.subtitle ?? null,
+        cloudRecipe.description ?? null,
+        cloudRecipe.emoji ?? null,
+        cloudRecipe.imageUrl ?? null,
+        serializeSteps(cloudRecipe.steps),
+        serializeCloudIngredients(cloudRecipe),
+        serializeCloudFolders(cloudRecipe),
+        cloudRecipe.prepTimeMinutes ?? null,
+        cloudRecipe.cookTimeMinutes ?? null,
+        cloudRecipe.servings ?? null,
+        cloudRecipe.createdAt ?? now,
+        cloudRecipe.updatedAt ?? cloudRecipe.createdAt ?? now,
+        null,
+        ownerUserId,
+        cloudRecipe.id,
+        0,
+        1,
+        now,
+      ]
+    )
+  }
+
+  for (const existing of existingRows) {
+    if (!existing.cloud_id) continue
+    if (existing.dirty === 1) continue
+    if (!cloudIds.has(existing.cloud_id)) {
+      await runSqlAsync('DELETE FROM local_recipes WHERE id = ?;', [existing.id])
+      await deleteRecipePdfAttachmentsForRecipe(existing.id)
+    }
+  }
+}
+
+export async function purgeLocalRecipeRow(localId: string) {
+  await ensureLocalSqliteMigrationReady()
+  await runSqlAsync('DELETE FROM local_recipes WHERE id = ?;', [localId])
 }

@@ -27,6 +27,7 @@ import { useCreateCloudFolder } from '@/features/folders/hooks/useCreateCloudFol
 import { useCloudFoldersList } from '@/features/folders/hooks/useCloudFoldersList'
 import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
 import { useStrategyRecipe, useStrategyUpdateRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
+import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
 import { getSafeReturnTo } from '@/lib/navigation'
 
@@ -67,7 +68,9 @@ export default function EditRecipeScreen() {
   const insets = useSafeAreaInsets()
   const segments = useSegments()
   const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
-  const { shouldUseLocalData } = useStorageDataMode(routeMode)
+  const { shouldUseLocalData: baseLocalMode } = useStorageDataMode(routeMode)
+  const { cloudSyncEnabled } = useStorageStrategy()
+  const shouldUseLocalData = baseLocalMode || (routeMode === 'auth' && cloudSyncEnabled)
 
   const recipeQuery = useStrategyRecipe(recipeId, routeMode)
   const recipe = recipeQuery.data

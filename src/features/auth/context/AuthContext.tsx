@@ -5,6 +5,7 @@ import type { AuthResponse, Session, User } from '@supabase/supabase-js'
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { usePostHog } from 'posthog-react-native'
 import { tagLocalDataAsMigratable } from '@/features/storage/localAccountLinking'
+import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 
 type AuthContextValue = {
   session: Session | null
@@ -106,7 +107,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * - If data.session exists, user is signed in -> redirect to app
    */
   const register = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    const normalized = normalizeEmail(email)
+    if (!normalized) throw new Error('Email is required')
+    if (!isValidEmail(normalized)) throw new Error('Please enter a valid email address.')
+
+    const { data, error } = await supabase.auth.signUp({ email: normalized, password })
     if (error) throw error
     return data
   }
@@ -126,47 +131,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const updateEmailAddress = useCallback(async (email: string) => {
-    const normalized = email.trim().toLowerCase()
+    const normalized = normalizeEmail(email)
     if (!normalized) throw new Error('Email is required')
-    const currentEmail = session?.user?.email?.trim().toLowerCase() ?? null
+    if (!isValidEmail(normalized)) throw new Error('Please enter a valid email address.')
 
     const { data, error } = await supabase.auth.updateUser({
       email: normalized,
     })
 
-    const pendingEmail = data.user?.new_email?.trim().toLowerCase() ?? null
+    const pendingEmail = normalizeEmail(data.user?.new_email ?? '')
     const isRequestedEmailPending = pendingEmail === normalized
-    const errorMessage = error?.message ?? ''
-    const isOldEmailValidationError =
-      !!currentEmail &&
-      normalized !== currentEmail &&
-      errorMessage.includes(`"${currentEmail}"`) &&
-      /invalid/i.test(errorMessage)
-
-    // Supabase can report an error while still queueing the email-change confirmation.
-    if (error && !isRequestedEmailPending && !isOldEmailValidationError) throw error
+    if (error) throw error
 
     if (data.user) {
       setSession((prev) => (prev ? { ...prev, user: data.user } : prev))
-    } else if (isOldEmailValidationError) {
-      // Keep UI in sync when Supabase accepted the new email request but failed notifying old email.
-      setSession((prev) =>
-        prev
-          ? {
-              ...prev,
-              user: {
-                ...prev.user,
-                new_email: normalized,
-              },
-            }
-          : prev
-      )
     }
 
     return {
-      pendingEmail: isRequestedEmailPending || isOldEmailValidationError ? normalized : null,
+      pendingEmail: isRequestedEmailPending ? normalized : null,
     }
-  }, [session?.user?.email])
+  }, [])
 
   const logout = async () => {
     const { error } = await supabase.auth.signOut()

@@ -251,7 +251,7 @@ const styles = createThemedStyles((theme) => ({
   billingToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.muted,
+    backgroundColor: theme.colors.creamDark,
     borderRadius: theme.radii.xxl,
     padding: theme.spacing.xxs,
     marginBottom: theme.spacing.lg,
@@ -285,7 +285,7 @@ const styles = createThemedStyles((theme) => ({
     flexDirection: 'row',
     alignItems: 'flex-end',
     borderRadius: theme.radii.xxl,
-    backgroundColor: theme.colors.muted,
+    backgroundColor: theme.colors.creamDark,
     paddingVertical: theme.spacing.md,
     paddingHorizontal: theme.spacing.xl,
   },

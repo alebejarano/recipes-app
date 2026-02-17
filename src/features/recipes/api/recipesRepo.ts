@@ -322,7 +322,7 @@ export async function getRecipeById(id: string): Promise<Recipe> {
   if (error) throw error
   if (!data) throw new Error('Recipe not found')
 
-  return getRecipeById(id)
+  return mapRecipe(data as RecipeRow)
 }
 
 /**
@@ -352,6 +352,14 @@ export async function listRecipes(params?: {
       servings,
       created_at,
       updated_at,
+      recipe_ingredients:recipe_ingredients (
+        id,
+        name,
+        quantity,
+        unit,
+        notes,
+        position
+      ),
       recipe_folders:recipe_folders (
         folder:folders (
           id,
