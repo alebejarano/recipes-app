@@ -2,17 +2,17 @@
 import { fetch } from 'expo/fetch'
 import { supabase } from '@/lib/supabase'
 import {
-  FREE_PLAN_MAX_IMPORT_FILE_BYTES,
   IMPORT_ALLOWED_IMAGE_MIME_TYPES,
-  IMPORT_FILE_TOO_LARGE_MESSAGE,
+  RECIPE_IMAGE_MASTER_MAX_FILE_BYTES,
+  RECIPE_IMAGE_MASTER_TOO_LARGE_MESSAGE,
 } from '@/features/subscription/constants/limits'
 import type { RecipeFormSubmitValues } from '../components/RecipeForm'
 
 const REQUEST_TIMEOUT_MS = 10000
 
-function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+function withTimeout<T>(promiseLike: PromiseLike<T>, ms: number, message: string): Promise<T> {
   return Promise.race([
-    promise,
+    Promise.resolve(promiseLike),
     new Promise<T>((_, reject) => {
       setTimeout(() => reject(new Error(message)), ms)
     }),
@@ -91,7 +91,7 @@ type RecipeIngredientRow = {
 }
 
 type RecipeFolderJoinRow = {
-  folder: RecipeFolderRow | null
+  folder: RecipeFolderRow | RecipeFolderRow[] | null
 }
 
 type RecipeFolderRow = {
@@ -117,7 +117,11 @@ function mapIngredients(rows: RecipeIngredientRow[] | null | undefined): RecipeI
 function mapFolders(rows: RecipeFolderJoinRow[] | null | undefined): RecipeFolder[] {
   if (!rows || rows.length === 0) return []
   return rows
-    .map((row) => row.folder)
+    .map((row) => {
+      const folder = row.folder
+      if (Array.isArray(folder)) return folder[0] ?? null
+      return folder
+    })
     .filter((folder): folder is RecipeFolderRow => Boolean(folder))
     .map((folder) => ({
       id: folder.id,
@@ -188,8 +192,8 @@ export async function uploadRecipeImage(input: UploadRecipeImageInput): Promise<
   if (!ALLOWED_IMAGE_MIME_TYPES.has(normalizedMimeType)) {
     throw new Error('Unsupported file type. Use JPG or PNG.')
   }
-  if (bytes.byteLength > FREE_PLAN_MAX_IMPORT_FILE_BYTES) {
-    throw new Error(IMPORT_FILE_TOO_LARGE_MESSAGE)
+  if (bytes.byteLength > RECIPE_IMAGE_MASTER_MAX_FILE_BYTES) {
+    throw new Error(RECIPE_IMAGE_MASTER_TOO_LARGE_MESSAGE)
   }
 
   const { error: uploadError } = await supabase.storage

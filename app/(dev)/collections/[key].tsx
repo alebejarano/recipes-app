@@ -12,10 +12,11 @@ import {
   TextInput,
   View,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
-import RecipeRow from '@/features/recipes/components/RecipeRow'
 import { useStrategyDeleteFolder, useStrategyFoldersList, useStrategyUpdateFolder } from '@/features/folders/hooks/useStrategyFolders'
+import RecipeRow from '@/features/recipes/components/RecipeRow'
 import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { createThemedStyles } from '@/styles/createStyles'
@@ -130,7 +131,7 @@ export default function CollectionDetailScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Button
           variant="ghost"
@@ -287,7 +288,7 @@ export default function CollectionDetailScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   )
 }
 
@@ -311,12 +312,13 @@ const styles = createThemedStyles(theme => ({
 
   backText: {
     fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.lg,
     color: theme.colors.mutedForeground,
   },
 
   backIcon: {
     color: theme.colors.mutedForeground,
+    fontSize: theme.fontSize.lg,
   },
 
   titleRow: {

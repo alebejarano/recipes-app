@@ -48,3 +48,4 @@ app-example
 .env
 
 env-ex.ts
+supabase/.temp/

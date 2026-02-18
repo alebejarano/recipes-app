@@ -110,10 +110,6 @@ export default function ProfileScreen() {
     <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
       <ProfileHeader
         title="Account"
-        subtitle={accountPlan === 'premium' ? 'Premium plan' : 'Free plan, local-first'}
-        onPressSettings={() => {
-          // TODO later
-        }}
       />
 
       <ProfileUserCard

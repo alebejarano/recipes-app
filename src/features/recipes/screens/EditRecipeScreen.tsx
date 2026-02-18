@@ -17,15 +17,14 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import Button from '@/components/Button'
 import { createThemedStyles } from '@/styles/createStyles'
 
+import { useCloudFoldersList } from '@/features/folders/hooks/useCloudFoldersList'
+import { useCreateCloudFolder } from '@/features/folders/hooks/useCreateCloudFolder'
+import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
 import RecipeForm, {
   type RecipeFormHandle,
   type RecipeFormSubmitValues,
   type RecipeFormValues,
 } from '@/features/recipes/components/RecipeForm'
-import type { Recipe } from '@/features/recipes/api/recipesRepo'
-import { useCreateCloudFolder } from '@/features/folders/hooks/useCreateCloudFolder'
-import { useCloudFoldersList } from '@/features/folders/hooks/useCloudFoldersList'
-import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
 import { useStrategyRecipe, useStrategyUpdateRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
@@ -33,7 +32,21 @@ import { getSafeReturnTo } from '@/lib/navigation'
 
 const FOOTER_HEIGHT = 72
 
-function buildInitialValues(recipe: Recipe): RecipeFormValues {
+type RecipeFormSeed = {
+  title: string
+  subtitle: string | null
+  description: string | null
+  emoji: string | null
+  imageUrl: string | null
+  prepTimeMinutes: number | null
+  cookTimeMinutes: number | null
+  servings: number | null
+  ingredients: { name: string }[]
+  steps: string[]
+  folders: { name: string }[]
+}
+
+function buildInitialValues(recipe: RecipeFormSeed): RecipeFormValues {
   return {
     title: recipe.title ?? '',
     subtitle: recipe.subtitle ?? '',
@@ -265,10 +278,10 @@ const styles = createThemedStyles((theme) => ({
   backButton: { paddingHorizontal: 0, alignSelf: 'flex-start' },
   backText: {
     fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.lg,
     color: theme.colors.mutedForeground,
   },
-  backIcon: { color: theme.colors.mutedForeground },
+  backIcon: { color: theme.colors.mutedForeground, fontSize: theme.fontSize.lg, },
 
   scrollContent: { paddingHorizontal: theme.spacing.lg },
 

@@ -16,19 +16,19 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import Button from '@/components/Button'
 import { createThemedStyles } from '@/styles/createStyles'
 
+import { useCloudFoldersList } from '@/features/folders/hooks/useCloudFoldersList'
+import { useCreateCloudFolder } from '@/features/folders/hooks/useCreateCloudFolder'
+import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
+import { uploadPremiumImport } from '@/features/recipes/api/importsRepo'
+import RecipeDocumentForm, {
+  type RecipeDocumentFormHandle,
+  type RecipeDocumentFormValues,
+} from '@/features/recipes/components/RecipeDocumentForm'
 import RecipeForm, {
   createEmptyRecipeFormValues,
   type RecipeFormHandle,
   type RecipeFormSubmitValues,
 } from '@/features/recipes/components/RecipeForm'
-import RecipeDocumentForm, {
-  type RecipeDocumentFormHandle,
-  type RecipeDocumentFormValues,
-} from '@/features/recipes/components/RecipeDocumentForm'
-import { useCreateCloudFolder } from '@/features/folders/hooks/useCreateCloudFolder'
-import { useCloudFoldersList } from '@/features/folders/hooks/useCloudFoldersList'
-import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
-import { uploadPremiumImport } from '@/features/recipes/api/importsRepo'
 import { useAddRecipeDocument } from '@/features/recipes/hooks/useRecipeDocuments'
 import { useStrategyCreateRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
@@ -347,10 +347,10 @@ const styles = createThemedStyles((theme) => ({
   backButton: { paddingHorizontal: 0, alignSelf: 'flex-start' },
   backText: {
     fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.lg,
     color: theme.colors.mutedForeground,
   },
-  backIcon: { color: theme.colors.mutedForeground },
+  backIcon: { color: theme.colors.mutedForeground, fontSize: theme.fontSize.lg, },
 
   scrollContent: { paddingHorizontal: theme.spacing.lg },
 

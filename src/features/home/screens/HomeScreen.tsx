@@ -1,5 +1,6 @@
 import { Feather, Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Image as ExpoImage } from 'expo-image';
 import { router, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -209,6 +210,15 @@ export default function HomeScreen({
     },
     [recipesQuery.data]
   );
+
+  useEffect(() => {
+    const imageUrls = recipes
+      .map((recipe) => recipe.imageUrl?.trim())
+      .filter((url): url is string => Boolean(url))
+      .slice(0, 24);
+    if (!imageUrls.length) return;
+    void ExpoImage.prefetch(imageUrls);
+  }, [recipes]);
 
   const recipeCollections = useMemo(() => {
     const items = buildCollectionsForSegment(

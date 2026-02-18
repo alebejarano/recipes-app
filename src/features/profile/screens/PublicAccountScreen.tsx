@@ -75,10 +75,6 @@ export default function PublicAccountScreen() {
     <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
       <ProfileHeader
         title="Account"
-        subtitle="No account, local only"
-        onPressSettings={() => {
-          // TODO later
-        }}
       />
 
       <ProfileUserCard name="Guest" email="Not signed in" />

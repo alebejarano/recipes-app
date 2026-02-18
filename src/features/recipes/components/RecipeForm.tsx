@@ -1,5 +1,6 @@
 // src/features/recipes/components/RecipeForm.tsx
 import { Feather } from '@expo/vector-icons'
+import { Image } from 'expo-image'
 import { File } from 'expo-file-system'
 import * as ImagePicker from 'expo-image-picker'
 import React, {
@@ -13,7 +14,6 @@ import React, {
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Modal,
   Pressable,
   Text,
@@ -33,6 +33,10 @@ import {
   FREE_PLAN_MAX_IMPORT_FILE_BYTES,
   FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
   IMPORT_FILE_TOO_LARGE_MESSAGE,
+  RECIPE_IMAGE_MASTER_COMPRESS_QUALITY,
+  RECIPE_IMAGE_MASTER_MAX_DIMENSION_PX,
+  RECIPE_IMAGE_MASTER_MAX_FILE_BYTES,
+  RECIPE_IMAGE_MASTER_TOO_LARGE_MESSAGE,
 } from '@/features/subscription/constants/limits'
 import { createThemedStyles } from '@/styles/createStyles'
 
@@ -110,6 +114,93 @@ type Props = {
   showActions?: boolean
   suggestedFolders?: FolderSuggestion[]
   imageUploadMode?: 'cloud' | 'local'
+}
+
+const IMAGE_QUALITY_STEPS = [
+  RECIPE_IMAGE_MASTER_COMPRESS_QUALITY,
+  0.72,
+  0.66,
+]
+
+type ImageManipulatorModule = {
+  SaveFormat: {
+    JPEG: string
+  }
+  manipulateAsync: (
+    uri: string,
+    actions: { resize: { width?: number; height?: number } }[],
+    saveOptions: { compress: number; format: string }
+  ) => Promise<{ uri: string }>
+}
+
+type OptimizedImageAsset = {
+  uri: string
+  fileName: string
+  mimeType: string
+  fileSize: number
+}
+
+function getOptimizedFileName(fileName?: string | null): string {
+  const base = (fileName?.trim() || `recipe-${Date.now()}`).replace(/\.[^/.]+$/, '')
+  return `${base}.jpg`
+}
+
+function getResizeAction(asset: ImagePicker.ImagePickerAsset) {
+  const width = asset.width ?? 0
+  const height = asset.height ?? 0
+  if (!width || !height) return []
+  const longestSide = Math.max(width, height)
+  if (longestSide <= RECIPE_IMAGE_MASTER_MAX_DIMENSION_PX) return []
+
+  if (width >= height) {
+    return [{ resize: { width: RECIPE_IMAGE_MASTER_MAX_DIMENSION_PX } }]
+  }
+  return [{ resize: { height: RECIPE_IMAGE_MASTER_MAX_DIMENSION_PX } }]
+}
+
+async function getFileSizeBytes(uri: string): Promise<number> {
+  try {
+    const info = await new File(uri).info()
+    if (info.exists && 'size' in info && typeof info.size === 'number') return info.size
+  } catch {
+    // Ignore info lookup errors and return 0 as unknown size.
+  }
+  return 0
+}
+
+function loadImageManipulatorModule(): ImageManipulatorModule {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const module = require('expo-image-manipulator') as ImageManipulatorModule
+  if (!module?.manipulateAsync || !module?.SaveFormat?.JPEG) {
+    throw new Error('Image optimizer is not available on this build.')
+  }
+  return module
+}
+
+async function optimizeRecipeImageAsset(
+  asset: ImagePicker.ImagePickerAsset
+): Promise<OptimizedImageAsset> {
+  const imageManipulator = loadImageManipulatorModule()
+  const actions = getResizeAction(asset)
+  const fileName = getOptimizedFileName(asset.fileName)
+
+  for (const quality of IMAGE_QUALITY_STEPS) {
+    const result = await imageManipulator.manipulateAsync(asset.uri, actions, {
+      compress: quality,
+      format: imageManipulator.SaveFormat.JPEG,
+    })
+    const size = await getFileSizeBytes(result.uri)
+    if (size > 0 && size <= RECIPE_IMAGE_MASTER_MAX_FILE_BYTES) {
+      return {
+        uri: result.uri,
+        fileName,
+        mimeType: 'image/jpeg',
+        fileSize: size,
+      }
+    }
+  }
+
+  throw new Error(RECIPE_IMAGE_MASTER_TOO_LARGE_MESSAGE)
 }
 
 const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
@@ -381,12 +472,13 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     async (asset: ImagePicker.ImagePickerAsset) => {
       try {
         setIsUploadingImage(true)
-        let url = asset.uri
+        const optimized = await optimizeRecipeImageAsset(asset)
+        let url = optimized.uri
         if (imageUploadMode === 'local') {
-          let size = typeof asset.fileSize === 'number' ? asset.fileSize : 0
+          let size = optimized.fileSize
           if (!size) {
             try {
-              const info = await new File(asset.uri).info()
+              const info = await new File(optimized.uri).info()
               size = info.exists && 'size' in info && typeof info.size === 'number' ? info.size : 0
             } catch {
               size = 0
@@ -410,9 +502,9 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
           }
         } else {
           url = await uploadRecipeImage({
-            uri: asset.uri,
-            fileName: asset.fileName ?? null,
-            mimeType: asset.mimeType ?? null,
+            uri: optimized.uri,
+            fileName: optimized.fileName,
+            mimeType: optimized.mimeType,
           })
         }
 
@@ -492,7 +584,12 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
           accessibilityLabel="Add emoji or photo"
         >
           {values.imageUrl ? (
-            <Image source={{ uri: values.imageUrl }} style={styles.coverImage} />
+            <Image
+              source={{ uri: values.imageUrl }}
+              style={styles.coverImage}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+            />
           ) : values.emoji ? (
             <Text style={styles.coverEmoji}>{values.emoji}</Text>
           ) : (

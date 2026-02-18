@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import React from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { createThemedStyles } from '@/styles/createStyles';
 import { theme } from '@/styles/theme';
@@ -35,7 +36,12 @@ export default function PickCard({
         {hasMedia ? (
           <View style={styles.iconCircle}>
             {imageUrl ? (
-              <Image source={{ uri: imageUrl }} style={styles.image} />
+              <Image
+                source={{ uri: imageUrl }}
+                style={styles.image}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+              />
             ) : (
               <Text style={styles.emoji}>{emoji}</Text>
             )}

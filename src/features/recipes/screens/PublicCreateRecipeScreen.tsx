@@ -15,15 +15,15 @@ import Button from '@/components/Button'
 import { createThemedStyles } from '@/styles/createStyles'
 
 import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
+import RecipeDocumentForm, {
+  type RecipeDocumentFormHandle,
+  type RecipeDocumentFormValues,
+} from '@/features/recipes/components/RecipeDocumentForm'
 import RecipeForm, {
   createEmptyRecipeFormValues,
   type RecipeFormHandle,
   type RecipeFormSubmitValues,
 } from '@/features/recipes/components/RecipeForm'
-import RecipeDocumentForm, {
-  type RecipeDocumentFormHandle,
-  type RecipeDocumentFormValues,
-} from '@/features/recipes/components/RecipeDocumentForm'
 import { useCreateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
 import { useAddRecipeDocument } from '@/features/recipes/hooks/useRecipeDocuments'
 import type { CreateRecipeEntry } from '@/features/recipes/screens/CreateRecipeScreen'
@@ -291,10 +291,10 @@ const styles = createThemedStyles((theme) => ({
   backButton: { paddingHorizontal: 0, alignSelf: 'flex-start' },
   backText: {
     fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.lg,
     color: theme.colors.mutedForeground,
   },
-  backIcon: { color: theme.colors.mutedForeground },
+  backIcon: { color: theme.colors.mutedForeground, fontSize: theme.fontSize.lg, },
 
   scrollContent: { paddingHorizontal: theme.spacing.lg },
 

@@ -1,12 +1,13 @@
 // src/features/recipes/screens/RecipeDetailScreen.tsx
 
-import { Feather } from '@expo/vector-icons'
+import { Feather, Ionicons } from '@expo/vector-icons'
+import { Image } from 'expo-image'
 import { router, useLocalSearchParams, useSegments } from 'expo-router'
 import React, { useMemo } from 'react'
 import {
   ActivityIndicator,
   Alert,
-  Image,
+  Share,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -16,13 +17,58 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { createThemedStyles } from '@/styles/createStyles'
 
-import { useStrategyDeleteRecipe, useStrategyRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
+import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
+import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
+import {
+  useStrategyDeleteRecipe,
+  useStrategyRecipe,
+  useStrategyUpdateRecipe,
+} from '@/features/recipes/hooks/useStrategyRecipes'
+import { buildRecipeShareText, shareRecipeAsTextFile } from '@/features/recipes/utils/shareRecipe'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 const FALLBACK_FOLDERS: string[] = []
+const FAVORITES_FOLDER_NAME = 'Favorites'
 
 type RecipeDetailScreenProps = {
   recipeId: string
+}
+
+type FavoriteToggleRecipe = {
+  title: string
+  subtitle: string | null
+  description: string | null
+  emoji: string | null
+  imageUrl: string | null
+  prepTimeMinutes: number | null
+  cookTimeMinutes: number | null
+  servings: number | null
+  ingredients: { name: string }[]
+  steps: string[]
+  folders: { name: string }[]
+}
+
+function isFavoritesFolder(name: string) {
+  return name.trim().toLowerCase() === FAVORITES_FOLDER_NAME.toLowerCase()
+}
+
+function buildFavoriteTogglePayload(
+  recipe: FavoriteToggleRecipe,
+  nextFolderNames: string[]
+): RecipeFormSubmitValues {
+  return {
+    title: recipe.title,
+    subtitle: recipe.subtitle ?? null,
+    description: recipe.description ?? null,
+    emoji: recipe.emoji ?? null,
+    imageUrl: recipe.imageUrl ?? null,
+    prepTimeMinutes: recipe.prepTimeMinutes ?? null,
+    cookTimeMinutes: recipe.cookTimeMinutes ?? null,
+    servings: recipe.servings ?? null,
+    ingredients: recipe.ingredients.map((item) => item.name).filter(Boolean),
+    steps: recipe.steps.filter(Boolean),
+    folders: nextFolderNames.length ? nextFolderNames : null,
+  }
 }
 
 function buildIngredientLines(ingredients: { name: string }[] | undefined): string[] {
@@ -38,6 +84,9 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
   const segments = useSegments()
   const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
   const deleteMutation = useStrategyDeleteRecipe(routeMode)
+  const updateMutation = useStrategyUpdateRecipe(recipeId, routeMode)
+  const foldersQuery = useStrategyFoldersList(routeMode)
+  const createFolderMutation = useStrategyCreateFolder(routeMode)
   const recipeQuery = useStrategyRecipe(recipeId, routeMode)
   const recipe = recipeQuery.data
   const isLoading = recipeQuery.isLoading
@@ -52,6 +101,14 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
   const folders = useMemo(
     () => recipe?.folders?.map((folder) => folder.name) ?? FALLBACK_FOLDERS,
     [recipe?.folders]
+  )
+  const isFavorited = useMemo(
+    () => (recipe?.folders ?? []).some((folder) => isFavoritesFolder(folder.name)),
+    [recipe?.folders]
+  )
+  const favoritesFolderExists = useMemo(
+    () => (foldersQuery.data ?? []).some((folder) => isFavoritesFolder(folder.name)),
+    [foldersQuery.data]
   )
 
   const { editPath, detailPath } = useMemo(() => {
@@ -105,6 +162,86 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
       },
       { text: 'Cancel', style: 'cancel' },
     ])
+  }
+
+  const handleShareAsFile = async () => {
+    if (!recipe) return
+    try {
+      await shareRecipeAsTextFile({
+        title: recipe.title,
+        subtitle: recipe.subtitle,
+        description: recipe.description,
+        prepTimeMinutes: recipe.prepTimeMinutes,
+        cookTimeMinutes: recipe.cookTimeMinutes,
+        servings: recipe.servings,
+        ingredients: recipe.ingredients,
+        steps: recipe.steps,
+        folders: recipe.folders,
+      })
+    } catch (shareError: any) {
+      Alert.alert('Share failed', shareError?.message ?? 'Unable to share this recipe right now.')
+    }
+  }
+
+  const handleShareAsText = async () => {
+    if (!recipe) return
+    try {
+      await Share.share({
+        title: recipe.title,
+        message: buildRecipeShareText({
+          title: recipe.title,
+          subtitle: recipe.subtitle,
+          description: recipe.description,
+          prepTimeMinutes: recipe.prepTimeMinutes,
+          cookTimeMinutes: recipe.cookTimeMinutes,
+          servings: recipe.servings,
+          ingredients: recipe.ingredients,
+          steps: recipe.steps,
+          folders: recipe.folders,
+        }),
+      })
+    } catch (shareError: any) {
+      Alert.alert('Share failed', shareError?.message ?? 'Unable to share this recipe right now.')
+    }
+  }
+
+  const handleShare = () => {
+    Alert.alert('Share recipe', 'Choose how you want to share.', [
+      { text: 'Share as text', onPress: () => { void handleShareAsText() } },
+      { text: 'Share as file', onPress: () => { void handleShareAsFile() } },
+      { text: 'Cancel', style: 'cancel' },
+    ])
+  }
+
+  const handleToggleFavorite = async () => {
+    if (!recipe) return
+    const currentFolderNames = (recipe.folders ?? []).map((folder) => folder.name.trim()).filter(Boolean)
+    const withoutFavorites = currentFolderNames.filter((name) => !isFavoritesFolder(name))
+    const nextFolderNames = isFavorited
+      ? withoutFavorites
+      : [...withoutFavorites, FAVORITES_FOLDER_NAME]
+
+    try {
+      if (!isFavorited && !favoritesFolderExists) {
+        try {
+          await createFolderMutation.mutateAsync({
+            name: FAVORITES_FOLDER_NAME,
+            emoji: '❤️',
+          })
+        } catch (folderError: any) {
+          const code = folderError?.code ?? folderError?.cause?.code
+          if (code !== '23505') throw folderError
+        }
+      }
+      await updateMutation.mutateAsync(
+        buildFavoriteTogglePayload(recipe, nextFolderNames)
+      )
+    } catch (favoriteError: any) {
+      Alert.alert(
+        'Unable to update favorites',
+        favoriteError?.message ?? 'Please try again.'
+      )
+    }
   }
 
 
@@ -171,15 +308,20 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
 
           <View style={styles.topActions}>
             <TouchableOpacity
-              onPress={() => {}}
+              onPress={() => { void handleToggleFavorite() }}
               accessibilityRole="button"
-              accessibilityLabel="Save recipe"
+              accessibilityLabel={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
               style={styles.iconButton}
+              disabled={updateMutation.isPending || createFolderMutation.isPending}
             >
-              <Feather name="heart" size={18} style={styles.icon} />
+              <Ionicons
+                name={isFavorited ? 'heart' : 'heart-outline'}
+                size={18}
+                style={[styles.icon, isFavorited ? styles.iconFavorite : undefined]}
+              />
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => {}}
+              onPress={handleShare}
               accessibilityRole="button"
               accessibilityLabel="Share recipe"
               style={styles.iconButton}
@@ -204,7 +346,8 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
                 <Image
                   source={{ uri: recipe.imageUrl }}
                   style={styles.mediaImage}
-                  resizeMode="cover"
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
                   accessibilityLabel="Recipe thumbnail"
                 />
               ) : (
@@ -366,6 +509,9 @@ const styles = createThemedStyles((theme) => ({
   },
   icon: {
     color: theme.colors.mutedForeground,
+  },
+  iconFavorite: {
+    color: theme.colors.primary,
   },
   header: {
     gap: theme.spacing.sm,

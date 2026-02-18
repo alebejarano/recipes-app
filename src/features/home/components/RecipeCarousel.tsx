@@ -1,5 +1,6 @@
+import { Image } from 'expo-image';
 import React from 'react';
-import { Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { createThemedStyles } from '@/styles/createStyles';
 
@@ -60,7 +61,12 @@ export default function RecipeCarousel({
               {hasMedia ? (
                 <View style={styles.iconWrap}>
                   {r.imageUrl ? (
-                    <Image source={{ uri: r.imageUrl }} style={styles.image} />
+                    <Image
+                      source={{ uri: r.imageUrl }}
+                      style={styles.image}
+                      contentFit="cover"
+                      cachePolicy="memory-disk"
+                    />
                   ) : (
                     <Text style={styles.emoji}>{r.emoji}</Text>
                   )}

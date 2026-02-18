@@ -287,10 +287,10 @@ const styles = createThemedStyles((theme) => ({
   backButton: { paddingHorizontal: 0 },
   backText: {
     fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.lg,
     color: theme.colors.mutedForeground,
   },
-  backIcon: { color: theme.colors.mutedForeground },
+  backIcon: { color: theme.colors.mutedForeground, fontSize: theme.fontSize.lg, },
   deleteButton: { paddingHorizontal: 0 },
   deleteText: {
     fontFamily: theme.fontFamily.medium,

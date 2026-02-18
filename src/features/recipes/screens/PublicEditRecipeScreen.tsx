@@ -15,12 +15,12 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import Button from '@/components/Button'
 import { createThemedStyles } from '@/styles/createStyles'
 
+import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
 import RecipeForm, {
   type RecipeFormHandle,
   type RecipeFormSubmitValues,
   type RecipeFormValues,
 } from '@/features/recipes/components/RecipeForm'
-import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
 import { useLocalRecipe, useUpdateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
 import { getSafeReturnTo } from '@/lib/navigation'
 
@@ -264,10 +264,10 @@ const styles = createThemedStyles((theme) => ({
   backButton: { paddingHorizontal: 0, alignSelf: 'flex-start' },
   backText: {
     fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.lg,
     color: theme.colors.mutedForeground,
   },
-  backIcon: { color: theme.colors.mutedForeground },
+  backIcon: { color: theme.colors.mutedForeground, fontSize: theme.fontSize.lg, },
 
   scrollContent: { paddingHorizontal: theme.spacing.lg },
 

@@ -13,7 +13,7 @@ const LIST_KEY = ['folders', 'local', 'list']
 export function useLocalFoldersList() {
   return useQuery<Folder[]>({
     queryKey: LIST_KEY,
-    queryFn: listLocalFoldersRepo,
+    queryFn: () => listLocalFoldersRepo(),
   })
 }
 

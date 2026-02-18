@@ -135,10 +135,11 @@ const styles = createThemedStyles(theme => ({
     backIcon: {
         color: theme.colors.warmGray,
         marginRight: theme.spacing.xs,
+        fontSize: theme.fontSize.lg,
     },
     backText: {
         fontFamily: theme.fontFamily.medium,
-        fontSize: theme.fontSize.sm,
+        fontSize: theme.fontSize.lg,
         color: theme.colors.warmGray,
     },
 

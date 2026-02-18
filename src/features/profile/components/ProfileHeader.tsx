@@ -5,10 +5,9 @@ import { createThemedStyles } from '@/styles/createStyles';
 
 type Props = {
   title: string;
-  onPressSettings?: () => void;
 };
 
-export default function ProfileHeader({ title, onPressSettings }: Props) {
+export default function ProfileHeader({ title }: Props) {
   return (
     <View style={styles.wrap}>
       <View style={styles.left}>
