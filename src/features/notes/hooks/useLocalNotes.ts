@@ -33,7 +33,8 @@ export function useLocalNote(id: string) {
 export function useCreateLocalNote() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (input: { title: string; content: string }) => createLocalNote(input),
+    mutationFn: (input: { title: string; content: string; pinnedAt?: string | null }) =>
+      createLocalNote(input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: LIST_KEY })
     },
@@ -43,7 +44,8 @@ export function useCreateLocalNote() {
 export function useUpdateLocalNote(id: string) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (input: { title: string; content: string }) => updateLocalNote(id, input),
+    mutationFn: (input: { title?: string; content?: string; pinnedAt?: string | null }) =>
+      updateLocalNote(id, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: LIST_KEY })
       qc.invalidateQueries({ queryKey: ['notes', 'local', 'detail', id] })

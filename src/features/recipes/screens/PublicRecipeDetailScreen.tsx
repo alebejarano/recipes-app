@@ -1,7 +1,8 @@
 import { Feather, Ionicons } from '@expo/vector-icons'
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { Image } from 'expo-image'
 import { router, useLocalSearchParams } from 'expo-router'
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -16,9 +17,11 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { createThemedStyles } from '@/styles/createStyles'
 
 import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
+import IngredientImportSheet from '@/features/recipes/components/IngredientImportSheet'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
 import { useDeleteLocalRecipe, useLocalRecipe, useUpdateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
 import { buildRecipeShareText, shareRecipeAsTextFile } from '@/features/recipes/utils/shareRecipe'
+import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 const FALLBACK_FOLDERS: string[] = []
@@ -71,6 +74,9 @@ function buildIngredientLines(ingredients: { name: string }[] | undefined): stri
 }
 
 export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
+  const [isIngredientImportOpen, setIsIngredientImportOpen] = useState(false)
+  const [isImportingIngredients, setIsImportingIngredients] = useState(false)
+
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
   const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
@@ -84,6 +90,7 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
     () => buildIngredientLines(recipe?.ingredients),
     [recipe?.ingredients]
   )
+  const bulkAdd = useShoppingListStore((s) => s.bulkAdd)
 
   const folders = useMemo(
     () => recipe?.folders?.map((folder) => folder.name) ?? FALLBACK_FOLDERS,
@@ -217,6 +224,41 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
         'Unable to update favorites',
         favoriteError?.message ?? 'Please try again.'
       )
+    }
+  }
+
+  const importIngredients = async (names: string[]) => {
+    if (names.length === 0) {
+      Alert.alert('No ingredients', 'This recipe has no ingredients to add.')
+      return
+    }
+
+    try {
+      setIsImportingIngredients(true)
+      const { added, skipped } = await bulkAdd(names)
+      setIsIngredientImportOpen(false)
+
+      if (added === 0) {
+        Alert.alert('Shopping list unchanged', 'All selected ingredients are already in your list.')
+        return
+      }
+
+      if (skipped > 0) {
+        Alert.alert('Ingredients added', `${added} added, ${skipped} already on your list.`)
+        return
+      }
+
+      Alert.alert(
+        'Ingredients added',
+        `${added} ingredient${added === 1 ? '' : 's'} added to your shopping list.`
+      )
+    } catch (importError: any) {
+      Alert.alert(
+        'Unable to add ingredients',
+        importError?.message ?? 'Please try again.'
+      )
+    } finally {
+      setIsImportingIngredients(false)
     }
   }
 
@@ -373,7 +415,22 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Ingredients</Text>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Ingredients</Text>
+            <TouchableOpacity
+              onPress={() => setIsIngredientImportOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Add ingredients to shopping list"
+              style={styles.sectionActionButton}
+            >
+              <MaterialIcons
+                name="add-shopping-cart"
+                size={16}
+                style={styles.sectionActionIcon}
+              />
+              <Text style={styles.sectionActionText}>Add to shopping list</Text>
+            </TouchableOpacity>
+          </View>
           <View style={styles.card}>
             {ingredientLines.length > 0 ? (
               ingredientLines.map((line, index) => (
@@ -417,6 +474,15 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
           </View>
         ) : null}
       </ScrollView>
+
+      <IngredientImportSheet
+        visible={isIngredientImportOpen}
+        ingredients={ingredientLines}
+        isSubmitting={isImportingIngredients}
+        onClose={() => setIsIngredientImportOpen(false)}
+        onAddAll={() => { void importIngredients(ingredientLines) }}
+        onAddSelected={(selectedIngredients) => { void importIngredients(selectedIngredients) }}
+      />
     </SafeAreaView>
   )
 }
@@ -566,10 +632,35 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
     marginBottom: theme.spacing.lg,
   },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing.sm,
+  },
   sectionTitle: {
     fontFamily: theme.fontFamily.semibold,
     fontSize: theme.fontSize.lg,
     lineHeight: theme.lineHeight.lg,
+    color: theme.colors.foreground,
+  },
+  sectionActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.radii.md,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  sectionActionIcon: {
+    color: theme.colors.primaryDark,
+  },
+  sectionActionText: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.sm,
     color: theme.colors.foreground,
   },
   card: {

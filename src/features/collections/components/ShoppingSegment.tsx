@@ -1,12 +1,12 @@
-import { Feather } from '@expo/vector-icons'
-import { router } from 'expo-router'
-import React, { useEffect, useMemo } from 'react'
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React, { useEffect, useMemo } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { createThemedStyles } from '@/styles/createStyles'
-import { theme } from '@/styles/theme'
+import { createThemedStyles } from '@/styles/createStyles';
+import { theme } from '@/styles/theme';
 
-import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
+import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore';
 
 const HIGHLIGHTS_COUNT = 3
 
@@ -118,32 +118,12 @@ export default function ShoppingSegment({
           <Feather name="chevron-right" size={22} color={theme.colors.mutedForeground} />
         </View>
       </Pressable>
-
-      {/* From Recipe tile */}
-      <Pressable
-        onPress={() => {
-          // TODO: route to "pick recipe → add ingredients to current list"
-          // This is where you'll use store.bulkAdd([...ingredientNames])
-        }}
-        style={styles.fromRecipeCard}
-        accessibilityRole="button"
-        accessibilityLabel="Add ingredients from a recipe"
-      >
-        <View style={styles.fromRecipeIconWrap}>
-          <Feather name="image" size={18} color={theme.colors.mutedForeground} />
-        </View>
-
-        <View style={{ flex: 1 }}>
-          <Text style={styles.fromRecipeTitle}>From Recipe</Text>
-          <Text style={styles.fromRecipeSub}>Auto-generate</Text>
-        </View>
-      </Pressable>
+    
 
       {/* Tip banner */}
       <View style={styles.tip}>
-        <Feather name="info" size={16} color={theme.colors.mutedForeground} />
         <Text style={styles.tipText}>
-          Tip: Add ingredients from any recipe directly to your shopping list
+            💡 Tip: Add ingredients from any recipe directly to your shopping list
         </Text>
       </View>
     </ScrollView>
@@ -303,23 +283,12 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.foreground,
   },
 
-  fromRecipeSub: {
-    marginTop: theme.spacing.xs,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    color: theme.colors.mutedForeground,
-  },
-
   tip: {
     marginTop: theme.spacing['2xl'],
     borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.secondary,
     paddingVertical: theme.spacing.lg,
     paddingHorizontal: theme.spacing.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
   },
 
   tipText: {

@@ -13,6 +13,7 @@ export type Note = {
   userId: string
   title: string | null
   content: string | null
+  pinnedAt: string | null
   createdAt: string
   updatedAt: string
 }
@@ -22,6 +23,7 @@ type NoteRow = {
   user_id: string
   title: string | null
   content: string | null
+  pinned_at: string | null
   created_at: string
   updated_at: string
 }
@@ -37,6 +39,7 @@ function mapNote(row: NoteRow): Note {
     userId: row.user_id,
     title: row.title ?? null,
     content: row.content ?? null,
+    pinnedAt: row.pinned_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -45,11 +48,13 @@ function mapNote(row: NoteRow): Note {
 export type CreateNoteInput = {
   title: string
   content: string
+  pinnedAt?: string | null
 }
 
 export type UpdateNoteInput = {
-  title: string
-  content: string
+  title?: string
+  content?: string
+  pinnedAt?: string | null
 }
 
 export async function createNote(input: CreateNoteInput): Promise<Note> {
@@ -60,6 +65,7 @@ export async function createNote(input: CreateNoteInput): Promise<Note> {
       user_id: user.id,
       title: normalizeText(input.title),
       content: normalizeText(input.content),
+      pinned_at: input.pinnedAt ?? null,
     })
     .select(
       `
@@ -67,6 +73,7 @@ export async function createNote(input: CreateNoteInput): Promise<Note> {
       user_id,
       title,
       content,
+      pinned_at,
       created_at,
       updated_at
     `
@@ -88,6 +95,7 @@ export async function getNoteById(id: string): Promise<Note> {
       user_id,
       title,
       content,
+      pinned_at,
       created_at,
       updated_at
     `
@@ -116,10 +124,12 @@ export async function listNotes(params?: {
       user_id,
       title,
       content,
+      pinned_at,
       created_at,
       updated_at
     `
     )
+    .order('pinned_at', { ascending: false, nullsFirst: false })
     .order('updated_at', { ascending: false })
     .limit(limit)
 
@@ -135,12 +145,20 @@ export async function listNotes(params?: {
 
 export async function updateNote(id: string, input: UpdateNoteInput): Promise<Note> {
   await requireAuth()
+  const payload: Record<string, string | null> = {}
+  if (typeof input.title === 'string') payload.title = normalizeText(input.title)
+  if (typeof input.content === 'string') payload.content = normalizeText(input.content)
+  if (Object.prototype.hasOwnProperty.call(input, 'pinnedAt')) {
+    payload.pinned_at = input.pinnedAt ?? null
+  }
+
+  if (Object.keys(payload).length === 0) {
+    return getNoteById(id)
+  }
+
   const { data, error } = await supabase
     .from('notes')
-    .update({
-      title: normalizeText(input.title),
-      content: normalizeText(input.content),
-    })
+    .update(payload)
     .eq('id', id)
     .select(
       `
@@ -148,6 +166,7 @@ export async function updateNote(id: string, input: UpdateNoteInput): Promise<No
       user_id,
       title,
       content,
+      pinned_at,
       created_at,
       updated_at
     `

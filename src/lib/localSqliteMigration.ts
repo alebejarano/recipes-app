@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-import { runSqlBatchAsync } from '@/lib/sqlite'
+import { getAllAsync, runSqlAsync, runSqlBatchAsync } from '@/lib/sqlite'
 
 const RECIPES_KEY = 'recipes:local'
 const NOTES_KEY = 'notes:local'
@@ -37,6 +37,7 @@ const TABLE_SETUP_STATEMENTS = [
       id TEXT PRIMARY KEY NOT NULL,
       title TEXT,
       content TEXT,
+      pinned_at TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       deleted_at TEXT,
@@ -150,6 +151,7 @@ function normalizeNoteRow(row: any) {
     id: normalizeString(row.id),
     title: normalizeString(row.title),
     content: normalizeString(row.content),
+    pinned_at: normalizeString(row.pinned_at) ?? normalizeString(row.pinnedAt),
     created_at: createdAt,
     updated_at: updatedAt,
     deleted_at: normalizeString(row.deleted_at),
@@ -189,8 +191,18 @@ function chunkStatements<T>(items: T[], build: (item: T) => { sql: string; param
   return chunks
 }
 
+async function ensureLocalNotesPinnedColumn() {
+  const columns = await getAllAsync<{ name: string }>('PRAGMA table_info(local_notes);')
+  const hasPinnedAt = columns.some((column) => column.name === 'pinned_at')
+  if (!hasPinnedAt) {
+    await runSqlAsync('ALTER TABLE local_notes ADD COLUMN pinned_at TEXT;')
+  }
+  await runSqlAsync('CREATE INDEX IF NOT EXISTS local_notes_pinned_at_idx ON local_notes(pinned_at);')
+}
+
 export async function migrateLocalAsyncStorageToSqlite() {
   await runSqlBatchAsync(TABLE_SETUP_STATEMENTS)
+  await ensureLocalNotesPinnedColumn()
 
   const alreadyDone = await AsyncStorage.getItem(MIGRATION_DONE_KEY)
   if (alreadyDone === '1') return
@@ -241,14 +253,15 @@ export async function migrateLocalAsyncStorageToSqlite() {
   const noteChunks = chunkStatements(notes, (row) => ({
     sql: `INSERT OR IGNORE INTO local_notes
       (
-        id, title, content, created_at, updated_at, deleted_at,
+        id, title, content, pinned_at, created_at, updated_at, deleted_at,
         owner_user_id, cloud_id, dirty, version, last_synced_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     params: [
       row.id,
       row.title,
       row.content,
+      row.pinned_at,
       row.created_at,
       row.updated_at,
       row.deleted_at,

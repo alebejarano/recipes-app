@@ -29,6 +29,7 @@ type LocalNoteRow = {
   cloud_id: string | null
   title: string | null
   content: string | null
+  pinned_at: string | null
   deleted_at: string | null
   last_synced_at: string | null
   dirty: number | null
@@ -137,6 +138,7 @@ export async function migrateLocalDataToCloudOnPremium(userId: string): Promise<
       const created = await createNote({
         title: row.title?.trim() ?? '',
         content: row.content?.trim() ?? '',
+        pinnedAt: row.pinned_at ?? null,
       })
 
       await runSqlAsync(

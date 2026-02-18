@@ -1,20 +1,22 @@
-import { Feather } from '@expo/vector-icons'
-import { router } from 'expo-router'
-import React, { useMemo } from 'react'
-import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native'
+import { Feather } from '@expo/vector-icons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { router } from 'expo-router';
+import React, { useMemo } from 'react';
+import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
 
-import { formatRelativeDay } from '@/features/home/utils/homeFormatters'
-import { useStrategyNotesList } from '@/features/notes/hooks/useStrategyNotes'
-import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
-import { getSafeReturnTo } from '@/lib/navigation'
-import { createThemedStyles } from '@/styles/createStyles'
-import { theme } from '@/styles/theme'
+import { formatRelativeDay } from '@/features/home/utils/homeFormatters';
+import { useStrategyNotesList } from '@/features/notes/hooks/useStrategyNotes';
+import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode';
+import { getSafeReturnTo } from '@/lib/navigation';
+import { createThemedStyles } from '@/styles/createStyles';
+import { theme } from '@/styles/theme';
 
 type NoteItem = {
   id: string
   title: string
   preview: string
   relativeDate: string
+  pinnedAt: string | null
 }
 
 const FALLBACK_TITLE = 'Untitled note'
@@ -46,6 +48,7 @@ export default function NotesSegment({
       title: note.title?.trim() || FALLBACK_TITLE,
       preview: (note.content ?? '').trim().slice(0, PREVIEW_LIMIT) || 'No note content yet.',
       relativeDate: formatRelativeDay(note.updatedAt),
+      pinnedAt: note.pinnedAt ?? null,
     }))
   }, [notesQuery.data])
 
@@ -112,9 +115,14 @@ export default function NotesSegment({
 
             <View style={styles.rowText}>
               <View style={styles.rowTop}>
-                <Text style={styles.rowTitle} numberOfLines={1}>
-                  {item.title}
-                </Text>
+                <View style={styles.rowTitleWrap}>
+                  {item.pinnedAt ? (
+                    <MaterialCommunityIcons name="pin-outline" size={24} color="black" />
+                  ) : null}
+                  <Text style={styles.rowTitle} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                </View>
                 <Text style={styles.rowDate}>{item.relativeDate}</Text>
               </View>
 
@@ -249,6 +257,15 @@ const styles = createThemedStyles((theme) => ({
     alignItems: 'baseline',
     justifyContent: 'space-between',
     gap: theme.spacing.md,
+  },
+  rowTitleWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    flex: 1,
+  },
+  pinIcon: {
+    color: theme.colors.primaryDark,
   },
 
   rowTitle: {

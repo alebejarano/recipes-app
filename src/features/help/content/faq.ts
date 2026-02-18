@@ -209,9 +209,9 @@ export const FAQ_SECTIONS: FaqSection[] = [
       // },
       {
         id: 'share-recipes',
-        question: 'Can I share recipes with friends?',
+        question: 'Can I share recipes?',
         answers: [
-          'Yes — open any recipe and tap the share icon. You can send a link, or share directly to messaging apps.',
+          'Yes — open any recipe and tap the share icon. You can send the recipe as a file (.txt) or share it directly as plain text.',
         ],
       },
     ],

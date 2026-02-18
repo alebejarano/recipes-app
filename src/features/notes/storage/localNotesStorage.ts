@@ -5,6 +5,7 @@ type LocalNoteRow = {
   id: string
   title: string | null
   content: string | null
+  pinned_at: string | null
   created_at: string
   updated_at: string
   deleted_at?: string | null
@@ -19,6 +20,7 @@ export type LocalNote = {
   id: string
   title: string | null
   content: string | null
+  pinnedAt: string | null
   createdAt: string
   updatedAt: string
 }
@@ -41,13 +43,13 @@ async function listNoteRows(params?: LocalNotesListParams): Promise<LocalNoteRow
       `SELECT * FROM local_notes
        WHERE title LIKE ? COLLATE NOCASE
           OR content LIKE ? COLLATE NOCASE
-       ORDER BY updated_at DESC
+       ORDER BY (pinned_at IS NOT NULL) DESC, pinned_at DESC, updated_at DESC
        LIMIT ?;`,
       [`%${search}%`, `%${search}%`, limit]
     )
   }
   return getAllAsync<LocalNoteRow>(
-    'SELECT * FROM local_notes ORDER BY created_at DESC LIMIT ?;',
+    'SELECT * FROM local_notes ORDER BY (pinned_at IS NOT NULL) DESC, pinned_at DESC, updated_at DESC LIMIT ?;',
     [limit]
   )
 }
@@ -75,6 +77,7 @@ function toNoteView(row: LocalNoteRow): LocalNote {
     id: row.id,
     title: row.title ?? null,
     content: row.content ?? null,
+    pinnedAt: row.pinned_at ?? null,
     createdAt: row.created_at ?? legacyCreatedAt ?? new Date().toISOString(),
     updatedAt: row.updated_at ?? legacyUpdatedAt ?? new Date().toISOString(),
   }
@@ -93,6 +96,7 @@ export async function getLocalNote(id: string): Promise<LocalNote | null> {
 export async function createLocalNote(input: {
   title: string
   content: string
+  pinnedAt?: string | null
 }): Promise<LocalNote> {
   await ensureLocalSqliteMigrationReady()
   const now = new Date().toISOString()
@@ -100,6 +104,7 @@ export async function createLocalNote(input: {
     id: makeId(),
     title: normalizeText(input.title),
     content: normalizeText(input.content),
+    pinned_at: input.pinnedAt ?? null,
     created_at: now,
     updated_at: now,
     deleted_at: null,
@@ -112,9 +117,9 @@ export async function createLocalNote(input: {
     `INSERT INTO local_notes
       (
         id, title, content, created_at, updated_at, deleted_at,
-        owner_user_id, cloud_id, dirty, version, last_synced_at
+        owner_user_id, cloud_id, dirty, version, last_synced_at, pinned_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     [
       note.id,
       note.title,
@@ -127,6 +132,7 @@ export async function createLocalNote(input: {
       note.dirty ?? 1,
       note.version ?? 1,
       note.last_synced_at ?? null,
+      note.pinned_at ?? null,
     ]
   )
 
@@ -135,7 +141,7 @@ export async function createLocalNote(input: {
 
 export async function updateLocalNote(
   id: string,
-  input: { title: string; content: string }
+  input: { title?: string; content?: string; pinnedAt?: string | null }
 ): Promise<LocalNote> {
   await ensureLocalSqliteMigrationReady()
 
@@ -144,14 +150,17 @@ export async function updateLocalNote(
 
   const updatedAt = new Date().toISOString()
   const nextVersion = (existing.version ?? 1) + 1
-  const title = normalizeText(input.title)
-  const content = normalizeText(input.content)
+  const title = typeof input.title === 'string' ? normalizeText(input.title) : existing.title ?? null
+  const content = typeof input.content === 'string' ? normalizeText(input.content) : existing.content ?? null
+  const pinnedAt = Object.prototype.hasOwnProperty.call(input, 'pinnedAt')
+    ? input.pinnedAt ?? null
+    : existing.pinned_at ?? null
 
   await runSqlAsync(
     `UPDATE local_notes
-      SET title = ?, content = ?, updated_at = ?, dirty = ?, version = ?
+      SET title = ?, content = ?, pinned_at = ?, updated_at = ?, dirty = ?, version = ?
       WHERE id = ?;`,
-    [title, content, updatedAt, 1, nextVersion, id]
+    [title, content, pinnedAt, updatedAt, 1, nextVersion, id]
   )
 
   const next = await getNoteRow(id)

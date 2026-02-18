@@ -71,6 +71,7 @@ function migrateNotes(raw: string): string {
       id: row.id,
       title: row.title ?? null,
       content: row.content ?? null,
+      pinned_at: row.pinned_at ?? row.pinnedAt ?? null,
       created_at: created,
       updated_at: updated,
       deleted_at: row.deleted_at ?? null,

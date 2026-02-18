@@ -1,5 +1,5 @@
 // src/features/notes/screens/NoteDetailScreen.tsx
-import { Feather } from '@expo/vector-icons'
+import { Feather, Ionicons } from '@expo/vector-icons'
 import { router, useLocalSearchParams, useSegments } from 'expo-router'
 import React, { useMemo } from 'react'
 import {
@@ -14,7 +14,11 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { createThemedStyles } from '@/styles/createStyles'
 
-import { useStrategyDeleteNote, useStrategyNote } from '@/features/notes/hooks/useStrategyNotes'
+import {
+  useStrategyDeleteNote,
+  useStrategyNote,
+  useStrategyUpdateNote,
+} from '@/features/notes/hooks/useStrategyNotes'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 const FALLBACK_TITLE = 'Untitled note'
@@ -34,6 +38,8 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
   const isLoading = noteQuery.isLoading
   const isError = noteQuery.isError
   const deleteMutation = useStrategyDeleteNote(routeMode)
+  const updateMutation = useStrategyUpdateNote(noteId, routeMode)
+  const isPinned = Boolean(note?.pinnedAt)
 
   const title = useMemo(() => note?.title?.trim() || FALLBACK_TITLE, [note?.title])
   const content = useMemo(() => note?.content?.trim() ?? '', [note?.content])
@@ -75,6 +81,17 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
       },
       { text: 'Cancel', style: 'cancel' },
     ])
+  }
+
+  const handleTogglePin = async () => {
+    if (!note) return
+    try {
+      await updateMutation.mutateAsync({
+        pinnedAt: isPinned ? null : new Date().toISOString(),
+      })
+    } catch (error: any) {
+      Alert.alert('Unable to update pin', error?.message ?? 'Please try again.')
+    }
   }
 
   if (isLoading) {
@@ -120,14 +137,29 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
             <Feather name="arrow-left" size={18} style={styles.icon} />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={handleMore}
-            accessibilityRole="button"
-            accessibilityLabel="More actions"
-            style={styles.iconButton}
-          >
-            <Feather name="more-vertical" size={18} style={styles.icon} />
-          </TouchableOpacity>
+          <View style={styles.topActions}>
+            <TouchableOpacity
+              onPress={() => { void handleTogglePin() }}
+              accessibilityRole="button"
+              accessibilityLabel={isPinned ? 'Unpin note' : 'Pin note'}
+              style={styles.iconButton}
+              disabled={updateMutation.isPending}
+            >
+              <Ionicons
+                name={isPinned ? 'pin' : 'pin-outline'}
+                size={18}
+                style={[styles.icon, isPinned ? styles.iconPinned : undefined]}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleMore}
+              accessibilityRole="button"
+              accessibilityLabel="More actions"
+              style={styles.iconButton}
+            >
+              <Feather name="more-vertical" size={18} style={styles.icon} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.header}>
@@ -172,11 +204,22 @@ const styles = createThemedStyles((theme) => ({
     paddingTop: theme.spacing.lg,
     paddingBottom: theme.spacing.md,
   },
+  topActions: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
   iconButton: {
-    padding: theme.spacing.sm,
-    borderRadius: theme.radii.xl,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   icon: { color: theme.colors.mutedForeground },
+  iconPinned: { color: theme.colors.primary },
   header: { marginBottom: theme.spacing.lg },
   title: {
     fontFamily: theme.fontFamily.semibold,
