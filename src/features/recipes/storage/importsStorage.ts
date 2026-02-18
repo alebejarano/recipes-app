@@ -5,6 +5,7 @@ import { getFirstAsync, runSqlAsync, runSqlBatchAsync } from '@/lib/sqlite'
 import {
   FREE_PLAN_MAX_IMPORT_FILE_BYTES,
   FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
+  IMPORT_FILE_TOO_LARGE_MESSAGE,
 } from '@/features/subscription/constants/limits'
 
 export type ImportsUsageSummary = {
@@ -107,7 +108,7 @@ export async function assertCanAddImport(params: {
   }
 
   if (incomingBytes > FREE_PLAN_MAX_IMPORT_FILE_BYTES) {
-    throw new Error('This file is too large. Max 10 MB per file.')
+    throw new Error(IMPORT_FILE_TOO_LARGE_MESSAGE)
   }
 
   if (plan === 'free') {

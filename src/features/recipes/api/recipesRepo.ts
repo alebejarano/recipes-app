@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import {
   FREE_PLAN_MAX_IMPORT_FILE_BYTES,
   IMPORT_ALLOWED_IMAGE_MIME_TYPES,
+  IMPORT_FILE_TOO_LARGE_MESSAGE,
 } from '@/features/subscription/constants/limits'
 import type { RecipeFormSubmitValues } from '../components/RecipeForm'
 
@@ -188,7 +189,7 @@ export async function uploadRecipeImage(input: UploadRecipeImageInput): Promise<
     throw new Error('Unsupported file type. Use JPG or PNG.')
   }
   if (bytes.byteLength > FREE_PLAN_MAX_IMPORT_FILE_BYTES) {
-    throw new Error('This file is too large. Max 10 MB per file.')
+    throw new Error(IMPORT_FILE_TOO_LARGE_MESSAGE)
   }
 
   const { error: uploadError } = await supabase.storage

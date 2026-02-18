@@ -452,10 +452,8 @@ const styles = createThemedStyles((theme) => ({
   },
   card: {
     borderRadius: theme.radii.lg,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.muted,
     padding: theme.spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     gap: theme.spacing.sm,
   },
   ingredientRow: {

@@ -22,6 +22,7 @@ import { getRecipeDocumentUsageSummary } from '@/features/recipes/storage/recipe
 import {
   FREE_PLAN_MAX_IMPORT_FILE_BYTES,
   FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
+  IMPORT_FILE_TOO_LARGE_MESSAGE,
   IMPORT_ALLOWED_MIME_TYPES,
 } from '@/features/subscription/constants/limits'
 
@@ -183,7 +184,7 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
       const totalBytes = usage.totalBytes
 
       if (size > FREE_PLAN_MAX_IMPORT_FILE_BYTES) {
-        Alert.alert('File too large', 'Each file must be 10 MB or smaller.')
+        Alert.alert('File too large', IMPORT_FILE_TOO_LARGE_MESSAGE)
         return
       }
       if (totalBytes + size > FREE_PLAN_MAX_IMPORT_TOTAL_BYTES) {

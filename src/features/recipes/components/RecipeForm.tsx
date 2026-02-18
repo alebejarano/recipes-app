@@ -32,6 +32,7 @@ import {
 import {
   FREE_PLAN_MAX_IMPORT_FILE_BYTES,
   FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
+  IMPORT_FILE_TOO_LARGE_MESSAGE,
 } from '@/features/subscription/constants/limits'
 import { createThemedStyles } from '@/styles/createStyles'
 
@@ -393,7 +394,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
           }
 
           if (size > FREE_PLAN_MAX_IMPORT_FILE_BYTES) {
-            Alert.alert('File too large', 'Each file must be 10 MB or smaller.')
+            Alert.alert('File too large', IMPORT_FILE_TOO_LARGE_MESSAGE)
             return
           }
 
@@ -884,7 +885,11 @@ const styles = createThemedStyles((theme) => ({
   flex1: { flex: 1 },
   flex2: { flex: 2 },
   coverCard: {
-    height: 160,
+    width: 300,
+    height: 200,
+    resizeMode: 'contain',
+    aspectRatio: 1,
+    alignSelf: 'center',
     borderRadius: theme.radii.lg,
     borderWidth: 2,
     borderStyle: 'dashed',

@@ -233,6 +233,9 @@ export default function PublicCreateRecipeScreen({
                   >
                     Import from file
                   </Button>
+                  <Text style={styles.choiceHelperText}>
+                    Supports PDF and image files (PNG, JPG){'\n'}Max 10MB per file
+                  </Text>
                 </View>
               </View>
             )}
@@ -334,6 +337,12 @@ const styles = createThemedStyles((theme) => ({
   choiceButtons: {
     marginTop: theme.spacing.lg,
     gap: theme.spacing.sm,
+  },
+  choiceHelperText: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.mutedForeground,
   },
   choiceIconPrimary: { color: theme.colors.background },
   choiceIconSecondary: { color: theme.colors.foreground },
