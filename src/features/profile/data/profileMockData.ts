@@ -74,6 +74,7 @@ export const PREFERENCES_ITEMS = ({
 export function buildAccountItems(args: {
   plan: AccountPlan
   onPremiumPress: () => void
+  onCurrentPlanPress: () => void
   onManagePlanPress: () => void
   onPrivacyPress: () => void
   onLogoutPress: () => void
@@ -84,6 +85,7 @@ export function buildAccountItems(args: {
   const {
     plan,
     onPremiumPress,
+    onCurrentPlanPress,
     onManagePlanPress,
     onPrivacyPress,
     onLogoutPress,
@@ -116,7 +118,7 @@ export function buildAccountItems(args: {
         ? 'Billing, renewals, and invoices'
         : 'Free plan, local-first on this device',
       rightText: isPremium ? 'Premium' : 'Free',
-      onPress: isPremium ? onManagePlanPress : onPremiumPress,
+      onPress: isPremium ? onManagePlanPress : onCurrentPlanPress,
     },
     {
       id: 'privacy',

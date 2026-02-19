@@ -96,6 +96,7 @@ export default function ProfileScreen() {
       buildAccountItems({
         plan: accountPlan,
         onPremiumPress: () => router.push('/premium'),
+        onCurrentPlanPress: () => router.push('/current-plan'),
         onManagePlanPress: () => router.push('/premium'),
         onPrivacyPress: () => router.push('/privacy'),
         isLoggingOut,

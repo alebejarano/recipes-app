@@ -20,7 +20,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
         question: 'Do I need an account to use the app?',
         answers: [
           "No. You can use the app without an account and save recipes locally on your device.",
-          "Create an account only if you'd like to upgrade and sync your library across devices.",
+          "Create an account if you'd like to upgrade and sync your library across devices.",
         ],
       },
       {

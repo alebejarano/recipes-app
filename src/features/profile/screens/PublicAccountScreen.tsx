@@ -41,7 +41,8 @@ export default function PublicAccountScreen() {
         title: 'Current plan',
         subtitle: 'Guest mode, local only on this device',
         icon: 'hard-drive' as const,
-        disabled: true,
+        rightText: 'Guest',
+        onPress: () => router.push('/current-plan'),
       },
       {
         id: 'privacy',
