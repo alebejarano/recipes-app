@@ -20,14 +20,14 @@ export const FAQ_SECTIONS: FaqSection[] = [
         question: 'Do I need an account to use the app?',
         answers: [
           "No. You can use the app without an account and save recipes locally on your device.",
-          "Create an account if you’d like to upgrade and sync your library across devices later.",
+          "Create an account only if you'd like to upgrade and sync your library across devices.",
         ],
       },
       {
         id: 'offline',
         question: 'Does the app work offline?',
         answers: [
-          "Yes. You can create, edit, and view recipes offline.",
+          "Yes. You can create, edit, and view recipes without an internet connection.",
           "If you have Premium, changes sync automatically when you reconnect.",
         ],
       },
@@ -36,45 +36,58 @@ export const FAQ_SECTIONS: FaqSection[] = [
         question: 'How do I add my first recipe?',
         answers: [
           "Tap the '+' button in the tab bar, then choose 'Recipe'.",
-          'You can type it manually or import a PDF or Image.',
+          "You can type it manually or import a PDF or image.",
         ],
       },
-      // {
-      //   id: 'import-websites',
-      //   question: 'Can I import recipes from websites?',
-      //   answers: [
-      //     'Yes. Paste the recipe URL when creating a new recipe and we’ll try to extract the details automatically.',
-              // 'Not yet — for now you can save the link and add the recipe manually. Website import is coming soon.'
-      //   ],
-      // },
       {
         id: 'collections',
         question: 'How do collections work?',
         answers: [
-          'Collections are your main library. They include your recipes, imports, notes, and shopping list.',
-          'You can group recipes into folders to organize them by category, cuisine, or occasion.',
+          "Collections are your main library. They include your recipes, imports, notes, and shopping list.",
+          "You can group recipes into folders to organize them by category, cuisine, or occasion.",
         ],
       },
     ],
   },
+
   {
-    id: 'your-data-account',
-    title: 'Your Data & Account',
+    id: 'account-data',
+    title: 'Account & Data',
     items: [
+      {
+        id: 'free-plan-limits',
+        question: 'What are the limits of the Free plan?',
+        answers: [
+          'The Free plan includes:',
+          '• Up to 100 recipes',
+          '• Up to 50MB total storage for imports and images',
+          '• Unlimited notes',
+          '• Full offline access on this device',
+          'You can upgrade anytime to remove recipe and storage limits and enable cloud sync.',
+        ],
+      },
+      {
+        id: 'free-plan-reach',
+        question: 'What happens if I reach the Free plan limit?',
+        answers: [
+          "If you reach the recipe or storage limit, you won’t be able to add new recipes or imports until you free up space or upgrade to Premium.",
+          "Your existing content remains accessible.",
+        ],
+      },
       {
         id: 'no-upgrade',
         question: "What happens if I don't upgrade?",
         answers: [
           'Your recipes stay safely stored on this device.',
-          "If you uninstall the app or switch to a new device without Premium, your recipes won't automatically transfer.",
-          'You can upgrade anytime to import and sync them.',
+          "If you uninstall the app or switch devices without Premium, your recipes won't automatically transfer.",
+          'You can upgrade anytime to sync them.',
         ],
       },
       {
         id: 'upgrade-premium-data',
         question: 'What happens when I upgrade to Premium?',
         answers: [
-          'When you upgrade, we automatically import all recipes, notes, and folders from this device into your account.',
+          'We automatically import all recipes, notes, and folders from this device into your account.',
           'From then on, everything stays synced across your devices.',
           'Nothing is overwritten. Nothing is deleted.',
         ],
@@ -83,18 +96,25 @@ export const FAQ_SECTIONS: FaqSection[] = [
         id: 'cancel-premium-data',
         question: 'What happens if I cancel Premium?',
         answers: [
-          'If you cancel, your synced data remains safely stored in your account.',
-          'At the end of your subscription, syncing stops.',
-          'New changes stay local to your device.',
-          'You can renew anytime to resume syncing.',
+          'Your synced data remains safely stored in your account.',
+          'Syncing stops at the end of your subscription.',
+          'New changes stay local to your device unless you renew.',
         ],
       },
       {
         id: 'change-phones',
         question: 'What happens if I change phones?',
         answers: [
-          'With Premium, simply install the app and sign in. Your recipes will sync automatically.',
+          'With Premium, install the app and sign in. Your recipes will sync automatically.',
           'Without Premium, your recipes remain on your original device.',
+        ],
+      },
+      {
+        id: 'recipes-private',
+        question: 'Are my recipes private?',
+        answers: [
+          'Yes. Your recipes and files are private to your account.',
+          'We do not access or share your personal content.',
         ],
       },
       {
@@ -106,56 +126,49 @@ export const FAQ_SECTIONS: FaqSection[] = [
       },
     ],
   },
+
   {
-    id: 'cloud-sync',
-    title: 'Cloud Sync',
+    id: 'premium',
+    title: 'Premium',
     items: [
       {
-        id: 'cloud-sync-includes',
+        id: 'premium-includes',
         question: 'What does Premium include?',
         answers: [
-          'Premium securely backs up and syncs your:',
-          'Recipes',
-          'Notes',
-          'Folders',
-          'Images (PNG, JPG)',
-          'Imported PDFs',
-          "When you upgrade, we also import everything you've already created on this device.",
+          'Premium removes Free plan limits and enables secure cloud sync.',
+          'You get:',
+          '• Unlimited recipes',
+          '• Sync across devices',
+          '• Images (PNG, JPG)',
+          '• Imported PDFs',
+          '• Notes and folders',
+          "When you upgrade, we automatically import everything you've already created on this device.",
           'The app remains fully usable offline.',
-          "Changes sync automatically when you're connected.",
-        ],
-      },
-      {
-        id: 'work-offline',
-        question: 'Does the app work offline?',
-        answers: [
-          'Yes. You can view, edit, and create recipes without internet.',
-          'Sync happens automatically when you reconnect.',
         ],
       },
       {
         id: 'storage-limit',
-        question: 'Is there a storage limit?',
+        question: 'Is there a storage limit with Premium?',
         answers: [
           'Premium includes:',
-          'Up to 10MB per file (PDF or image)',
-          "5GB total storage for your library. That's more than enough for most home cooks.",
+          '• Up to 10MB per file (PDF or image)',
+          '• 5GB total storage for your library',
           "If you ever approach the limit, we'll let you know.",
         ],
       },
       {
-        id: 'recipes-private',
-        question: 'Are my recipes private?',
+        id: 'subscription-multiple-devices',
+        question: 'Can I use Premium on multiple devices?',
         answers: [
-          'Yes. Your recipes and files are private to your account.',
-          'We do not access or share your personal content.',
+          "Yes. As long as you're signed into the same account, your synced library is available across your devices.",
         ],
       },
     ],
   },
+
   {
-    id: 'account-billing',
-    title: 'Billing & Subscription',
+    id: 'billing',
+    title: 'Billing',
     items: [
       {
         id: 'upgrade',
@@ -170,7 +183,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
         question: 'Can I cancel my subscription?',
         answers: [
           'Yes. You can cancel anytime from your Apple or Google subscription settings.',
-          'Your Premium features remain active until the end of your billing period.',
+          'Premium remains active until the end of your billing period.',
         ],
       },
       {
@@ -180,15 +193,9 @@ export const FAQ_SECTIONS: FaqSection[] = [
           'Yes. You can switch at any time through your app store subscription settings.',
         ],
       },
-      {
-        id: 'subscription-multiple-devices',
-        question: 'Can I use my subscription on multiple devices?',
-        answers: [
-          "Yes. As long as you're signed into the same account, your subscription and synced library are available across your devices.",
-        ],
-      },
     ],
   },
+
   {
     id: 'features',
     title: 'Features',
@@ -197,25 +204,20 @@ export const FAQ_SECTIONS: FaqSection[] = [
         id: 'shopping-list',
         question: 'What does the shopping list do?',
         answers: [
-          'The shopping list helps you gather ingredients from your recipes in one place so you can check items off while shopping.',
+          'The shopping list gathers ingredients from your recipes in one place so you can check items off while shopping.',
         ],
       },
-      // {
-      //   id: 'meal-planning',
-      //   question: 'How does meal planning work?',
-      //   answers: [
-      //     'You can organize recipes by collections and pick what to cook during the week, then use your shopping list to prepare faster.',
-      //   ],
-      // },
       {
         id: 'share-recipes',
         question: 'Can I share recipes?',
         answers: [
-          'Yes — open any recipe and tap the share icon. You can send the recipe as a file (.txt) or share it directly as plain text.',
+          'Yes. Open any recipe and tap the share icon.',
+          'You can export it as a .txt file or share it directly as plain text.',
         ],
       },
     ],
   },
+
   {
     id: 'troubleshooting',
     title: 'Troubleshooting',
@@ -224,14 +226,16 @@ export const FAQ_SECTIONS: FaqSection[] = [
         id: 'import-issue',
         question: "My recipe didn't import correctly",
         answers: [
-          'Try importing again with a clearer source or edit the recipe manually after import to fix missing fields.',
+          'Try importing again with a clearer source.',
+          'You can always edit the recipe manually to fix missing fields.',
         ],
       },
       {
         id: 'app-slow',
         question: 'The app feels slow',
         answers: [
-          'Close and reopen the app, then make sure your device has enough free storage and a stable internet connection.',
+          'Close and reopen the app.',
+          'Make sure your device has enough free storage and a stable internet connection.',
         ],
       },
     ],
