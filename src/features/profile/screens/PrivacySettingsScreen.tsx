@@ -25,16 +25,16 @@ export default function PrivacySettingsScreen() {
       />
 
       <SettingsSection
-        title="Storage"
-        subtitle="Imports storage usage"
+        title="Data"
+        subtitle="info to put here for later"
         rightPillText={usageLabel}
         items={[
           {
             id: 'imports-usage',
             type: 'link',
             icon: 'hard-drive',
-            title: 'Recipe Imports',
-            subtitle: 'Free plan cap: 10 MB per file • 50 MB total',
+            title: 'Delete account',
+            subtitle: 'Delete account, 2FA',
             showChevron: false,
           },
         ]}

@@ -23,6 +23,7 @@ export default function DevCurrentPlanRoute() {
       accountType="free"
       onBack={() => router.replace('/(dev)/(tabs)/profile')}
       onUpgrade={() => router.push('/premium')}
+      onManageExistingRecipes={() => router.replace('/(dev)/(tabs)/collections')}
     />
   )
 }

@@ -4,8 +4,12 @@ import { Text, TouchableOpacity, View } from 'react-native'
 
 import Button from '@/components/Button'
 import Screen from '@/components/Screen'
+import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments'
 import { useLocalRecipesList } from '@/features/recipes/hooks/useLocalRecipes'
-import { FREE_PLAN_MAX_RECIPES } from '@/features/subscription/constants/limits'
+import {
+  FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
+  FREE_PLAN_MAX_RECIPES,
+} from '@/features/subscription/constants/limits'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
@@ -13,6 +17,7 @@ type CurrentPlanScreenProps = {
   accountType: 'guest' | 'free'
   onBack: () => void
   onUpgrade: () => void
+  onManageExistingRecipes?: () => void
 }
 
 const premiumFeatures = [
@@ -30,25 +35,91 @@ const freeFeatures = [
   'Offline access',
 ]
 
-function getUsageMessage(recipesSaved: number) {
-  if (recipesSaved >= FREE_PLAN_MAX_RECIPES) {
-    return 'You reached the free limit. Upgrade anytime when you are ready.'
+type UsageBand = 'under70' | 'between70and84' | 'between85and94' | 'between95and99' | 'atLimit'
+
+const MEGABYTE = 1024 * 1024
+
+function getUsageBand(percent: number): UsageBand {
+  if (percent >= 100) {
+    return 'atLimit'
   }
-  if (recipesSaved >= FREE_PLAN_MAX_RECIPES * 0.7) {
+  if (percent >= 95) {
+    return 'between95and99'
+  }
+  if (percent >= 85) {
+    return 'between85and94'
+  }
+  if (percent >= 70) {
+    return 'between70and84'
+  }
+  return 'under70'
+}
+
+function formatMegabytes(bytes: number) {
+  return Math.max(0, Math.round(bytes / MEGABYTE))
+}
+
+function getRecipeUsageMessage(recipesSaved: number, usageBand: UsageBand) {
+  const recipesRemaining = Math.max(FREE_PLAN_MAX_RECIPES - recipesSaved, 0)
+
+  if (usageBand === 'atLimit') {
+    return "You've reached the Free plan limit."
+  }
+  if (usageBand === 'between95and99') {
+    return `${recipesRemaining} recipes remaining before you reach the Free limit.`
+  }
+  if (usageBand === 'between85and94') {
+    return `Only ${recipesRemaining} recipes left on the Free plan.`
+  }
+  if (usageBand === 'between70and84') {
     return 'Getting close to your limit - no rush, just good to know.'
   }
-  return 'You still have room to keep saving recipes on this device.'
+  return 'You still have room to save recipes.'
+}
+
+function getStorageUsageMessage(totalBytesUsed: number, usageBand: UsageBand) {
+  const maxStorageMb = formatMegabytes(FREE_PLAN_MAX_IMPORT_TOTAL_BYTES)
+  const usedMb = formatMegabytes(totalBytesUsed)
+  const remainingMb = Math.max(maxStorageMb - usedMb, 0)
+
+  if (usageBand === 'atLimit') {
+    return "You've reached the Free storage limit."
+  }
+  if (usageBand === 'between95and99') {
+    return "You're almost at the Free storage limit."
+  }
+  if (usageBand === 'between85and94') {
+    return `Only ${remainingMb}MB remaining.`
+  }
+  if (usageBand === 'between70and84') {
+    return 'Storage is filling up.'
+  }
+  return 'You still have storage available.'
 }
 
 export default function CurrentPlanScreen({
   accountType,
   onBack,
   onUpgrade,
+  onManageExistingRecipes,
 }: CurrentPlanScreenProps) {
   const localRecipesQuery = useLocalRecipesList()
+  const storageUsageQuery = useRecipeDocumentUsageSummary()
   const recipesSaved = localRecipesQuery.data?.length ?? 0
-  const usagePercent = Math.min((recipesSaved / FREE_PLAN_MAX_RECIPES) * 100, 100)
-  const usageMessage = getUsageMessage(recipesSaved)
+  const recipesUsagePercent = Math.min((recipesSaved / FREE_PLAN_MAX_RECIPES) * 100, 100)
+  const recipesUsageBand = getUsageBand(recipesUsagePercent)
+  const recipesUsageMessage = getRecipeUsageMessage(recipesSaved, recipesUsageBand)
+
+  const storageBytesUsed = storageUsageQuery.data?.totalBytes ?? 0
+  const storageUsagePercent = Math.min((storageBytesUsed / FREE_PLAN_MAX_IMPORT_TOTAL_BYTES) * 100, 100)
+  const storageUsageBand = getUsageBand(storageUsagePercent)
+  const storageUsageMessage = getStorageUsageMessage(storageBytesUsed, storageUsageBand)
+  const storageMbUsed = formatMegabytes(storageBytesUsed)
+  const storageMbLimit = formatMegabytes(FREE_PLAN_MAX_IMPORT_TOTAL_BYTES)
+
+  const upgradeUsageBand = getUsageBand(Math.max(recipesUsagePercent, storageUsagePercent))
+  const handleManageExistingRecipes = onManageExistingRecipes ?? onBack
+
   const currentPlanLabel = accountType === 'guest' ? 'Guest' : 'Free'
   const subtitle =
     accountType === 'guest'
@@ -83,10 +154,67 @@ export default function CurrentPlanScreen({
         </View>
 
         <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${usagePercent}%` }]} />
+          <View style={[styles.progressFill, { width: `${recipesUsagePercent}%` }]} />
         </View>
 
-        <Text style={styles.usageMessage}>{usageMessage}</Text>
+        <Text style={styles.usageMessage}>{recipesUsageMessage}</Text>
+
+        <View style={styles.sectionDivider} />
+
+        <View style={styles.usageHeader}>
+          <Text style={styles.usageTitle}>Storage</Text>
+          <Text style={styles.usageValue}>
+            <Text style={styles.usageValueStrong}>{storageMbUsed}MB</Text>/{storageMbLimit}MB used
+          </Text>
+        </View>
+
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${storageUsagePercent}%` }]} />
+        </View>
+
+        <Text style={styles.usageMessage}>{storageUsageMessage}</Text>
+
+        {upgradeUsageBand === 'between70and84' ? (
+          <Text style={styles.inlineUpgradeHint}>
+            Upgrade to Premium for unlimited recipes and cloud sync.
+          </Text>
+        ) : null}
+
+        {upgradeUsageBand === 'between85and94' ? (
+          <View style={styles.usagePromptWrap}>
+            <Button onPress={onUpgrade} variant="ghost" size="md" style={styles.ghostCta}>
+              Learn about Premium
+            </Button>
+          </View>
+        ) : null}
+
+        {upgradeUsageBand === 'between95and99' ? (
+          <View style={styles.usagePromptWrap}>
+            <Button onPress={onUpgrade} size="md" style={styles.usageUpgradeButton}>
+              Upgrade to Premium
+            </Button>
+            <Text style={styles.upgradeMicrocopy}>
+              Premium removes limits and securely backs up your library.
+            </Text>
+          </View>
+        ) : null}
+
+        {upgradeUsageBand === 'atLimit' ? (
+          <View style={styles.usagePromptWrap}>
+            <Text style={styles.limitReachedText}>You&apos;ve reached the Free plan limit.</Text>
+            <Button onPress={onUpgrade} size="md" style={styles.usageUpgradeButton}>
+              Upgrade to Premium
+            </Button>
+            <Button
+              onPress={handleManageExistingRecipes}
+              size="md"
+              variant="secondary"
+              style={styles.manageRecipesButton}
+            >
+              Manage existing recipes
+            </Button>
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.card}>
@@ -245,11 +373,50 @@ const styles = createThemedStyles((theme) => ({
     borderRadius: theme.radii.xxl,
     backgroundColor: theme.colors.primary,
   },
+  sectionDivider: {
+    marginVertical: theme.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
   usageMessage: {
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.lg,
     lineHeight: theme.lineHeight.lg,
     color: theme.colors.mutedForeground,
+  },
+  inlineUpgradeHint: {
+    marginTop: theme.spacing.xs,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
+  },
+  usagePromptWrap: {
+    marginTop: theme.spacing.sm,
+    gap: theme.spacing.sm,
+  },
+  ghostCta: {
+    width: 'auto',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 0,
+  },
+  usageUpgradeButton: {
+    borderRadius: theme.radii.xl,
+  },
+  upgradeMicrocopy: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
+  },
+  limitReachedText: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    color: theme.colors.foreground,
+  },
+  manageRecipesButton: {
+    borderRadius: theme.radii.xl,
   },
   planHeader: {
     flexDirection: 'row',

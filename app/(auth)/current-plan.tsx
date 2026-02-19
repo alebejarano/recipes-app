@@ -23,6 +23,7 @@ export default function AuthCurrentPlanRoute() {
       accountType="free"
       onBack={() => router.replace('/(auth)/(tabs)/profile')}
       onUpgrade={() => router.push('/premium')}
+      onManageExistingRecipes={() => router.replace('/(auth)/(tabs)/collections')}
     />
   )
 }
