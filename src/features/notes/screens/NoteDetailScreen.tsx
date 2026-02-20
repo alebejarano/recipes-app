@@ -1,5 +1,5 @@
 // src/features/notes/screens/NoteDetailScreen.tsx
-import { Feather, Ionicons } from '@expo/vector-icons'
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons'
 import { router, useLocalSearchParams, useSegments } from 'expo-router'
 import React, { useMemo } from 'react'
 import {
@@ -145,9 +145,9 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
               style={styles.iconButton}
               disabled={updateMutation.isPending}
             >
-              <Ionicons
+              <MaterialCommunityIcons
                 name={isPinned ? 'pin' : 'pin-outline'}
-                size={18}
+                size={22}
                 style={[styles.icon, isPinned ? styles.iconPinned : undefined]}
               />
             </TouchableOpacity>
@@ -167,7 +167,7 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
           <Text style={styles.subtitle}>Last updated {new Date(note.updatedAt).toLocaleDateString()}</Text>
         </View>
 
-        <View style={styles.card}>
+        <View>
           {content ? (
             <Text style={styles.bodyText}>{content}</Text>
           ) : (
@@ -180,7 +180,7 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
 }
 
 const styles = createThemedStyles((theme) => ({
-  safeArea: { flex: 1, backgroundColor: theme.colors.background },
+  safeArea: { flex: 1, backgroundColor: theme.colors.background},
   scrollContent: {
     paddingHorizontal: theme.spacing.lg,
     paddingBottom: theme.spacing.xl,
@@ -219,7 +219,7 @@ const styles = createThemedStyles((theme) => ({
     borderColor: theme.colors.border,
   },
   icon: { color: theme.colors.mutedForeground },
-  iconPinned: { color: theme.colors.primary },
+  iconPinned: { color: theme.colors.accent },
   header: { marginBottom: theme.spacing.lg },
   title: {
     fontFamily: theme.fontFamily.semibold,
@@ -234,13 +234,13 @@ const styles = createThemedStyles((theme) => ({
     lineHeight: theme.lineHeight.sm,
     color: theme.colors.mutedForeground,
   },
-  card: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radii.lg,
-    backgroundColor: theme.colors.card,
-    padding: theme.spacing.lg,
-  },
+  // card: {
+  //   borderWidth: 1,
+  //   borderColor: theme.colors.border,
+  //   borderRadius: theme.radii.lg,
+  //   backgroundColor: theme.colors.card,
+  //   padding: theme.spacing.lg,
+  // },
   bodyText: {
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.base,

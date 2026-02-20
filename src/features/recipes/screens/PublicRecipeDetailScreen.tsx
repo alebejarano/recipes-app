@@ -6,8 +6,8 @@ import React, { useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
-  Share,
   ScrollView,
+  Share,
   Text,
   TouchableOpacity,
   View,
@@ -16,9 +16,9 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { createThemedStyles } from '@/styles/createStyles'
 
-import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
-import IngredientImportSheet from '@/features/recipes/components/IngredientImportSheet'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
+import IngredientImportSheet from '@/features/recipes/components/IngredientImportSheet'
+import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
 import { useDeleteLocalRecipe, useLocalRecipe, useUpdateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
 import { buildRecipeShareText, shareRecipeAsTextFile } from '@/features/recipes/utils/shareRecipe'
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
@@ -334,7 +334,7 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
             >
               <Ionicons
                 name={isFavorited ? 'heart' : 'heart-outline'}
-                size={18}
+                size={22}
                 style={[styles.icon, isFavorited ? styles.iconFavorite : undefined]}
               />
             </TouchableOpacity>
@@ -553,7 +553,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
   iconFavorite: {
-    color: theme.colors.primary,
+    color: theme.colors.accent,
   },
   header: {
     gap: theme.spacing.sm,

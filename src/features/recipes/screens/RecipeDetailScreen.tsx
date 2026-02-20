@@ -358,7 +358,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
             >
               <Ionicons
                 name={isFavorited ? 'heart' : 'heart-outline'}
-                size={18}
+                size={22}
                 style={[styles.icon, isFavorited ? styles.iconFavorite : undefined]}
               />
             </TouchableOpacity>
@@ -577,7 +577,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
   iconFavorite: {
-    color: theme.colors.primary,
+    color: theme.colors.accent,
   },
   header: {
     gap: theme.spacing.sm,

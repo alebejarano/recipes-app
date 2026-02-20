@@ -105,19 +105,23 @@ export default function NotesSegment({
                 },
               })
             }
-            style={styles.row}
+            style={[styles.row, item.pinnedAt ? styles.rowPinned : null]}
             accessibilityRole="button"
             accessibilityLabel={`Open note ${item.title}`}
           >
-            <View style={styles.iconWrap}>
-              <Feather name="file-text" size={18} color={theme.colors.mutedForeground} />
+            <View style={[styles.iconWrap, item.pinnedAt ? styles.iconWrapPinned : null]}>
+              <Feather
+                name="file-text"
+                size={18}
+                color={item.pinnedAt ? theme.colors.accent : theme.colors.mutedForeground}
+              />
             </View>
 
             <View style={styles.rowText}>
               <View style={styles.rowTop}>
                 <View style={styles.rowTitleWrap}>
                   {item.pinnedAt ? (
-                    <MaterialCommunityIcons name="pin-outline" size={24} color="black" />
+                    <MaterialCommunityIcons name="pin" size={22} style={styles.pinIcon} />
                   ) : null}
                   <Text style={styles.rowTitle} numberOfLines={1}>
                     {item.title}
@@ -239,6 +243,9 @@ const styles = createThemedStyles((theme) => ({
     padding: theme.spacing.lg,
     ...theme.shadows.soft,
   },
+  rowPinned: {
+    borderColor: theme.colors.terracottaLight,
+  },
 
   iconWrap: {
     width: 44,
@@ -248,6 +255,9 @@ const styles = createThemedStyles((theme) => ({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: theme.spacing.md,
+  },
+  iconWrapPinned: {
+    backgroundColor: theme.colors.terracottaLight,
   },
 
   rowText: { flex: 1 },
@@ -265,7 +275,7 @@ const styles = createThemedStyles((theme) => ({
     flex: 1,
   },
   pinIcon: {
-    color: theme.colors.primaryDark,
+    color: theme.colors.accent,
   },
 
   rowTitle: {

@@ -1,4 +1,4 @@
-import { Feather, Ionicons } from '@expo/vector-icons'
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons'
 import { router, useLocalSearchParams } from 'expo-router'
 import React, { useMemo } from 'react'
 import {
@@ -135,9 +135,9 @@ export default function PublicNoteDetailScreen({ noteId }: NoteDetailScreenProps
               style={styles.iconButton}
               disabled={updateMutation.isPending}
             >
-              <Ionicons
+              <MaterialCommunityIcons
                 name={isPinned ? 'pin' : 'pin-outline'}
-                size={18}
+                size={22}
                 style={[styles.icon, isPinned ? styles.iconPinned : undefined]}
               />
             </TouchableOpacity>
@@ -211,7 +211,7 @@ const styles = createThemedStyles((theme) => ({
     borderColor: theme.colors.border,
   },
   icon: { color: theme.colors.mutedForeground },
-  iconPinned: { color: theme.colors.primary },
+  iconPinned: { color: theme.colors.accent },
   header: { marginBottom: theme.spacing.lg },
   title: {
     fontFamily: theme.fontFamily.semibold,
