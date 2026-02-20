@@ -14,7 +14,7 @@ import {
   PREFERENCES_ITEMS,
   SUPPORT_ITEMS,
   type PreferenceToggles,
-} from '@/features/profile/data/profileMockData'
+} from '@/features/profile/data/profileSettingsData'
 
 export default function PublicAccountScreen() {
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)

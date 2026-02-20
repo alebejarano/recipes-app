@@ -1,4 +1,5 @@
-import React, { useContext, useEffect } from 'react'
+import React, { useContext } from 'react'
+import { Alert } from 'react-native'
 import { useRouter } from 'expo-router'
 
 import CurrentPlanScreen from '@/features/subscription/screens/CurrentPlanScreen'
@@ -6,24 +7,26 @@ import { SubscriptionContext } from '@/features/subscription/context/Subscriptio
 
 export default function AuthCurrentPlanRoute() {
   const router = useRouter()
-  const { plan } = useContext(SubscriptionContext)
+  const { plan, billingCycle, setPlan } = useContext(SubscriptionContext)
 
-  useEffect(() => {
-    if (plan === 'premium') {
-      router.replace('/premium')
-    }
-  }, [plan, router])
-
-  if (plan === 'premium') {
-    return null
-  }
+  const premiumPlanLabel = billingCycle === 'year' ? '€36/year' : '€5/month'
+  const premiumNextRenewalLabel = billingCycle === 'year' ? 'March 18, 2027' : 'March 18, 2026'
 
   return (
     <CurrentPlanScreen
-      accountType="free"
+      accountType={plan === 'premium' ? 'premium' : 'free'}
+      mode="auth"
       onBack={() => router.replace('/(auth)/(tabs)/profile')}
       onUpgrade={() => router.push('/premium')}
       onManageExistingRecipes={() => router.replace('/(auth)/(tabs)/collections')}
+      onManageSubscription={() => {
+        Alert.alert('Manage subscription', 'Billing management will be available here soon.')
+      }}
+      onDeactivatePremiumForTest={() => {
+        void setPlan('free')
+      }}
+      premiumPlanLabel={premiumPlanLabel}
+      premiumNextRenewalLabel={premiumNextRenewalLabel}
     />
   )
 }

@@ -5,27 +5,34 @@ import { Text, TouchableOpacity, View } from 'react-native'
 import Button from '@/components/Button'
 import Screen from '@/components/Screen'
 import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments'
-import { useLocalRecipesList } from '@/features/recipes/hooks/useLocalRecipes'
+import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
+import type { StorageScreenMode } from '@/features/storage/hooks/useStorageDataMode'
 import {
-  FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
   FREE_PLAN_MAX_RECIPES,
+  PREMIUM_PLAN_MAX_STORAGE_BYTES,
 } from '@/features/subscription/constants/limits'
+import { buildFreePlanUsageSnapshot } from '@/features/subscription/utils/planUsage'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
 type CurrentPlanScreenProps = {
-  accountType: 'guest' | 'free'
+  accountType: 'guest' | 'free' | 'premium'
+  mode?: StorageScreenMode
   onBack: () => void
   onUpgrade: () => void
   onManageExistingRecipes?: () => void
+  onManageSubscription?: () => void
+  onDeactivatePremiumForTest?: () => void
+  premiumPlanLabel?: string
+  premiumNextRenewalLabel?: string
 }
 
 const premiumFeatures = [
   'Unlimited recipes',
   '5GB cloud storage',
   'Sync across devices',
-  'Automatic import of your existing recipes',
-  'Offline + cloud sync',
+  'Automatic recipe import',
+  'Offline access + cloud sync',
 ]
 
 const freeFeatures = [
@@ -35,96 +42,127 @@ const freeFeatures = [
   'Offline access',
 ]
 
-type UsageBand = 'under70' | 'between70and84' | 'between85and94' | 'between95and99' | 'atLimit'
-
-const MEGABYTE = 1024 * 1024
-
-function getUsageBand(percent: number): UsageBand {
-  if (percent >= 100) {
-    return 'atLimit'
-  }
-  if (percent >= 95) {
-    return 'between95and99'
-  }
-  if (percent >= 85) {
-    return 'between85and94'
-  }
-  if (percent >= 70) {
-    return 'between70and84'
-  }
-  return 'under70'
-}
-
-function formatMegabytes(bytes: number) {
-  return Math.max(0, Math.round(bytes / MEGABYTE))
-}
-
-function getRecipeUsageMessage(recipesSaved: number, usageBand: UsageBand) {
-  const recipesRemaining = Math.max(FREE_PLAN_MAX_RECIPES - recipesSaved, 0)
-
-  if (usageBand === 'atLimit') {
-    return "You've reached the Free plan limit."
-  }
-  if (usageBand === 'between95and99') {
-    return `${recipesRemaining} recipes remaining before you reach the Free limit.`
-  }
-  if (usageBand === 'between85and94') {
-    return `Only ${recipesRemaining} recipes left on the Free plan.`
-  }
-  if (usageBand === 'between70and84') {
-    return 'Getting close to your limit - no rush, just good to know.'
-  }
-  return 'You still have room to save recipes.'
-}
-
-function getStorageUsageMessage(totalBytesUsed: number, usageBand: UsageBand) {
-  const maxStorageMb = formatMegabytes(FREE_PLAN_MAX_IMPORT_TOTAL_BYTES)
-  const usedMb = formatMegabytes(totalBytesUsed)
-  const remainingMb = Math.max(maxStorageMb - usedMb, 0)
-
-  if (usageBand === 'atLimit') {
-    return "You've reached the Free storage limit."
-  }
-  if (usageBand === 'between95and99') {
-    return "You're almost at the Free storage limit."
-  }
-  if (usageBand === 'between85and94') {
-    return `Only ${remainingMb}MB remaining.`
-  }
-  if (usageBand === 'between70and84') {
-    return 'Storage is filling up.'
-  }
-  return 'You still have storage available.'
+function formatStorageGigabytes(bytes: number) {
+  const gigabytes = bytes / (1024 * 1024 * 1024)
+  return `${Math.max(0, Math.round(gigabytes * 10) / 10)}GB`
 }
 
 export default function CurrentPlanScreen({
   accountType,
+  mode = 'auth',
   onBack,
   onUpgrade,
   onManageExistingRecipes,
+  onManageSubscription,
+  onDeactivatePremiumForTest,
+  premiumPlanLabel = '€5/month',
+  premiumNextRenewalLabel = 'March 18, 2026',
 }: CurrentPlanScreenProps) {
-  const localRecipesQuery = useLocalRecipesList()
+  const recipesQuery = useStrategyRecipesList({ limit: 2000 }, mode)
   const storageUsageQuery = useRecipeDocumentUsageSummary()
-  const recipesSaved = localRecipesQuery.data?.length ?? 0
-  const recipesUsagePercent = Math.min((recipesSaved / FREE_PLAN_MAX_RECIPES) * 100, 100)
-  const recipesUsageBand = getUsageBand(recipesUsagePercent)
-  const recipesUsageMessage = getRecipeUsageMessage(recipesSaved, recipesUsageBand)
 
+  const recipesSaved = recipesQuery.data?.length ?? 0
   const storageBytesUsed = storageUsageQuery.data?.totalBytes ?? 0
-  const storageUsagePercent = Math.min((storageBytesUsed / FREE_PLAN_MAX_IMPORT_TOTAL_BYTES) * 100, 100)
-  const storageUsageBand = getUsageBand(storageUsagePercent)
-  const storageUsageMessage = getStorageUsageMessage(storageBytesUsed, storageUsageBand)
-  const storageMbUsed = formatMegabytes(storageBytesUsed)
-  const storageMbLimit = formatMegabytes(FREE_PLAN_MAX_IMPORT_TOTAL_BYTES)
 
-  const upgradeUsageBand = getUsageBand(Math.max(recipesUsagePercent, storageUsagePercent))
+  if (accountType === 'premium') {
+    const storagePercent = Math.min((storageBytesUsed / PREMIUM_PLAN_MAX_STORAGE_BYTES) * 100, 100)
+    const manageSubscription = onManageSubscription ?? onUpgrade
+
+    return (
+      <Screen scroll bottomPadding={theme.spacing['3xl']} contentStyle={styles.content}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            activeOpacity={0.8}
+            onPress={onBack}
+            style={styles.backButton}
+          >
+            <Feather name="arrow-left" size={20} style={styles.backIcon} />
+          </TouchableOpacity>
+
+          <View style={styles.headerTextWrap}>
+            <Text style={styles.title}>Current Plan</Text>
+            <Text style={styles.subtitle}>Premium</Text>
+          </View>
+        </View>
+
+        <View style={styles.card}>
+          <View style={styles.usageHeader}>
+            <Text style={styles.usageTitle}>Recipes synced</Text>
+            <Text style={styles.usageValue}>
+              <Text style={styles.usageValueStrong}>{recipesSaved}</Text>
+            </Text>
+          </View>
+
+          <Text style={styles.unlimitedRecipesText}>Unlimited recipes on Premium.</Text>
+
+          <View style={styles.sectionDivider} />
+
+          <View style={styles.usageHeader}>
+            <Text style={styles.usageTitle}>Storage</Text>
+            <Text style={styles.usageValue}>
+              <Text style={styles.usageValueStrong}>{formatStorageGigabytes(storageBytesUsed)}</Text> / 5GB
+            </Text>
+          </View>
+
+          <View style={styles.progressTrack}>
+            <View
+              style={[
+                styles.progressFill,
+                styles.progressFillPremium,
+                { width: `${storagePercent}%` },
+              ]}
+            />
+          </View>
+        </View>
+
+        <Text style={styles.supportText}>Thank you for supporting independent development.</Text>
+
+        <View style={styles.card}>
+          <Text style={styles.subscriptionTitle}>Subscription</Text>
+
+          <View style={styles.subscriptionRow}>
+            <Text style={styles.subscriptionLabel}>Plan</Text>
+            <Text style={styles.subscriptionValue}>{premiumPlanLabel}</Text>
+          </View>
+
+          <View style={styles.subscriptionRow}>
+            <Text style={styles.subscriptionLabel}>Next renewal</Text>
+            <Text style={styles.subscriptionValue}>{premiumNextRenewalLabel}</Text>
+          </View>
+
+          <Button onPress={manageSubscription} variant="soft" size="md" style={styles.manageSubscriptionButton}>
+            Manage Subscription
+          </Button>
+        </View>
+
+        <Text style={styles.supportFootnote}>
+          Premium helps keep the app simple, private, and sustainable.
+        </Text>
+
+        {onDeactivatePremiumForTest ? (
+          <Button
+            onPress={onDeactivatePremiumForTest}
+            variant="secondary"
+            size="md"
+            style={styles.deactivatePremiumButton}
+          >
+            Deactivate Premium (Test)
+          </Button>
+        ) : null}
+      </Screen>
+    )
+  }
+
+  const usage = buildFreePlanUsageSnapshot(recipesSaved, storageBytesUsed)
   const handleManageExistingRecipes = onManageExistingRecipes ?? onBack
 
   const currentPlanLabel = accountType === 'guest' ? 'Guest' : 'Free'
   const subtitle =
     accountType === 'guest'
       ? 'You are in Guest mode (Free plan).'
-      : 'You are on the Free plan.'
+      : 'Free plan'
 
   return (
     <Screen scroll bottomPadding={theme.spacing['3xl']} contentStyle={styles.content}>
@@ -154,33 +192,34 @@ export default function CurrentPlanScreen({
         </View>
 
         <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${recipesUsagePercent}%` }]} />
+          <View style={[styles.progressFill, { width: `${usage.recipesUsagePercent}%` }]} />
         </View>
 
-        <Text style={styles.usageMessage}>{recipesUsageMessage}</Text>
+        <Text style={styles.usageMessage}>{usage.recipesUsageMessage}</Text>
 
         <View style={styles.sectionDivider} />
 
         <View style={styles.usageHeader}>
           <Text style={styles.usageTitle}>Storage</Text>
           <Text style={styles.usageValue}>
-            <Text style={styles.usageValueStrong}>{storageMbUsed}MB</Text>/{storageMbLimit}MB used
+            <Text style={styles.usageValueStrong}>{usage.storageMbUsed}MB</Text>/{usage.storageMbLimit}
+            MB used
           </Text>
         </View>
 
         <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${storageUsagePercent}%` }]} />
+          <View style={[styles.progressFill, { width: `${usage.storageUsagePercent}%` }]} />
         </View>
 
-        <Text style={styles.usageMessage}>{storageUsageMessage}</Text>
+        <Text style={styles.usageMessage}>{usage.storageUsageMessage}</Text>
 
-        {upgradeUsageBand === 'between70and84' ? (
+        {usage.upgradeUsageBand === 'between70and84' ? (
           <Text style={styles.inlineUpgradeHint}>
             Upgrade to Premium for unlimited recipes and cloud sync.
           </Text>
         ) : null}
 
-        {upgradeUsageBand === 'between85and94' ? (
+        {usage.upgradeUsageBand === 'between85and94' ? (
           <View style={styles.usagePromptWrap}>
             <Button onPress={onUpgrade} variant="ghost" size="md" style={styles.ghostCta}>
               Learn about Premium
@@ -188,7 +227,7 @@ export default function CurrentPlanScreen({
           </View>
         ) : null}
 
-        {upgradeUsageBand === 'between95and99' ? (
+        {usage.upgradeUsageBand === 'between95and99' ? (
           <View style={styles.usagePromptWrap}>
             <Button onPress={onUpgrade} size="md" style={styles.usageUpgradeButton}>
               Upgrade to Premium
@@ -199,7 +238,7 @@ export default function CurrentPlanScreen({
           </View>
         ) : null}
 
-        {upgradeUsageBand === 'atLimit' ? (
+        {usage.upgradeUsageBand === 'atLimit' ? (
           <View style={styles.usagePromptWrap}>
             <Text style={styles.limitReachedText}>You&apos;ve reached the Free plan limit.</Text>
             <Button onPress={onUpgrade} size="md" style={styles.usageUpgradeButton}>
@@ -252,14 +291,7 @@ export default function CurrentPlanScreen({
               <View style={[styles.featureIconWrap, styles.featureIconWrapPremium]}>
                 <Feather name="check" size={14} style={styles.featureIconPremium} />
               </View>
-              <Text
-                style={[
-                  styles.featureText,
-                  index === 0 && styles.featureTextStrong,
-                ]}
-              >
-                {feature}
-              </Text>
+              <Text style={[styles.featureText, index === 0 && styles.featureTextStrong]}>{feature}</Text>
             </View>
           ))}
         </View>
@@ -328,9 +360,10 @@ const styles = createThemedStyles((theme) => ({
   subtitle: {
     marginTop: theme.spacing.xs,
     fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.lg,
+    fontSize: theme.fontSize.xl,
     lineHeight: theme.lineHeight.lg,
-    color: theme.colors.mutedForeground,
+    color: theme.colors.primaryDark,
+    fontWeight: theme.fontWeight.semibold
   },
   card: {
     borderWidth: 1,
@@ -373,12 +406,21 @@ const styles = createThemedStyles((theme) => ({
     borderRadius: theme.radii.xxl,
     backgroundColor: theme.colors.primary,
   },
+  progressFillPremium: {
+    backgroundColor: theme.colors.primary,
+  },
   sectionDivider: {
     marginVertical: theme.spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
   usageMessage: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    color: theme.colors.mutedForeground,
+  },
+  unlimitedRecipesText: {
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.lg,
     lineHeight: theme.lineHeight.lg,
@@ -459,7 +501,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.secondary,
   },
   featureIconWrapPremium: {
-    backgroundColor: theme.colors.primarySoft,
+    backgroundColor: theme.colors.background,
   },
   featureIcon: {
     color: theme.colors.warmGray,
@@ -551,5 +593,50 @@ const styles = createThemedStyles((theme) => ({
     fontSize: theme.fontSize.lg,
     lineHeight: theme.lineHeight.lg,
     color: theme.colors.mutedForeground,
+  },
+  supportText: {
+    textAlign: 'center',
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    color: theme.colors.mutedForeground,
+  },
+  subscriptionTitle: {
+    fontFamily: theme.fontFamily.semibold,
+    fontSize: theme.fontSize.xxl,
+    lineHeight: theme.lineHeight.xxl,
+    color: theme.colors.foreground,
+    marginBottom: theme.spacing.xs,
+  },
+  subscriptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  subscriptionLabel: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
+    color: theme.colors.mutedForeground,
+  },
+  subscriptionValue: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
+    color: theme.colors.foreground,
+  },
+  manageSubscriptionButton: {
+    marginTop: theme.spacing.sm,
+    borderRadius: theme.radii.xl,
+  },
+  supportFootnote: {
+    textAlign: 'center',
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
+  },
+  deactivatePremiumButton: {
+    borderRadius: theme.radii.xl,
   },
 }))

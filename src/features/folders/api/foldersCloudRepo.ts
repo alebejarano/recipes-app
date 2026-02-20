@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { removeFolderFromLocalRecipesByName } from '@/features/recipes/storage/localRecipesStorage'
 
 async function requireAuth() {
   const { data, error } = await supabase.auth.getSession()
@@ -28,6 +29,11 @@ function mapFolder(row: FolderRow): Folder {
     emoji: row.emoji ?? '📁',
     createdAt: row.created_at,
   }
+}
+
+function isFavoritesFolderName(name: string) {
+  const normalized = name.trim().toLowerCase()
+  return normalized === 'favorites' || normalized === 'favourites'
 }
 
 export async function listFolders(): Promise<Folder[]> {
@@ -83,6 +89,28 @@ export async function updateFolder(input: {
 }
 
 export async function deleteFolderWithRecipes(input: { id: string }): Promise<void> {
+  const { data: folderRow, error: folderError } = await supabase
+    .from('folders')
+    .select('name')
+    .eq('id', input.id)
+    .maybeSingle()
+
+  if (folderError) throw folderError
+  const folderName = typeof folderRow?.name === 'string' ? folderRow.name : ''
+
+  if (isFavoritesFolderName(folderName)) {
+    const { error: unlinkError } = await supabase
+      .from('recipe_folders')
+      .delete()
+      .eq('folder_id', input.id)
+    if (unlinkError) throw unlinkError
+
+    const { error: deleteFolderError } = await supabase.from('folders').delete().eq('id', input.id)
+    if (deleteFolderError) throw deleteFolderError
+    await removeFolderFromLocalRecipesByName(folderName)
+    return
+  }
+
   const { data: links, error: linksError } = await supabase
     .from('recipe_folders')
     .select('recipe_id')

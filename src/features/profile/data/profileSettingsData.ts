@@ -101,12 +101,11 @@ export function buildAccountItems(args: {
       id: 'premium',
       type: 'link',
       icon: 'award',
-      title: isPremium ? 'Premium active' : 'Upgrade to Premium',
+      title: isPremium ? 'Premium Active' : 'Upgrade to Premium',
       subtitle: isPremium
         ? 'Cloud sync and backup are enabled'
         : 'Unlock cloud backup, sync, and unlimited saves',
       tone: 'accent',
-      rightText: isPremium ? 'Active' : undefined,
       onPress: onPremiumPress,
     },
     {
@@ -116,8 +115,7 @@ export function buildAccountItems(args: {
       title: isPremium ? 'Manage subscription' : 'Current plan',
       subtitle: isPremium
         ? 'Billing, renewals, and invoices'
-        : 'Free plan, local-first on this device',
-      rightText: isPremium ? 'Premium' : 'Free',
+        : 'Free plan',
       onPress: isPremium ? onManagePlanPress : onCurrentPlanPress,
     },
     {

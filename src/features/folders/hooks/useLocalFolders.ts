@@ -44,6 +44,7 @@ export function useDeleteLocalFolder() {
     mutationFn: (id: string) => deleteLocalFolderRepo(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: LIST_KEY })
+      qc.invalidateQueries({ queryKey: ['recipes'] })
     },
   })
 }

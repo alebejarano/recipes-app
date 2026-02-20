@@ -1,5 +1,5 @@
 import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
-import { getAllAsync, getFirstAsync, runSqlAsync } from '@/lib/sqlite'
+import { getAllAsync, getFirstAsync, runSqlAsync, runSqlBatchAsync } from '@/lib/sqlite'
 import { File } from 'expo-file-system'
 
 import type { Recipe } from '@/features/recipes/api/recipesRepo'
@@ -27,6 +27,12 @@ type LocalRecipeFolder = {
   emoji: string
 }
 
+type LocalFolderLookupRow = {
+  id: string
+  name: string
+  emoji: string | null
+}
+
 type LocalRecipeRow = {
   id: string
   title: string
@@ -48,6 +54,12 @@ type LocalRecipeRow = {
   dirty: number
   version: number
   last_synced_at: string | null
+}
+
+type LocalRecipeFoldersRow = {
+  id: string
+  folders_json: string
+  version: number | null
 }
 
 export type LocalRecipeSyncRow = {
@@ -193,16 +205,33 @@ function buildIngredients(values: RecipeFormSubmitValues): LocalRecipeIngredient
     .filter((item) => item.name.length > 0)
 }
 
-function buildFolders(values: RecipeFormSubmitValues): LocalRecipeFolder[] {
+async function buildFolders(values: RecipeFormSubmitValues): Promise<LocalRecipeFolder[]> {
   const list = values.folders ?? []
-  return list
+  const normalizedFolderNames = list
     .map((name) => name.trim())
     .filter(Boolean)
-    .map((name) => ({
-      id: name.toLowerCase(),
+
+  if (normalizedFolderNames.length === 0) return []
+
+  const localFolders = await getAllAsync<LocalFolderLookupRow>(
+    'SELECT id, name, emoji FROM local_folders;'
+  )
+
+  const folderByName = new Map<string, LocalFolderLookupRow>()
+  for (const folder of localFolders) {
+    const key = folder.name.trim().toLowerCase()
+    if (!key || folderByName.has(key)) continue
+    folderByName.set(key, folder)
+  }
+
+  return normalizedFolderNames.map((name) => {
+    const existing = folderByName.get(name.toLowerCase())
+    return {
+      id: existing?.id ?? name.toLowerCase(),
       name,
-      emoji: '📁',
-    }))
+      emoji: existing?.emoji?.trim() || '📁',
+    }
+  })
 }
 
 async function listRecipeRows(params?: LocalRecipeListParams): Promise<LocalRecipeRow[]> {
@@ -275,7 +304,7 @@ export async function createLocalRecipe(
     image_url: resolvedImageUrl,
     steps_text: serializeSteps(values.steps),
     ingredients_json: JSON.stringify(buildIngredients(values)),
-    folders_json: JSON.stringify(buildFolders(values)),
+    folders_json: JSON.stringify(await buildFolders(values)),
     prep_time_minutes: values.prepTimeMinutes ?? null,
     cook_time_minutes: values.cookTimeMinutes ?? null,
     servings: values.servings ?? null,
@@ -378,7 +407,7 @@ export async function updateLocalRecipe(
       resolvedImageUrl,
       serializeSteps(values.steps),
       JSON.stringify(buildIngredients(values)),
-      JSON.stringify(buildFolders(values)),
+      JSON.stringify(await buildFolders(values)),
       values.prepTimeMinutes ?? null,
       values.cookTimeMinutes ?? null,
       values.servings ?? null,
@@ -614,4 +643,39 @@ export async function mergeCloudRecipesIntoLocal(params: {
 export async function purgeLocalRecipeRow(localId: string) {
   await ensureLocalSqliteMigrationReady()
   await runSqlAsync('DELETE FROM local_recipes WHERE id = ?;', [localId])
+}
+
+export async function removeFolderFromLocalRecipesByName(folderName: string): Promise<number> {
+  await ensureLocalSqliteMigrationReady()
+
+  const normalizedFolderName = folderName.trim().toLowerCase()
+  if (!normalizedFolderName) return 0
+
+  const rows = await getAllAsync<LocalRecipeFoldersRow>(
+    `SELECT id, folders_json, version
+      FROM local_recipes
+      WHERE deleted_at IS NULL;`
+  )
+
+  const now = new Date().toISOString()
+  const statements: { sql: string; params?: (string | number | null)[] }[] = []
+
+  for (const row of rows) {
+    const folders = parseJsonArray<LocalRecipeFolder>(row.folders_json)
+    const nextFolders = folders.filter(
+      (folder) => folder.name.trim().toLowerCase() !== normalizedFolderName
+    )
+    if (nextFolders.length === folders.length) continue
+
+    statements.push({
+      sql: `UPDATE local_recipes
+            SET folders_json = ?, updated_at = ?, dirty = ?, version = ?
+            WHERE id = ?;`,
+      params: [JSON.stringify(nextFolders), now, 1, (row.version ?? 1) + 1, row.id],
+    })
+  }
+
+  if (statements.length === 0) return 0
+  await runSqlBatchAsync(statements)
+  return statements.length
 }

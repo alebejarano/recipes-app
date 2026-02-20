@@ -7,8 +7,10 @@ import Screen from '@/components/Screen'
 import { createThemedStyles } from '@/styles/createStyles'
 
 type PremiumScreenProps = {
-  onUpgrade: () => void
+  onUpgrade?: (billingCycle: 'month' | 'year') => void
   onMaybeLater?: () => void
+  isActive?: boolean
+  onManageSubscription?: () => void
 }
 
 const premiumItems = [
@@ -35,7 +37,12 @@ const premiumItems = [
   },
 ]
 
-export default function PremiumScreen({ onUpgrade, onMaybeLater }: PremiumScreenProps) {
+export default function PremiumScreen({
+  onUpgrade,
+  onMaybeLater,
+  isActive = false,
+  onManageSubscription,
+}: PremiumScreenProps) {
   const [billingCycle, setBillingCycle] = React.useState<'month' | 'year'>('month')
   const priceValue = billingCycle === 'month' ? '5 €' : '36 €'
   const pricePeriod = billingCycle === 'month' ? '/ month' : '/ year'
@@ -52,15 +59,21 @@ export default function PremiumScreen({ onUpgrade, onMaybeLater }: PremiumScreen
 
       <View>
           <Image
-            source={require('@assets/illustrations/premium-counter.png')}
+            source={
+              isActive
+                ? require('@assets/illustrations/premium-pantry.png')
+                : require('@assets/illustrations/premium-counter.png')
+            }
             style={styles.heroImage}
             resizeMode="contain"
           />
       </View>
 
-      <Text style={styles.title}>Go Premium</Text>
+      <Text style={styles.title}>{isActive ? "You're on Premium!!" : 'Go Premium'}</Text>
       <Text style={styles.subtitle}>
-        Your recipes deserve a safe home. Sync everywhere, lose nothing.
+        {isActive
+          ? 'Your subscription is active and all premium features are enabled.'
+          : 'Your recipes deserve a safe home. Sync everywhere, lose nothing.'}
       </Text>
 
       <View style={styles.card}>
@@ -81,56 +94,72 @@ export default function PremiumScreen({ onUpgrade, onMaybeLater }: PremiumScreen
         </View>
       </View>
 
-      <View style={styles.priceRow}>
-        <View style={styles.billingToggle}>
-          <TouchableOpacity
-            style={[styles.billingOption, billingCycle === 'month' && styles.billingOptionActive]}
-            onPress={() => setBillingCycle('month')}
-            activeOpacity={0.85}
-          >
-            <Text
-              style={[
-                styles.billingOptionText,
-                billingCycle === 'month' && styles.billingOptionTextActive,
-              ]}
-            >
-              Monthly
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.billingOption, billingCycle === 'year' && styles.billingOptionActive]}
-            onPress={() => setBillingCycle('year')}
-            activeOpacity={0.85}
-          >
-            <Text
-              style={[
-                styles.billingOptionText,
-                billingCycle === 'year' && styles.billingOptionTextActive,
-              ]}
-            >
-              Yearly
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.priceMetaRow}>
-          <View style={styles.pricePill}>
-            <Text style={styles.priceValue}>{priceValue}</Text>
-            <Text style={styles.pricePeriod}>{pricePeriod}</Text>
+      {isActive ? (
+        <Button
+          onPress={onManageSubscription ?? (() => {})}
+          style={styles.ctaButton}
+          textStyle={styles.ctaText}
+        >
+          Manage Subscription
+        </Button>
+      ) : (
+        <>
+          <View style={styles.priceRow}>
+            <View style={styles.billingToggle}>
+              <TouchableOpacity
+                style={[styles.billingOption, billingCycle === 'month' && styles.billingOptionActive]}
+                onPress={() => setBillingCycle('month')}
+                activeOpacity={0.85}
+              >
+                <Text
+                  style={[
+                    styles.billingOptionText,
+                    billingCycle === 'month' && styles.billingOptionTextActive,
+                  ]}
+                >
+                  Monthly
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.billingOption, billingCycle === 'year' && styles.billingOptionActive]}
+                onPress={() => setBillingCycle('year')}
+                activeOpacity={0.85}
+              >
+                <Text
+                  style={[
+                    styles.billingOptionText,
+                    billingCycle === 'year' && styles.billingOptionTextActive,
+                  ]}
+                >
+                  Yearly
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.priceMetaRow}>
+              <View style={styles.pricePill}>
+                <Text style={styles.priceValue}>{priceValue}</Text>
+                <Text style={styles.pricePeriod}>{pricePeriod}</Text>
+              </View>
+              <Text style={[styles.sideLabel, billingCycle === 'year' && styles.sideLabelYearly]}>
+                {sideLabel}
+              </Text>
+            </View>
           </View>
-          <Text style={[styles.sideLabel, billingCycle === 'year' && styles.sideLabelYearly]}>
-            {sideLabel}
+          <Text style={styles.priceNote}>
+            It’s €5. Not €4.99. Yes, we rounded it — we cook honestly.
           </Text>
-        </View>
-      </View>
-      <Text style={styles.priceNote}>
-        It’s €5. Not €4.99. Yes, we rounded it — we cook honestly.
-      </Text>
+          <Button
+            onPress={() => onUpgrade?.(billingCycle)}
+            style={styles.ctaButton}
+            textStyle={styles.ctaText}
+            disabled={!onUpgrade}
+          >
+            Start Premium
+          </Button>
+        </>
+      )}
 
-      <Button onPress={onUpgrade} style={styles.ctaButton} textStyle={styles.ctaText}>
-        Start Premium
-      </Button>
-
-      {!!onMaybeLater && (
+      {!!onMaybeLater && !isActive && (
         <TouchableOpacity style={styles.notNowButton} onPress={onMaybeLater} activeOpacity={0.8}>
           <Text style={styles.notNowText}>Not now</Text>
         </TouchableOpacity>

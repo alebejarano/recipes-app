@@ -5,19 +5,23 @@ import { useAuth } from '@/features/auth/context/AuthContext'
 import { FREE_PLAN_MAX_RECIPES } from '@/features/subscription/constants/limits'
 
 export type Plan = 'free' | 'premium'
+export type BillingCycle = 'month' | 'year'
 
 type SubscriptionContextValue = {
   plan: Plan
+  billingCycle: BillingCycle
   isLoaded: boolean
   recipesCount: number
   maxFreeRecipes: number
-  setPlan: (nextPlan: Plan) => Promise<void>
+  setPlan: (nextPlan: Plan, options?: { billingCycle?: BillingCycle }) => Promise<void>
 }
 
 const PLAN_KEY_PREFIX = 'subscription:plan:user:'
+const BILLING_CYCLE_KEY_PREFIX = 'subscription:billing-cycle:user:'
 
 export const SubscriptionContext = createContext<SubscriptionContextValue>({
   plan: 'free',
+  billingCycle: 'month',
   isLoaded: false,
   recipesCount: 0,
   maxFreeRecipes: FREE_PLAN_MAX_RECIPES,
@@ -35,6 +39,7 @@ export function SubscriptionProvider({
 }: Props) {
   const { user } = useAuth()
   const [plan, setPlanState] = useState<Plan>('free')
+  const [billingCycle, setBillingCycleState] = useState<BillingCycle>('month')
   const [isLoaded, setIsLoaded] = useState(false)
 
   useEffect(() => {
@@ -44,18 +49,24 @@ export function SubscriptionProvider({
       if (!user?.id) {
         if (!isMounted) return
         setPlanState('free')
+        setBillingCycleState('month')
         setIsLoaded(true)
         return
       }
 
       setIsLoaded(false)
       try {
-        const raw = await AsyncStorage.getItem(`${PLAN_KEY_PREFIX}${user.id}`)
+        const [rawPlan, rawBillingCycle] = await Promise.all([
+          AsyncStorage.getItem(`${PLAN_KEY_PREFIX}${user.id}`),
+          AsyncStorage.getItem(`${BILLING_CYCLE_KEY_PREFIX}${user.id}`),
+        ])
         if (!isMounted) return
-        setPlanState(raw === 'premium' ? 'premium' : 'free')
+        setPlanState(rawPlan === 'premium' ? 'premium' : 'free')
+        setBillingCycleState(rawBillingCycle === 'year' ? 'year' : 'month')
       } catch {
         if (!isMounted) return
         setPlanState('free')
+        setBillingCycleState('month')
       } finally {
         if (isMounted) setIsLoaded(true)
       }
@@ -68,15 +79,21 @@ export function SubscriptionProvider({
   }, [user?.id])
 
   const setPlan = useCallback(
-    async (nextPlan: Plan) => {
+    async (nextPlan: Plan, options?: { billingCycle?: BillingCycle }) => {
       if (!user?.id) {
         setPlanState('free')
+        setBillingCycleState('month')
         return
       }
 
       const normalized = nextPlan === 'premium' ? 'premium' : 'free'
-      await AsyncStorage.setItem(`${PLAN_KEY_PREFIX}${user.id}`, normalized)
+      const nextBillingCycle = options?.billingCycle === 'year' ? 'year' : 'month'
+      await Promise.all([
+        AsyncStorage.setItem(`${PLAN_KEY_PREFIX}${user.id}`, normalized),
+        AsyncStorage.setItem(`${BILLING_CYCLE_KEY_PREFIX}${user.id}`, nextBillingCycle),
+      ])
       setPlanState(normalized)
+      setBillingCycleState(nextBillingCycle)
     },
     [user?.id]
   )
@@ -84,12 +101,13 @@ export function SubscriptionProvider({
   const value = useMemo(
     () => ({
       plan,
+      billingCycle,
       isLoaded,
       recipesCount: 0,
       maxFreeRecipes,
       setPlan,
     }),
-    [isLoaded, maxFreeRecipes, plan, setPlan]
+    [billingCycle, isLoaded, maxFreeRecipes, plan, setPlan]
   )
 
   return <SubscriptionContext.Provider value={value}>{children}</SubscriptionContext.Provider>

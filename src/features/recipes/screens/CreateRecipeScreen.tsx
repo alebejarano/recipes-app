@@ -16,9 +16,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import Button from '@/components/Button'
 import { createThemedStyles } from '@/styles/createStyles'
 
-import { useCloudFoldersList } from '@/features/folders/hooks/useCloudFoldersList'
-import { useCreateCloudFolder } from '@/features/folders/hooks/useCreateCloudFolder'
-import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
+import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
 import { uploadPremiumImport } from '@/features/recipes/api/importsRepo'
 import RecipeDocumentForm, {
   type RecipeDocumentFormHandle,
@@ -74,21 +72,17 @@ export default function CreateRecipeScreen({
   const [isUploadingPremiumImport, setIsUploadingPremiumImport] = useState(false)
   const createMutation = useStrategyCreateRecipe(routeMode)
   const documentMutation = useAddRecipeDocument()
-  const cloudFoldersQuery = useCloudFoldersList({ enabled: !shouldUseLocalData })
-  const localFoldersQuery = useLocalFoldersList()
-  const createLocalFolderMutation = useCreateLocalFolder()
-  const createCloudFolderMutation = useCreateCloudFolder()
+  const foldersQuery = useStrategyFoldersList(routeMode)
+  const createFolderMutation = useStrategyCreateFolder(routeMode)
   const folderSuggestions = useMemo(
     () => {
-      const source = shouldUseLocalData
-        ? localFoldersQuery.data ?? []
-        : cloudFoldersQuery.data ?? []
+      const source = foldersQuery.data ?? []
       return source.map((folder) => ({
         label: folder.name,
         emoji: folder.emoji,
       }))
     },
-    [cloudFoldersQuery.data, localFoldersQuery.data, shouldUseLocalData]
+    [foldersQuery.data]
   )
   const recipeFormRef = useRef<RecipeFormHandle>(null)
   const documentFormRef = useRef<RecipeDocumentFormHandle>(null)
@@ -174,13 +168,9 @@ export default function CreateRecipeScreen({
 
   const handleCreateFolder = useCallback(
     async (input: { name: string; emoji?: string | null }) => {
-      if (shouldUseLocalData) {
-        await createLocalFolderMutation.mutateAsync(input)
-        return
-      }
-      await createCloudFolderMutation.mutateAsync(input)
+      await createFolderMutation.mutateAsync(input)
     },
-    [createCloudFolderMutation, createLocalFolderMutation, shouldUseLocalData]
+    [createFolderMutation]
   )
 
   const triggerSave = useCallback(() => {

@@ -26,6 +26,11 @@ function isUncategorizedKey(key: string) {
   return key === 'uncategorized'
 }
 
+function isFavoritesFolderName(name: string) {
+  const normalized = name.trim().toLowerCase()
+  return normalized === 'favorites' || normalized === 'favourites'
+}
+
 function decodeKey(key: string) {
   // Router params are strings; keep it robust.
   try {
@@ -105,9 +110,12 @@ export default function CollectionDetailScreen() {
 
   const handleDeleteFolder = () => {
     if (!folderId) return
+    const isFavoritesFolder = isFavoritesFolderName(title)
     Alert.alert(
       'Delete folder?',
-      'Deleting this folder will delete all recipes inside it. This cannot be undone.',
+      isFavoritesFolder
+        ? 'Deleting Favorites will unmark favorite recipes. This cannot be undone.'
+        : 'Deleting this folder will delete all recipes inside it. This cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {

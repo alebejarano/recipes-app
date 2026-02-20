@@ -38,8 +38,8 @@ export default function DevLandingScreen() {
           Onboarding (reset)
         </Link>
 
-        <Link href="/(dev)/(tabs)">
-            Home (Tabs)
+        <Link href="/(dev)/current-plan-mock">
+            mock current plan
         </Link>
 
         <Link href="/(public)/get-started">

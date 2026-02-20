@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { createThemedStyles } from '@/styles/createStyles';
@@ -23,7 +23,15 @@ export default function PickCard({
   imageUrl,
   onPress,
 }: Props) {
-  const hasMedia = Boolean(emoji || imageUrl);
+  const normalizedImageUrl = useMemo(() => imageUrl?.trim() ?? '', [imageUrl]);
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [normalizedImageUrl]);
+
+  const hasImage = Boolean(normalizedImageUrl) && !imageFailed;
+  const hasMedia = Boolean(emoji || hasImage);
 
   return (
     <Pressable
@@ -35,12 +43,13 @@ export default function PickCard({
       <View style={styles.left}>
         {hasMedia ? (
           <View style={styles.iconCircle}>
-            {imageUrl ? (
+            {hasImage ? (
               <Image
-                source={{ uri: imageUrl }}
+                source={{ uri: normalizedImageUrl }}
                 style={styles.image}
                 contentFit="cover"
                 cachePolicy="memory-disk"
+                onError={() => setImageFailed(true)}
               />
             ) : (
               <Text style={styles.emoji}>{emoji}</Text>

@@ -9,6 +9,7 @@ export default function PublicCurrentPlanRoute() {
   return (
     <CurrentPlanScreen
       accountType="guest"
+      mode="public"
       onBack={() => router.replace('/(public)/(tabs)/profile')}
       onUpgrade={() => router.push('/premium')}
       onManageExistingRecipes={() => router.replace('/(public)/(tabs)/collections')}

@@ -17,7 +17,7 @@ import {
   buildAccountItems,
   type AccountPlan,
   type PreferenceToggles,
-} from '@/features/profile/data/profileMockData'
+} from '@/features/profile/data/profileSettingsData'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
@@ -97,7 +97,7 @@ export default function ProfileScreen() {
         plan: accountPlan,
         onPremiumPress: () => router.push('/premium'),
         onCurrentPlanPress: () => router.push('/current-plan'),
-        onManagePlanPress: () => router.push('/premium'),
+        onManagePlanPress: () => router.push('/current-plan'),
         onPrivacyPress: () => router.push('/privacy'),
         isLoggingOut,
         isDeletingAccount,

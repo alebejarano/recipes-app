@@ -5,7 +5,7 @@ import { createThemedStyles } from '@/styles/createStyles';
 
 import DietaryChip from '@/features/profile/components/DietaryChip';
 import SectionHeader from '@/features/profile/components/SectionHeader';
-import type { DietaryId, DietaryOption } from '@/features/profile/data/profileMockData';
+import type { DietaryId, DietaryOption } from '@/features/profile/data/profileSettingsData';
 
 type Props = {
   title: string;

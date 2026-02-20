@@ -75,6 +75,11 @@ export async function listLocalFolders(params?: LocalFoldersListParams): Promise
   return rows.map(toFolderView)
 }
 
+export async function getLocalFolder(id: string): Promise<LocalFolder | null> {
+  const row = await getById(id)
+  return row ? toFolderView(row) : null
+}
+
 export async function createLocalFolder(input: {
   name: string
   emoji?: string | null

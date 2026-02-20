@@ -498,7 +498,9 @@ async function getOrCreateFolderIds(names: string[], userId: string): Promise<st
 
   const map = new Map<string, string>()
   for (const folder of (existing ?? []) as RecipeFolderRow[]) {
-    map.set(folder.name.toLowerCase(), folder.id)
+    const key = folder.name.trim().toLowerCase()
+    if (!key || map.has(key)) continue
+    map.set(key, folder.id)
   }
 
   const missing = trimmed.filter((name) => !map.has(name.toLowerCase()))

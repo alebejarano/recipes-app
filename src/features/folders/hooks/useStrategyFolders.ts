@@ -65,7 +65,7 @@ export function useStrategyDeleteFolder(mode: StorageScreenMode = 'auth') {
       deleteFolderForStrategy({ mode, canUseCloudSync }, folderId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['folders', target, 'list'] })
-      qc.invalidateQueries({ queryKey: ['recipes', 'list'] })
+      qc.invalidateQueries({ queryKey: ['recipes'] })
     },
   })
 }

@@ -57,6 +57,7 @@ export function getCollectionsHelperText(segment: SegmentKey): string {
 
 export function pickEmoji(label: string): string {
   const s = label.toLowerCase();
+  if (s.includes('favorite') || s.includes('favourite')) return '❤️';
   if (s.includes('breakfast')) return '🌅';
   if (s.includes('dessert')) return '🍰';
   if (s.includes('dinner')) return '🍽️';
