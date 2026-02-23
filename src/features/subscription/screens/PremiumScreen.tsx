@@ -10,6 +10,7 @@ type PremiumScreenProps = {
   onUpgrade?: (billingCycle: 'month' | 'year') => void
   onMaybeLater?: () => void
   isActive?: boolean
+  isUpgrading?: boolean
   onManageSubscription?: () => void
 }
 
@@ -41,6 +42,7 @@ export default function PremiumScreen({
   onUpgrade,
   onMaybeLater,
   isActive = false,
+  isUpgrading = false,
   onManageSubscription,
 }: PremiumScreenProps) {
   const [billingCycle, setBillingCycle] = React.useState<'month' | 'year'>('month')
@@ -152,9 +154,9 @@ export default function PremiumScreen({
             onPress={() => onUpgrade?.(billingCycle)}
             style={styles.ctaButton}
             textStyle={styles.ctaText}
-            disabled={!onUpgrade}
+            disabled={!onUpgrade || isUpgrading}
           >
-            Start Premium
+            {isUpgrading ? 'Upgrading...' : 'Start Premium'}
           </Button>
         </>
       )}

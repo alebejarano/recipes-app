@@ -6,6 +6,7 @@ import {
   listLocalFolders,
   updateLocalFolder,
 } from '@/features/folders/storage/localFoldersStorage'
+import { triggerFolderSync } from '@/features/folders/sync/folderSync'
 import { removeFolderFromLocalRecipesByName } from '@/features/recipes/storage/localRecipesStorage'
 
 function isFavoritesFolderName(name: string) {
@@ -40,6 +41,7 @@ export async function createLocalFolderRepo(input: {
   emoji?: string | null
 }): Promise<Folder> {
   const row = await createLocalFolder(input)
+  void triggerFolderSync()
   return toFolderShape(row)
 }
 
@@ -49,6 +51,7 @@ export async function updateLocalFolderRepo(input: {
   emoji?: string | null
 }): Promise<Folder> {
   const row = await updateLocalFolder(input)
+  void triggerFolderSync()
   return toFolderShape(row)
 }
 
@@ -58,4 +61,5 @@ export async function deleteLocalFolderRepo(id: string): Promise<void> {
     await removeFolderFromLocalRecipesByName(folder.name)
   }
   await deleteLocalFolder(id)
+  void triggerFolderSync()
 }

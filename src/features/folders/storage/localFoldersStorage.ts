@@ -1,3 +1,4 @@
+import type { Folder } from '@/features/folders/api/foldersCloudRepo'
 import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
 import { getAllAsync, getFirstAsync, runSqlAsync } from '@/lib/sqlite'
 
@@ -23,6 +24,15 @@ export type LocalFolder = {
   updatedAt: string
 }
 
+export type LocalFolderSyncRow = {
+  id: string
+  ownerUserId: string | null
+  cloudId: string | null
+  name: string
+  emoji: string | null
+  deletedAt: string | null
+}
+
 type LocalFoldersListParams = {
   limit?: number
   search?: string
@@ -41,18 +51,26 @@ async function readAll(params?: LocalFoldersListParams): Promise<LocalFolderRow[
   if (search) {
     return getAllAsync<LocalFolderRow>(
       `SELECT * FROM local_folders
-       WHERE name LIKE ? COLLATE NOCASE
+       WHERE deleted_at IS NULL
+         AND name LIKE ? COLLATE NOCASE
        ORDER BY name ASC
        LIMIT ?;`,
       [`%${search}%`, limit]
     )
   }
-  return getAllAsync<LocalFolderRow>('SELECT * FROM local_folders ORDER BY name ASC LIMIT ?;', [limit])
+  return getAllAsync<LocalFolderRow>(
+    'SELECT * FROM local_folders WHERE deleted_at IS NULL ORDER BY name ASC LIMIT ?;',
+    [limit]
+  )
 }
 
-async function getById(id: string): Promise<LocalFolderRow | null> {
+async function getById(id: string, includeDeleted = false): Promise<LocalFolderRow | null> {
   await ensureLocalSqliteMigrationReady()
-  return getFirstAsync<LocalFolderRow>('SELECT * FROM local_folders WHERE id = ? LIMIT 1;', [id])
+  const deletedFilter = includeDeleted ? '' : ' AND deleted_at IS NULL'
+  return getFirstAsync<LocalFolderRow>(
+    `SELECT * FROM local_folders WHERE id = ?${deletedFilter} LIMIT 1;`,
+    [id]
+  )
 }
 
 function toFolderView(row: LocalFolderRow): LocalFolder {
@@ -151,5 +169,152 @@ export async function updateLocalFolder(input: {
 
 export async function deleteLocalFolder(id: string): Promise<void> {
   await ensureLocalSqliteMigrationReady()
+  const existing = await getById(id, true)
+  if (!existing) return
+
+  const shouldSoftDeleteForSync = Boolean(existing.cloud_id || existing.owner_user_id)
+  if (shouldSoftDeleteForSync) {
+    const now = new Date().toISOString()
+    await runSqlAsync(
+      `UPDATE local_folders
+        SET deleted_at = ?, updated_at = ?, dirty = ?, version = ?
+        WHERE id = ?;`,
+      [now, now, 1, (existing.version ?? 1) + 1, id]
+    )
+    return
+  }
+
   await runSqlAsync('DELETE FROM local_folders WHERE id = ?;', [id])
+}
+
+function toSyncRow(row: LocalFolderRow): LocalFolderSyncRow {
+  return {
+    id: row.id,
+    ownerUserId: row.owner_user_id ?? null,
+    cloudId: row.cloud_id ?? null,
+    name: row.name,
+    emoji: row.emoji ?? null,
+    deletedAt: row.deleted_at ?? null,
+  }
+}
+
+export async function listDirtyLocalFolderRowsForSync(limit = 100): Promise<LocalFolderSyncRow[]> {
+  await ensureLocalSqliteMigrationReady()
+  const rows = await getAllAsync<LocalFolderRow>(
+    `SELECT * FROM local_folders
+      WHERE dirty = 1
+      ORDER BY updated_at ASC
+      LIMIT ?;`,
+    [limit]
+  )
+  return rows.map(toSyncRow)
+}
+
+export async function markLocalFolderSynced(params: {
+  localId: string
+  ownerUserId: string
+  cloudId: string
+}) {
+  await ensureLocalSqliteMigrationReady()
+  const now = new Date().toISOString()
+  await runSqlAsync(
+    `UPDATE local_folders
+      SET owner_user_id = ?, cloud_id = ?, dirty = ?, deleted_at = ?, last_synced_at = ?, updated_at = ?
+      WHERE id = ?;`,
+    [params.ownerUserId, params.cloudId, 0, null, now, now, params.localId]
+  )
+}
+
+export async function mergeCloudFoldersIntoLocal(params: {
+  ownerUserId: string
+  cloudFolders: Folder[]
+}) {
+  await ensureLocalSqliteMigrationReady()
+
+  const ownerUserId = params.ownerUserId.trim()
+  if (!ownerUserId) return
+
+  const cloudFolders = params.cloudFolders
+  const now = new Date().toISOString()
+  const cloudIds = new Set(cloudFolders.map((folder) => folder.id))
+  const existingRows = await getAllAsync<LocalFolderRow>(
+    'SELECT * FROM local_folders WHERE owner_user_id = ? OR owner_user_id IS NULL;',
+    [ownerUserId]
+  )
+
+  const byCloudId = new Map<string, LocalFolderRow>()
+  for (const row of existingRows) {
+    if (row.cloud_id) {
+      byCloudId.set(row.cloud_id, row)
+    }
+  }
+
+  for (const cloudFolder of cloudFolders) {
+    const existing = byCloudId.get(cloudFolder.id)
+    if (existing) {
+      if (existing.dirty === 1) continue
+
+      await runSqlAsync(
+        `UPDATE local_folders
+          SET
+            name = ?,
+            emoji = ?,
+            updated_at = ?,
+            deleted_at = ?,
+            owner_user_id = ?,
+            cloud_id = ?,
+            dirty = ?,
+            last_synced_at = ?
+          WHERE id = ?;`,
+        [
+          cloudFolder.name,
+          cloudFolder.emoji ?? null,
+          now,
+          null,
+          ownerUserId,
+          cloudFolder.id,
+          0,
+          now,
+          existing.id,
+        ]
+      )
+      continue
+    }
+
+    const localId = `cloud_${cloudFolder.id}`
+    await runSqlAsync(
+      `INSERT INTO local_folders
+        (
+          id, name, emoji, created_at, updated_at, deleted_at,
+          owner_user_id, cloud_id, dirty, version, last_synced_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      [
+        localId,
+        cloudFolder.name,
+        cloudFolder.emoji ?? null,
+        cloudFolder.createdAt ?? now,
+        cloudFolder.createdAt ?? now,
+        null,
+        ownerUserId,
+        cloudFolder.id,
+        0,
+        1,
+        now,
+      ]
+    )
+  }
+
+  for (const existing of existingRows) {
+    if (!existing.cloud_id) continue
+    if (existing.dirty === 1) continue
+    if (!cloudIds.has(existing.cloud_id)) {
+      await runSqlAsync('DELETE FROM local_folders WHERE id = ?;', [existing.id])
+    }
+  }
+}
+
+export async function purgeLocalFolderRow(localId: string) {
+  await ensureLocalSqliteMigrationReady()
+  await runSqlAsync('DELETE FROM local_folders WHERE id = ?;', [localId])
 }

@@ -8,6 +8,7 @@ import {
   listLocalNotes,
   updateLocalNote,
 } from '@/features/notes/storage/localNotesStorage'
+import { triggerNoteSync } from '@/features/notes/sync/noteSync'
 
 const LIST_KEY = ['notes', 'local', 'list']
 type LocalNotesListParams = {
@@ -37,6 +38,7 @@ export function useCreateLocalNote() {
       createLocalNote(input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: LIST_KEY })
+      void triggerNoteSync()
     },
   })
 }
@@ -49,6 +51,7 @@ export function useUpdateLocalNote(id: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: LIST_KEY })
       qc.invalidateQueries({ queryKey: ['notes', 'local', 'detail', id] })
+      void triggerNoteSync()
     },
   })
 }
@@ -59,6 +62,7 @@ export function useDeleteLocalNote() {
     mutationFn: (id: string) => deleteLocalNote(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: LIST_KEY })
+      void triggerNoteSync()
     },
   })
 }

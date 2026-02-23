@@ -33,11 +33,10 @@ type UpdateFolderInput = {
 
 export function resolveFolderStorageTarget({
   mode,
-  canUseCloudSync,
 }: FolderServiceContext): FolderStorageTarget {
   if (mode === 'public') return 'local'
   if (mode === 'dev') return 'cloud'
-  return canUseCloudSync ? 'cloud' : 'local'
+  return 'local'
 }
 
 export async function listFoldersForStrategy(

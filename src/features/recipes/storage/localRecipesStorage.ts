@@ -103,7 +103,9 @@ type LocalRecipeListParams = {
 }
 
 function makeId() {
-  return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  const randomUuid = globalThis.crypto?.randomUUID?.()
+  if (randomUuid) return randomUuid
+  return `local_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
 }
 
 function parseStepsText(value: string | null | undefined): string[] {

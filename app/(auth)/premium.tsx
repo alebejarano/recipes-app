@@ -1,27 +1,30 @@
-// app/(auth)/premium.tsx
-import React, { useContext, useState } from 'react'
+import React, { useContext } from 'react'
+import { Alert } from 'react-native'
 import { useRouter } from 'expo-router'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
 import PremiumScreen from '@/features/subscription/screens/PremiumScreen'
+import { upgradeToPremium } from '@/features/subscription/services/upgradeToPremium'
 
 export default function PremiumRoute() {
   const router = useRouter()
   const { user } = useAuth()
-  const { plan, setPlan } = useContext(SubscriptionContext)
-  const [isUpgrading, setIsUpgrading] = useState(false)
+  const { plan, upgradeStatus, setPlan, setUpgradeStatus } = useContext(SubscriptionContext)
+  const isUpgrading = upgradeStatus === 'running'
 
   const handleUpgrade = async (billingCycle: 'month' | 'year') => {
     if (!user?.id || isUpgrading) return
-    setIsUpgrading(true)
     try {
-      await setPlan('premium', { billingCycle })
+      await upgradeToPremium({
+        userId: user.id,
+        billingCycle,
+        setPlan,
+        setUpgradeStatus,
+      })
       router.replace('/(auth)/current-plan')
     } catch (error: any) {
-      console.warn('Premium upgrade failed in local test mode:', error?.message ?? error)
-    } finally {
-      setIsUpgrading(false)
+      Alert.alert('Upgrade failed', error?.message ?? 'Could not complete premium upgrade.')
     }
   }
 
@@ -40,5 +43,5 @@ export default function PremiumRoute() {
     )
   }
 
-  return <PremiumScreen onUpgrade={handleUpgrade} onMaybeLater={handleMaybeLater} />
+  return <PremiumScreen onUpgrade={handleUpgrade} onMaybeLater={handleMaybeLater} isUpgrading={isUpgrading} />
 }

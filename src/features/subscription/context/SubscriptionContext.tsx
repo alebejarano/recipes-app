@@ -6,26 +6,32 @@ import { FREE_PLAN_MAX_RECIPES } from '@/features/subscription/constants/limits'
 
 export type Plan = 'free' | 'premium'
 export type BillingCycle = 'month' | 'year'
+export type UpgradeStatus = 'idle' | 'running' | 'failed'
 
 type SubscriptionContextValue = {
   plan: Plan
   billingCycle: BillingCycle
+  upgradeStatus: UpgradeStatus
   isLoaded: boolean
   recipesCount: number
   maxFreeRecipes: number
   setPlan: (nextPlan: Plan, options?: { billingCycle?: BillingCycle }) => Promise<void>
+  setUpgradeStatus: (nextStatus: UpgradeStatus) => Promise<void>
 }
 
 const PLAN_KEY_PREFIX = 'subscription:plan:user:'
 const BILLING_CYCLE_KEY_PREFIX = 'subscription:billing-cycle:user:'
+const UPGRADE_STATUS_KEY_PREFIX = 'subscription:upgrade-status:user:'
 
 export const SubscriptionContext = createContext<SubscriptionContextValue>({
   plan: 'free',
   billingCycle: 'month',
+  upgradeStatus: 'idle',
   isLoaded: false,
   recipesCount: 0,
   maxFreeRecipes: FREE_PLAN_MAX_RECIPES,
   setPlan: async () => {},
+  setUpgradeStatus: async () => {},
 })
 
 type Props = {
@@ -40,6 +46,7 @@ export function SubscriptionProvider({
   const { user } = useAuth()
   const [plan, setPlanState] = useState<Plan>('free')
   const [billingCycle, setBillingCycleState] = useState<BillingCycle>('month')
+  const [upgradeStatus, setUpgradeStatusState] = useState<UpgradeStatus>('idle')
   const [isLoaded, setIsLoaded] = useState(false)
 
   useEffect(() => {
@@ -50,23 +57,27 @@ export function SubscriptionProvider({
         if (!isMounted) return
         setPlanState('free')
         setBillingCycleState('month')
+        setUpgradeStatusState('idle')
         setIsLoaded(true)
         return
       }
 
       setIsLoaded(false)
       try {
-        const [rawPlan, rawBillingCycle] = await Promise.all([
+        const [rawPlan, rawBillingCycle, rawUpgradeStatus] = await Promise.all([
           AsyncStorage.getItem(`${PLAN_KEY_PREFIX}${user.id}`),
           AsyncStorage.getItem(`${BILLING_CYCLE_KEY_PREFIX}${user.id}`),
+          AsyncStorage.getItem(`${UPGRADE_STATUS_KEY_PREFIX}${user.id}`),
         ])
         if (!isMounted) return
         setPlanState(rawPlan === 'premium' ? 'premium' : 'free')
         setBillingCycleState(rawBillingCycle === 'year' ? 'year' : 'month')
+        setUpgradeStatusState(rawUpgradeStatus === 'running' || rawUpgradeStatus === 'failed' ? rawUpgradeStatus : 'idle')
       } catch {
         if (!isMounted) return
         setPlanState('free')
         setBillingCycleState('month')
+        setUpgradeStatusState('idle')
       } finally {
         if (isMounted) setIsLoaded(true)
       }
@@ -91,9 +102,25 @@ export function SubscriptionProvider({
       await Promise.all([
         AsyncStorage.setItem(`${PLAN_KEY_PREFIX}${user.id}`, normalized),
         AsyncStorage.setItem(`${BILLING_CYCLE_KEY_PREFIX}${user.id}`, nextBillingCycle),
+        AsyncStorage.setItem(`${UPGRADE_STATUS_KEY_PREFIX}${user.id}`, 'idle'),
       ])
       setPlanState(normalized)
       setBillingCycleState(nextBillingCycle)
+      setUpgradeStatusState('idle')
+    },
+    [user?.id]
+  )
+
+  const setUpgradeStatus = useCallback(
+    async (nextStatus: UpgradeStatus) => {
+      if (!user?.id) {
+        setUpgradeStatusState('idle')
+        return
+      }
+      const normalized: UpgradeStatus =
+        nextStatus === 'running' || nextStatus === 'failed' ? nextStatus : 'idle'
+      await AsyncStorage.setItem(`${UPGRADE_STATUS_KEY_PREFIX}${user.id}`, normalized)
+      setUpgradeStatusState(normalized)
     },
     [user?.id]
   )
@@ -102,12 +129,14 @@ export function SubscriptionProvider({
     () => ({
       plan,
       billingCycle,
+      upgradeStatus,
       isLoaded,
       recipesCount: 0,
       maxFreeRecipes,
       setPlan,
+      setUpgradeStatus,
     }),
-    [billingCycle, isLoaded, maxFreeRecipes, plan, setPlan]
+    [billingCycle, isLoaded, maxFreeRecipes, plan, setPlan, setUpgradeStatus, upgradeStatus]
   )
 
   return <SubscriptionContext.Provider value={value}>{children}</SubscriptionContext.Provider>

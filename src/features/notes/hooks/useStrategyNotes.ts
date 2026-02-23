@@ -6,6 +6,7 @@ import { useCreateLocalNote, useDeleteLocalNote, useLocalNote, useLocalNotesList
 import { useNote } from '@/features/notes/hooks/useNote'
 import { useNotesList } from '@/features/notes/hooks/useNotesList'
 import { useUpdateNote } from '@/features/notes/hooks/useUpdateNote'
+import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { useStorageDataMode, type StorageScreenMode } from '@/features/storage/hooks/useStorageDataMode'
 
 type NotesListParams = {
@@ -14,7 +15,9 @@ type NotesListParams = {
 }
 
 export function useStrategyNotesList(params?: NotesListParams, mode: StorageScreenMode = 'auth') {
-  const { shouldUseLocalData } = useStorageDataMode(mode)
+  const { shouldUseLocalData: baseLocalMode } = useStorageDataMode(mode)
+  const { cloudSyncEnabled } = useStorageStrategy()
+  const shouldUseLocalData = baseLocalMode || (mode === 'auth' && cloudSyncEnabled)
   const cloudQuery = useNotesList({
     ...params,
     enabled: !shouldUseLocalData,
@@ -24,28 +27,36 @@ export function useStrategyNotesList(params?: NotesListParams, mode: StorageScre
 }
 
 export function useStrategyNote(id: string, mode: StorageScreenMode = 'auth') {
-  const { shouldUseLocalData } = useStorageDataMode(mode)
+  const { shouldUseLocalData: baseLocalMode } = useStorageDataMode(mode)
+  const { cloudSyncEnabled } = useStorageStrategy()
+  const shouldUseLocalData = baseLocalMode || (mode === 'auth' && cloudSyncEnabled)
   const cloudQuery = useNote(id, { enabled: !shouldUseLocalData })
   const localQuery = useLocalNote(id)
   return shouldUseLocalData ? localQuery : cloudQuery
 }
 
 export function useStrategyCreateNote(mode: StorageScreenMode = 'auth') {
-  const { shouldUseLocalData } = useStorageDataMode(mode)
+  const { shouldUseLocalData: baseLocalMode } = useStorageDataMode(mode)
+  const { cloudSyncEnabled } = useStorageStrategy()
+  const shouldUseLocalData = baseLocalMode || (mode === 'auth' && cloudSyncEnabled)
   const cloudMutation = useCreateNote()
   const localMutation = useCreateLocalNote()
   return shouldUseLocalData ? localMutation : cloudMutation
 }
 
 export function useStrategyUpdateNote(id: string, mode: StorageScreenMode = 'auth') {
-  const { shouldUseLocalData } = useStorageDataMode(mode)
+  const { shouldUseLocalData: baseLocalMode } = useStorageDataMode(mode)
+  const { cloudSyncEnabled } = useStorageStrategy()
+  const shouldUseLocalData = baseLocalMode || (mode === 'auth' && cloudSyncEnabled)
   const cloudMutation = useUpdateNote(id)
   const localMutation = useUpdateLocalNote(id)
   return shouldUseLocalData ? localMutation : cloudMutation
 }
 
 export function useStrategyDeleteNote(mode: StorageScreenMode = 'auth') {
-  const { shouldUseLocalData } = useStorageDataMode(mode)
+  const { shouldUseLocalData: baseLocalMode } = useStorageDataMode(mode)
+  const { cloudSyncEnabled } = useStorageStrategy()
+  const shouldUseLocalData = baseLocalMode || (mode === 'auth' && cloudSyncEnabled)
   const cloudMutation = useDeleteNote()
   const localMutation = useDeleteLocalNote()
 

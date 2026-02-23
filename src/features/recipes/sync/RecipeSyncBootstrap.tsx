@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { AppState } from 'react-native'
 
+import { triggerFolderSync } from '@/features/folders/sync/folderSync'
+import { triggerNoteSync } from '@/features/notes/sync/noteSync'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
 
@@ -13,15 +15,21 @@ export default function RecipeSyncBootstrap() {
     if (!cloudSyncEnabled || !isAuthenticated) return
 
     void triggerRecipeSync()
+    void triggerNoteSync()
+    void triggerFolderSync()
 
     const appStateSubscription = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active') {
         void triggerRecipeSync()
+        void triggerNoteSync()
+        void triggerFolderSync()
       }
     })
 
     const intervalId = setInterval(() => {
       void triggerRecipeSync()
+      void triggerNoteSync()
+      void triggerFolderSync()
     }, SYNC_POLL_INTERVAL_MS)
 
     return () => {
