@@ -110,7 +110,7 @@ export default function ProfileScreen() {
   return (
     <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
       <ProfileHeader
-        title="Account"
+        title="Profile"
       />
 
       <ProfileUserCard
