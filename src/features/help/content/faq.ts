@@ -60,6 +60,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
         answers: [
           'The Free plan includes:',
           '• Up to 100 recipes',
+          '• Up to 10MB per import file (PDF or image)',
           '• Up to 50MB total storage for imports and images',
           '• Unlimited notes',
           '• Full offline access on this device',
@@ -72,6 +73,15 @@ export const FAQ_SECTIONS: FaqSection[] = [
         answers: [
           "If you reach the recipe or storage limit, you won’t be able to add new recipes or imports until you free up space or upgrade to Premium.",
           "Your existing content remains accessible.",
+        ],
+      },
+      {
+        id: 'free-plan-device-space',
+        question: 'Why can I save more recipes, notes, or imports if I have not hit the Free plan limits?',
+        answers: [
+          'Free plan limits are app limits, but your device still needs enough available storage to save new data.',
+          'If your phone is low on space, imports or images may fail even when your plan limits have not been reached.',
+          'Try freeing up device storage and then import again.',
         ],
       },
       {
@@ -153,6 +163,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
           'Premium includes:',
           '• Up to 10MB per file (PDF or image)',
           '• 5GB total storage for your library',
+          '• Unlimited recipes and notes',
           "If you ever approach the limit, we'll let you know.",
         ],
       },

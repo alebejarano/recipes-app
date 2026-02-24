@@ -28,11 +28,13 @@ import {
   getActiveImportBytesByUri,
   getImportsUsageSummary,
   isManagedLocalImportImageUri,
+  type ImportPlan,
 } from '@/features/recipes/storage/importsStorage'
 import {
   FREE_PLAN_MAX_IMPORT_FILE_BYTES,
   FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
   IMPORT_FILE_TOO_LARGE_MESSAGE,
+  PREMIUM_PLAN_MAX_STORAGE_BYTES,
   RECIPE_IMAGE_MASTER_COMPRESS_QUALITY,
   RECIPE_IMAGE_MASTER_MAX_DIMENSION_PX,
   RECIPE_IMAGE_MASTER_MAX_FILE_BYTES,
@@ -114,6 +116,7 @@ type Props = {
   showActions?: boolean
   suggestedFolders?: FolderSuggestion[]
   imageUploadMode?: 'cloud' | 'local'
+  plan?: ImportPlan
 }
 
 const IMAGE_QUALITY_STEPS = [
@@ -214,6 +217,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     showActions = true,
     suggestedFolders = [],
     imageUploadMode = 'cloud',
+    plan = 'free',
   },
   ref
 ) {
@@ -495,9 +499,17 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
             ? await getActiveImportBytesByUri(values.imageUrl ?? '')
             : 0
           if (
-            usage.totalBytes - replacingBytes + size > FREE_PLAN_MAX_IMPORT_TOTAL_BYTES
+            usage.totalBytes - replacingBytes + size >
+            (plan === 'premium'
+              ? PREMIUM_PLAN_MAX_STORAGE_BYTES
+              : FREE_PLAN_MAX_IMPORT_TOTAL_BYTES)
           ) {
-            Alert.alert('Storage limit reached', 'Free accounts can save up to 50 MB of files.')
+            Alert.alert(
+              'Storage limit reached',
+              plan === 'premium'
+                ? 'Premium includes up to 5 GB total storage.'
+                : 'Free accounts can save up to 50 MB of files.'
+            )
             return
           }
         } else {
@@ -516,7 +528,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         setIsUploadingImage(false)
       }
     },
-    [imageUploadMode, update, values.imageUrl]
+    [imageUploadMode, plan, update, values.imageUrl]
   )
 
   const handlePickImage = useCallback(async () => {

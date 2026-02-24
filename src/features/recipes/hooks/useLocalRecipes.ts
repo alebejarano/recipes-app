@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
+import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import type { LocalRecipe } from '@/features/recipes/storage/localRecipesStorage'
 import {
   createLocalRecipe,
@@ -33,9 +34,11 @@ export function useLocalRecipe(id: string) {
 }
 
 export function useCreateLocalRecipe() {
+  const { isPremium } = useStorageStrategy()
+  const plan = isPremium ? 'premium' : 'free'
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (values: RecipeFormSubmitValues) => createLocalRecipe(values),
+    mutationFn: (values: RecipeFormSubmitValues) => createLocalRecipe(values, { plan }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: LIST_KEY })
       void triggerRecipeSync()
@@ -44,9 +47,11 @@ export function useCreateLocalRecipe() {
 }
 
 export function useUpdateLocalRecipe(id: string) {
+  const { isPremium } = useStorageStrategy()
+  const plan = isPremium ? 'premium' : 'free'
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (values: RecipeFormSubmitValues) => updateLocalRecipe(id, values),
+    mutationFn: (values: RecipeFormSubmitValues) => updateLocalRecipe(id, values, { plan }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: LIST_KEY })
       qc.invalidateQueries({ queryKey: ['recipes', 'local', 'detail', id] })

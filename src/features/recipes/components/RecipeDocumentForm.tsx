@@ -19,11 +19,13 @@ import {
   type RecipeDocumentUsageSummary,
 } from '@/features/recipes/storage/recipeDocumentStorage'
 import { getRecipeDocumentUsageSummary } from '@/features/recipes/storage/recipeDocumentStorage'
+import type { ImportPlan } from '@/features/recipes/storage/importsStorage'
 import {
   FREE_PLAN_MAX_IMPORT_FILE_BYTES,
   FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
   IMPORT_FILE_TOO_LARGE_MESSAGE,
   IMPORT_ALLOWED_MIME_TYPES,
+  PREMIUM_PLAN_MAX_STORAGE_BYTES,
 } from '@/features/subscription/constants/limits'
 
 export type RecipeDocumentFormValues = {
@@ -37,6 +39,7 @@ export type RecipeDocumentFormHandle = {
 type Props = {
   isSubmitting?: boolean
   autoPickPdf?: boolean
+  plan?: ImportPlan
   onSubmit: (values: RecipeDocumentFormValues, file: PendingRecipeDocument) => Promise<void> | void
 }
 
@@ -137,7 +140,7 @@ function formatBytes(bytes: number) {
 }
 
 const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function RecipeDocumentForm(
-  { isSubmitting, autoPickPdf = false, onSubmit },
+  { isSubmitting, autoPickPdf = false, plan = 'free', onSubmit },
   ref
 ) {
   const [title, setTitle] = useState('')
@@ -187,8 +190,15 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
         Alert.alert('File too large', IMPORT_FILE_TOO_LARGE_MESSAGE)
         return
       }
-      if (totalBytes + size > FREE_PLAN_MAX_IMPORT_TOTAL_BYTES) {
-        Alert.alert('Storage limit reached', 'Free accounts can save up to 50 MB of files.')
+      const maxTotalBytes =
+        plan === 'premium' ? PREMIUM_PLAN_MAX_STORAGE_BYTES : FREE_PLAN_MAX_IMPORT_TOTAL_BYTES
+      if (totalBytes + size > maxTotalBytes) {
+        Alert.alert(
+          'Storage limit reached',
+          plan === 'premium'
+            ? 'Premium includes up to 5 GB total storage.'
+            : 'Free accounts can save up to 50 MB of files.'
+        )
         return
       }
 
@@ -211,7 +221,7 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
     } finally {
       setIsPicking(false)
     }
-  }, [isPicking, usage.totalBytes])
+  }, [isPicking, plan, usage.totalBytes])
 
   useImperativeHandle(
     ref,
@@ -228,8 +238,11 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
   )
 
   const helperText = useMemo(() => {
-    return `Free plan: PDF, JPG, PNG up to 50 MB total. ${formatBytes(usage.totalBytes)} used.`
-  }, [usage.totalBytes])
+    if (plan === 'premium') {
+      return `Premium: PDF, JPG, PNG up to 10MB per file and 5GB total. ${formatBytes(usage.totalBytes)} used.`
+    }
+    return `Free plan: PDF, JPG, PNG up to 10MB per file and 50MB total. ${formatBytes(usage.totalBytes)} used.`
+  }, [plan, usage.totalBytes])
 
   React.useEffect(() => {
     void refreshUsage()

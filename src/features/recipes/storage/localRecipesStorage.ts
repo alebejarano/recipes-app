@@ -7,6 +7,7 @@ import type { RecipeFormSubmitValues } from '@/features/recipes/components/Recip
 import { deleteRecipePdfAttachmentsForRecipe } from '@/features/recipes/storage/recipePdfStorage'
 import {
   importLocalImage,
+  type ImportPlan,
   isManagedLocalImportImageUri,
   removeImportByUri,
 } from '@/features/recipes/storage/importsStorage'
@@ -155,9 +156,10 @@ async function getLocalFileSize(uri: string): Promise<number> {
 
 async function resolveLocalRecipeImageUrl(params: {
   imageUrl: string | null | undefined
+  plan: ImportPlan
   replacingFileUri?: string | null
 }): Promise<string | null> {
-  const { imageUrl, replacingFileUri } = params
+  const { imageUrl, plan, replacingFileUri } = params
   const nextImageUrl = imageUrl?.trim() ?? ''
   if (!nextImageUrl) return null
   if (isRemoteUri(nextImageUrl)) return nextImageUrl
@@ -165,7 +167,7 @@ async function resolveLocalRecipeImageUrl(params: {
 
   const size = await getLocalFileSize(nextImageUrl)
   const imported = await importLocalImage({
-    plan: 'free',
+    plan,
     uri: nextImageUrl,
     name: inferNameFromUri(nextImageUrl),
     size,
@@ -280,22 +282,27 @@ export async function getLocalRecipe(id: string): Promise<LocalRecipe | null> {
 }
 
 export async function createLocalRecipe(
-  values: RecipeFormSubmitValues
+  values: RecipeFormSubmitValues,
+  options?: { plan?: ImportPlan }
 ): Promise<LocalRecipe> {
   await ensureLocalSqliteMigrationReady()
+  const plan = options?.plan ?? 'free'
 
-  const countRow = await getFirstAsync<{ count: number }>(
-    'SELECT COUNT(*) as count FROM local_recipes WHERE deleted_at IS NULL;'
-  )
-  if (Number(countRow?.count ?? 0) >= FREE_PLAN_MAX_RECIPES) {
-    throw new Error(
-      `Local plan limit reached. You can save up to ${FREE_PLAN_MAX_RECIPES} recipes on this device.`
+  if (plan === 'free') {
+    const countRow = await getFirstAsync<{ count: number }>(
+      'SELECT COUNT(*) as count FROM local_recipes WHERE deleted_at IS NULL;'
     )
+    if (Number(countRow?.count ?? 0) >= FREE_PLAN_MAX_RECIPES) {
+      throw new Error(
+        `Local plan limit reached. You can save up to ${FREE_PLAN_MAX_RECIPES} recipes on this device.`
+      )
+    }
   }
 
   const now = new Date().toISOString()
   const resolvedImageUrl = await resolveLocalRecipeImageUrl({
     imageUrl: values.imageUrl ?? null,
+    plan,
   })
   const row: LocalRecipeRow = {
     id: makeId(),
@@ -358,9 +365,11 @@ export async function createLocalRecipe(
 
 export async function updateLocalRecipe(
   id: string,
-  values: RecipeFormSubmitValues
+  values: RecipeFormSubmitValues,
+  options?: { plan?: ImportPlan }
 ): Promise<LocalRecipe> {
   await ensureLocalSqliteMigrationReady()
+  const plan = options?.plan ?? 'free'
 
   const existing = await getRecipeRow(id)
   if (!existing) throw new Error('Recipe not found')
@@ -369,6 +378,7 @@ export async function updateLocalRecipe(
   const nextVersion = (existing.version ?? 1) + 1
   const resolvedImageUrl = await resolveLocalRecipeImageUrl({
     imageUrl: values.imageUrl ?? null,
+    plan,
     replacingFileUri:
       existing.image_url && isManagedLocalImportImageUri(existing.image_url)
         ? existing.image_url

@@ -62,8 +62,9 @@ export default function CreateRecipeScreen({
   const segments = useSegments()
   const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
   const { shouldUseLocalData: baseLocalMode } = useStorageDataMode(routeMode)
-  const { cloudSyncEnabled } = useStorageStrategy()
+  const { cloudSyncEnabled, isPremium } = useStorageStrategy()
   const shouldUseLocalData = baseLocalMode || (routeMode === 'auth' && cloudSyncEnabled)
+  const importPlan = isPremium ? 'premium' : 'free'
 
   const isOnboarding = variant === 'onboarding'
   const [entryMode, setEntryMode] = useState<CreateRecipeEntry | null>(
@@ -147,7 +148,7 @@ export default function CreateRecipeScreen({
         await documentMutation.mutateAsync({
           title: values.title,
           file,
-          plan: shouldUseLocalData ? 'free' : 'premium',
+          plan: importPlan,
         })
         router.replace({
           pathname: '/(auth)/(tabs)/collections',
@@ -163,7 +164,7 @@ export default function CreateRecipeScreen({
         setIsUploadingPremiumImport(false)
       }
     },
-    [documentMutation, shouldUseLocalData]
+    [documentMutation, importPlan, shouldUseLocalData]
   )
 
   const handleCreateFolder = useCallback(
@@ -237,6 +238,7 @@ export default function CreateRecipeScreen({
                   <RecipeDocumentForm
                     ref={documentFormRef}
                     isSubmitting={documentMutation.isPending}
+                    plan={importPlan}
                     onSubmit={handleDocumentSubmit}
                     autoPickPdf
                   />
@@ -251,6 +253,7 @@ export default function CreateRecipeScreen({
                     suggestedFolders={folderSuggestions}
                     onCreateFolder={handleCreateFolder}
                     imageUploadMode={shouldUseLocalData ? 'local' : 'cloud'}
+                    plan={importPlan}
                   />
                 )}
               </>

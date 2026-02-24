@@ -29,6 +29,8 @@ type CurrentPlanScreenProps = {
 
 const premiumFeatures = [
   'Unlimited recipes',
+  'Unlimited notes',
+  '10MB max per import file',
   '5GB cloud storage',
   'Sync across devices',
   'Automatic recipe import',

@@ -6,6 +6,7 @@ import {
   FREE_PLAN_MAX_IMPORT_FILE_BYTES,
   FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
   IMPORT_FILE_TOO_LARGE_MESSAGE,
+  PREMIUM_PLAN_MAX_STORAGE_BYTES,
 } from '@/features/subscription/constants/limits'
 
 export type ImportsUsageSummary = {
@@ -118,6 +119,14 @@ export async function assertCanAddImport(params: {
       : 0
     if (usage.totalBytes - replacingBytes + incomingBytes > FREE_PLAN_MAX_IMPORT_TOTAL_BYTES) {
       throw new Error('Import limit reached. Free plan allows 50 MB total.')
+    }
+  } else {
+    const usage = await getImportsUsageSummary()
+    const replacingBytes = replacingFileUri
+      ? await getActiveImportBytesByUri(replacingFileUri)
+      : 0
+    if (usage.totalBytes - replacingBytes + incomingBytes > PREMIUM_PLAN_MAX_STORAGE_BYTES) {
+      throw new Error('Storage limit reached. Premium includes up to 5 GB total.')
     }
   }
 }

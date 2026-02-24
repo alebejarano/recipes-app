@@ -82,8 +82,9 @@ export default function EditRecipeScreen() {
   const segments = useSegments()
   const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
   const { shouldUseLocalData: baseLocalMode } = useStorageDataMode(routeMode)
-  const { cloudSyncEnabled } = useStorageStrategy()
+  const { cloudSyncEnabled, isPremium } = useStorageStrategy()
   const shouldUseLocalData = baseLocalMode || (routeMode === 'auth' && cloudSyncEnabled)
+  const importPlan = isPremium ? 'premium' : 'free'
 
   const recipeQuery = useStrategyRecipe(recipeId, routeMode)
   const recipe = recipeQuery.data
@@ -225,6 +226,7 @@ export default function EditRecipeScreen() {
               suggestedFolders={folderSuggestions}
               onCreateFolder={handleCreateFolder}
               imageUploadMode={shouldUseLocalData ? 'local' : 'cloud'}
+              plan={importPlan}
             />
 
             {updateMutation.isError ? (
