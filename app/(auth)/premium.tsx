@@ -22,7 +22,6 @@ export default function PremiumRoute() {
         setPlan,
         setUpgradeStatus,
       })
-      router.replace('/(auth)/current-plan')
     } catch (error: any) {
       Alert.alert('Upgrade failed', error?.message ?? 'Could not complete premium upgrade.')
     }
@@ -38,7 +37,7 @@ export default function PremiumRoute() {
       <PremiumScreen
         isActive
         onMaybeLater={handleMaybeLater}
-        onManageSubscription={() => {}}
+        onManageSubscription={() => router.push('/(auth)/current-plan')}
       />
     )
   }

@@ -2,3 +2,6 @@ project_id = "wdksucflcbmuubwlpecd"
 
 [functions.delete-account]
 verify_jwt = false
+
+[functions.premium-upgrade-sync]
+verify_jwt = false

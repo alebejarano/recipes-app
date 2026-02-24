@@ -205,7 +205,7 @@ export default function CollectionDetailScreen() {
           </Text>
 
           <View style={styles.emptyCta}>
-            <Button size="lg" onPress={() => router.push('/(dev)/(tabs)/add-recipe')}>
+            <Button size="lg" onPress={() => router.push('/(dev)/recipes/create')}>
               Add a recipe
             </Button>
           </View>

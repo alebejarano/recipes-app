@@ -295,7 +295,13 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
               ) : null}
               <Pressable
                 onPress={() =>
-                  router.push(isPublic ? '/(public)/recipes/create' : '/(auth)/(tabs)/add-recipe')
+                  router.push(
+                    isPublic
+                      ? '/(public)/recipes/create'
+                      : resolvedMode === 'dev'
+                        ? '/(dev)/recipes/create'
+                        : '/(auth)/recipes/create'
+                  )
                 }
                 style={styles.emptyCta}
                 accessibilityRole="button"
