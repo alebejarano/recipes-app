@@ -57,10 +57,7 @@ function buildInitialValues(recipe: {
       recipe.servings !== null && recipe.servings !== undefined
         ? String(recipe.servings)
         : '',
-    ingredients:
-      recipe.ingredients?.length
-        ? recipe.ingredients.map((item) => item.name).filter(Boolean)
-        : [''],
+    ingredientsText: recipe.ingredients?.map((item) => item.name).filter(Boolean).join('\n') ?? '',
     steps: recipe.steps?.length ? recipe.steps : [''],
     folders: recipe.folders?.map((folder) => folder.name) ?? [],
   }

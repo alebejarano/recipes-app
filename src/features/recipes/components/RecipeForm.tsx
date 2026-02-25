@@ -51,7 +51,7 @@ export type RecipeFormValues = {
   prepTimeMinutes: string
   cookTimeMinutes: string
   servings: string
-  ingredients: string[]
+  ingredientsText: string
   steps: string[]
   folders: string[]
 }
@@ -98,7 +98,7 @@ export function createEmptyRecipeFormValues(): RecipeFormValues {
     prepTimeMinutes: '',
     cookTimeMinutes: '',
     servings: '',
-    ingredients: [''],
+    ingredientsText: '',
     steps: [''],
     folders: [],
   }
@@ -241,7 +241,6 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     return filtered.slice(0, 8)
   }, [suggestedFolders, folderInput, values.folders])
 
-  const ingredientInputRefs = useRef<(TextInput | null)[]>([])
   const stepInputRefs = useRef<(TextInput | null)[]>([])
 
   const canSubmit = useMemo(() => {
@@ -260,28 +259,6 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       const steps = [...prev.steps]
       steps[index] = next
       return { ...prev, steps }
-    })
-  }, [])
-
-  const updateIngredient = useCallback((index: number, next: string) => {
-    setValues((prev) => {
-      const ingredients = [...prev.ingredients]
-      ingredients[index] = next
-      return { ...prev, ingredients }
-    })
-  }, [])
-
-  const addIngredient = useCallback(() => {
-    setValues((prev) => {
-      const nextIngredients = [...prev.ingredients, '']
-      return { ...prev, ingredients: nextIngredients }
-    })
-  }, [])
-
-  const removeIngredient = useCallback((index: number) => {
-    setValues((prev) => {
-      const ingredients = prev.ingredients.filter((_, i) => i !== index)
-      return { ...prev, ingredients: ingredients.length ? ingredients : [''] }
     })
   }, [])
 
@@ -367,7 +344,8 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       return null
     }
 
-    const normalizedIngredients = values.ingredients
+    const normalizedIngredients = values.ingredientsText
+      .split(/\r?\n/)
       .map((ingredient) => ingredient.trim())
       .filter(Boolean)
 
@@ -715,53 +693,18 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         <Text style={styles.sectionTitle}>Ingredients</Text>
 
         <View style={styles.field}>
-          <Text style={styles.label}>List</Text>
-
-          <View style={styles.stepsStack}>
-            {values.ingredients.map((ingredient, index) => {
-              const n = index + 1
-              return (
-                <View
-                  key={`ingredient-${index}`}
-                  style={styles.ingredientRow}
-                >
-                  <TextInput
-                    value={ingredient}
-                    onChangeText={(t) => updateIngredient(index, t)}
-                    placeholder={`Ingredient ${n}`}
-                    placeholderTextColor={styles.placeholder.color}
-                    style={[styles.input, styles.stepInput]}
-                    editable={!isSubmitting}
-                    autoCapitalize="sentences"
-                    ref={(node) => {
-                      ingredientInputRefs.current[index] = node
-                    }}
-                  />
-
-                  {values.ingredients.length > 1 ? (
-                    <Text
-                      style={styles.removeStep}
-                      onPress={() => removeIngredient(index)}
-                      accessibilityRole="button"
-                    >
-                      Remove
-                    </Text>
-                  ) : null}
-                </View>
-              )
-            })}
-          </View>
-
-          <Button
-            variant="ghost"
-            size="md"
-            onPress={addIngredient}
-            disabled={isSubmitting}
-            style={styles.addStepButton}
-            textStyle={styles.addStepText}
-          >
-            Add ingredient
-          </Button>
+          <Text style={styles.label}>Paste one ingredient per line</Text>
+          <TextInput
+            value={values.ingredientsText}
+            onChangeText={(t) => update('ingredientsText', t)}
+            placeholder={'2 chicken breasts\n1 tbsp olive oil\n1 lemon, juiced'}
+            placeholderTextColor={styles.placeholder.color}
+            style={[styles.input, styles.textarea]}
+            editable={!isSubmitting}
+            multiline
+            autoCapitalize="sentences"
+            textAlignVertical="top"
+          />
         </View>
       </View>
 
@@ -1092,7 +1035,6 @@ const styles = createThemedStyles((theme) => ({
 
 
   stepsStack: { gap: theme.spacing.sm },
-  ingredientRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
   stepRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
   stepBadge: {
     width: 28,
