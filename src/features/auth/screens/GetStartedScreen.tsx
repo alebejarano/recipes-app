@@ -112,19 +112,18 @@ function Actions({
     <View style={styles.actions}>
       <Button
         onPress={onRegister}
+        variant="primary"
         size="lg"
         style={styles.primaryButton}
-        textStyle={styles.primaryButtonText}
       >
         Create an account
       </Button>
 
       <Button
         onPress={onLogin}
-        variant="secondary"
+        variant="soft"
         size="lg"
         style={styles.secondaryButton}
-        textStyle={styles.secondaryButtonText}
       >
         I already have an account
       </Button>
@@ -234,26 +233,10 @@ const styles = createThemedStyles((theme) => ({
 
   primaryButton: {
     width: '100%',
-    borderRadius: 999,
-    backgroundColor: theme.colors.primary,
-  },
-
-  primaryButtonText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    color: theme.colors.primaryForeground,
   },
 
   secondaryButton: {
     width: '100%',
-    borderRadius: 999,
-    backgroundColor: theme.colors.secondary,
-  },
-
-  secondaryButtonText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    color: theme.colors.secondaryForeground,
   },
 
   microCopy: {

@@ -1,17 +1,17 @@
-import React from 'react';
-import { View } from 'react-native';
+import React from 'react'
+import { View } from 'react-native'
 
-import { createThemedStyles } from '@/styles/createStyles';
+import { createThemedStyles } from '@/styles/createStyles'
 
-import SectionHeader from '@/features/profile/components/SectionHeader';
-import SettingsRow, { type SettingsRowItem } from '@/features/profile/components/SettingsRow';
+import SectionHeader from '@/features/profile/components/SectionHeader'
+import SettingsRow, { type SettingsRowItem } from '@/features/profile/components/SettingsRow'
 
 type Props = {
-  title: string;
-  subtitle?: string;
-  rightPillText?: string;
-  items: SettingsRowItem[];
-};
+  title: string
+  subtitle?: string
+  rightPillText?: string
+  items: SettingsRowItem[]
+}
 
 export default function SettingsSection({ title, subtitle, rightPillText, items }: Props) {
   return (
@@ -27,13 +27,11 @@ export default function SettingsSection({ title, subtitle, rightPillText, items 
         ))}
       </View>
     </View>
-  );
+  )
 }
 
 const styles = createThemedStyles((theme) => ({
-  wrap: {
-    marginBottom: theme.spacing.xl,
-  },
+  wrap: {},
   card: {
     borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.card,
@@ -41,4 +39,4 @@ const styles = createThemedStyles((theme) => ({
     borderColor: theme.colors.border,
     overflow: 'hidden',
   },
-}));
+}))

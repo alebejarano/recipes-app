@@ -46,9 +46,9 @@ export default function PremiumScreen({
   onManageSubscription,
 }: PremiumScreenProps) {
   const [billingCycle, setBillingCycle] = React.useState<'month' | 'year'>('month')
-  const priceValue = billingCycle === 'month' ? '5 €' : '36 €'
+
+  const priceValue = billingCycle === 'month' ? '€5' : '€36'
   const pricePeriod = billingCycle === 'month' ? '/ month' : '/ year'
-  const sideLabel = billingCycle === 'month' ? ' Cancel anytime' : '40% saved'
 
   return (
     <Screen scroll contentStyle={styles.content}>
@@ -59,106 +59,88 @@ export default function PremiumScreen({
         </TouchableOpacity>
       )}
 
-      <View>
-          <Image
-            source={
-              isActive
-                ? require('@assets/illustrations/premium-pantry.png')
-                : require('@assets/illustrations/premium-counter.png')
-            }
-            style={styles.heroImage}
-            resizeMode="contain"
-          />
-      </View>
+      <Image
+        source={require('@assets/illustrations/hero-kitchen.jpg')}
+        style={styles.heroImage}
+        resizeMode="cover"
+      />
 
-      <Text style={styles.title}>{isActive ? "You're on Premium!!" : 'Go Premium'}</Text>
-      <Text style={styles.subtitle}>
-        {isActive
-          ? 'Your subscription is active and all premium features are enabled.'
-          : 'Your recipes deserve a safe home. Sync everywhere, lose nothing.'}
+      <Text style={styles.title}>
+        {isActive ? 'You\'re on Premium' : 'Keep your recipes safe everywhere'}
       </Text>
 
-      <View style={styles.card}>
-        <Text style={styles.cardLabel}>EVERYTHING INCLUDED</Text>
-        <View style={styles.featuresList}>
-          {premiumItems.map((item) => (
-            <View key={item.id} style={styles.featureRow}>
-              <View style={styles.featureLeft}>
-                <Feather name={item.icon} size={20} style={styles.featureIcon} />
-                <View style={styles.featureTextWrap}>
-                  <Text style={styles.featureTitle}>{item.title}</Text>
-                  {!!item.subtitle && <Text style={styles.featureSubtitle}>{item.subtitle}</Text>}
-                </View>
+      <Text style={styles.subtitle}>
+        {isActive
+          ? 'Your kitchen is synced, backed up, and fully unlocked.'
+          : 'Your kitchen stays backed up, synced, and ready — wherever you cook.'}
+      </Text>
+
+      {!isActive ? (
+        <>
+          <View style={styles.billingToggle}>
+            <TouchableOpacity
+              style={[styles.billingOption, billingCycle === 'month' && styles.billingOptionActive]}
+              onPress={() => setBillingCycle('month')}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.billingOptionText, billingCycle === 'month' && styles.billingOptionTextActive]}>
+                Monthly
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.billingOption, billingCycle === 'year' && styles.billingOptionActive]}
+              onPress={() => setBillingCycle('year')}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.billingOptionText, billingCycle === 'year' && styles.billingOptionTextActive]}>
+                Yearly
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.priceRow}>
+            <Text style={styles.priceValue}>{priceValue}</Text>
+            <Text style={styles.pricePeriod}>{pricePeriod}</Text>
+          </View>
+        </>
+      ) : null}
+
+      <Text style={styles.includedTitle}>Everything included</Text>
+
+      <View style={styles.featuresList}>
+        {premiumItems.map((item) => (
+          <View key={item.id} style={styles.featureRow}>
+            <View style={styles.featureLeft}>
+              <Feather name={item.icon} size={18} style={styles.featureIcon} />
+              <View style={styles.featureTextWrap}>
+                <Text style={styles.featureTitle}>{item.title}</Text>
+                {!!item.subtitle && <Text style={styles.featureSubtitle}>{item.subtitle}</Text>}
               </View>
-              <Feather name="check" size={20} style={styles.featureCheck} />
             </View>
-          ))}
-        </View>
+          </View>
+        ))}
       </View>
 
       {isActive ? (
         <Button
           onPress={onManageSubscription ?? (() => {})}
+          variant="secondary"
+          size="xl"
           style={styles.ctaButton}
-          textStyle={styles.ctaText}
         >
           Manage Subscription
         </Button>
       ) : (
-        <>
-          <View style={styles.priceRow}>
-            <View style={styles.billingToggle}>
-              <TouchableOpacity
-                style={[styles.billingOption, billingCycle === 'month' && styles.billingOptionActive]}
-                onPress={() => setBillingCycle('month')}
-                activeOpacity={0.85}
-              >
-                <Text
-                  style={[
-                    styles.billingOptionText,
-                    billingCycle === 'month' && styles.billingOptionTextActive,
-                  ]}
-                >
-                  Monthly
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.billingOption, billingCycle === 'year' && styles.billingOptionActive]}
-                onPress={() => setBillingCycle('year')}
-                activeOpacity={0.85}
-              >
-                <Text
-                  style={[
-                    styles.billingOptionText,
-                    billingCycle === 'year' && styles.billingOptionTextActive,
-                  ]}
-                >
-                  Yearly
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.priceMetaRow}>
-              <View style={styles.pricePill}>
-                <Text style={styles.priceValue}>{priceValue}</Text>
-                <Text style={styles.pricePeriod}>{pricePeriod}</Text>
-              </View>
-              <Text style={[styles.sideLabel, billingCycle === 'year' && styles.sideLabelYearly]}>
-                {sideLabel}
-              </Text>
-            </View>
-          </View>
-          <Text style={styles.priceNote}>
-            It’s €5. Not €4.99. Yes, we rounded it — we cook honestly.
-          </Text>
-          <Button
-            onPress={() => onUpgrade?.(billingCycle)}
-            style={styles.ctaButton}
-            textStyle={styles.ctaText}
-            disabled={!onUpgrade || isUpgrading}
-          >
-            {isUpgrading ? 'Upgrading...' : 'Start Premium'}
-          </Button>
-        </>
+        <Button
+          onPress={() => onUpgrade?.(billingCycle)}
+          variant="premium"
+          size="xl"
+          style={styles.ctaButton}
+          disabled={!onUpgrade || isUpgrading}
+        >
+          {isUpgrading ? 'Upgrading...' : 'Unlock Premium'}
+        </Button>
       )}
 
       {!!onMaybeLater && !isActive && (
@@ -166,10 +148,6 @@ export default function PremiumScreen({
           <Text style={styles.notNowText}>Not now</Text>
         </TouchableOpacity>
       )}
-
-      <Text style={styles.footer}>
-        Your data stays private. Premium simply keeps it safe in the cloud.
-      </Text>
     </Screen>
   )
 }
@@ -179,12 +157,12 @@ const styles = createThemedStyles((theme) => ({
     paddingTop: theme.spacing.sm,
     paddingBottom: theme.spacing['3xl'],
     alignItems: 'center',
+    gap: theme.spacing.xl,
   },
   backRow: {
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.md,
   },
   backIcon: {
     color: theme.colors.mutedForeground,
@@ -197,8 +175,10 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
   heroImage: {
-    width: 250,
-    height: 150,
+    width: '100%',
+    maxWidth: 390,
+    height: 270,
+    borderRadius: theme.radii.xl,
   },
   title: {
     textAlign: 'center',
@@ -206,53 +186,92 @@ const styles = createThemedStyles((theme) => ({
     fontSize: theme.fontSize.hero,
     lineHeight: theme.lineHeight.hero,
     color: theme.colors.foreground,
-    marginBottom: theme.spacing.sm,
+    maxWidth: 340,
   },
   subtitle: {
     textAlign: 'center',
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
+    fontFamily: theme.fontFamily.semibold,
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
     color: theme.colors.mutedForeground,
     maxWidth: 360,
-    marginBottom: theme.spacing['2xl'],
   },
-  card: {
-    width: '100%',
-    maxWidth: 390,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radii.xl,
-    backgroundColor: theme.colors.card,
-    paddingHorizontal: theme.spacing.xl,
-    paddingVertical: theme.spacing.xl,
-    marginBottom: theme.spacing['2xl'],
+  billingToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.creamDark,
+    borderRadius: theme.radii.full,
+    padding: theme.spacing.xxs,
   },
-  cardLabel: {
+  billingOption: {
+    minWidth: 116,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  billingOptionActive: {
+    backgroundColor: theme.colors.background,
+  },
+  billingOptionText: {
+    fontFamily: theme.fontFamily.semibold,
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
+    color: theme.colors.mutedForeground,
+  },
+  billingOptionTextActive: {
+    color: theme.colors.foreground,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  priceValue: {
     fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
-    letterSpacing: 0.8,
-    color: theme.colors.warmGray,
-    marginBottom: theme.spacing.lg,
+    fontSize: 72,
+    lineHeight: 72,
+    color: theme.colors.foreground,
+  },
+  pricePeriod: {
+    marginLeft: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+    fontFamily: theme.fontFamily.semibold,
+    fontSize: theme.fontSize.xxl,
+    lineHeight: theme.lineHeight.xxl,
+    color: theme.colors.mutedForeground,
+  },
+  includedTitle: {
+    textAlign: 'center',
+    fontFamily: theme.fontFamily.bold,
+    fontSize: theme.fontSize.display,
+    lineHeight: theme.lineHeight.display,
+    color: theme.colors.foreground,
   },
   featuresList: {
-    gap: theme.spacing.lg,
+    width: '100%',
+    maxWidth: 390,
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    gap: theme.spacing.md,
   },
   featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   featureLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    marginRight: theme.spacing.md,
+    gap: theme.spacing.md,
   },
   featureIcon: {
     color: theme.colors.primary,
-    marginRight: theme.spacing.lg,
   },
   featureTextWrap: {
     flex: 1,
@@ -270,122 +289,18 @@ const styles = createThemedStyles((theme) => ({
     lineHeight: theme.lineHeight.base,
     color: theme.colors.mutedForeground,
   },
-  featureCheck: {
-    color: theme.colors.primary,
-  },
-  priceRow: {
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing['2xl'],
-  },
-  billingToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.creamDark,
-    borderRadius: theme.radii.xxl,
-    padding: theme.spacing.xxs,
-    marginBottom: theme.spacing.lg,
-  },
-  billingOption: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.radii.xxl,
-  },
-  billingOptionActive: {
-    backgroundColor: theme.colors.background,
-  },
-  billingOptionText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.mutedForeground,
-  },
-  billingOptionTextActive: {
-    color: theme.colors.foreground,
-  },
-  priceMetaRow: {
-    width: '100%',
-    maxWidth: 390,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing.md,
-  },
-  pricePill: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    borderRadius: theme.radii.xxl,
-    backgroundColor: theme.colors.creamDark,
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.xl,
-  },
-  priceValue: {
-    fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize.xxl,
-    lineHeight: theme.lineHeight.xxl,
-    color: theme.colors.foreground,
-    fontWeight: theme.fontWeight.semibold
-  },
-  pricePeriod: {
-    marginLeft: theme.spacing.xs,
-    marginBottom: theme.spacing.xs,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.mutedForeground,
-  },
-  sideLabel: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    color: theme.colors.mutedForeground,
-  },
-  sideLabelYearly: {
-    fontFamily: theme.fontFamily.medium,
-    color: theme.colors.primary,
-  },
-  priceNote: {
-    marginTop: -theme.spacing.lg,
-    marginBottom: theme.spacing['2xl'],
-    textAlign: 'center',
-    maxWidth: 360,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    color: theme.colors.mutedForeground,
-  },
   ctaButton: {
     width: '100%',
     maxWidth: 390,
-    borderRadius: theme.radii.xxl,
-    backgroundColor: theme.colors.primary,
-    paddingVertical: theme.spacing.lg,
-  },
-  ctaText: {
-    fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
-    color: theme.colors.primaryForeground,
   },
   notNowButton: {
-    marginTop: theme.spacing.xl,
+    marginTop: -theme.spacing.sm,
     paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.lg,
   },
   notNowText: {
     fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
-    color: theme.colors.mutedForeground,
-  },
-  footer: {
-    marginTop: theme.spacing['2xl'],
-    textAlign: 'center',
-    maxWidth: 340,
-    fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.sm,
-    color: theme.colors.foreground,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
   },
 }))

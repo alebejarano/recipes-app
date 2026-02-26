@@ -1,5 +1,5 @@
 import { router } from 'expo-router'
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 
 import Screen from '@/components/Screen'
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding'
@@ -10,19 +10,10 @@ import ProfileHeader from '@/features/profile/components/ProfileHeader'
 import ProfileUserCard from '@/features/profile/components/ProfileUserCard'
 import SettingsSection from '@/features/profile/components/SettingsSection'
 
-import {
-  PREFERENCES_ITEMS,
-  SUPPORT_ITEMS,
-  type PreferenceToggles,
-} from '@/features/profile/data/profileSettingsData'
+import { SUPPORT_ITEMS } from '@/features/profile/data/profileSettingsData'
 
 export default function PublicAccountScreen() {
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
-
-  const [toggles, setToggles] = useState<PreferenceToggles>({
-    pushNotifications: true,
-    emailUpdates: false,
-  })
 
   const accountItems = useMemo(
     () => [
@@ -56,34 +47,35 @@ export default function PublicAccountScreen() {
     []
   )
 
-  const preferenceItems = useMemo(
-    () =>
-      PREFERENCES_ITEMS({
-        toggles,
-        setToggles,
-      }).map((item) =>
-        item.id === 'email'
-          ? {
-              ...item,
-              disabled: true,
-            }
-          : item
-      ),
-    [toggles]
+  const notificationsItems = useMemo(
+    () => [
+      {
+        id: 'push-disabled',
+        type: 'link' as const,
+        title: 'Push Notifications',
+        subtitle: 'Create an account to customize',
+        icon: 'bell' as const,
+        disabled: true,
+      },
+      {
+        id: 'email-disabled',
+        type: 'link' as const,
+        title: 'Email Updates',
+        subtitle: 'Create an account to customize',
+        icon: 'mail' as const,
+        disabled: true,
+      },
+    ],
+    []
   )
 
   return (
     <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
-      <ProfileHeader
-        title="Account"
-      />
+      <ProfileHeader title="Account" />
 
       <ProfileUserCard name="Guest" email="Not signed in" />
 
-      <SettingsSection
-        title="Preferences"
-        items={preferenceItems}
-      />
+      <SettingsSection title="Notifications" items={notificationsItems} />
 
       <SettingsSection title="Account" items={accountItems} />
 

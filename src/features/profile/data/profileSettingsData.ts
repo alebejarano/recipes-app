@@ -1,5 +1,5 @@
 import type { SettingsRowItem } from '@/features/profile/components/SettingsRow'
-import type { Feather } from '@expo/vector-icons'
+import { Feather } from '@expo/vector-icons'
 import type React from 'react'
 
 export type DietaryId =
@@ -33,124 +33,63 @@ export const DEFAULT_DIETARY_PREFERENCES: DietaryId[] = ['vegetarian']
 export type PreferenceToggles = {
   pushNotifications: boolean
   emailUpdates: boolean
-  // darkMode: boolean // TODO later
 }
 
 export type AccountPlan = 'free' | 'premium'
 
-export const PREFERENCES_ITEMS = ({
-  toggles,
-  setToggles,
-}: {
-  toggles: PreferenceToggles
-  setToggles: React.Dispatch<React.SetStateAction<PreferenceToggles>>
-}): SettingsRowItem[] => [
-  {
-    id: 'push',
-    type: 'toggle',
-    icon: 'bell',
-    title: 'Push Notifications',
-    subtitle: 'Get recipe reminders',
-    value: toggles.pushNotifications,
-    onValueChange: (next) =>
-      setToggles((prev) => ({ ...prev, pushNotifications: next })),
-  },
-  {
-    id: 'email',
-    type: 'toggle',
-    icon: 'mail',
-    title: 'Email Updates',
-    subtitle: 'Weekly recipe digest',
-    value: toggles.emailUpdates,
-    onValueChange: (next) =>
-      setToggles((prev) => ({ ...prev, emailUpdates: next })),
-  },
-]
-
-/**
- * Account section should include logout/delete (not Support).
- * We build it so ProfileScreen can inject real handlers.
- */
-export function buildAccountItems(args: {
+export function buildMembershipItems(args: {
   plan: AccountPlan
-  onPremiumPress: () => void
-  onCurrentPlanPress: () => void
-  onManagePlanPress: () => void
-  onPrivacyPress: () => void
-  onLogoutPress: () => void
-  onDeleteAccountPress?: () => void
-  isLoggingOut?: boolean
-  isDeletingAccount?: boolean
+  onManageOrUpgradePress: () => void
 }): SettingsRowItem[] {
-  const {
-    plan,
-    onPremiumPress,
-    onCurrentPlanPress,
-    onManagePlanPress,
-    onPrivacyPress,
-    onLogoutPress,
-    onDeleteAccountPress,
-    isLoggingOut = false,
-    isDeletingAccount = false,
-  } = args
+  const isPremium = args.plan === 'premium'
 
-  const isPremium = plan === 'premium'
-
-  const items: SettingsRowItem[] = [
+  return [
     {
-      id: 'premium',
+      id: 'membership-action',
       type: 'link',
-      icon: 'award',
-      title: isPremium ? 'Premium Active' : 'Upgrade to Premium',
-      subtitle: isPremium
-        ? 'Cloud sync and backup are enabled'
-        : 'Unlock cloud backup, sync, and unlimited saves',
-      tone: 'accent',
-      onPress: onPremiumPress,
-    },
-    {
-      id: 'subscription',
-      type: 'link',
-      icon: 'credit-card',
-      title: isPremium ? 'Manage subscription' : 'Current plan',
-      subtitle: isPremium
-        ? 'Billing, renewals, and invoices'
-        : 'Free plan',
-      onPress: isPremium ? onManagePlanPress : onCurrentPlanPress,
-    },
-    {
-      id: 'privacy',
-      type: 'link',
-      icon: 'shield',
-      title: 'Privacy & Security',
-      subtitle: 'Manage your data',
-      onPress: onPrivacyPress,
+      icon: isPremium ? 'award' : 'sparkles-sharp',
+      iconFamily: isPremium ? 'feather' : 'ionicons',
+      title: isPremium ? 'Manage Subscription' : 'Upgrade to Premium',
+      subtitle: isPremium ? 'Billing settings' : 'Unlock all features',
+      tone: isPremium ? 'default' : 'accent',
+      onPress: args.onManageOrUpgradePress,
     },
   ]
-
-  items.push({
-    id: 'logout',
-    type: 'link',
-    icon: 'log-out',
-    title: isLoggingOut ? 'Logging out…' : 'Log Out',
-    subtitle: 'Sign out of your account',
-    onPress: isLoggingOut ? undefined : onLogoutPress,
-  })
-
-  if (onDeleteAccountPress) {
-    items.push({
-      id: 'delete',
-      type: 'link',
-      icon: 'trash-2',
-      title: isDeletingAccount ? 'Deleting…' : 'Delete Account',
-      subtitle: 'Permanently remove your data',
-      tone: 'danger',
-      onPress: isDeletingAccount ? undefined : onDeleteAccountPress,
-    })
-  }
-
-  return items
 }
+
+export function buildNotificationsItems(args: {
+  onPushPress: () => void
+  onEmailPress: () => void
+}): SettingsRowItem[] {
+  return [
+    {
+      id: 'push-notifications',
+      type: 'link',
+      icon: 'bell',
+      title: 'Push Notifications',
+      subtitle: 'Push Settings',
+      onPress: args.onPushPress,
+    },
+    {
+      id: 'email-updates',
+      type: 'link',
+      icon: 'mail',
+      title: 'Email Updates',
+      subtitle: 'Email Settings',
+      onPress: args.onEmailPress,
+    },
+  ]
+}
+
+export const PRIVACY_ITEMS: SettingsRowItem[] = [
+  {
+    id: 'privacy',
+    type: 'link',
+    icon: 'shield',
+    title: 'Privacy Settings',
+    subtitle: 'Privacy & Security',
+  },
+]
 
 export const SUPPORT_ITEMS: SettingsRowItem[] = [
   {
@@ -158,15 +97,46 @@ export const SUPPORT_ITEMS: SettingsRowItem[] = [
     type: 'link',
     icon: 'help-circle',
     title: 'Help Center',
-    subtitle: 'FAQs and guides',
-    onPress: () => {},
+    subtitle: 'FAQ',
   },
   {
     id: 'rate',
     type: 'link',
     icon: 'star',
     title: 'Rate the App',
-    subtitle: 'Share your feedback',
-    onPress: () => {},
+    subtitle: 'Open App Store',
   },
 ]
+
+export function buildSessionItems(args: {
+  onLogoutPress: () => void
+  isLoggingOut?: boolean
+}): SettingsRowItem[] {
+  return [
+    {
+      id: 'logout',
+      type: 'link',
+      icon: 'log-out',
+      title: args.isLoggingOut ? 'Logging out…' : 'Log Out',
+      subtitle: 'Sign out of your account',
+      onPress: args.isLoggingOut ? undefined : args.onLogoutPress,
+    },
+  ]
+}
+
+export function buildDangerZoneItems(args: {
+  onDeleteAccountPress: () => void
+  isDeletingAccount?: boolean
+}): SettingsRowItem[] {
+  return [
+    {
+      id: 'delete',
+      type: 'link',
+      icon: 'trash-2',
+      title: args.isDeletingAccount ? 'Deleting…' : 'Delete Account',
+      subtitle: 'Permanently remove your data',
+      tone: 'danger',
+      onPress: args.isDeletingAccount ? undefined : args.onDeleteAccountPress,
+    },
+  ]
+}

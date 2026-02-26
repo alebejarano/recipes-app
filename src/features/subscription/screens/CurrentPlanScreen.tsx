@@ -25,6 +25,7 @@ type CurrentPlanScreenProps = {
   onDeactivatePremiumForTest?: () => void
   premiumPlanLabel?: string
   premiumNextRenewalLabel?: string
+  highlightSubscriptionCard?: boolean
 }
 
 const premiumFeatures = [
@@ -59,6 +60,7 @@ export default function CurrentPlanScreen({
   onDeactivatePremiumForTest,
   premiumPlanLabel = '€5/month',
   premiumNextRenewalLabel = 'March 18, 2026',
+  highlightSubscriptionCard = false,
 }: CurrentPlanScreenProps) {
   const recipesQuery = useStrategyRecipesList({ limit: 2000 }, mode)
   const storageUsageQuery = useRecipeDocumentUsageSummary()
@@ -84,8 +86,8 @@ export default function CurrentPlanScreen({
           </TouchableOpacity>
 
           <View style={styles.headerTextWrap}>
-            <Text style={styles.title}>Current Plan</Text>
-            <Text style={styles.subtitle}>Premium</Text>
+            <Text style={styles.title}>Current Plan: Premium</Text>
+            <Text style={styles.subtitle}>Plan & Subscription</Text>
           </View>
         </View>
 
@@ -121,7 +123,7 @@ export default function CurrentPlanScreen({
 
         <Text style={styles.supportText}>Thank you for supporting independent development.</Text>
 
-        <View style={styles.card}>
+        <View style={[styles.card, highlightSubscriptionCard && styles.subscriptionCardHighlighted]}>
           <Text style={styles.subscriptionTitle}>Subscription</Text>
 
           <View style={styles.subscriptionRow}>
@@ -148,7 +150,6 @@ export default function CurrentPlanScreen({
             onPress={onDeactivatePremiumForTest}
             variant="secondary"
             size="md"
-            style={styles.deactivatePremiumButton}
           >
             Deactivate Premium (Test)
           </Button>
@@ -180,7 +181,7 @@ export default function CurrentPlanScreen({
         </TouchableOpacity>
 
         <View style={styles.headerTextWrap}>
-          <Text style={styles.title}>Current Plan</Text>
+          <Text style={styles.title}>Current Plan: {currentPlanLabel}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
       </View>
@@ -231,7 +232,7 @@ export default function CurrentPlanScreen({
 
         {usage.upgradeUsageBand === 'between95and99' ? (
           <View style={styles.usagePromptWrap}>
-            <Button onPress={onUpgrade} size="md" style={styles.usageUpgradeButton}>
+            <Button onPress={onUpgrade} variant="premium" size="md">
               Upgrade to Premium
             </Button>
             <Text style={styles.upgradeMicrocopy}>
@@ -243,14 +244,13 @@ export default function CurrentPlanScreen({
         {usage.upgradeUsageBand === 'atLimit' ? (
           <View style={styles.usagePromptWrap}>
             <Text style={styles.limitReachedText}>You&apos;ve reached the Free plan limit.</Text>
-            <Button onPress={onUpgrade} size="md" style={styles.usageUpgradeButton}>
+            <Button onPress={onUpgrade} variant="premium" size="md">
               Upgrade to Premium
             </Button>
             <Button
               onPress={handleManageExistingRecipes}
               size="md"
               variant="secondary"
-              style={styles.manageRecipesButton}
             >
               Manage existing recipes
             </Button>
@@ -304,7 +304,7 @@ export default function CurrentPlanScreen({
         </Text>
       </View>
 
-      <Button onPress={onUpgrade} style={styles.upgradeButton} textStyle={styles.upgradeButtonText}>
+      <Button onPress={onUpgrade} variant="premium" size="xl">
         Upgrade to Premium
       </Button>
 
@@ -376,6 +376,9 @@ const styles = createThemedStyles((theme) => ({
     paddingVertical: theme.spacing.lg,
     gap: theme.spacing.md,
   },
+  subscriptionCardHighlighted: {
+    borderColor: theme.colors.accent,
+  },
   usageHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -444,9 +447,6 @@ const styles = createThemedStyles((theme) => ({
     alignSelf: 'flex-start',
     paddingHorizontal: 0,
   },
-  usageUpgradeButton: {
-    borderRadius: theme.radii.xl,
-  },
   upgradeMicrocopy: {
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.base,
@@ -458,9 +458,6 @@ const styles = createThemedStyles((theme) => ({
     fontSize: theme.fontSize.lg,
     lineHeight: theme.lineHeight.lg,
     color: theme.colors.foreground,
-  },
-  manageRecipesButton: {
-    borderRadius: theme.radii.xl,
   },
   planHeader: {
     flexDirection: 'row',
@@ -545,15 +542,6 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
     fontStyle: 'italic',
   },
-  upgradeButton: {
-    borderRadius: theme.radii.xxl,
-    paddingVertical: theme.spacing.sm,
-  },
-  upgradeButtonText: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xxl,
-    lineHeight: theme.lineHeight.xxl,
-  },
   pricingText: {
     marginTop: -theme.spacing.md,
     textAlign: 'center',
@@ -637,8 +625,5 @@ const styles = createThemedStyles((theme) => ({
     fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.base,
     color: theme.colors.mutedForeground,
-  },
-  deactivatePremiumButton: {
-    borderRadius: theme.radii.xl,
   },
 }))

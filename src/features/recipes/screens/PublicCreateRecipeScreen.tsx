@@ -153,7 +153,6 @@ export default function PublicCreateRecipeScreen({
             size="md"
             onPress={handleBack}
             style={styles.backButton}
-            textStyle={styles.backText}
             icon={<Feather name="arrow-left" size={16} style={styles.backIcon} />}
             disabled={isSaving}
           >
@@ -289,11 +288,6 @@ const styles = createThemedStyles((theme) => ({
   },
 
   backButton: { paddingHorizontal: 0, alignSelf: 'flex-start' },
-  backText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.lg,
-    color: theme.colors.mutedForeground,
-  },
   backIcon: { color: theme.colors.mutedForeground, fontSize: theme.fontSize.lg, },
 
   scrollContent: { paddingHorizontal: theme.spacing.lg },

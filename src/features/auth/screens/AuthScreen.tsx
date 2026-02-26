@@ -170,7 +170,6 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
             }}
             size="lg"
             style={styles.submitButton}
-            textStyle={styles.submitButtonText}
           >
             Go to sign in
           </Button>
@@ -288,7 +287,6 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
             disabled={loading || !canSubmit}
             size="lg"
             style={[styles.submitButton, (!canSubmit || loading) && styles.submitButtonDisabled]}
-            textStyle={styles.submitButtonText}
           >
             {loading ? '...' : isLogin ? 'Sign in' : 'Create account'}
           </Button>
@@ -457,19 +455,11 @@ const styles = createThemedStyles((theme) => ({
   /* Button */
   submitButton: {
     width: '100%',
-    borderRadius: 999,
-    backgroundColor: theme.colors.primary,
     marginTop: theme.spacing.md,
   },
 
   submitButtonDisabled: {
     opacity: 0.7,
-  },
-
-  submitButtonText: {
-    color: theme.colors.primaryForeground,
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
   },
 
   /* Toggle */

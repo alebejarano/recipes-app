@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons'
+import { Feather, Ionicons } from '@expo/vector-icons'
 import React from 'react'
 import { Switch, Text, TouchableOpacity, View } from 'react-native'
 
@@ -8,7 +8,8 @@ type RowBase = {
   id: string
   title: string
   subtitle?: string
-  icon: React.ComponentProps<typeof Feather>['name']
+  icon: React.ComponentProps<typeof Feather>['name'] | React.ComponentProps<typeof Ionicons>['name']
+  iconFamily?: 'feather' | 'ionicons'
   tone?: 'default' | 'accent' | 'danger'
   disabled?: boolean
 }
@@ -37,7 +38,13 @@ export default function SettingsRow({
 }) {
   const tone = item.tone ?? 'default'
   const isDisabled = item.disabled ?? false
-  const rowStyle = [styles.row, !isLast && styles.rowDivider, isDisabled && styles.rowDisabled]
+  const isInformationalLink = item.type === 'link' && !item.onPress
+  const rowStyle = [
+    styles.row,
+    !isLast && styles.rowDivider,
+    isDisabled && styles.rowDisabled,
+    isInformationalLink && styles.rowInformational,
+  ]
 
   const showChevron = item.type === 'link' ? (item.showChevron ?? true) : false
   const isPressableLink = item.type === 'link' && !isDisabled && Boolean(item.onPress)
@@ -51,15 +58,27 @@ export default function SettingsRow({
           tone === 'danger' && styles.iconWrapDanger,
         ]}
       >
-        <Feather
-          name={item.icon}
-          size={18}
-          style={[
-            styles.icon,
-            tone === 'accent' && styles.iconAccent,
-            tone === 'danger' && styles.iconDanger,
-          ]}
-        />
+        {item.iconFamily === 'ionicons' ? (
+          <Ionicons
+            name={item.icon as React.ComponentProps<typeof Ionicons>['name']}
+            size={20}
+            style={[
+              styles.iconUpgrade,
+              tone === 'accent' && styles.iconAccent,
+              tone === 'danger' && styles.iconDanger,
+            ]}
+          />
+        ) : (
+          <Feather
+            name={item.icon as React.ComponentProps<typeof Feather>['name']}
+            size={18}
+            style={[
+              styles.icon,
+              tone === 'accent' && styles.iconAccent,
+              tone === 'danger' && styles.iconDanger,
+            ]}
+          />
+        )}
       </View>
 
       <View style={styles.textWrap}>
@@ -117,6 +136,9 @@ const styles = createThemedStyles((theme) => ({
   rowDisabled: {
     opacity: 0.5,
   },
+  rowInformational: {
+    backgroundColor: theme.colors.muted,
+  },
 
   iconWrap: {
     width: 44,
@@ -134,6 +156,10 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.secondary,
   },
 
+  iconUpgrade: {
+    color: theme.colors.mutedForeground,
+    paddingLeft: theme.spacing.xs,
+  },
   icon: { color: theme.colors.mutedForeground },
   iconAccent: { color: theme.colors.accent },
   iconDanger: { color: '#d13b3b' },

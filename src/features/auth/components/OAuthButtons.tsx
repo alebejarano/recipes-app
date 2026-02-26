@@ -27,7 +27,6 @@ export default function OAuthButtons({ onApplePress, onGooglePress }: Props) {
                     variant="secondary"
                     size="lg"
                     style={styles.oauthButton}
-                    textStyle={styles.oauthButtonText}
                     icon={
                         <Ionicons
                             name="logo-apple"
@@ -44,7 +43,6 @@ export default function OAuthButtons({ onApplePress, onGooglePress }: Props) {
                     variant="secondary"
                     size="lg"
                     style={styles.oauthButton}
-                    textStyle={styles.oauthButtonText}
                     icon={
                         <Ionicons
                             name="logo-google"
@@ -83,14 +81,7 @@ const styles = createThemedStyles(theme => ({
     buttons: {},
     oauthButton: {
         width: '100%',
-        borderRadius: 999,
         marginBottom: theme.spacing.sm,
-        backgroundColor: theme.colors.card,
-    },
-    oauthButtonText: {
-        fontFamily: theme.fontFamily.medium,
-        fontSize: theme.fontSize.base,
-        color: theme.colors.foreground,
     },
     oauthIcon: {
         color: theme.colors.foreground,

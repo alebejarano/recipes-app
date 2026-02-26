@@ -1,12 +1,13 @@
 import React, { useContext } from 'react'
 import { Alert } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 
 import CurrentPlanScreen from '@/features/subscription/screens/CurrentPlanScreen'
 import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
 
 export default function AuthCurrentPlanRoute() {
   const router = useRouter()
+  const { focus } = useLocalSearchParams<{ focus?: string }>()
   const { plan, billingCycle, setPlan } = useContext(SubscriptionContext)
 
   const premiumPlanLabel = billingCycle === 'year' ? '€36/year' : '€5/month'
@@ -27,6 +28,7 @@ export default function AuthCurrentPlanRoute() {
       }}
       premiumPlanLabel={premiumPlanLabel}
       premiumNextRenewalLabel={premiumNextRenewalLabel}
+      highlightSubscriptionCard={focus === 'billing'}
     />
   )
 }

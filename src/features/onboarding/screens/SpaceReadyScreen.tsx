@@ -60,7 +60,6 @@ export default function SpaceReadyScreen({
           onPress={onSkip}
           variant="ghost"
           size="lg"
-          textStyle={styles.skipText}
           style={styles.skipButton}
         >
           See the app first
@@ -148,10 +147,5 @@ const styles = createThemedStyles(theme => ({
   },
   skipButton: {
     marginTop: theme.spacing.sm,
-  },
-  skipText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.lg,
-    color: theme.colors.foreground,
   },
 }));

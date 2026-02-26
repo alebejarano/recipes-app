@@ -98,7 +98,6 @@ export default function ForgotPasswordScreen() {
                         disabled={submitting}
                         size="lg"
                         style={styles.submitButton}
-                        textStyle={styles.submitButtonText}
                     >
                         {submitting ? 'Sending...' : 'Send reset link'}
                     </Button>
@@ -207,13 +206,6 @@ const styles = createThemedStyles(theme => ({
 
     submitButton: {
         width: '100%',
-        borderRadius: 999,
-        backgroundColor: theme.colors.primary,
-    },
-    submitButtonText: {
-        fontFamily: theme.fontFamily.medium,
-        fontSize: theme.fontSize.base,
-        color: theme.colors.primaryForeground,
     },
 
     infoText: {

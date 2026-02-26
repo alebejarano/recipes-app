@@ -1,20 +1,34 @@
-import React, { useContext } from 'react'
-import { Alert } from 'react-native'
+import React, { useContext, useEffect, useRef, useState } from 'react'
+import { Alert, View } from 'react-native'
 import { useRouter } from 'expo-router'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
+import CurrentPlanScreen from '@/features/subscription/screens/CurrentPlanScreen'
 import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
 import PremiumScreen from '@/features/subscription/screens/PremiumScreen'
+import PremiumSuccessModal from '@/features/subscription/components/PremiumSuccessModal'
 import { upgradeToPremium } from '@/features/subscription/services/upgradeToPremium'
+import { createThemedStyles } from '@/styles/createStyles'
 
 export default function PremiumRoute() {
   const router = useRouter()
   const { user } = useAuth()
-  const { plan, upgradeStatus, setPlan, setUpgradeStatus } = useContext(SubscriptionContext)
+  const { plan, billingCycle, upgradeStatus, setPlan, setUpgradeStatus } = useContext(SubscriptionContext)
   const isUpgrading = upgradeStatus === 'running'
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const shouldHoldRedirectRef = useRef(false)
+  const premiumPlanLabel = billingCycle === 'year' ? '€36/year' : '€5/month'
+  const premiumNextRenewalLabel = billingCycle === 'year' ? 'March 18, 2027' : 'March 18, 2026'
+
+  useEffect(() => {
+    if (plan === 'premium' && !showSuccessModal && !isUpgrading && !shouldHoldRedirectRef.current) {
+      router.replace('/(auth)/current-plan')
+    }
+  }, [isUpgrading, plan, router, showSuccessModal])
 
   const handleUpgrade = async (billingCycle: 'month' | 'year') => {
     if (!user?.id || isUpgrading) return
+    shouldHoldRedirectRef.current = true
     try {
       await upgradeToPremium({
         userId: user.id,
@@ -22,7 +36,9 @@ export default function PremiumRoute() {
         setPlan,
         setUpgradeStatus,
       })
+      setShowSuccessModal(true)
     } catch (error: any) {
+      shouldHoldRedirectRef.current = false
       Alert.alert('Upgrade failed', error?.message ?? 'Could not complete premium upgrade.')
     }
   }
@@ -32,15 +48,48 @@ export default function PremiumRoute() {
     router.replace('/(auth)/(tabs)/profile')
   }
 
-  if (plan === 'premium') {
-    return (
-      <PremiumScreen
-        isActive
-        onMaybeLater={handleMaybeLater}
-        onManageSubscription={() => router.push('/(auth)/current-plan')}
-      />
-    )
+  const onCloseSuccessModal = () => {
+    setShowSuccessModal(false)
+    shouldHoldRedirectRef.current = false
+    router.replace('/(auth)/current-plan')
   }
 
-  return <PremiumScreen onUpgrade={handleUpgrade} onMaybeLater={handleMaybeLater} isUpgrading={isUpgrading} />
+  if (plan === 'premium' && !showSuccessModal && !isUpgrading) {
+    return null
+  }
+
+  const shouldShowCurrentPlanBackground = showSuccessModal && plan === 'premium'
+
+  return (
+    <>
+      {shouldShowCurrentPlanBackground ? (
+        <View style={styles.backgroundWrap} pointerEvents="none">
+          <CurrentPlanScreen
+            accountType="premium"
+            mode="auth"
+            onBack={() => {}}
+            onUpgrade={() => {}}
+            onManageExistingRecipes={() => {}}
+            onManageSubscription={() => {}}
+            premiumPlanLabel={premiumPlanLabel}
+            premiumNextRenewalLabel={premiumNextRenewalLabel}
+          />
+        </View>
+      ) : (
+        <PremiumScreen
+          onUpgrade={handleUpgrade}
+          onMaybeLater={handleMaybeLater}
+          isUpgrading={isUpgrading}
+        />
+      )}
+
+      <PremiumSuccessModal visible={showSuccessModal} onClose={onCloseSuccessModal} />
+    </>
+  )
 }
+
+const styles = createThemedStyles(() => ({
+  backgroundWrap: {
+    flex: 1,
+  },
+}))

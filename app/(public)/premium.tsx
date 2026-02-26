@@ -1,9 +1,10 @@
-import React, { useContext } from 'react'
+import React, { useContext, useState } from 'react'
 import { Alert } from 'react-native'
 import { useRouter } from 'expo-router'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
+import PremiumSuccessModal from '@/features/subscription/components/PremiumSuccessModal'
 import PremiumScreen from '@/features/subscription/screens/PremiumScreen'
 import { upgradeToPremium } from '@/features/subscription/services/upgradeToPremium'
 
@@ -12,6 +13,7 @@ export default function PremiumRoute() {
   const { user } = useAuth()
   const { setPlan, setUpgradeStatus, upgradeStatus } = useContext(SubscriptionContext)
   const isUpgrading = upgradeStatus === 'running'
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
 
   const handleUpgrade = async (billingCycle: 'month' | 'year') => {
     if (!user?.id) {
@@ -26,7 +28,7 @@ export default function PremiumRoute() {
         setPlan,
         setUpgradeStatus,
       })
-      router.replace('/(auth)/(tabs)/profile')
+      setShowSuccessModal(true)
     } catch (error: any) {
       Alert.alert('Upgrade failed', error?.message ?? 'Could not complete premium upgrade.')
     }
@@ -36,5 +38,16 @@ export default function PremiumRoute() {
     router.replace('/(public)/(tabs)/profile')
   }
 
-  return <PremiumScreen onUpgrade={handleUpgrade} onMaybeLater={handleMaybeLater} isUpgrading={isUpgrading} />
+  const onCloseSuccessModal = () => {
+    setShowSuccessModal(false)
+    router.replace('/(auth)/current-plan')
+  }
+
+  return (
+    <>
+      <PremiumScreen onUpgrade={handleUpgrade} onMaybeLater={handleMaybeLater} isUpgrading={isUpgrading} />
+
+      <PremiumSuccessModal visible={showSuccessModal} onClose={onCloseSuccessModal} />
+    </>
+  )
 }

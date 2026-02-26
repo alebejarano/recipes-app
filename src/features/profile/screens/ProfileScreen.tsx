@@ -1,26 +1,31 @@
-import { router } from 'expo-router'
-import React, { useCallback, useContext, useMemo, useState } from 'react'
-import { Alert } from 'react-native'
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React, { useCallback, useContext, useMemo, useState } from 'react';
+import { Alert, Text, View } from 'react-native';
 
-import Screen from '@/components/Screen'
-import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding'
-import { createThemedStyles } from '@/styles/createStyles'
-import { theme } from '@/styles/theme'
+import Screen from '@/components/Screen';
+import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
+import { createThemedStyles } from '@/styles/createStyles';
+import { theme } from '@/styles/theme';
 
-import ProfileHeader from '@/features/profile/components/ProfileHeader'
-import ProfileUserCard from '@/features/profile/components/ProfileUserCard'
-import SettingsSection from '@/features/profile/components/SettingsSection'
+import ProfileHeader from '@/features/profile/components/ProfileHeader';
+import ProfileUserCard from '@/features/profile/components/ProfileUserCard';
+import SectionHeader from '@/features/profile/components/SectionHeader';
+import SettingsRow from '@/features/profile/components/SettingsRow';
+import SettingsSection from '@/features/profile/components/SettingsSection';
 
 import {
-  PREFERENCES_ITEMS,
+  buildDangerZoneItems,
+  buildMembershipItems,
+  buildNotificationsItems,
+  buildSessionItems,
+  PRIVACY_ITEMS,
   SUPPORT_ITEMS,
-  buildAccountItems,
   type AccountPlan,
-  type PreferenceToggles,
-} from '@/features/profile/data/profileSettingsData'
+} from '@/features/profile/data/profileSettingsData';
 
-import { useAuth } from '@/features/auth/context/AuthContext'
-import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
+import { useAuth } from '@/features/auth/context/AuthContext';
+import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext';
 
 export default function ProfileScreen() {
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
@@ -41,12 +46,7 @@ export default function ProfileScreen() {
     return email.split('@')[0] || 'Account'
   }, [user?.email, user?.user_metadata?.display_name])
 
-  const [toggles, setToggles] = useState<PreferenceToggles>({
-    pushNotifications: true,
-    emailUpdates: false,
-  })
-
-  const onLogoutPress = useCallback(async () => {
+  const performLogout = useCallback(async () => {
     if (isLoggingOut) return
 
     setIsLoggingOut(true)
@@ -60,6 +60,21 @@ export default function ProfileScreen() {
       setIsLoggingOut(false)
     }
   }, [isLoggingOut, logout])
+
+  const onLogoutPress = useCallback(() => {
+    if (isLoggingOut) return
+
+    Alert.alert('Log out', 'Are you sure you want to log out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Log Out',
+        style: 'destructive',
+        onPress: () => {
+          void performLogout()
+        },
+      },
+    ])
+  }, [isLoggingOut, performLogout])
 
   const performDeleteAccount = useCallback(async () => {
     if (isDeletingAccount) return
@@ -91,20 +106,73 @@ export default function ProfileScreen() {
     )
   }, [performDeleteAccount])
 
-  const accountItems = useMemo(
+  const membershipItems = useMemo(
     () =>
-      buildAccountItems({
+      buildMembershipItems({
         plan: accountPlan,
-        onPremiumPress: () => router.push('/premium'),
-        onCurrentPlanPress: () => router.push('/current-plan'),
-        onManagePlanPress: () => router.push('/current-plan'),
-        onPrivacyPress: () => router.push('/privacy'),
-        isLoggingOut,
-        isDeletingAccount,
-        onLogoutPress,
-        onDeleteAccountPress,
+        onManageOrUpgradePress: () =>
+          accountPlan === 'premium'
+            ? router.push('/current-plan?focus=billing')
+            : router.push('/premium'),
       }),
-    [accountPlan, isDeletingAccount, isLoggingOut, onDeleteAccountPress, onLogoutPress]
+    [accountPlan]
+  )
+  const membershipStatusTitle = accountPlan === 'premium' ? 'Premium Active' : 'Free Plan'
+  const isPremiumPlan = accountPlan === 'premium'
+
+  const notificationItems = useMemo(
+    () =>
+      buildNotificationsItems({
+        onPushPress: () => router.push('/(auth)/settings/push'),
+        onEmailPress: () => router.push('/(auth)/settings/email'),
+      }),
+    []
+  )
+
+  const privacyItems = useMemo(
+    () =>
+      PRIVACY_ITEMS.map((item) => ({
+        ...item,
+        onPress: () => router.push('/privacy'),
+      })),
+    []
+  )
+
+  const supportItems = useMemo(
+    () =>
+      SUPPORT_ITEMS.map((item) => {
+        if (item.id === 'help') {
+          return {
+            ...item,
+            onPress: () => router.push('/faq'),
+          }
+        }
+
+        return {
+          ...item,
+          disabled: true,
+          onPress: undefined,
+        }
+      }),
+    []
+  )
+
+  const sessionItems = useMemo(
+    () =>
+      buildSessionItems({
+        onLogoutPress,
+        isLoggingOut,
+      }),
+    [isLoggingOut, onLogoutPress]
+  )
+
+  const dangerItems = useMemo(
+    () =>
+      buildDangerZoneItems({
+        onDeleteAccountPress,
+        isDeletingAccount,
+      }),
+    [isDeletingAccount, onDeleteAccountPress]
   )
 
   return (
@@ -119,33 +187,103 @@ export default function ProfileScreen() {
         onPressEdit={() => router.push('/(auth)/account/edit-profile')}
       />
 
-      <SettingsSection
-        title="Preferences"
-        items={PREFERENCES_ITEMS({
-          toggles,
-          setToggles,
-        })}
-      />
+      <View style={styles.bigSpace} />
 
-      <SettingsSection title="Account" items={accountItems} />
+      <View>
+        <SectionHeader title="Membership & Account" />
+        <View style={styles.membershipStatusRow}>
+          {isPremiumPlan ? (
+            <MaterialCommunityIcons
+              name="crown-outline"
+              size={28}
+              style={[styles.membershipStatusIcon, styles.membershipStatusIconPremium]}
+            />
+          ) : (
+            <Ionicons
+              name="leaf-outline"
+              size={22}
+              style={[styles.membershipStatusIcon, styles.membershipStatusIconFree]}
+            />
+          )}
+          <Text style={[styles.membershipStatusText, isPremiumPlan ? styles.membershipStatusTextPremium : styles.membershipStatusTextFree]}>
+            {membershipStatusTitle}
+          </Text>
+        </View>
+        <View style={styles.membershipCard}>
+          <SettingsRow item={membershipItems[0]} isLast />
+        </View>
+      </View>
 
-      <SettingsSection
-        title="Support"
-        items={SUPPORT_ITEMS.map((item) =>
-          item.id === 'help'
-            ? {
-                ...item,
-                onPress: () => router.push('/faq'),
-              }
-            : item
-        )}
-      />
+      <View style={styles.mediumSpace} />
+
+      <SettingsSection title="Notifications" items={notificationItems} />
+
+      <View style={styles.mediumSpace} />
+
+      <SettingsSection title="Privacy & Security" items={privacyItems} />
+
+      <View style={styles.mediumSpace} />
+
+      <SettingsSection title="Support" items={supportItems} />
+
+      <View style={styles.mediumSpace} />
+
+      <SettingsSection title="Session" items={sessionItems} />
+
+      <View style={styles.bigSpace} />
+
+      <SettingsSection title="⚠️ Danger Zone" items={dangerItems} />
     </Screen>
   )
 }
 
 const styles = createThemedStyles((theme) => ({
-  content: {
-    gap: theme.spacing.xl,
+  content: {},
+  bigSpace: {
+    height: theme.spacing['3xl'],
+  },
+  mediumSpace: {
+    height: theme.spacing.xl,
+  },
+  membershipStatusRow: {
+    borderRadius: theme.radii.lg,
+    borderBottomEndRadius: 0,
+    borderBottomStartRadius: 0,
+    backgroundColor: theme.colors.muted,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: theme.spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+  },
+  membershipStatusIcon: {
+    width: 28,
+  },
+  membershipStatusIconPremium: {
+    color: theme.colors.accent,
+  },
+  membershipStatusIconFree: {
+    color: theme.colors.foreground,
+  },
+  membershipStatusText: {
+    fontFamily: theme.fontFamily.semibold,
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
+  },
+  membershipStatusTextPremium: {
+    color: theme.colors.accent,
+  },
+  membershipStatusTextFree: {
+    color: theme.colors.foreground,
+  },
+  membershipCard: {
+    borderRadius: theme.radii.lg,
+    borderTopEndRadius: 0,
+    borderTopStartRadius: 0,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    overflow: 'hidden',
   },
 }))
