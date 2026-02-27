@@ -39,18 +39,27 @@ export type AccountPlan = 'free' | 'premium'
 
 export function buildMembershipItems(args: {
   plan: AccountPlan
+  onPlanDetailsPress: () => void
   onManageOrUpgradePress: () => void
 }): SettingsRowItem[] {
   const isPremium = args.plan === 'premium'
 
   return [
     {
+      id: 'membership-plan-details',
+      type: 'link',
+      icon: 'book-open',
+      title: 'Your Kitchen Plan',
+      subtitle: 'Usage & limits',
+      onPress: args.onPlanDetailsPress,
+    },
+    {
       id: 'membership-action',
       type: 'link',
       icon: isPremium ? 'award' : 'sparkles-sharp',
       iconFamily: isPremium ? 'feather' : 'ionicons',
       title: isPremium ? 'Manage Subscription' : 'Upgrade to Premium',
-      subtitle: isPremium ? 'Billing settings' : 'Unlock all features',
+      subtitle: isPremium ? 'Billing & payments' : 'Unlock all features',
       tone: isPremium ? 'default' : 'accent',
       onPress: args.onManageOrUpgradePress,
     },

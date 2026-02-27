@@ -110,6 +110,7 @@ export default function ProfileScreen() {
     () =>
       buildMembershipItems({
         plan: accountPlan,
+        onPlanDetailsPress: () => router.push('/current-plan'),
         onManageOrUpgradePress: () =>
           accountPlan === 'premium'
             ? router.push('/current-plan?focus=billing')
@@ -210,7 +211,13 @@ export default function ProfileScreen() {
           </Text>
         </View>
         <View style={styles.membershipCard}>
-          <SettingsRow item={membershipItems[0]} isLast />
+          {membershipItems.map((item, index) => (
+            <SettingsRow
+              key={item.id}
+              item={item}
+              isLast={index === membershipItems.length - 1}
+            />
+          ))}
         </View>
       </View>
 
