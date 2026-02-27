@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons'
 import React from 'react'
-import { Text, TouchableOpacity, View } from 'react-native'
+import { Text, View } from 'react-native'
 
 import Button from '@/components/Button'
 import Screen from '@/components/Screen'
@@ -28,21 +28,25 @@ type CurrentPlanScreenProps = {
   highlightSubscriptionCard?: boolean
 }
 
-const premiumFeatures = [
-  'Unlimited recipes',
-  'Unlimited notes',
-  '10MB max per import file',
-  '5GB cloud storage',
-  'Sync across devices',
-  'Automatic recipe import',
-  'Offline access + cloud sync',
+type FeatureItem = {
+  icon: React.ComponentProps<typeof Feather>['name']
+  label: string
+}
+
+const freeFeatures: FeatureItem[] = [
+  { icon: 'book-open', label: 'Up to 100 recipes' },
+  { icon: 'cloud', label: '50MB total storage' },
+  { icon: 'coffee', label: 'Unlimited notes' },
+  { icon: 'wifi-off', label: 'Offline access' },
 ]
 
-const freeFeatures = [
-  'Up to 100 recipes',
-  '50MB total storage',
-  'Unlimited notes',
-  'Offline access',
+const premiumFeatures: FeatureItem[] = [
+  { icon: 'book-open', label: 'Unlimited recipes' },
+  { icon: 'coffee', label: 'Unlimited notes' },
+  { icon: 'cloud', label: '5GB cloud storage' },
+  { icon: 'smartphone', label: 'Sync across devices' },
+  { icon: 'download', label: 'Automatic recipe import' },
+  { icon: 'wifi', label: 'Offline access + cloud sync' },
 ]
 
 function formatStorageGigabytes(bytes: number) {
@@ -50,10 +54,57 @@ function formatStorageGigabytes(bytes: number) {
   return `${Math.max(0, Math.round(gigabytes * 10) / 10)}GB`
 }
 
+function UsageProgressRow({
+  label,
+  value,
+  percent,
+}: {
+  label: string
+  value: string
+  percent: number
+}) {
+  return (
+    <View style={styles.usageRowWrap}>
+      <View style={styles.usageRowHeader}>
+        <Text style={styles.usageRowLabel}>{label}</Text>
+        <Text style={styles.usageRowValue}>{value}</Text>
+      </View>
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: `${Math.min(Math.max(percent, 0), 100)}%` }]} />
+      </View>
+    </View>
+  )
+}
+
+function FeatureList({ items, premium = false }: { items: FeatureItem[]; premium?: boolean }) {
+  return (
+    <View style={styles.featuresList}>
+      {items.map((item) => (
+        <View key={item.label} style={styles.featureRow}>
+          <Feather
+            name={item.icon}
+            size={18}
+            style={premium ? styles.featureIconPremium : styles.featureIcon}
+          />
+          <Text style={styles.featureText}>{item.label}</Text>
+        </View>
+      ))}
+    </View>
+  )
+}
+
+function PlanPill({ label, premium = false }: { label: string; premium?: boolean }) {
+  return (
+    <View style={[styles.planPill, premium && styles.planPillPremium]}>
+      <Text style={[styles.planPillText, premium && styles.planPillTextPremium]}>{label}</Text>
+    </View>
+  )
+}
+
 export default function CurrentPlanScreen({
   accountType,
   mode = 'auth',
-  onBack,
+  onBack: _onBack,
   onUpgrade,
   onManageExistingRecipes,
   onManageSubscription,
@@ -74,57 +125,50 @@ export default function CurrentPlanScreen({
 
     return (
       <Screen scroll bottomPadding={theme.spacing['3xl']} contentStyle={styles.content}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            activeOpacity={0.8}
-            onPress={onBack}
-            style={styles.backButton}
-          >
-            <Feather name="arrow-left" size={20} style={styles.backIcon} />
-          </TouchableOpacity>
-
-          <View style={styles.headerTextWrap}>
-            <Text style={styles.title}>Current Plan: Premium</Text>
-            <Text style={styles.subtitle}>Plan & Subscription</Text>
+        <View style={styles.header}>
+          <Text style={styles.pageTitle}>Your Kitchen Plan</Text>
+          <View style={styles.planPillWrap}>
+            <PlanPill label="Premium" premium />
           </View>
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.usageHeader}>
-            <Text style={styles.usageTitle}>Recipes synced</Text>
-            <Text style={styles.usageValue}>
-              <Text style={styles.usageValueStrong}>{recipesSaved}</Text>
-            </Text>
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Your kitchen</Text>
+
+          <View style={styles.usageRowHeader}>
+            <Text style={styles.usageRowLabel}>Recipes synced</Text>
+            <Text style={styles.usageRowValue}>{recipesSaved}</Text>
           </View>
 
-          <Text style={styles.unlimitedRecipesText}>Unlimited recipes on Premium.</Text>
+          <UsageProgressRow
+            label="Cloud storage"
+            value={`${formatStorageGigabytes(storageBytesUsed)} / 5GB`}
+            percent={storagePercent}
+          />
+        </View>
 
-          <View style={styles.sectionDivider} />
+        <View style={styles.sectionBlock}>
+          <Text style={styles.sectionHeading}>Your benefits</Text>
 
-          <View style={styles.usageHeader}>
-            <Text style={styles.usageTitle}>Storage</Text>
-            <Text style={styles.usageValue}>
-              <Text style={styles.usageValueStrong}>{formatStorageGigabytes(storageBytesUsed)}</Text> / 5GB
-            </Text>
-          </View>
+          <View style={[styles.planCard, styles.premiumPlanCard]}>
+            <View style={styles.planCardHeader}>
+              <Text style={styles.planName}>PREMIUM</Text>
+              <PlanPill label="Current" premium />
+            </View>
 
-          <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                styles.progressFillPremium,
-                { width: `${storagePercent}%` },
-              ]}
-            />
+            <FeatureList items={premiumFeatures} premium />
           </View>
         </View>
 
-        <Text style={styles.supportText}>Thank you for supporting independent development.</Text>
+        <Text style={styles.supportText}>Thanks for supporting independent development.</Text>
 
-        <View style={[styles.card, highlightSubscriptionCard && styles.subscriptionCardHighlighted]}>
-          <Text style={styles.subscriptionTitle}>Subscription</Text>
+        <View
+          style={[
+            styles.sectionCard,
+            highlightSubscriptionCard && styles.subscriptionCardHighlighted,
+          ]}
+        >
+          <Text style={styles.sectionTitle}>Subscription</Text>
 
           <View style={styles.subscriptionRow}>
             <Text style={styles.subscriptionLabel}>Plan</Text>
@@ -136,21 +180,13 @@ export default function CurrentPlanScreen({
             <Text style={styles.subscriptionValue}>{premiumNextRenewalLabel}</Text>
           </View>
 
-          <Button onPress={manageSubscription} variant="soft" size="md" style={styles.manageSubscriptionButton}>
+          <Button onPress={manageSubscription} variant="soft" size="md" style={styles.manageButton}>
             Manage Subscription
           </Button>
         </View>
 
-        <Text style={styles.supportFootnote}>
-          Premium helps keep the app simple, private, and sustainable.
-        </Text>
-
         {onDeactivatePremiumForTest ? (
-          <Button
-            onPress={onDeactivatePremiumForTest}
-            variant="secondary"
-            size="md"
-          >
+          <Button onPress={onDeactivatePremiumForTest} variant="secondary" size="md">
             Deactivate Premium (Test)
           </Button>
         ) : null}
@@ -159,171 +195,76 @@ export default function CurrentPlanScreen({
   }
 
   const usage = buildFreePlanUsageSnapshot(recipesSaved, storageBytesUsed)
-  const handleManageExistingRecipes = onManageExistingRecipes ?? onBack
-
-  const currentPlanLabel = accountType === 'guest' ? 'Guest' : 'Free'
-  const subtitle =
-    accountType === 'guest'
-      ? 'You are in Guest mode (Free plan).'
-      : 'Free plan'
+  const usageMessage =
+    usage.recipesUsagePercent >= usage.storageUsagePercent
+      ? usage.recipesUsageMessage
+      : usage.storageUsageMessage
+  const handleManageExistingRecipes = onManageExistingRecipes ?? _onBack
 
   return (
     <Screen scroll bottomPadding={theme.spacing['3xl']} contentStyle={styles.content}>
-      <View style={styles.headerRow}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          activeOpacity={0.8}
-          onPress={onBack}
-          style={styles.backButton}
-        >
-          <Feather name="arrow-left" size={20} style={styles.backIcon} />
-        </TouchableOpacity>
-
-        <View style={styles.headerTextWrap}>
-          <Text style={styles.title}>Current Plan: {currentPlanLabel}</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
+      <View style={styles.header}>
+        <Text style={styles.pageTitle}>Your Kitchen Plan</Text>
+        <View style={styles.planPillWrap}>
+          <PlanPill label="Free" />
         </View>
       </View>
 
-      <View style={styles.card}>
-        <View style={styles.usageHeader}>
-          <Text style={styles.usageTitle}>Recipes saved</Text>
-          <Text style={styles.usageValue}>
-            <Text style={styles.usageValueStrong}>{recipesSaved}</Text>/{FREE_PLAN_MAX_RECIPES}
-          </Text>
-        </View>
+      <View style={styles.sectionCard}>
+        <Text style={styles.sectionTitle}>Your usage</Text>
 
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${usage.recipesUsagePercent}%` }]} />
-        </View>
+        <UsageProgressRow
+          label="Recipes saved"
+          value={`${recipesSaved} / ${FREE_PLAN_MAX_RECIPES}`}
+          percent={usage.recipesUsagePercent}
+        />
 
-        <Text style={styles.usageMessage}>{usage.recipesUsageMessage}</Text>
+        <UsageProgressRow
+          label="Storage used"
+          value={`${usage.storageMbUsed}MB / ${usage.storageMbLimit}MB`}
+          percent={usage.storageUsagePercent}
+        />
 
-        <View style={styles.sectionDivider} />
+        <Text style={styles.usageMessage}>{usageMessage}</Text>
+      </View>
 
-        <View style={styles.usageHeader}>
-          <Text style={styles.usageTitle}>Storage</Text>
-          <Text style={styles.usageValue}>
-            <Text style={styles.usageValueStrong}>{usage.storageMbUsed}MB</Text>/{usage.storageMbLimit}
-            MB used
-          </Text>
-        </View>
+      <View style={styles.sectionBlock}>
+        <Text style={styles.sectionHeading}>Compare plans</Text>
 
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${usage.storageUsagePercent}%` }]} />
-        </View>
-
-        <Text style={styles.usageMessage}>{usage.storageUsageMessage}</Text>
-
-        {usage.upgradeUsageBand === 'between70and84' ? (
-          <Text style={styles.inlineUpgradeHint}>
-            Upgrade to Premium for unlimited recipes and cloud sync.
-          </Text>
-        ) : null}
-
-        {usage.upgradeUsageBand === 'between85and94' ? (
-          <View style={styles.usagePromptWrap}>
-            <Button onPress={onUpgrade} variant="ghost" size="md" style={styles.ghostCta}>
-              Learn about Premium
-            </Button>
+        <View style={styles.planCard}>
+          <View style={styles.planCardHeader}>
+            <Text style={styles.planName}>FREE</Text>
+            <PlanPill label="Current" />
           </View>
-        ) : null}
+          <FeatureList items={freeFeatures} />
+        </View>
 
-        {usage.upgradeUsageBand === 'between95and99' ? (
-          <View style={styles.usagePromptWrap}>
-            <Button onPress={onUpgrade} variant="premium" size="md">
-              Upgrade to Premium
-            </Button>
-            <Text style={styles.upgradeMicrocopy}>
-              Premium removes limits and securely backs up your library.
-            </Text>
+        <View style={[styles.planCard, styles.premiumPlanCard]}>
+          <View style={styles.planCardHeader}>
+            <Text style={styles.planName}>PREMIUM</Text>
+            <PlanPill label="Recommended" premium />
           </View>
-        ) : null}
+          <FeatureList items={premiumFeatures} premium />
+        </View>
+      </View>
+
+      <View style={styles.ctaBlock}>
+        <Button onPress={onUpgrade} variant="premium" size="xl" style={styles.ctaButton}>
+          Unlock Premium
+        </Button>
+        <Text style={styles.pricingText}>€5/month · €36/year</Text>
+
+        <View style={styles.ctaNotes}>
+          <Text style={styles.ctaNote}>Your existing recipes will be automatically imported.</Text>
+          <Text style={styles.ctaNote}>Nothing will be deleted.</Text>
+          <Text style={styles.ctaNote}>Cancel anytime.</Text>
+        </View>
 
         {usage.upgradeUsageBand === 'atLimit' ? (
-          <View style={styles.usagePromptWrap}>
-            <Text style={styles.limitReachedText}>You&apos;ve reached the Free plan limit.</Text>
-            <Button onPress={onUpgrade} variant="premium" size="md">
-              Upgrade to Premium
-            </Button>
-            <Button
-              onPress={handleManageExistingRecipes}
-              size="md"
-              variant="secondary"
-            >
-              Manage existing recipes
-            </Button>
-          </View>
+          <Button onPress={handleManageExistingRecipes} size="md" variant="secondary">
+            Manage existing recipes
+          </Button>
         ) : null}
-      </View>
-
-      <View style={styles.card}>
-        <View style={styles.planHeader}>
-          <Text style={styles.planTitle}>{currentPlanLabel}</Text>
-          <View style={styles.currentPill}>
-            <Text style={styles.currentPillText}>Current</Text>
-          </View>
-        </View>
-
-        <View style={styles.featuresList}>
-          {freeFeatures.map((feature) => (
-            <View key={feature} style={styles.featureRow}>
-              <View style={styles.featureIconWrap}>
-                <Feather name="check" size={14} style={styles.featureIcon} />
-              </View>
-              <Text style={styles.featureText}>{feature}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.divider} />
-        <Text style={styles.planFootnote}>Everything stays on this device.</Text>
-      </View>
-
-      <View style={[styles.card, styles.premiumCard]}>
-        <View style={styles.planHeader}>
-          <Text style={styles.planTitle}>Premium</Text>
-          <Feather name="cloud" size={16} style={styles.premiumCloudIcon} />
-        </View>
-
-        <View style={styles.featuresList}>
-          {premiumFeatures.map((feature, index) => (
-            <View key={`${feature}-${index}`} style={styles.featureRow}>
-              <View style={[styles.featureIconWrap, styles.featureIconWrapPremium]}>
-                <Feather name="check" size={14} style={styles.featureIconPremium} />
-              </View>
-              <Text style={[styles.featureText, index === 0 && styles.featureTextStrong]}>{feature}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.divider} />
-        <Text style={styles.premiumFootnote}>
-          Designed for cooks who want their library safe and accessible everywhere.
-        </Text>
-      </View>
-
-      <Button onPress={onUpgrade} variant="premium" size="xl">
-        Upgrade to Premium
-      </Button>
-
-      <Text style={styles.pricingText}>€5/month or €36/year</Text>
-      <Text style={styles.pricingSubtext}>It&apos;s €5. Not €4.99. We cook honestly.</Text>
-
-      <View style={styles.noteCard}>
-        <View style={styles.noteRow}>
-          <Feather name="check" size={16} style={styles.noteIcon} />
-          <Text style={styles.noteText}>Your existing recipes will be automatically imported.</Text>
-        </View>
-        <View style={styles.noteRow}>
-          <Feather name="check" size={16} style={styles.noteIcon} />
-          <Text style={styles.noteText}>Nothing will be deleted.</Text>
-        </View>
-        <View style={styles.noteRow}>
-          <Feather name="check" size={16} style={styles.noteIcon} />
-          <Text style={styles.noteText}>Cancel anytime.</Text>
-        </View>
       </View>
     </Screen>
   )
@@ -331,157 +272,130 @@ export default function CurrentPlanScreen({
 
 const styles = createThemedStyles((theme) => ({
   content: {
-    gap: theme.spacing.xl,
+    gap: theme.spacing.lg,
+    paddingTop: theme.spacing.sm,
   },
-  headerRow: {
-    flexDirection: 'row',
+  header: {
     alignItems: 'center',
-    gap: theme.spacing.md,
     marginTop: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
   },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: theme.radii.full,
-    backgroundColor: theme.colors.secondary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backIcon: {
-    color: theme.colors.mutedForeground,
-  },
-  headerTextWrap: {
-    flex: 1,
-  },
-  title: {
-    fontFamily: theme.fontFamily.semibold,
+  pageTitle: {
+    textAlign: 'center',
+    fontFamily: theme.fontFamily.bold,
     fontSize: theme.fontSize.display,
     lineHeight: theme.lineHeight.display,
     color: theme.colors.foreground,
   },
-  subtitle: {
-    marginTop: theme.spacing.xs,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.primaryDark,
-    fontWeight: theme.fontWeight.semibold
+  planPillWrap: {
+    marginTop: theme.spacing.md,
   },
-  card: {
+  planPill: {
+    borderRadius: theme.radii.full,
+    backgroundColor: theme.colors.secondary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+  },
+  planPillPremium: {
+    backgroundColor: theme.colors.primarySoft,
+  },
+  planPillText: {
+    fontFamily: theme.fontFamily.semibold,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    color: theme.colors.secondaryForeground,
+  },
+  planPillTextPremium: {
+    color: theme.colors.primaryDark,
+  },
+  sectionCard: {
     borderWidth: 1,
     borderColor: theme.colors.border,
     borderRadius: theme.radii.xl,
     backgroundColor: theme.colors.card,
     paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.lg,
-    gap: theme.spacing.md,
+    paddingVertical: theme.spacing.xl,
+    gap: theme.spacing.lg,
   },
-  subscriptionCardHighlighted: {
-    borderColor: theme.colors.accent,
+  sectionTitle: {
+    fontFamily: theme.fontFamily.bold,
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
+    color: theme.colors.foreground,
   },
-  usageHeader: {
+  usageRowWrap: {
+    gap: theme.spacing.xs,
+  },
+  usageRowHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: theme.spacing.md,
   },
-  usageTitle: {
-    fontFamily: theme.fontFamily.semibold,
+  usageRowLabel: {
+    flex: 1,
+    fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.lg,
     lineHeight: theme.lineHeight.lg,
     color: theme.colors.foreground,
   },
-  usageValue: {
-    fontFamily: theme.fontFamily.regular,
+  usageRowValue: {
+    fontFamily: theme.fontFamily.semibold,
     fontSize: theme.fontSize.lg,
     lineHeight: theme.lineHeight.lg,
     color: theme.colors.warmGray,
   },
-  usageValueStrong: {
-    fontFamily: theme.fontFamily.semibold,
-    color: theme.colors.foreground,
-  },
   progressTrack: {
-    height: 8,
-    borderRadius: theme.radii.xxl,
+    height: 12,
+    borderRadius: theme.radii.full,
     backgroundColor: theme.colors.secondary,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    borderRadius: theme.radii.xxl,
-    backgroundColor: theme.colors.primary,
-  },
-  progressFillPremium: {
-    backgroundColor: theme.colors.primary,
-  },
-  sectionDivider: {
-    marginVertical: theme.spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderRadius: theme.radii.full,
+    backgroundColor: theme.colors.accent,
   },
   usageMessage: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.mutedForeground,
-  },
-  unlimitedRecipesText: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.mutedForeground,
-  },
-  inlineUpgradeHint: {
     marginTop: theme.spacing.xs,
     fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
     color: theme.colors.mutedForeground,
   },
-  usagePromptWrap: {
-    marginTop: theme.spacing.sm,
-    gap: theme.spacing.sm,
+  sectionBlock: {
+    gap: theme.spacing.md,
   },
-  ghostCta: {
-    width: 'auto',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 0,
-  },
-  upgradeMicrocopy: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    color: theme.colors.mutedForeground,
-  },
-  limitReachedText: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.foreground,
-  },
-  planHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: theme.spacing.xs,
-  },
-  planTitle: {
-    fontFamily: theme.fontFamily.semibold,
+  sectionHeading: {
+    fontFamily: theme.fontFamily.bold,
     fontSize: theme.fontSize.xxl,
     lineHeight: theme.lineHeight.xxl,
     color: theme.colors.foreground,
   },
-  currentPill: {
-    borderRadius: theme.radii.xxl,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
-    backgroundColor: theme.colors.secondary,
+  planCard: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.card,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.xl,
+    gap: theme.spacing.md,
   },
-  currentPillText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    color: theme.colors.mutedForeground,
+  premiumPlanCard: {
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.primarySoft,
+  },
+  planCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  planName: {
+    fontFamily: theme.fontFamily.bold,
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
+    color: theme.colors.foreground,
+    letterSpacing: 0.8,
   },
   featuresList: {
     gap: theme.spacing.md,
@@ -491,139 +405,74 @@ const styles = createThemedStyles((theme) => ({
     alignItems: 'center',
     gap: theme.spacing.md,
   },
-  featureIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: theme.radii.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.secondary,
-  },
-  featureIconWrapPremium: {
-    backgroundColor: theme.colors.background,
-  },
   featureIcon: {
-    color: theme.colors.warmGray,
+    color: theme.colors.mutedForeground,
   },
   featureIconPremium: {
-    color: theme.colors.primary,
+    color: theme.colors.primaryDark,
   },
   featureText: {
     flex: 1,
     fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
     color: theme.colors.foreground,
   },
-  featureTextStrong: {
-    fontFamily: theme.fontFamily.semibold,
-  },
-  divider: {
+  ctaBlock: {
+    alignItems: 'center',
+    gap: theme.spacing.md,
     marginTop: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
   },
-  planFootnote: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.mutedForeground,
-  },
-  premiumCard: {
-    backgroundColor: theme.colors.primarySoft,
-  },
-  premiumCloudIcon: {
-    color: theme.colors.primary,
-  },
-  premiumFootnote: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.mutedForeground,
-    fontStyle: 'italic',
+  ctaButton: {
+    width: '100%',
   },
   pricingText: {
-    marginTop: -theme.spacing.md,
-    textAlign: 'center',
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
-    color: theme.colors.foreground,
-  },
-  pricingSubtext: {
-    marginTop: -theme.spacing.md,
-    textAlign: 'center',
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.mutedForeground,
-  },
-  noteCard: {
-    marginTop: theme.spacing.sm,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radii.lg,
-    backgroundColor: theme.colors.card,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.lg,
-    gap: theme.spacing.sm,
-  },
-  noteRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: theme.spacing.sm,
-  },
-  noteIcon: {
-    color: theme.colors.mutedForeground,
-    marginTop: theme.spacing.xs,
-  },
-  noteText: {
-    flex: 1,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.mutedForeground,
-  },
-  supportText: {
-    textAlign: 'center',
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.mutedForeground,
-  },
-  subscriptionTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xxl,
-    lineHeight: theme.lineHeight.xxl,
-    color: theme.colors.foreground,
-    marginBottom: theme.spacing.xs,
-  },
-  subscriptionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  subscriptionLabel: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
-    color: theme.colors.mutedForeground,
-  },
-  subscriptionValue: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
-    color: theme.colors.foreground,
-  },
-  manageSubscriptionButton: {
-    marginTop: theme.spacing.sm,
-    borderRadius: theme.radii.xl,
-  },
-  supportFootnote: {
     textAlign: 'center',
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.base,
     color: theme.colors.mutedForeground,
+  },
+  ctaNotes: {
+    marginTop: theme.spacing.sm,
+    gap: theme.spacing.xxs,
+  },
+  ctaNote: {
+    textAlign: 'center',
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.mutedForeground,
+  },
+  supportText: {
+    textAlign: 'center',
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
+  },
+  subscriptionCardHighlighted: {
+    borderColor: theme.colors.accent,
+  },
+  subscriptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing.md,
+  },
+  subscriptionLabel: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    color: theme.colors.mutedForeground,
+  },
+  subscriptionValue: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    color: theme.colors.foreground,
+  },
+  manageButton: {
+    marginTop: theme.spacing.xs,
   },
 }))

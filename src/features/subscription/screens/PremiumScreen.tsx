@@ -14,28 +14,18 @@ type PremiumScreenProps = {
   onManageSubscription?: () => void
 }
 
-const premiumItems = [
-  {
-    id: 'backup',
-    icon: 'cloud' as const,
-    title: 'Cloud backup & sync',
-    subtitle: 'Recipes, notes, and imports',
-  },
-  {
-    id: 'devices',
-    icon: 'monitor' as const,
-    title: 'Access on all your devices',
-  },
-  {
-    id: 'recipes',
-    icon: 'book-open' as const,
-    title: 'Unlimited recipes',
-  },
-  {
-    id: 'imports',
-    icon: 'file-plus' as const,
-    title: 'Unlimited imports',
-  },
+const checklistItems = [
+  'Never lose a recipe',
+  'Sync across your devices',
+  'Save without limits',
+  'Backup your kitchen',
+]
+
+const supportingLines = [
+  'Cloud backup and sync all your recipes and notes.',
+  'Access your kitchen across all your devices.',
+  'Unlimited recipes.',
+  '5GB cloud storage for imports.',
 ]
 
 export default function PremiumScreen({
@@ -46,8 +36,10 @@ export default function PremiumScreen({
   onManageSubscription,
 }: PremiumScreenProps) {
   const [billingCycle, setBillingCycle] = React.useState<'month' | 'year'>('month')
-
-  const priceValue = billingCycle === 'month' ? '€5' : '€36'
+  const monthlyPrice = 5
+  const yearlyPrice = 36
+  const yearlyMonthlyEquivalent = yearlyPrice / 12
+  const priceValue = billingCycle === 'month' ? `€${monthlyPrice}` : `€${yearlyPrice}`
   const pricePeriod = billingCycle === 'month' ? '/ month' : '/ year'
 
   return (
@@ -65,14 +57,12 @@ export default function PremiumScreen({
         resizeMode="cover"
       />
 
-      <Text style={styles.title}>
-        {isActive ? 'You\'re on Premium' : 'Keep your recipes safe everywhere'}
-      </Text>
+      <Text style={styles.title}>Keep your recipes safe everywhere</Text>
 
       <Text style={styles.subtitle}>
         {isActive
           ? 'Your kitchen is synced, backed up, and fully unlocked.'
-          : 'Your kitchen stays backed up, synced, and ready — wherever you cook.'}
+          : 'Premium gives you backup, sync, and unlimited saves — so your kitchen is always with you.'}
       </Text>
 
       {!isActive ? (
@@ -103,22 +93,29 @@ export default function PremiumScreen({
             <Text style={styles.priceValue}>{priceValue}</Text>
             <Text style={styles.pricePeriod}>{pricePeriod}</Text>
           </View>
+          {billingCycle === 'year' ? (
+            <Text style={styles.yearlyNote}>That&apos;s €{yearlyMonthlyEquivalent} per month</Text>
+          ) : null}
         </>
       ) : null}
 
       <Text style={styles.includedTitle}>Everything included</Text>
 
       <View style={styles.featuresList}>
-        {premiumItems.map((item) => (
-          <View key={item.id} style={styles.featureRow}>
+        {checklistItems.map((item) => (
+          <View key={item} style={styles.featureRow}>
             <View style={styles.featureLeft}>
-              <Feather name={item.icon} size={18} style={styles.featureIcon} />
-              <View style={styles.featureTextWrap}>
-                <Text style={styles.featureTitle}>{item.title}</Text>
-                {!!item.subtitle && <Text style={styles.featureSubtitle}>{item.subtitle}</Text>}
-              </View>
+              <Text style={styles.featureCheck}>✔</Text>
+              <Text style={styles.featureTitle}>{item}</Text>
             </View>
           </View>
+        ))}
+      </View>
+      <View style={styles.supportingLines}>
+        {supportingLines.map((line) => (
+          <Text key={line} style={styles.featureSubtitle}>
+            {line}
+          </Text>
         ))}
       </View>
 
@@ -142,12 +139,12 @@ export default function PremiumScreen({
           {isUpgrading ? 'Upgrading...' : 'Unlock Premium'}
         </Button>
       )}
+      {!isActive ? (
+        <Text style={styles.trustText}>
+          It&apos;s €5. Not €4.99. Yes, we rounded it — we cook honestly.
+        </Text>
+      ) : null}
 
-      {!!onMaybeLater && !isActive && (
-        <TouchableOpacity style={styles.notNowButton} onPress={onMaybeLater} activeOpacity={0.8}>
-          <Text style={styles.notNowText}>Not now</Text>
-        </TouchableOpacity>
-      )}
     </Screen>
   )
 }
@@ -157,7 +154,7 @@ const styles = createThemedStyles((theme) => ({
     paddingTop: theme.spacing.sm,
     paddingBottom: theme.spacing['3xl'],
     alignItems: 'center',
-    gap: theme.spacing.xl,
+    gap: theme.spacing.md,
   },
   backRow: {
     width: '100%',
@@ -181,6 +178,7 @@ const styles = createThemedStyles((theme) => ({
     borderRadius: theme.radii.xl,
   },
   title: {
+    marginTop: theme.spacing.sm,
     textAlign: 'center',
     fontFamily: theme.fontFamily.bold,
     fontSize: theme.fontSize.hero,
@@ -189,14 +187,16 @@ const styles = createThemedStyles((theme) => ({
     maxWidth: 340,
   },
   subtitle: {
+    marginTop: theme.spacing.xs,
     textAlign: 'center',
     fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
     color: theme.colors.mutedForeground,
     maxWidth: 360,
   },
   billingToggle: {
+    marginTop: theme.spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.creamDark,
@@ -224,13 +224,22 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.foreground,
   },
   priceRow: {
+    marginTop: theme.spacing.sm,
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
+  yearlyNote: {
+    marginTop: -theme.spacing.xxs,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
+    textAlign: 'center',
+  },
   priceValue: {
     fontFamily: theme.fontFamily.bold,
-    fontSize: 72,
+    fontSize: 64,
     lineHeight: 72,
     color: theme.colors.foreground,
   },
@@ -243,22 +252,18 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
   includedTitle: {
+    marginTop: theme.spacing.xl,
     textAlign: 'center',
     fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize.display,
-    lineHeight: theme.lineHeight.display,
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
     color: theme.colors.foreground,
   },
   featuresList: {
     width: '100%',
-    maxWidth: 390,
-    borderRadius: theme.radii.xl,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    gap: theme.spacing.md,
+    maxWidth: 320,
+    marginTop: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
   featureRow: {
     flexDirection: 'row',
@@ -268,39 +273,44 @@ const styles = createThemedStyles((theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
-  featureIcon: {
+  featureCheck: {
     color: theme.colors.primary,
-  },
-  featureTextWrap: {
-    flex: 1,
-  },
-  featureTitle: {
     fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.foreground,
-  },
-  featureSubtitle: {
-    marginTop: theme.spacing.xxs,
-    fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.base,
+  },
+  featureTitle: {
+    fontFamily: theme.fontFamily.bold,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.foreground,
+  },
+  supportingLines: {
+    width: '100%',
+    maxWidth: 320,
+    marginTop: theme.spacing.md,
+    gap: theme.spacing.xs,
+  },
+  featureSubtitle: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
     color: theme.colors.mutedForeground,
   },
   ctaButton: {
     width: '100%',
-    maxWidth: 390,
+    maxWidth: 320,
+    marginTop: theme.spacing['2xl'],
   },
-  notNowButton: {
-    marginTop: -theme.spacing.sm,
-    paddingVertical: theme.spacing.sm,
-  },
-  notNowText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+  trustText: {
+    marginTop: theme.spacing.md,
+    textAlign: 'center',
+    maxWidth: 320,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
     color: theme.colors.mutedForeground,
   },
 }))
