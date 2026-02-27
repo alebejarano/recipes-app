@@ -11,7 +11,7 @@ export default function AuthCurrentPlanRoute() {
   const { plan, billingCycle, setPlan } = useContext(SubscriptionContext)
 
   const premiumPlanLabel = billingCycle === 'year' ? '€36/year' : '€5/month'
-  const premiumNextRenewalLabel = billingCycle === 'year' ? 'March 18, 2027' : 'March 18, 2026'
+  const premiumNextRenewalLabel = billingCycle === 'year' ? 'Renews Mar 27, 2027' : 'Renews Mar 27, 2026'
 
   return (
     <CurrentPlanScreen

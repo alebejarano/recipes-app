@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons'
 import React from 'react'
-import { Text, View } from 'react-native'
+import { Text, TouchableOpacity, View } from 'react-native'
 
 import Button from '@/components/Button'
 import Screen from '@/components/Screen'
@@ -35,7 +35,7 @@ type FeatureItem = {
 
 const freeFeatures: FeatureItem[] = [
   { icon: 'book-open', label: 'Up to 100 recipes' },
-  { icon: 'cloud', label: '50MB total storage' },
+  { icon: 'cloud', label: '50MB total storage for imports' },
   { icon: 'coffee', label: 'Unlimited notes' },
   { icon: 'wifi-off', label: 'Offline access' },
 ]
@@ -43,9 +43,8 @@ const freeFeatures: FeatureItem[] = [
 const premiumFeatures: FeatureItem[] = [
   { icon: 'book-open', label: 'Unlimited recipes' },
   { icon: 'coffee', label: 'Unlimited notes' },
-  { icon: 'cloud', label: '5GB cloud storage' },
+  { icon: 'cloud', label: '5GB cloud storage for imports' },
   { icon: 'smartphone', label: 'Sync across devices' },
-  { icon: 'download', label: 'Automatic recipe import' },
   { icon: 'wifi', label: 'Offline access + cloud sync' },
 ]
 
@@ -104,13 +103,13 @@ function PlanPill({ label, premium = false }: { label: string; premium?: boolean
 export default function CurrentPlanScreen({
   accountType,
   mode = 'auth',
-  onBack: _onBack,
+  onBack,
   onUpgrade,
   onManageExistingRecipes,
   onManageSubscription,
   onDeactivatePremiumForTest,
   premiumPlanLabel = '€5/month',
-  premiumNextRenewalLabel = 'March 18, 2026',
+  premiumNextRenewalLabel = 'Renews Mar 27, 2026',
   highlightSubscriptionCard = false,
 }: CurrentPlanScreenProps) {
   const recipesQuery = useStrategyRecipesList({ limit: 2000 }, mode)
@@ -125,6 +124,11 @@ export default function CurrentPlanScreen({
 
     return (
       <Screen scroll bottomPadding={theme.spacing['3xl']} contentStyle={styles.content}>
+        <TouchableOpacity style={styles.backRow} onPress={onBack} activeOpacity={0.75}>
+          <Feather name="chevron-left" size={18} style={styles.backIcon} />
+          <Text style={styles.backText}>Back</Text>
+        </TouchableOpacity>
+
         <View style={styles.header}>
           <Text style={styles.pageTitle}>Your Kitchen Plan</Text>
           <View style={styles.planPillWrap}>
@@ -170,15 +174,8 @@ export default function CurrentPlanScreen({
         >
           <Text style={styles.sectionTitle}>Subscription</Text>
 
-          <View style={styles.subscriptionRow}>
-            <Text style={styles.subscriptionLabel}>Plan</Text>
-            <Text style={styles.subscriptionValue}>{premiumPlanLabel}</Text>
-          </View>
-
-          <View style={styles.subscriptionRow}>
-            <Text style={styles.subscriptionLabel}>Next renewal</Text>
-            <Text style={styles.subscriptionValue}>{premiumNextRenewalLabel}</Text>
-          </View>
+          <Text style={styles.subscriptionAmount}>{premiumPlanLabel}</Text>
+          <Text style={styles.subscriptionRenewal}>{premiumNextRenewalLabel}</Text>
 
           <Button onPress={manageSubscription} variant="soft" size="md" style={styles.manageButton}>
             Manage Subscription
@@ -199,10 +196,15 @@ export default function CurrentPlanScreen({
     usage.recipesUsagePercent >= usage.storageUsagePercent
       ? usage.recipesUsageMessage
       : usage.storageUsageMessage
-  const handleManageExistingRecipes = onManageExistingRecipes ?? _onBack
+  const handleManageExistingRecipes = onManageExistingRecipes ?? onBack
 
   return (
     <Screen scroll bottomPadding={theme.spacing['3xl']} contentStyle={styles.content}>
+      <TouchableOpacity style={styles.backRow} onPress={onBack} activeOpacity={0.75}>
+        <Feather name="chevron-left" size={18} style={styles.backIcon} />
+        <Text style={styles.backText}>Back</Text>
+      </TouchableOpacity>
+
       <View style={styles.header}>
         <Text style={styles.pageTitle}>Your Kitchen Plan</Text>
         <View style={styles.planPillWrap}>
@@ -275,9 +277,24 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.lg,
     paddingTop: theme.spacing.sm,
   },
+  backRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backIcon: {
+    color: theme.colors.mutedForeground,
+  },
+  backText: {
+    marginLeft: theme.spacing.xs,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
+  },
   header: {
     alignItems: 'center',
-    marginTop: theme.spacing.sm,
+    marginTop: theme.spacing.xs,
     marginBottom: theme.spacing.md,
   },
   pageTitle: {
@@ -454,25 +471,20 @@ const styles = createThemedStyles((theme) => ({
   subscriptionCardHighlighted: {
     borderColor: theme.colors.accent,
   },
-  subscriptionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: theme.spacing.md,
-  },
-  subscriptionLabel: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.mutedForeground,
-  },
-  subscriptionValue: {
+  subscriptionAmount: {
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.lg,
     lineHeight: theme.lineHeight.lg,
     color: theme.colors.foreground,
   },
+  subscriptionRenewal: {
+    marginTop: theme.spacing.xxs,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    color: theme.colors.mutedForeground,
+  },
   manageButton: {
-    marginTop: theme.spacing.xs,
+    marginTop: theme.spacing.sm,
   },
 }))
