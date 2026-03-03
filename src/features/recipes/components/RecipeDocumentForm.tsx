@@ -22,10 +22,8 @@ import { getRecipeDocumentUsageSummary } from '@/features/recipes/storage/recipe
 import type { ImportPlan } from '@/features/recipes/storage/importsStorage'
 import {
   FREE_PLAN_MAX_IMPORT_FILE_BYTES,
-  FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
   IMPORT_FILE_TOO_LARGE_MESSAGE,
   IMPORT_ALLOWED_MIME_TYPES,
-  PREMIUM_PLAN_MAX_STORAGE_BYTES,
 } from '@/features/subscription/constants/limits'
 
 export type RecipeDocumentFormValues = {
@@ -184,21 +182,8 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
         }
       }
 
-      const totalBytes = usage.totalBytes
-
       if (size > FREE_PLAN_MAX_IMPORT_FILE_BYTES) {
         Alert.alert('File too large', IMPORT_FILE_TOO_LARGE_MESSAGE)
-        return
-      }
-      const maxTotalBytes =
-        plan === 'premium' ? PREMIUM_PLAN_MAX_STORAGE_BYTES : FREE_PLAN_MAX_IMPORT_TOTAL_BYTES
-      if (totalBytes + size > maxTotalBytes) {
-        Alert.alert(
-          'Storage limit reached',
-          plan === 'premium'
-            ? 'Premium includes up to 5 GB total storage.'
-            : 'Free accounts can save up to 50 MB of files.'
-        )
         return
       }
 
@@ -221,7 +206,7 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
     } finally {
       setIsPicking(false)
     }
-  }, [isPicking, plan, usage.totalBytes])
+  }, [isPicking])
 
   useImperativeHandle(
     ref,

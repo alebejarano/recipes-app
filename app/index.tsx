@@ -42,6 +42,14 @@ export default function DevLandingScreen() {
             mock current plan
         </Link>
 
+        <Link href="/(dev)/(tabs)/profile">
+            Dev profile
+        </Link>
+
+        <Link href="/(dev)/limit-qa">
+            Limit QA mode
+        </Link>
+
         <Link href="/(public)/get-started">
             Get started
         </Link>

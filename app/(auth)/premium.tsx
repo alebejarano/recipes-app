@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import { Alert, View } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
 import CurrentPlanScreen from '@/features/subscription/screens/CurrentPlanScreen'
@@ -9,9 +9,12 @@ import PremiumScreen from '@/features/subscription/screens/PremiumScreen'
 import PremiumSuccessModal from '@/features/subscription/components/PremiumSuccessModal'
 import { upgradeToPremium } from '@/features/subscription/services/upgradeToPremium'
 import { createThemedStyles } from '@/styles/createStyles'
+import { getSafeReturnTo } from '@/lib/navigation'
 
 export default function PremiumRoute() {
   const router = useRouter()
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
+  const safeReturnTo = getSafeReturnTo(returnTo)
   const { user } = useAuth()
   const { plan, billingCycle, upgradeStatus, setPlan, setUpgradeStatus } = useContext(SubscriptionContext)
   const isUpgrading = upgradeStatus === 'running'
@@ -22,9 +25,9 @@ export default function PremiumRoute() {
 
   useEffect(() => {
     if (plan === 'premium' && !showSuccessModal && !isUpgrading && !shouldHoldRedirectRef.current) {
-      router.replace('/(auth)/current-plan')
+      router.replace(safeReturnTo ?? '/(auth)/current-plan')
     }
-  }, [isUpgrading, plan, router, showSuccessModal])
+  }, [isUpgrading, plan, router, safeReturnTo, showSuccessModal])
 
   const handleUpgrade = async (billingCycle: 'month' | 'year') => {
     if (!user?.id || isUpgrading) return
@@ -45,13 +48,13 @@ export default function PremiumRoute() {
 
   const handleMaybeLater = () => {
     if (isUpgrading) return
-    router.replace('/(auth)/(tabs)/profile')
+    router.replace(safeReturnTo ?? '/(auth)/(tabs)/profile')
   }
 
   const onCloseSuccessModal = () => {
     setShowSuccessModal(false)
     shouldHoldRedirectRef.current = false
-    router.replace('/(auth)/current-plan')
+    router.replace(safeReturnTo ?? '/(auth)/current-plan')
   }
 
   if (plan === 'premium' && !showSuccessModal && !isUpgrading) {

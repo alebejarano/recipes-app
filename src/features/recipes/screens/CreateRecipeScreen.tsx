@@ -1,8 +1,9 @@
 // src/features/recipes/screens/CreateRecipeScreen.tsx
 
 import { Feather } from '@expo/vector-icons'
-import { router, useSegments } from 'expo-router'
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { router, useLocalSearchParams, useSegments } from 'expo-router'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
   KeyboardAvoidingView,
@@ -16,6 +17,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import Button from '@/components/Button'
 import { createThemedStyles } from '@/styles/createStyles'
 
+import { useAuth } from '@/features/auth/context/AuthContext'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
 import { uploadPremiumImport } from '@/features/recipes/api/importsRepo'
 import RecipeDocumentForm, {
@@ -31,6 +33,9 @@ import { useAddRecipeDocument } from '@/features/recipes/hooks/useRecipeDocument
 import { useStrategyCreateRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
+import PlanLimitReachedModal, { type PlanLimitReachedType } from '@/features/subscription/components/PlanLimitReachedModal'
+import { useLimitQaOverrides } from '@/features/subscription/dev/limitQaOverrides'
+import { getPlanLimitTypeFromError } from '@/features/subscription/utils/limitErrors'
 
 export type CreateRecipeVariant = 'onboarding' | 'app'
 export type CreateRecipeEntry = 'scratch' | 'pdf'
@@ -43,6 +48,18 @@ interface CreateRecipeScreenProps {
 }
 
 const FOOTER_HEIGHT = 72
+const PENDING_LIMIT_RETRY_PREFIX = 'recipes:create:pending-retry:'
+
+type PendingLimitRetry =
+  | {
+      kind: 'recipe'
+      values: RecipeFormSubmitValues
+    }
+  | {
+      kind: 'document'
+      values: RecipeDocumentFormValues
+      file: { uri: string; name: string; size: number }
+    }
 
 function inferImportMimeType(fileName: string) {
   const lower = fileName.trim().toLowerCase()
@@ -59,10 +76,14 @@ export default function CreateRecipeScreen({
   onBack,
 }: CreateRecipeScreenProps) {
   const insets = useSafeAreaInsets()
+  const { user } = useAuth()
+  const { retryAfterUpgrade } = useLocalSearchParams<{ retryAfterUpgrade?: string }>()
   const segments = useSegments()
   const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
+  const isDevMode = routeMode === 'dev'
   const { shouldUseLocalData: baseLocalMode } = useStorageDataMode(routeMode)
   const { cloudSyncEnabled, isPremium } = useStorageStrategy()
+  const { overrides } = useLimitQaOverrides()
   const shouldUseLocalData = baseLocalMode || (routeMode === 'auth' && cloudSyncEnabled)
   const importPlan = isPremium ? 'premium' : 'free'
 
@@ -71,6 +92,9 @@ export default function CreateRecipeScreen({
     isOnboarding ? 'scratch' : entry ?? null
   )
   const [isUploadingPremiumImport, setIsUploadingPremiumImport] = useState(false)
+  const [limitModalType, setLimitModalType] = useState<PlanLimitReachedType | null>(null)
+  const [pendingRetry, setPendingRetry] = useState<PendingLimitRetry | null>(null)
+  const hasTriedAutoRetryRef = useRef(false)
   const createMutation = useStrategyCreateRecipe(routeMode)
   const documentMutation = useAddRecipeDocument()
   const foldersQuery = useStrategyFoldersList(routeMode)
@@ -107,64 +131,133 @@ export default function CreateRecipeScreen({
     ? documentMutation.isPending || isUploadingPremiumImport
     : createMutation.isPending
 
+  const premiumPath =
+    routeMode === 'dev' ? '/(dev)/premium' : routeMode === 'public' ? '/(public)/premium' : '/(auth)/premium'
+  const recipeDetailPath =
+    routeMode === 'dev' ? '/(dev)/recipes/[id]' : routeMode === 'public' ? '/(public)/recipes/[id]' : '/(auth)/recipes/[id]'
+  const collectionsPath =
+    routeMode === 'dev'
+      ? '/(dev)/(tabs)/collections'
+      : routeMode === 'public'
+        ? '/(public)/(tabs)/collections'
+        : '/(auth)/(tabs)/collections'
+  const createPath =
+    routeMode === 'dev' ? '/(dev)/recipes/create' : routeMode === 'public' ? '/(public)/recipes/create' : '/(auth)/recipes/create'
+  const pendingRetryKey = `${PENDING_LIMIT_RETRY_PREFIX}${routeMode}:${user?.id ?? 'guest'}`
+
   const handleBack = useCallback(() => {
     if (isSaving) return
     if (onBack) return onBack()
     router.back()
   }, [isSaving, onBack])
 
+  const clearPendingRetry = useCallback(async () => {
+    setPendingRetry(null)
+    try {
+      await AsyncStorage.removeItem(pendingRetryKey)
+    } catch {
+      // no-op
+    }
+  }, [pendingRetryKey])
+
+  const saveRecipe = useCallback(
+    async (values: RecipeFormSubmitValues) => {
+      const recipe = await createMutation.mutateAsync(values)
+
+      await clearPendingRetry()
+      if (onSaved) {
+        onSaved(recipe.id)
+        return
+      }
+
+      router.replace({
+        pathname: recipeDetailPath as any,
+        params: { id: recipe.id },
+      })
+    },
+    [clearPendingRetry, createMutation, onSaved, recipeDetailPath]
+  )
+
+  const saveDocument = useCallback(
+    async (values: RecipeDocumentFormValues, file: { uri: string; name: string; size: number }) => {
+      if (!shouldUseLocalData) {
+        setIsUploadingPremiumImport(true)
+        await uploadPremiumImport({
+          uri: file.uri,
+          fileName: file.name,
+          mimeType: inferImportMimeType(file.name),
+        })
+      }
+      await documentMutation.mutateAsync({
+        title: values.title,
+        file,
+        plan: importPlan,
+      })
+      await clearPendingRetry()
+      router.replace({
+        pathname: collectionsPath as any,
+        params: {
+          segment: 'recipes',
+          recipesSegment: 'documents',
+          docSuccess: '1',
+        },
+      })
+    },
+    [clearPendingRetry, collectionsPath, documentMutation, importPlan, shouldUseLocalData]
+  )
+
   const handleSubmit = useCallback(
     async (values: RecipeFormSubmitValues) => {
       try {
-        const recipe = await createMutation.mutateAsync(values)
-
-        if (onSaved) {
-          onSaved(recipe.id)
+        if (isDevMode && (overrides.forceRecipeLimitErrorOnSave || overrides.recipeUsageBandOverride === 'atLimit')) {
+          const nextPending: PendingLimitRetry = { kind: 'recipe', values }
+          setPendingRetry(nextPending)
+          void AsyncStorage.setItem(pendingRetryKey, JSON.stringify(nextPending))
+          setLimitModalType('recipes')
           return
         }
-
-        router.replace({
-          pathname: '/(auth)/recipes/[id]',
-          params: { id: recipe.id },
-        })
+        await saveRecipe(values)
       } catch (e: any) {
+        const limitType = getPlanLimitTypeFromError(e)
+        if (limitType === 'recipes') {
+          const nextPending: PendingLimitRetry = { kind: 'recipe', values }
+          setPendingRetry(nextPending)
+          void AsyncStorage.setItem(pendingRetryKey, JSON.stringify(nextPending))
+          setLimitModalType('recipes')
+          return
+        }
         Alert.alert('Save failed', e?.message ?? 'Please try again.')
       }
     },
-    [createMutation, onSaved]
+    [isDevMode, overrides.forceRecipeLimitErrorOnSave, overrides.recipeUsageBandOverride, pendingRetryKey, saveRecipe]
   )
 
   const handleDocumentSubmit = useCallback(
     async (values: RecipeDocumentFormValues, file: { uri: string; name: string; size: number }) => {
       try {
-        if (!shouldUseLocalData) {
-          setIsUploadingPremiumImport(true)
-          await uploadPremiumImport({
-            uri: file.uri,
-            fileName: file.name,
-            mimeType: inferImportMimeType(file.name),
-          })
+        if (isDevMode && (overrides.forceStorageLimitErrorOnImport || overrides.storageUsageBandOverride === 'atLimit')) {
+          const nextPending: PendingLimitRetry = { kind: 'document', values, file }
+          setPendingRetry(nextPending)
+          void AsyncStorage.setItem(pendingRetryKey, JSON.stringify(nextPending))
+          setLimitModalType('storage')
+          return
         }
-        await documentMutation.mutateAsync({
-          title: values.title,
-          file,
-          plan: importPlan,
-        })
-        router.replace({
-          pathname: '/(auth)/(tabs)/collections',
-          params: {
-            segment: 'recipes',
-            recipesSegment: 'documents',
-            docSuccess: '1',
-          },
-        })
+        await saveDocument(values, file)
       } catch (error: any) {
+        const limitType = getPlanLimitTypeFromError(error)
+        if (limitType === 'storage') {
+          const nextPending: PendingLimitRetry = { kind: 'document', values, file }
+          setPendingRetry(nextPending)
+          void AsyncStorage.setItem(pendingRetryKey, JSON.stringify(nextPending))
+          setLimitModalType('storage')
+          return
+        }
         Alert.alert('Save failed', error?.message ?? 'Please try again.')
       } finally {
         setIsUploadingPremiumImport(false)
       }
     },
-    [documentMutation, importPlan, shouldUseLocalData]
+    [isDevMode, overrides.forceStorageLimitErrorOnImport, overrides.storageUsageBandOverride, pendingRetryKey, saveDocument]
   )
 
   const handleCreateFolder = useCallback(
@@ -187,6 +280,54 @@ export default function CreateRecipeScreen({
     ios: insets.top + 44,
     android: 0,
   })
+
+  useEffect(() => {
+    if (retryAfterUpgrade !== '1') return
+    let isCancelled = false
+    async function hydratePendingRetry() {
+      try {
+        const raw = await AsyncStorage.getItem(pendingRetryKey)
+        if (isCancelled || !raw) return
+        const parsed = JSON.parse(raw) as PendingLimitRetry
+        if (!parsed || (parsed.kind !== 'recipe' && parsed.kind !== 'document')) return
+        setPendingRetry(parsed)
+      } catch {
+        // no-op
+      }
+    }
+    void hydratePendingRetry()
+    return () => {
+      isCancelled = true
+    }
+  }, [pendingRetryKey, retryAfterUpgrade])
+
+  useEffect(() => {
+    if (retryAfterUpgrade !== '1' || !isPremium || !pendingRetry) return
+    if (isSaving || hasTriedAutoRetryRef.current) return
+    hasTriedAutoRetryRef.current = true
+
+    async function runAutoRetry() {
+      try {
+        if (pendingRetry.kind === 'recipe') {
+          await saveRecipe(pendingRetry.values)
+          return
+        }
+        await saveDocument(pendingRetry.values, pendingRetry.file)
+      } catch {
+        Alert.alert(
+          'Could not save automatically',
+          'Your draft is still here. Save when you are ready.',
+          [
+            { text: 'Later', style: 'cancel' },
+            { text: 'Save now', onPress: triggerSave },
+          ]
+        )
+      } finally {
+        setIsUploadingPremiumImport(false)
+      }
+    }
+    void runAutoRetry()
+  }, [isPremium, isSaving, pendingRetry, retryAfterUpgrade, saveDocument, saveRecipe, triggerSave])
 
 
   return (
@@ -321,6 +462,38 @@ export default function CreateRecipeScreen({
           </View>
         </KeyboardAvoidingView>
       </View>
+
+      {limitModalType ? (
+        <PlanLimitReachedModal
+          visible
+          type={limitModalType}
+          onClose={() => setLimitModalType(null)}
+          onPrimary={() => {
+            setLimitModalType(null)
+            hasTriedAutoRetryRef.current = false
+            router.push({
+              pathname: premiumPath as any,
+              params: {
+                returnTo: `${createPath}?entry=${entryMode ?? 'scratch'}&retryAfterUpgrade=1`,
+              },
+            })
+          }}
+          onSecondary={() => {
+            setLimitModalType(null)
+            if (limitModalType === 'recipes') {
+              router.replace({
+                pathname: collectionsPath as any,
+                params: { segment: 'recipes', recipesSegment: 'folders', manage: 'recipes' },
+              })
+              return
+            }
+            router.replace({
+              pathname: collectionsPath as any,
+              params: { segment: 'recipes', recipesSegment: 'documents', sort: 'largest' },
+            })
+          }}
+        />
+      ) : null}
     </SafeAreaView>
   )
 }

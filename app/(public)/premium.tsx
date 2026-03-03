@@ -1,15 +1,18 @@
 import React, { useContext, useState } from 'react'
 import { Alert } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
 import PremiumSuccessModal from '@/features/subscription/components/PremiumSuccessModal'
 import PremiumScreen from '@/features/subscription/screens/PremiumScreen'
 import { upgradeToPremium } from '@/features/subscription/services/upgradeToPremium'
+import { getSafeReturnTo } from '@/lib/navigation'
 
 export default function PremiumRoute() {
   const router = useRouter()
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
+  const safeReturnTo = getSafeReturnTo(returnTo)
   const { user } = useAuth()
   const { setPlan, setUpgradeStatus, upgradeStatus } = useContext(SubscriptionContext)
   const isUpgrading = upgradeStatus === 'running'
@@ -35,12 +38,12 @@ export default function PremiumRoute() {
   }
 
   const handleMaybeLater = () => {
-    router.replace('/(public)/(tabs)/profile')
+    router.replace(safeReturnTo ?? '/(public)/(tabs)/profile')
   }
 
   const onCloseSuccessModal = () => {
     setShowSuccessModal(false)
-    router.replace('/(auth)/current-plan')
+    router.replace(safeReturnTo ?? '/(auth)/current-plan')
   }
 
   return (

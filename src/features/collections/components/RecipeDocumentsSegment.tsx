@@ -14,11 +14,16 @@ const FALLBACK_TITLE = 'Untitled recipe file'
 export default function RecipeDocumentsSegment({
   bottomPadding,
   mode = 'auth',
+  sortBy = 'recent',
 }: {
   bottomPadding: number
   mode?: 'auth' | 'public' | 'dev'
+  sortBy?: 'recent' | 'largest' | 'oldest'
 }) {
   const isPublic = mode === 'public'
+  const isDev = mode === 'dev'
+  const createPath = isPublic ? '/(public)/recipes/create' : isDev ? '/(dev)/recipes/create' : '/(auth)/recipes/create'
+  const documentDetailPath = isPublic ? '/(public)/recipes/documents/[id]' : '/(auth)/recipes/documents/[id]'
   const docsQuery = useRecipeDocuments()
   const returnTo = getSafeReturnTo(
     mode === 'dev'
@@ -35,11 +40,25 @@ export default function RecipeDocumentsSegment({
         id: doc.id,
         title: doc.title?.trim() || FALLBACK_TITLE,
         fileName: doc.fileName,
+        createdAt: doc.createdAt,
         relativeDate: formatRelativeDay(doc.createdAt),
         fileSize: doc.fileSize,
       })),
     [docsQuery.data]
   )
+  const sortedData = useMemo(() => {
+    const next = [...data]
+    if (sortBy === 'largest') {
+      next.sort((a, b) => b.fileSize - a.fileSize)
+      return next
+    }
+    if (sortBy === 'oldest') {
+      next.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+      return next
+    }
+    next.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    return next
+  }, [data, sortBy])
 
   return (
     <View style={styles.wrap}>
@@ -62,7 +81,7 @@ export default function RecipeDocumentsSegment({
           <Pressable
             onPress={() =>
               router.push({
-                pathname: isPublic ? '/(public)/recipes/create' : '/(auth)/recipes/create',
+                pathname: createPath,
                 params: { entry: 'pdf', returnTo: returnToParam },
               })
             }
@@ -76,7 +95,7 @@ export default function RecipeDocumentsSegment({
         </View>
       ) : (
         <FlatList
-          data={data}
+          data={sortedData}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.listContent, { paddingBottom: bottomPadding }]}
@@ -85,9 +104,7 @@ export default function RecipeDocumentsSegment({
             <Pressable
               onPress={() =>
                 router.push({
-                  pathname: isPublic
-                    ? '/(public)/recipes/documents/[id]'
-                    : '/(auth)/recipes/documents/[id]',
+                  pathname: documentDetailPath,
                   params: { id: item.id, returnTo: returnToParam },
                 })
               }
@@ -117,7 +134,7 @@ export default function RecipeDocumentsSegment({
             <Pressable
               onPress={() =>
                 router.push({
-                  pathname: isPublic ? '/(public)/recipes/create' : '/(auth)/recipes/create',
+                  pathname: createPath,
                   params: { entry: 'pdf', returnTo: returnToParam },
                 })
               }

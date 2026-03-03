@@ -14,6 +14,7 @@ export default function DevLayout() {
       {/* Detail screens live alongside tabs */}
       <Stack.Screen name="collections/[key]" options={{ headerShown: false }} />
       <Stack.Screen name="current-plan-mock" options={{ headerShown: false }} />
+      <Stack.Screen name="limit-qa" options={{ headerShown: false }} />
     </Stack>
   )
 }

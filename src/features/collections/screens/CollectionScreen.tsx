@@ -1,8 +1,9 @@
 // app/(dev)/(tabs)/collections.tsx (or wherever CollectionsScreen lives)
 
 import { Feather } from '@expo/vector-icons'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { router, useLocalSearchParams, useSegments } from 'expo-router'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -20,6 +21,7 @@ import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
 import CollectionTile from '@/features/collections/components/CollectionTile'
+import KitchenAlmostFullCard from '@/features/recipes/components/KitchenAlmostFullCard'
 import NewCollectionTile from '@/features/collections/components/NewCollectionTile'
 import RecipeSegmentedTabs from '@/features/collections/components/RecipeSegmentedTabs'
 import SegmentedTabs from '@/features/collections/components/SegmentedTabs'
@@ -31,9 +33,20 @@ import ShoppingSegment from '@/features/collections/components/ShoppingSegment'
 
 import type { CollectionItem, RecipeSegmentKey, SegmentKey } from '@/features/collections/types'
 import { buildCollectionsForSegment } from '@/features/collections/utils/collections'
+import { useAuth } from '@/features/auth/context/AuthContext'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
+import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments'
 import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
+import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
+import { FREE_PLAN_MAX_IMPORT_TOTAL_BYTES } from '@/features/subscription/constants/limits'
+import { KITCHEN_ALMOST_FULL_STORAGE_DISMISS_UNTIL_PREFIX } from '@/features/subscription/constants/reminderKeys'
+import { useLimitQaOverrides } from '@/features/subscription/dev/limitQaOverrides'
+import {
+  hasShownStorageReminderInSession,
+  markStorageReminderShownInSession,
+} from '@/features/subscription/dev/reminderSession'
+import { buildFreePlanUsageSnapshot, formatMegabytes } from '@/features/subscription/utils/planUsage'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 type CollectionsScreenProps = {
@@ -41,25 +54,35 @@ type CollectionsScreenProps = {
 }
 
 export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
-  const { segment: segmentParam, recipesSegment, docSuccess } = useLocalSearchParams<{
+  const { segment: segmentParam, recipesSegment, docSuccess, sort, manage } = useLocalSearchParams<{
     segment?: SegmentKey
     recipesSegment?: RecipeSegmentKey
     docSuccess?: string
+    sort?: 'recent' | 'largest' | 'oldest'
+    manage?: 'recipes'
   }>()
   const segments = useSegments()
   const resolvedMode =
     mode ??
     (segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth')
   const isPublic = resolvedMode === 'public'
+  const isDevMode = resolvedMode === 'dev'
+  const { user } = useAuth()
+  const { plan } = useContext(SubscriptionContext)
+  const { overrides } = useLimitQaOverrides()
   const { shouldUseLocalData } = useStorageDataMode(resolvedMode)
   const [segment, setSegment] = useState<SegmentKey>('recipes')
   const [recipeSegment, setRecipeSegment] = useState<RecipeSegmentKey>('folders')
+  const [manageSort, setManageSort] = useState<'oldest' | 'largest'>('oldest')
   const [showDocSuccess, setShowDocSuccess] = useState(false)
+  const [queueStorageReminderAfterSuccess, setQueueStorageReminderAfterSuccess] = useState(false)
+  const [showStorageReminder, setShowStorageReminder] = useState(false)
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false)
   const [newFolderEmoji, setNewFolderEmoji] = useState('')
   const [newFolderName, setNewFolderName] = useState('')
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
   const recipesQuery = useStrategyRecipesList({ limit: 200 }, resolvedMode)
+  const storageUsageQuery = useRecipeDocumentUsageSummary({ enabled: plan !== 'premium' })
   const foldersQuery = useStrategyFoldersList(resolvedMode)
   const createFolderMutation = useStrategyCreateFolder(resolvedMode)
   const returnTo = getSafeReturnTo(
@@ -70,6 +93,15 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
         : '/(auth)/(tabs)/collections?segment=recipes'
   )
   const returnToParam = typeof returnTo === 'string' ? returnTo : undefined
+  const recipeCount = recipesQuery.data?.length ?? 0
+  const storageBytesUsed = storageUsageQuery.data?.totalBytes ?? 0
+  const usageSnapshot = useMemo(
+    () => buildFreePlanUsageSnapshot(recipeCount, storageBytesUsed),
+    [recipeCount, storageBytesUsed]
+  )
+  const effectiveStorageUsageBand =
+    isDevMode && overrides.storageUsageBandOverride ? overrides.storageUsageBandOverride : usageSnapshot.storageUsageBand
+  const storageLeftMb = Math.max(0, formatMegabytes(FREE_PLAN_MAX_IMPORT_TOTAL_BYTES - storageBytesUsed))
 
   useEffect(() => {
     if (segmentParam === 'notes' || segmentParam === 'recipes' || segmentParam === 'shopping') {
@@ -88,6 +120,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
       setSegment('recipes')
       setRecipeSegment('documents')
       setShowDocSuccess(true)
+      setShowStorageReminder(false)
     }
   }, [docSuccess])
 
@@ -102,6 +135,65 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
       setShowDocSuccess(false)
     }
   }, [recipeSegment, showDocSuccess])
+
+  useEffect(() => {
+    if (docSuccess !== '1') return
+    if (plan === 'premium') return
+    if (effectiveStorageUsageBand !== 'between95and99') return
+    if (hasShownStorageReminderInSession()) return
+    if (storageUsageQuery.isLoading) return
+
+    let isCancelled = false
+
+    async function maybeQueueStorageReminder() {
+      const key = `${KITCHEN_ALMOST_FULL_STORAGE_DISMISS_UNTIL_PREFIX}${resolvedMode}:${user?.id ?? 'guest'}`
+      try {
+        const rawDismissUntil = await AsyncStorage.getItem(key)
+        if (isCancelled) return
+        const dismissUntil = Number(rawDismissUntil ?? 0)
+        if (Number.isFinite(dismissUntil) && dismissUntil > Date.now()) return
+      } catch {
+        if (isCancelled) return
+      }
+
+      setQueueStorageReminderAfterSuccess(true)
+    }
+
+    void maybeQueueStorageReminder()
+    return () => {
+      isCancelled = true
+    }
+  }, [
+    docSuccess,
+    plan,
+    resolvedMode,
+    storageUsageQuery.isLoading,
+    effectiveStorageUsageBand,
+    user?.id,
+  ])
+
+  useEffect(() => {
+    if (!queueStorageReminderAfterSuccess) return
+    if (showDocSuccess) return
+    if (recipeSegment !== 'documents' || segment !== 'recipes') return
+    markStorageReminderShownInSession()
+    setShowStorageReminder(true)
+    setQueueStorageReminderAfterSuccess(false)
+  }, [queueStorageReminderAfterSuccess, recipeSegment, segment, showDocSuccess])
+
+  const dismissStorageReminder = async () => {
+    setShowStorageReminder(false)
+    markStorageReminderShownInSession()
+    const dismissUntil = Date.now() + 24 * 60 * 60 * 1000
+    try {
+      await AsyncStorage.setItem(
+        `${KITCHEN_ALMOST_FULL_STORAGE_DISMISS_UNTIL_PREFIX}${resolvedMode}:${user?.id ?? 'guest'}`,
+        String(dismissUntil)
+      )
+    } catch {
+      // No-op: session suppression still avoids repeat prompts.
+    }
+  }
 
   const recipeData = useMemo(
     () => recipesQuery.data ?? [],
@@ -160,6 +252,28 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     recipeSegment === 'documents'
       ? ''
       : 'Recipes are grouped automatically based on tags'
+  const isManagingRecipes = manage === 'recipes' && segment === 'recipes' && recipeSegment === 'folders'
+  const managedRecipes = useMemo(() => {
+    const list = [...recipeData]
+    if (manageSort === 'oldest') {
+      list.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+      return list
+    }
+    list.sort((a, b) => {
+      const scoreA =
+        (a.ingredients?.length ?? 0) * 50 +
+        (a.steps?.length ?? 0) * 70 +
+        (a.description?.length ?? 0) +
+        a.title.length
+      const scoreB =
+        (b.ingredients?.length ?? 0) * 50 +
+        (b.steps?.length ?? 0) * 70 +
+        (b.description?.length ?? 0) +
+        b.title.length
+      return scoreB - scoreA
+    })
+    return list
+  }, [manageSort, recipeData])
 
   const fabLabel =
     segment === 'recipes'
@@ -172,7 +286,11 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     if (segment === 'recipes') {
       if (recipeSegment === 'documents') {
         router.push({
-          pathname: isPublic ? '/(public)/recipes/create' : '/(auth)/recipes/create',
+          pathname: isPublic
+            ? '/(public)/recipes/create'
+            : resolvedMode === 'dev'
+              ? '/(dev)/recipes/create'
+              : '/(auth)/recipes/create',
           params: { entry: 'pdf' },
         })
         return
@@ -263,6 +381,25 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
           </Pressable>
         </View>
       ) : null}
+      {segment === 'recipes' && recipeSegment === 'documents' && !showDocSuccess && showStorageReminder ? (
+        <KitchenAlmostFullCard
+          title="Your kitchen storage is almost full"
+          line1={`About ${storageLeftMb} MB left on Free.`}
+          line2="Premium keeps everything backed up & synced."
+          onSeePremium={() =>
+            router.push(
+              resolvedMode === 'dev'
+                ? '/(dev)/premium'
+                : resolvedMode === 'public'
+                  ? '/(public)/premium'
+                  : '/(auth)/premium'
+            )
+          }
+          onDismiss={() => {
+            void dismissStorageReminder()
+          }}
+        />
+      ) : null}
 
       {/* Segment content */}
       {segment === 'recipes' ? (
@@ -275,7 +412,69 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
             <RecipeDocumentsSegment
               bottomPadding={bottomPadding}
               mode={isPublic ? 'public' : resolvedMode}
+              sortBy={sort === 'largest' || sort === 'oldest' ? sort : 'recent'}
             />
+          ) : isManagingRecipes ? (
+            <>
+              <View style={styles.manageHeader}>
+                <Text style={styles.manageTitle}>Manage recipes</Text>
+                <View style={styles.manageSortRow}>
+                  <Pressable
+                    onPress={() => setManageSort('oldest')}
+                    style={[styles.manageSortPill, manageSort === 'oldest' && styles.manageSortPillActive]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Sort recipes by oldest"
+                  >
+                    <Text style={[styles.manageSortText, manageSort === 'oldest' && styles.manageSortTextActive]}>
+                      Oldest
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setManageSort('largest')}
+                    style={[styles.manageSortPill, manageSort === 'largest' && styles.manageSortPillActive]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Sort recipes by largest"
+                  >
+                    <Text style={[styles.manageSortText, manageSort === 'largest' && styles.manageSortTextActive]}>
+                      Largest
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+              <FlatList
+                data={managedRecipes}
+                keyExtractor={(item) => item.id}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={[styles.manageList, { paddingBottom: bottomPadding }]}
+                ItemSeparatorComponent={() => <View style={{ height: theme.spacing.sm }} />}
+                renderItem={({ item }) => (
+                  <Pressable
+                    onPress={() =>
+                      router.push({
+                        pathname: isPublic
+                          ? '/(public)/recipes/[id]'
+                          : resolvedMode === 'dev'
+                            ? '/(dev)/recipes/[id]'
+                            : '/(auth)/recipes/[id]',
+                        params: { id: item.id },
+                      })
+                    }
+                    style={styles.manageRow}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${item.title}`}
+                  >
+                    <Text style={styles.manageRowTitle} numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    <Text style={styles.manageRowMeta}>
+                      {manageSort === 'largest'
+                        ? `${item.ingredients?.length ?? 0} ingredients · ${item.steps?.length ?? 0} steps`
+                        : `Created ${new Date(item.createdAt).toLocaleDateString()}`}
+                    </Text>
+                  </Pressable>
+                )}
+              />
+            </>
           ) : recipesQuery.isLoading && !shouldUseLocalData ? (
             <View style={styles.loadingState}>
               <ActivityIndicator size="small" color={styles.loadingText.color} />
@@ -520,6 +719,68 @@ const styles = createThemedStyles((theme) => ({
   },
   successCloseIcon: {
     color: theme.colors.foreground,
+  },
+  manageHeader: {
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing.sm,
+  },
+  manageTitle: {
+    fontFamily: theme.fontFamily.semibold,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.foreground,
+  },
+  manageSortRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.xs,
+  },
+  manageSortPill: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.radii.full,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+  },
+  manageSortPillActive: {
+    backgroundColor: theme.colors.secondary,
+  },
+  manageSortText: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.xs,
+    lineHeight: theme.lineHeight.xs,
+    color: theme.colors.mutedForeground,
+  },
+  manageSortTextActive: {
+    color: theme.colors.foreground,
+  },
+  manageList: {
+    paddingTop: theme.spacing.sm,
+  },
+  manageRow: {
+    borderRadius: theme.radii.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+  },
+  manageRowTitle: {
+    fontFamily: theme.fontFamily.semibold,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.foreground,
+  },
+  manageRowMeta: {
+    marginTop: theme.spacing.xxs,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.mutedForeground,
   },
 
   grid: {

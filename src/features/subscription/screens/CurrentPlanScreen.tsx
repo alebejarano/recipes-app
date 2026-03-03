@@ -37,15 +37,15 @@ const freeFeatures: FeatureItem[] = [
   { icon: 'book-open', label: 'Up to 100 recipes' },
   { icon: 'cloud', label: '50MB total storage for imports' },
   { icon: 'coffee', label: 'Unlimited notes' },
-  { icon: 'wifi-off', label: 'Offline access' },
+  { icon: 'wifi-off', label: 'Stored locally on this device' },
 ]
 
 const premiumFeatures: FeatureItem[] = [
   { icon: 'book-open', label: 'Unlimited recipes' },
   { icon: 'coffee', label: 'Unlimited notes' },
-  { icon: 'cloud', label: '5GB cloud storage for imports' },
-  { icon: 'smartphone', label: 'Sync across devices' },
-  { icon: 'wifi', label: 'Offline access + cloud sync' },
+  { icon: 'cloud', label: '5GB secure cloud storage' },
+  { icon: 'smartphone', label: 'Sync across all your devices' },
+  { icon: 'wifi', label: 'Offline access + Automatic backup' },
 ]
 
 function formatStorageGigabytes(bytes: number) {
@@ -257,7 +257,7 @@ export default function CurrentPlanScreen({
         <Text style={styles.pricingText}>€5/month · €36/year</Text>
 
         <View style={styles.ctaNotes}>
-          <Text style={styles.ctaNote}>Your existing recipes will be automatically imported.</Text>
+          <Text style={styles.ctaNote}>Your recipes will be safely backed up to the cloud.</Text>
           <Text style={styles.ctaNote}>Nothing will be deleted.</Text>
           <Text style={styles.ctaNote}>Cancel anytime.</Text>
         </View>

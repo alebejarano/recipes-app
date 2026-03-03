@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons'
-import { router } from 'expo-router'
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { router, useLocalSearchParams } from 'expo-router'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
   KeyboardAvoidingView,
@@ -27,6 +28,22 @@ import RecipeForm, {
 import { useCreateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
 import { useAddRecipeDocument } from '@/features/recipes/hooks/useRecipeDocuments'
 import type { CreateRecipeEntry } from '@/features/recipes/screens/CreateRecipeScreen'
+import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
+import PlanLimitReachedModal, { type PlanLimitReachedType } from '@/features/subscription/components/PlanLimitReachedModal'
+import { getPlanLimitTypeFromError } from '@/features/subscription/utils/limitErrors'
+
+const PENDING_LIMIT_RETRY_PREFIX = 'recipes:create:pending-retry:'
+
+type PendingLimitRetry =
+  | {
+      kind: 'recipe'
+      values: RecipeFormSubmitValues
+    }
+  | {
+      kind: 'document'
+      values: RecipeDocumentFormValues
+      file: { uri: string; name: string; size: number }
+    }
 
 
 
@@ -42,7 +59,12 @@ export default function PublicCreateRecipeScreen({
   entry,
 }: PublicCreateRecipeScreenProps) {
   const insets = useSafeAreaInsets()
+  const { retryAfterUpgrade } = useLocalSearchParams<{ retryAfterUpgrade?: string }>()
+  const { isPremium } = useStorageStrategy()
   const [entryMode, setEntryMode] = useState<'scratch' | 'pdf' | null>(entry ?? null)
+  const [limitModalType, setLimitModalType] = useState<PlanLimitReachedType | null>(null)
+  const [pendingRetry, setPendingRetry] = useState<PendingLimitRetry | null>(null)
+  const hasTriedAutoRetryRef = useRef(false)
   const createMutation = useCreateLocalRecipe()
   const documentMutation = useAddRecipeDocument()
   const foldersQuery = useLocalFoldersList()
@@ -52,6 +74,8 @@ export default function PublicCreateRecipeScreen({
 
   const screenTitle = 'Create your recipe'
   const submitLabel = entryMode === 'pdf' ? 'Save' : 'Add Recipe'
+  const pendingRetryKey = `${PENDING_LIMIT_RETRY_PREFIX}public:guest`
+  const createPath = '/(public)/recipes/create'
 
   const isSaving = entryMode === 'pdf' ? documentMutation.isPending : createMutation.isPending
 
@@ -64,43 +88,84 @@ export default function PublicCreateRecipeScreen({
     router.back()
   }, [isSaving, onBack])
 
+  const clearPendingRetry = useCallback(async () => {
+    setPendingRetry(null)
+    try {
+      await AsyncStorage.removeItem(pendingRetryKey)
+    } catch {
+      // no-op
+    }
+  }, [pendingRetryKey])
+
+  const saveRecipe = useCallback(
+    async (values: RecipeFormSubmitValues) => {
+      const recipe = await createMutation.mutateAsync(values)
+      await clearPendingRetry()
+      if (onSaved) {
+        onSaved(recipe.id)
+        return
+      }
+
+      router.replace({
+        pathname: '/(public)/recipes/[id]',
+        params: { id: recipe.id },
+      })
+    },
+    [clearPendingRetry, createMutation, onSaved]
+  )
+
+  const saveDocument = useCallback(
+    async (values: RecipeDocumentFormValues, file: { uri: string; name: string; size: number }) => {
+      await documentMutation.mutateAsync({ title: values.title, file })
+      await clearPendingRetry()
+      router.replace({
+        pathname: '/(public)/(tabs)/collections',
+        params: {
+          segment: 'recipes',
+          recipesSegment: 'documents',
+          docSuccess: '1',
+        },
+      })
+    },
+    [clearPendingRetry, documentMutation]
+  )
+
   const handleSubmit = useCallback(
     async (values: RecipeFormSubmitValues) => {
       try {
-        const recipe = await createMutation.mutateAsync(values)
-        if (onSaved) {
-          onSaved(recipe.id)
+        await saveRecipe(values)
+      } catch (e: any) {
+        const limitType = getPlanLimitTypeFromError(e)
+        if (limitType === 'recipes') {
+          const nextPending: PendingLimitRetry = { kind: 'recipe', values }
+          setPendingRetry(nextPending)
+          void AsyncStorage.setItem(pendingRetryKey, JSON.stringify(nextPending))
+          setLimitModalType('recipes')
           return
         }
-
-        router.replace({
-          pathname: '/(public)/recipes/[id]',
-          params: { id: recipe.id },
-        })
-      } catch (e: any) {
         Alert.alert('Save failed', e?.message ?? 'Please try again.')
       }
     },
-    [createMutation, onSaved]
+    [pendingRetryKey, saveRecipe]
   )
 
   const handleDocumentSubmit = useCallback(
     async (values: RecipeDocumentFormValues, file: { uri: string; name: string; size: number }) => {
       try {
-        await documentMutation.mutateAsync({ title: values.title, file })
-        router.replace({
-          pathname: '/(public)/(tabs)/collections',
-          params: {
-            segment: 'recipes',
-            recipesSegment: 'documents',
-            docSuccess: '1',
-          },
-        })
+        await saveDocument(values, file)
       } catch (error: any) {
+        const limitType = getPlanLimitTypeFromError(error)
+        if (limitType === 'storage') {
+          const nextPending: PendingLimitRetry = { kind: 'document', values, file }
+          setPendingRetry(nextPending)
+          void AsyncStorage.setItem(pendingRetryKey, JSON.stringify(nextPending))
+          setLimitModalType('storage')
+          return
+        }
         Alert.alert('Save failed', error?.message ?? 'Please try again.')
       }
     },
-    [documentMutation]
+    [pendingRetryKey, saveDocument]
   )
 
   const triggerSave = useCallback(() => {
@@ -112,10 +177,56 @@ export default function PublicCreateRecipeScreen({
     recipeFormRef.current?.submit()
   }, [entryMode, isSaving])
 
-   const keyboardVerticalOffset = Platform.select({
-      ios: insets.top + 44,
-      android: 0,
-    })
+  const keyboardVerticalOffset = Platform.select({
+    ios: insets.top + 44,
+    android: 0,
+  })
+
+  useEffect(() => {
+    if (retryAfterUpgrade !== '1') return
+    let isCancelled = false
+    async function hydratePendingRetry() {
+      try {
+        const raw = await AsyncStorage.getItem(pendingRetryKey)
+        if (isCancelled || !raw) return
+        const parsed = JSON.parse(raw) as PendingLimitRetry
+        if (!parsed || (parsed.kind !== 'recipe' && parsed.kind !== 'document')) return
+        setPendingRetry(parsed)
+      } catch {
+        // no-op
+      }
+    }
+    void hydratePendingRetry()
+    return () => {
+      isCancelled = true
+    }
+  }, [pendingRetryKey, retryAfterUpgrade])
+
+  useEffect(() => {
+    if (retryAfterUpgrade !== '1' || !isPremium || !pendingRetry) return
+    if (isSaving || hasTriedAutoRetryRef.current) return
+    hasTriedAutoRetryRef.current = true
+
+    async function runAutoRetry() {
+      try {
+        if (pendingRetry.kind === 'recipe') {
+          await saveRecipe(pendingRetry.values)
+          return
+        }
+        await saveDocument(pendingRetry.values, pendingRetry.file)
+      } catch {
+        Alert.alert(
+          'Could not save automatically',
+          'Your draft is still here. Save when you are ready.',
+          [
+            { text: 'Later', style: 'cancel' },
+            { text: 'Save now', onPress: triggerSave },
+          ]
+        )
+      }
+    }
+    void runAutoRetry()
+  }, [isPremium, isSaving, pendingRetry, retryAfterUpgrade, saveDocument, saveRecipe, triggerSave])
 
   const initialValues = useMemo(() => createEmptyRecipeFormValues(), [])
   const folderSuggestions = useMemo(
@@ -272,6 +383,38 @@ export default function PublicCreateRecipeScreen({
           </View>
         </KeyboardAvoidingView>
       </View>
+
+      {limitModalType ? (
+        <PlanLimitReachedModal
+          visible
+          type={limitModalType}
+          onClose={() => setLimitModalType(null)}
+          onPrimary={() => {
+            setLimitModalType(null)
+            hasTriedAutoRetryRef.current = false
+            router.push({
+              pathname: '/(public)/premium',
+              params: {
+                returnTo: `${createPath}?entry=${entryMode ?? 'scratch'}&retryAfterUpgrade=1`,
+              },
+            })
+          }}
+          onSecondary={() => {
+            setLimitModalType(null)
+            if (limitModalType === 'recipes') {
+              router.replace({
+                pathname: '/(public)/(tabs)/collections',
+                params: { segment: 'recipes', recipesSegment: 'folders', manage: 'recipes' },
+              })
+              return
+            }
+            router.replace({
+              pathname: '/(public)/(tabs)/collections',
+              params: { segment: 'recipes', recipesSegment: 'documents', sort: 'largest' },
+            })
+          }}
+        />
+      ) : null}
     </SafeAreaView>
   )
 }

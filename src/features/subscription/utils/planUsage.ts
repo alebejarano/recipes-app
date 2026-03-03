@@ -31,13 +31,13 @@ export function getRecipeUsageMessage(recipesSaved: number, usageBand: UsageBand
   const recipesRemaining = Math.max(FREE_PLAN_MAX_RECIPES - recipesSaved, 0)
 
   if (usageBand === 'atLimit') {
-    return "You've reached the Free plan limit."
+    return "Your Free kitchen is full 🫙 Upgrade to keep saving recipes (and back them up)."
   }
   if (usageBand === 'between95and99') {
-    return `${recipesRemaining} recipes remaining before you reach the Free limit.`
+    return `Almost full — ${recipesRemaining} recipes left. Premium keeps your kitchen backed up & synced.`
   }
   if (usageBand === 'between85and94') {
-    return `Only ${recipesRemaining} recipes left on the Free plan.`
+    return `Your shelves are filling up — ${recipesRemaining} recipes left on Free.`
   }
   if (usageBand === 'between70and84') {
     return 'Getting close to your limit - no rush, just good to know.'
@@ -50,17 +50,17 @@ export function getStorageUsageMessage(totalBytesUsed: number, usageBand: UsageB
   const usedMb = formatMegabytes(totalBytesUsed)
   const remainingMb = Math.max(maxStorageMb - usedMb, 0)
 
-  if (usageBand === 'atLimit') {
-    return "You've reached the Free storage limit."
+    if (usageBand === 'atLimit') {
+    return "You're out of Free storage. Upgrade to keep adding photos & PDFs (with backup)."
   }
   if (usageBand === 'between95and99') {
-    return "You're almost at the Free storage limit."
+    return `Almost full — about ${remainingMb}MB left. Premium gives you more room + backup.`
   }
   if (usageBand === 'between85and94') {
-    return `Only ${remainingMb}MB remaining.`
+   return `Tight on space — ${remainingMb}MB remaining.`
   }
   if (usageBand === 'between70and84') {
-    return 'Storage is filling up.'
+    return 'Storage is filling up — photos and PDFs add up quickly.'
   }
   return 'You still have storage available.'
 }

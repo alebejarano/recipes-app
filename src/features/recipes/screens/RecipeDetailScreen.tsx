@@ -1,10 +1,11 @@
 // src/features/recipes/screens/RecipeDetailScreen.tsx
 
 import { Feather, Ionicons } from '@expo/vector-icons'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { Image } from 'expo-image'
 import { router, useLocalSearchParams, useSegments } from 'expo-router'
-import React, { useMemo, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -19,13 +20,29 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { createThemedStyles } from '@/styles/createStyles'
 
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
+import { useAuth } from '@/features/auth/context/AuthContext'
 import IngredientImportSheet from '@/features/recipes/components/IngredientImportSheet'
+import KitchenAlmostFullCard from '@/features/recipes/components/KitchenAlmostFullCard'
 import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
 import {
   useStrategyDeleteRecipe,
   useStrategyRecipe,
+  useStrategyRecipesList,
   useStrategyUpdateRecipe,
 } from '@/features/recipes/hooks/useStrategyRecipes'
+import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments'
+import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
+import { FREE_PLAN_MAX_IMPORT_TOTAL_BYTES, FREE_PLAN_MAX_RECIPES } from '@/features/subscription/constants/limits'
+import {
+  KITCHEN_ALMOST_FULL_RECIPE_DISMISS_UNTIL_PREFIX,
+  KITCHEN_ALMOST_FULL_STORAGE_DISMISS_UNTIL_PREFIX,
+} from '@/features/subscription/constants/reminderKeys'
+import {
+  hasShownKitchenCapacityReminderInSession,
+  markKitchenCapacityReminderShownInSession,
+} from '@/features/subscription/dev/reminderSession'
+import { useLimitQaOverrides } from '@/features/subscription/dev/limitQaOverrides'
+import { buildFreePlanUsageSnapshot, formatMegabytes } from '@/features/subscription/utils/planUsage'
 import { buildRecipeShareText, shareRecipeAsTextFile } from '@/features/recipes/utils/shareRecipe'
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
 import { getSafeReturnTo } from '@/lib/navigation'
@@ -83,14 +100,21 @@ function buildIngredientLines(ingredients: { name: string }[] | undefined): stri
 export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
   const [isIngredientImportOpen, setIsIngredientImportOpen] = useState(false)
   const [isImportingIngredients, setIsImportingIngredients] = useState(false)
+  const [capacityReminderVariant, setCapacityReminderVariant] = useState<'recipe' | 'storage' | null>(null)
+  const { user } = useAuth()
 
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
   const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
   const segments = useSegments()
+  const { plan } = useContext(SubscriptionContext)
   const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
+  const isDevMode = routeMode === 'dev'
+  const { overrides } = useLimitQaOverrides()
   const deleteMutation = useStrategyDeleteRecipe(routeMode)
   const updateMutation = useStrategyUpdateRecipe(recipeId, routeMode)
+  const recipesListQuery = useStrategyRecipesList({ limit: 2000 }, routeMode)
+  const storageUsageQuery = useRecipeDocumentUsageSummary({ enabled: plan !== 'premium' })
   const foldersQuery = useStrategyFoldersList(routeMode)
   const createFolderMutation = useStrategyCreateFolder(routeMode)
   const recipeQuery = useStrategyRecipe(recipeId, routeMode)
@@ -103,6 +127,22 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
     () => buildIngredientLines(recipe?.ingredients),
     [recipe?.ingredients]
   )
+  const recipesCount = recipesListQuery.data?.length ?? 0
+  const storageBytesUsed = storageUsageQuery.data?.totalBytes ?? 0
+  const usageSnapshot = useMemo(
+    () => buildFreePlanUsageSnapshot(recipesCount, storageBytesUsed),
+    [recipesCount, storageBytesUsed]
+  )
+  const effectiveRecipeUsageBand =
+    isDevMode && overrides.recipeUsageBandOverride ? overrides.recipeUsageBandOverride : usageSnapshot.recipesUsageBand
+  const effectiveStorageUsageBand =
+    isDevMode && overrides.storageUsageBandOverride ? overrides.storageUsageBandOverride : usageSnapshot.storageUsageBand
+  const shouldOfferRecipeReminder =
+    plan !== 'premium' && effectiveRecipeUsageBand === 'between95and99'
+  const shouldOfferStorageReminder =
+    plan !== 'premium' && effectiveStorageUsageBand === 'between95and99'
+  const recipesLeft = Math.max(FREE_PLAN_MAX_RECIPES - recipesCount, 0)
+  const storageLeftMb = Math.max(0, formatMegabytes(FREE_PLAN_MAX_IMPORT_TOTAL_BYTES - storageBytesUsed))
   const bulkAdd = useShoppingListStore((s) => s.bulkAdd)
 
   const folders = useMemo(
@@ -131,6 +171,98 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
       detailPath: `/(auth)/recipes/${recipeId}`,
     }
   }, [recipeId, segments])
+
+  const collectionsPath = useMemo(() => {
+    const root = segments[0]
+    if (root === '(dev)' || root === '(public)' || root === '(auth)') {
+      return `/${root}/(tabs)/collections?segment=recipes`
+    }
+    return '/(auth)/(tabs)/collections?segment=recipes'
+  }, [segments])
+
+  const premiumPath = useMemo(() => {
+    const root = segments[0]
+    if (root === '(dev)' || root === '(public)' || root === '(auth)') {
+      return `/${root}/premium`
+    }
+    return '/(auth)/premium'
+  }, [segments])
+
+  useEffect(() => {
+    if (!shouldOfferRecipeReminder && !shouldOfferStorageReminder) return
+    if (hasShownKitchenCapacityReminderInSession()) return
+
+    let isCancelled = false
+    const userKey = `${routeMode}:${user?.id ?? 'guest'}`
+
+    async function maybeShowCard() {
+      const recipeKey = `${KITCHEN_ALMOST_FULL_RECIPE_DISMISS_UNTIL_PREFIX}${userKey}`
+      const storageKey = `${KITCHEN_ALMOST_FULL_STORAGE_DISMISS_UNTIL_PREFIX}${userKey}`
+      try {
+        const [rawRecipeDismissUntil, rawStorageDismissUntil] = await Promise.all([
+          AsyncStorage.getItem(recipeKey),
+          AsyncStorage.getItem(storageKey),
+        ])
+        if (isCancelled) return
+        const recipeDismissUntil = Number(rawRecipeDismissUntil ?? 0)
+        const storageDismissUntil = Number(rawStorageDismissUntil ?? 0)
+        const now = Date.now()
+
+        if (shouldOfferRecipeReminder) {
+          const isRecipeSuppressed = Number.isFinite(recipeDismissUntil) && recipeDismissUntil > now
+          if (!isRecipeSuppressed) {
+            markKitchenCapacityReminderShownInSession()
+            setCapacityReminderVariant('recipe')
+            return
+          }
+        }
+
+        if (shouldOfferStorageReminder) {
+          const isStorageSuppressed = Number.isFinite(storageDismissUntil) && storageDismissUntil > now
+          if (!isStorageSuppressed) {
+            markKitchenCapacityReminderShownInSession()
+            setCapacityReminderVariant('storage')
+          }
+        }
+      } catch {
+        if (isCancelled) return
+        if (shouldOfferRecipeReminder) {
+          markKitchenCapacityReminderShownInSession()
+          setCapacityReminderVariant('recipe')
+          return
+        }
+        if (shouldOfferStorageReminder) {
+          markKitchenCapacityReminderShownInSession()
+          setCapacityReminderVariant('storage')
+        }
+      }
+    }
+
+    void maybeShowCard()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [routeMode, shouldOfferRecipeReminder, shouldOfferStorageReminder, user?.id])
+
+  const dismissKitchenCapacityReminder = async () => {
+    const currentVariant = capacityReminderVariant
+    setCapacityReminderVariant(null)
+    markKitchenCapacityReminderShownInSession()
+    if (!currentVariant) return
+
+    const dismissUntil = Date.now() + 24 * 60 * 60 * 1000
+    const userKey = `${routeMode}:${user?.id ?? 'guest'}`
+    const storageKey = `${KITCHEN_ALMOST_FULL_STORAGE_DISMISS_UNTIL_PREFIX}${userKey}`
+    const recipeKey = `${KITCHEN_ALMOST_FULL_RECIPE_DISMISS_UNTIL_PREFIX}${userKey}`
+    const key = currentVariant === 'storage' ? storageKey : recipeKey
+
+    try {
+      await AsyncStorage.setItem(key, String(dismissUntil))
+    } catch {
+      // No-op: in-memory session suppression still avoids repeated prompts.
+    }
+  }
 
   const handleEdit = () => {
     router.push({
@@ -437,6 +569,27 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
             </View>
           </View>
         </View>
+
+        {capacityReminderVariant ? (
+          <KitchenAlmostFullCard
+            title={
+              capacityReminderVariant === 'recipe'
+                ? 'Your kitchen is almost full'
+                : 'Your kitchen storage is almost full'
+            }
+            line1={
+              capacityReminderVariant === 'recipe'
+                ? `${recipesLeft} recipes left on Free.`
+                : `About ${storageLeftMb} MB left on Free.`
+            }
+            line2="Premium keeps everything backed up & synced."
+            onSeePremium={() => router.push(premiumPath as any)}
+            onManageRecipes={() => router.push(collectionsPath as any)}
+            onDismiss={() => {
+              void dismissKitchenCapacityReminder()
+            }}
+          />
+        ) : null}
 
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>

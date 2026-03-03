@@ -4,7 +4,10 @@ export type StorageScreenMode = 'auth' | 'public' | 'dev'
 
 export function useStorageDataMode(mode: StorageScreenMode = 'auth') {
   const { localFirst } = useStorageStrategy()
-  const shouldUseLocalData = mode === 'public' || (mode === 'auth' && localFirst)
+  const shouldUseLocalData =
+    mode === 'public' ||
+    mode === 'dev' ||
+    (mode === 'auth' && localFirst)
   return {
     shouldUseLocalData,
     isPublicMode: mode === 'public',
