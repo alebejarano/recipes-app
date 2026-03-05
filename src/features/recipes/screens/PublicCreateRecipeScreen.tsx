@@ -76,6 +76,7 @@ export default function PublicCreateRecipeScreen({
   const submitLabel = entryMode === 'pdf' ? 'Save' : 'Add Recipe'
   const pendingRetryKey = `${PENDING_LIMIT_RETRY_PREFIX}public:guest`
   const createPath = '/(public)/recipes/create'
+  const homePath = '/(public)/(tabs)'
 
   const isSaving = entryMode === 'pdf' ? documentMutation.isPending : createMutation.isPending
 
@@ -108,10 +109,13 @@ export default function PublicCreateRecipeScreen({
 
       router.replace({
         pathname: '/(public)/recipes/[id]',
-        params: { id: recipe.id },
+        params: {
+          id: recipe.id,
+          ...(retryAfterUpgrade === '1' ? { returnTo: homePath } : {}),
+        },
       })
     },
-    [clearPendingRetry, createMutation, onSaved]
+    [clearPendingRetry, createMutation, homePath, onSaved, retryAfterUpgrade]
   )
 
   const saveDocument = useCallback(

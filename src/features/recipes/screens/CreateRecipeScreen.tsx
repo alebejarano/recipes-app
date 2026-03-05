@@ -135,6 +135,8 @@ export default function CreateRecipeScreen({
     routeMode === 'dev' ? '/(dev)/premium' : routeMode === 'public' ? '/(public)/premium' : '/(auth)/premium'
   const recipeDetailPath =
     routeMode === 'dev' ? '/(dev)/recipes/[id]' : routeMode === 'public' ? '/(public)/recipes/[id]' : '/(auth)/recipes/[id]'
+  const homePath =
+    routeMode === 'dev' ? '/(dev)/(tabs)' : routeMode === 'public' ? '/(public)/(tabs)' : '/(auth)/(tabs)'
   const collectionsPath =
     routeMode === 'dev'
       ? '/(dev)/(tabs)/collections'
@@ -172,10 +174,13 @@ export default function CreateRecipeScreen({
 
       router.replace({
         pathname: recipeDetailPath as any,
-        params: { id: recipe.id },
+        params: {
+          id: recipe.id,
+          ...(retryAfterUpgrade === '1' ? { returnTo: homePath } : {}),
+        },
       })
     },
-    [clearPendingRetry, createMutation, onSaved, recipeDetailPath]
+    [clearPendingRetry, createMutation, homePath, onSaved, recipeDetailPath, retryAfterUpgrade]
   )
 
   const saveDocument = useCallback(

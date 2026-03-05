@@ -2,8 +2,8 @@
 
 import { Feather } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { router, useLocalSearchParams, useSegments } from 'expo-router'
-import React, { useContext, useEffect, useMemo, useState } from 'react'
+import { router, useFocusEffect, useLocalSearchParams, useSegments } from 'expo-router'
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -21,26 +21,26 @@ import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
 import CollectionTile from '@/features/collections/components/CollectionTile'
-import KitchenAlmostFullCard from '@/features/recipes/components/KitchenAlmostFullCard'
 import NewCollectionTile from '@/features/collections/components/NewCollectionTile'
 import RecipeSegmentedTabs from '@/features/collections/components/RecipeSegmentedTabs'
 import SegmentedTabs from '@/features/collections/components/SegmentedTabs'
+import KitchenAlmostFullCard from '@/features/recipes/components/KitchenAlmostFullCard'
 
 // NEW: segment pages
 import NotesSegment from '@/features/collections/components/NotesSegment'
 import RecipeDocumentsSegment from '@/features/collections/components/RecipeDocumentsSegment'
 import ShoppingSegment from '@/features/collections/components/ShoppingSegment'
 
+import { useAuth } from '@/features/auth/context/AuthContext'
 import type { CollectionItem, RecipeSegmentKey, SegmentKey } from '@/features/collections/types'
 import { buildCollectionsForSegment } from '@/features/collections/utils/collections'
-import { useAuth } from '@/features/auth/context/AuthContext'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
 import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments'
-import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
+import { useStrategyDeleteRecipe, useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
-import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
 import { FREE_PLAN_MAX_IMPORT_TOTAL_BYTES } from '@/features/subscription/constants/limits'
 import { KITCHEN_ALMOST_FULL_STORAGE_DISMISS_UNTIL_PREFIX } from '@/features/subscription/constants/reminderKeys'
+import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
 import { useLimitQaOverrides } from '@/features/subscription/dev/limitQaOverrides'
 import {
   hasShownStorageReminderInSession,
@@ -73,7 +73,12 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   const { shouldUseLocalData } = useStorageDataMode(resolvedMode)
   const [segment, setSegment] = useState<SegmentKey>('recipes')
   const [recipeSegment, setRecipeSegment] = useState<RecipeSegmentKey>('folders')
+  const [isManagingRecipes, setIsManagingRecipes] = useState(false)
   const [manageSort, setManageSort] = useState<'oldest' | 'largest'>('oldest')
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
+  const [selectedRecipeIds, setSelectedRecipeIds] = useState<string[]>([])
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+  const [bulkDeleteSuccessMessage, setBulkDeleteSuccessMessage] = useState<string | null>(null)
   const [showDocSuccess, setShowDocSuccess] = useState(false)
   const [queueStorageReminderAfterSuccess, setQueueStorageReminderAfterSuccess] = useState(false)
   const [showStorageReminder, setShowStorageReminder] = useState(false)
@@ -85,6 +90,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   const storageUsageQuery = useRecipeDocumentUsageSummary({ enabled: plan !== 'premium' })
   const foldersQuery = useStrategyFoldersList(resolvedMode)
   const createFolderMutation = useStrategyCreateFolder(resolvedMode)
+  const deleteRecipeMutation = useStrategyDeleteRecipe(resolvedMode)
   const returnTo = getSafeReturnTo(
     resolvedMode === 'dev'
       ? '/(dev)/(tabs)/collections?segment=recipes'
@@ -93,6 +99,15 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
         : '/(auth)/(tabs)/collections?segment=recipes'
   )
   const returnToParam = typeof returnTo === 'string' ? returnTo : undefined
+  const manageReturnTo = useMemo(() => {
+    const basePath =
+      resolvedMode === 'dev'
+        ? '/(dev)/(tabs)/collections'
+        : resolvedMode === 'public'
+          ? '/(public)/(tabs)/collections'
+          : '/(auth)/(tabs)/collections'
+    return `${basePath}?segment=recipes&recipesSegment=folders&manage=recipes`
+  }, [resolvedMode])
   const recipeCount = recipesQuery.data?.length ?? 0
   const storageBytesUsed = storageUsageQuery.data?.totalBytes ?? 0
   const usageSnapshot = useMemo(
@@ -114,6 +129,48 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
       setRecipeSegment(recipesSegment)
     }
   }, [recipesSegment])
+
+  useEffect(() => {
+    if (manage !== 'recipes') return
+    setSegment('recipes')
+    setRecipeSegment('folders')
+    setIsManagingRecipes(true)
+    router.setParams({ manage: undefined })
+  }, [manage])
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setIsManagingRecipes(false)
+      }
+    }, [])
+  )
+
+  useEffect(() => {
+    if (plan === 'premium') {
+      setIsManagingRecipes(false)
+    }
+  }, [plan])
+
+  useEffect(() => {
+    if (segment !== 'recipes' || recipeSegment !== 'folders') {
+      setIsManagingRecipes(false)
+    }
+  }, [recipeSegment, segment])
+
+  useEffect(() => {
+    if (!isManagingRecipes) {
+      setIsSelectionMode(false)
+      setSelectedRecipeIds([])
+      setBulkDeleteSuccessMessage(null)
+    }
+  }, [isManagingRecipes])
+
+  useEffect(() => {
+    if (!bulkDeleteSuccessMessage) return
+    const timeout = setTimeout(() => setBulkDeleteSuccessMessage(null), 2600)
+    return () => clearTimeout(timeout)
+  }, [bulkDeleteSuccessMessage])
 
   useEffect(() => {
     if (docSuccess === '1') {
@@ -252,7 +309,6 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     recipeSegment === 'documents'
       ? ''
       : 'Recipes are grouped automatically based on tags'
-  const isManagingRecipes = manage === 'recipes' && segment === 'recipes' && recipeSegment === 'folders'
   const managedRecipes = useMemo(() => {
     const list = [...recipeData]
     if (manageSort === 'oldest') {
@@ -274,6 +330,88 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     })
     return list
   }, [manageSort, recipeData])
+
+  useEffect(() => {
+    if (!isSelectionMode) return
+    const recipeIds = new Set(managedRecipes.map((recipe) => recipe.id))
+    setSelectedRecipeIds((current) => current.filter((id) => recipeIds.has(id)))
+  }, [isSelectionMode, managedRecipes])
+
+  const toggleRecipeSelection = (recipeId: string) => {
+    if (isBulkDeleting) return
+    setSelectedRecipeIds((current) =>
+      current.includes(recipeId) ? current.filter((id) => id !== recipeId) : [...current, recipeId]
+    )
+  }
+
+  const openRecipeDetail = (recipeId: string) => {
+    if (isBulkDeleting) return
+    router.push({
+      pathname: isPublic
+        ? '/(public)/recipes/[id]'
+        : resolvedMode === 'dev'
+          ? '/(dev)/recipes/[id]'
+          : '/(auth)/recipes/[id]',
+      params: { id: recipeId, returnTo: manageReturnTo },
+    })
+  }
+
+  const closeSelectionMode = () => {
+    if (isBulkDeleting) return
+    setIsSelectionMode(false)
+    setSelectedRecipeIds([])
+  }
+
+  const selectAllManagedRecipes = () => {
+    if (isBulkDeleting) return
+    setSelectedRecipeIds(managedRecipes.map((recipe) => recipe.id))
+  }
+
+  const handleBulkDelete = () => {
+    if (selectedRecipeIds.length === 0 || isBulkDeleting) return
+    Alert.alert(
+      `Delete ${selectedRecipeIds.length} recipe${selectedRecipeIds.length === 1 ? '' : 's'}?`,
+      'This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const idsToDelete = [...selectedRecipeIds]
+            setIsBulkDeleting(true)
+            try {
+              const results = await Promise.allSettled(
+                idsToDelete.map((id) => deleteRecipeMutation.mutateAsync(id))
+              )
+              const failedIds = results
+                .map((result, index) => ({ result, id: idsToDelete[index] }))
+                .filter((entry) => entry.result.status === 'rejected')
+                .map((entry) => entry.id)
+              const deletedCount = idsToDelete.length - failedIds.length
+
+              if (failedIds.length > 0) {
+                setSelectedRecipeIds(failedIds)
+                Alert.alert(
+                  'Some recipes could not be deleted',
+                  `${deletedCount} deleted, ${failedIds.length} failed.`
+                )
+                return
+              }
+
+              setSelectedRecipeIds([])
+              setIsSelectionMode(false)
+              setBulkDeleteSuccessMessage(
+                `${deletedCount} recipe${deletedCount === 1 ? '' : 's'} deleted`
+              )
+            } finally {
+              setIsBulkDeleting(false)
+            }
+          },
+        },
+      ]
+    )
+  }
 
   const fabLabel =
     segment === 'recipes'
@@ -417,7 +555,34 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
           ) : isManagingRecipes ? (
             <>
               <View style={styles.manageHeader}>
-                <Text style={styles.manageTitle}>Manage recipes</Text>
+                <View style={styles.manageTitleRow}>
+                  <Text style={styles.manageTitle}>
+                    {isSelectionMode
+                      ? `${selectedRecipeIds.length} selected`
+                      : 'Manage recipes'}
+                  </Text>
+                  <Pressable
+                    onPress={() =>
+                      isSelectionMode ? closeSelectionMode() : setIsSelectionMode(true)
+                    }
+                    style={[
+                      styles.manageSelectButton,
+                      isSelectionMode && styles.manageSelectButtonActive,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={isSelectionMode ? 'Exit selection mode' : 'Select recipes'}
+                    disabled={isBulkDeleting}
+                  >
+                    <Text
+                      style={[
+                        styles.manageSelectButtonText,
+                        isSelectionMode && styles.manageSelectButtonTextActive,
+                      ]}
+                    >
+                      {isSelectionMode ? 'Done' : 'Select'}
+                    </Text>
+                  </Pressable>
+                </View>
                 <View style={styles.manageSortRow}>
                   <Pressable
                     onPress={() => setManageSort('oldest')}
@@ -441,39 +606,143 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
                   </Pressable>
                 </View>
               </View>
-              <FlatList
-                data={managedRecipes}
-                keyExtractor={(item) => item.id}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={[styles.manageList, { paddingBottom: bottomPadding }]}
-                ItemSeparatorComponent={() => <View style={{ height: theme.spacing.sm }} />}
-                renderItem={({ item }) => (
-                  <Pressable
-                    onPress={() =>
-                      router.push({
-                        pathname: isPublic
-                          ? '/(public)/recipes/[id]'
-                          : resolvedMode === 'dev'
-                            ? '/(dev)/recipes/[id]'
-                            : '/(auth)/recipes/[id]',
-                        params: { id: item.id },
-                      })
-                    }
-                    style={styles.manageRow}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open ${item.title}`}
-                  >
-                    <Text style={styles.manageRowTitle} numberOfLines={1}>
-                      {item.title}
-                    </Text>
-                    <Text style={styles.manageRowMeta}>
-                      {manageSort === 'largest'
+              <View style={styles.manageBody}>
+                <FlatList
+                  data={managedRecipes}
+                  keyExtractor={(item) => item.id}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={[
+                    styles.manageList,
+                    {
+                      paddingBottom:
+                        bottomPadding + (isSelectionMode ? theme.spacing['3xl'] : 0),
+                    },
+                  ]}
+                  ItemSeparatorComponent={() => <View style={{ height: theme.spacing.sm }} />}
+                  renderItem={({ item }) => {
+                    const isSelected = selectedRecipeIds.includes(item.id)
+                    const rowMeta =
+                      manageSort === 'largest'
                         ? `${item.ingredients?.length ?? 0} ingredients · ${item.steps?.length ?? 0} steps`
-                        : `Created ${new Date(item.createdAt).toLocaleDateString()}`}
-                    </Text>
-                  </Pressable>
-                )}
-              />
+                        : `Created ${new Date(item.createdAt).toLocaleDateString()}`
+
+                    if (!isSelectionMode) {
+                      return (
+                        <Pressable
+                          onPress={() => openRecipeDetail(item.id)}
+                          style={styles.manageRow}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Open ${item.title}`}
+                        >
+                          <Text style={styles.manageRowTitle} numberOfLines={1}>
+                            {item.title}
+                          </Text>
+                          <Text style={styles.manageRowMeta}>{rowMeta}</Text>
+                        </Pressable>
+                      )
+                    }
+
+                    return (
+                      <View style={styles.manageRowSelection}>
+                        <Pressable
+                          onPress={() => toggleRecipeSelection(item.id)}
+                          style={styles.manageSelectArea}
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: isSelected }}
+                          accessibilityLabel={`${isSelected ? 'Deselect' : 'Select'} ${item.title}`}
+                        >
+                          <View style={[styles.manageCheckbox, isSelected && styles.manageCheckboxSelected]}>
+                            {isSelected ? (
+                              <Feather name="check" size={12} color={theme.colors.primaryForeground} />
+                            ) : null}
+                          </View>
+                          <View style={styles.manageRowTextWrap}>
+                            <Text style={styles.manageRowTitle} numberOfLines={1}>
+                              {item.title}
+                            </Text>
+                            <Text style={styles.manageRowMeta}>{rowMeta}</Text>
+                          </View>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => openRecipeDetail(item.id)}
+                          style={styles.manageOpenButton}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Open ${item.title}`}
+                          disabled={isBulkDeleting}
+                        >
+                          <Feather name="arrow-up-right" size={16} color={theme.colors.mutedForeground} />
+                        </Pressable>
+                      </View>
+                    )
+                  }}
+                />
+
+                {isSelectionMode ? (
+                  <View
+                    style={[
+                      styles.manageBulkBar,
+                      {
+                        bottom: theme.spacing.xs,
+                      },
+                    ]}
+                  >
+                    <Pressable
+                      onPress={selectAllManagedRecipes}
+                      style={styles.manageBulkButton}
+                      accessibilityRole="button"
+                      accessibilityLabel="Select all recipes"
+                      disabled={isBulkDeleting}
+                    >
+                      <Text style={styles.manageBulkButtonText}>Select all</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={closeSelectionMode}
+                      style={styles.manageBulkButton}
+                      accessibilityRole="button"
+                      accessibilityLabel="Cancel selection"
+                      disabled={isBulkDeleting}
+                    >
+                      <Text style={styles.manageBulkButtonText}>Cancel</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={handleBulkDelete}
+                      style={[
+                        styles.manageBulkButton,
+                        styles.manageBulkDeleteButton,
+                        (selectedRecipeIds.length === 0 || isBulkDeleting) && styles.manageBulkDeleteButtonDisabled,
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Delete ${selectedRecipeIds.length} selected recipes`}
+                      disabled={selectedRecipeIds.length === 0 || isBulkDeleting}
+                    >
+                      {isBulkDeleting ? (
+                        <ActivityIndicator size="small" color={theme.colors.primaryForeground} />
+                      ) : (
+                        <Text style={styles.manageBulkDeleteButtonText}>
+                          Delete ({selectedRecipeIds.length})
+                        </Text>
+                      )}
+                    </Pressable>
+                  </View>
+                ) : null}
+
+                {bulkDeleteSuccessMessage ? (
+                  <View
+                    style={[
+                      styles.manageSnackbar,
+                      {
+                        bottom: bottomPadding + theme.spacing.sm,
+                      },
+                    ]}
+                    accessible
+                    accessibilityRole="alert"
+                    accessibilityLiveRegion="polite"
+                  >
+                    <Feather name="check-circle" size={16} color={styles.manageSnackbarIcon.color} />
+                    <Text style={styles.manageSnackbarText}>{bulkDeleteSuccessMessage}</Text>
+                  </View>
+                ) : null}
+              </View>
             </>
           ) : recipesQuery.isLoading && !shouldUseLocalData ? (
             <View style={styles.loadingState}>
@@ -723,6 +992,9 @@ const styles = createThemedStyles((theme) => ({
   manageHeader: {
     marginTop: theme.spacing.md,
     marginBottom: theme.spacing.sm,
+    gap: theme.spacing.sm,
+  },
+  manageTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -732,6 +1004,26 @@ const styles = createThemedStyles((theme) => ({
     fontFamily: theme.fontFamily.semibold,
     fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.base,
+    color: theme.colors.foreground,
+  },
+  manageSelectButton: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.radii.full,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+  },
+  manageSelectButtonActive: {
+    backgroundColor: theme.colors.secondary,
+  },
+  manageSelectButtonText: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.xs,
+    lineHeight: theme.lineHeight.xs,
+    color: theme.colors.mutedForeground,
+  },
+  manageSelectButtonTextActive: {
     color: theme.colors.foreground,
   },
   manageSortRow: {
@@ -761,6 +1053,9 @@ const styles = createThemedStyles((theme) => ({
   manageList: {
     paddingTop: theme.spacing.sm,
   },
+  manageBody: {
+    flex: 1,
+  },
   manageRow: {
     borderRadius: theme.radii.lg,
     borderWidth: 1,
@@ -781,6 +1076,121 @@ const styles = createThemedStyles((theme) => ({
     fontSize: theme.fontSize.sm,
     lineHeight: theme.lineHeight.sm,
     color: theme.colors.mutedForeground,
+  },
+  manageRowSelection: {
+    borderRadius: theme.radii.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    paddingLeft: theme.spacing.sm,
+    paddingRight: theme.spacing.xs,
+    paddingVertical: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+  },
+  manageSelectArea: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.spacing.sm,
+  },
+  manageCheckbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  manageCheckboxSelected: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  manageRowTextWrap: {
+    flex: 1,
+  },
+  manageOpenButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+  },
+  manageBulkBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.sm,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+  },
+  manageBulkButton: {
+    flex: 1,
+    minHeight: 40,
+    borderRadius: theme.radii.full,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: theme.spacing.sm,
+  },
+  manageBulkButtonText: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.foreground,
+  },
+  manageBulkDeleteButton: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  manageBulkDeleteButtonDisabled: {
+    opacity: 0.55,
+  },
+  manageBulkDeleteButtonText: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.primaryForeground,
+  },
+  manageSnackbar: {
+    position: 'absolute',
+    left: theme.spacing.md,
+    right: theme.spacing.md,
+    borderRadius: theme.radii.full,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    minHeight: 42,
+    paddingHorizontal: theme.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  manageSnackbarIcon: {
+    color: theme.colors.primary,
+  },
+  manageSnackbarText: {
+    flex: 1,
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.foreground,
   },
 
   grid: {

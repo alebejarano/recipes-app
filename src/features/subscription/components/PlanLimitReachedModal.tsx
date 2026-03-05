@@ -37,7 +37,7 @@ export default function PlanLimitReachedModal({
           </Pressable>
 
           <Text style={styles.title}>
-            {isRecipeLimit ? 'Your kitchen is full 🫙' : 'Out of storage space 📦'}
+            {isRecipeLimit ? 'Your kitchen is full' : 'Out of storage space 📦'}
           </Text>
 
           <Text style={styles.body}>
