@@ -77,6 +77,7 @@ export default function PublicCreateRecipeScreen({
   const pendingRetryKey = `${PENDING_LIMIT_RETRY_PREFIX}public:guest`
   const createPath = '/(public)/recipes/create'
   const homePath = '/(public)/(tabs)'
+  const manageRecipesPath = '/(public)/recipes/manage'
 
   const isSaving = entryMode === 'pdf' ? documentMutation.isPending : createMutation.isPending
 
@@ -407,8 +408,8 @@ export default function PublicCreateRecipeScreen({
             setLimitModalType(null)
             if (limitModalType === 'recipes') {
               router.replace({
-                pathname: '/(public)/(tabs)/collections',
-                params: { segment: 'recipes', recipesSegment: 'folders', manage: 'recipes' },
+                pathname: manageRecipesPath,
+                params: { returnTo: '/(public)/(tabs)/collections?segment=recipes' },
               })
               return
             }

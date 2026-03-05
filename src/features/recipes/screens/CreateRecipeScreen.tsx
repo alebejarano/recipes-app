@@ -143,6 +143,8 @@ export default function CreateRecipeScreen({
       : routeMode === 'public'
         ? '/(public)/(tabs)/collections'
         : '/(auth)/(tabs)/collections'
+  const manageRecipesPath =
+    routeMode === 'dev' ? '/(dev)/recipes/manage' : routeMode === 'public' ? '/(public)/recipes/manage' : '/(auth)/recipes/manage'
   const createPath =
     routeMode === 'dev' ? '/(dev)/recipes/create' : routeMode === 'public' ? '/(public)/recipes/create' : '/(auth)/recipes/create'
   const pendingRetryKey = `${PENDING_LIMIT_RETRY_PREFIX}${routeMode}:${user?.id ?? 'guest'}`
@@ -487,8 +489,8 @@ export default function CreateRecipeScreen({
             setLimitModalType(null)
             if (limitModalType === 'recipes') {
               router.replace({
-                pathname: collectionsPath as any,
-                params: { segment: 'recipes', recipesSegment: 'folders', manage: 'recipes' },
+                pathname: manageRecipesPath as any,
+                params: { returnTo: `${collectionsPath}?segment=recipes` },
               })
               return
             }

@@ -180,6 +180,14 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
     return '/(auth)/(tabs)/collections?segment=recipes'
   }, [segments])
 
+  const manageRecipesPath = useMemo(() => {
+    const root = segments[0]
+    if (root === '(dev)' || root === '(public)' || root === '(auth)') {
+      return `/${root}/recipes/manage`
+    }
+    return '/(auth)/recipes/manage'
+  }, [segments])
+
   const premiumPath = useMemo(() => {
     const root = segments[0]
     if (root === '(dev)' || root === '(public)' || root === '(auth)') {
@@ -584,7 +592,12 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
             }
             line2="Premium keeps everything backed up & synced."
             onSeePremium={() => router.push(premiumPath as any)}
-            onManageRecipes={() => router.push(collectionsPath as any)}
+            onManageRecipes={() =>
+              router.push({
+                pathname: manageRecipesPath as any,
+                params: { returnTo: collectionsPath },
+              })
+            }
             onDismiss={() => {
               void dismissKitchenCapacityReminder()
             }}
