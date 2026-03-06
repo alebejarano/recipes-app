@@ -32,6 +32,14 @@ export type RecipeDocumentUsageSummary = {
   totalBytes: number
 }
 
+export type DuplicateRecipeDocument = {
+  id: string
+  title: string | null
+  createdAt: string
+}
+
+export const DUPLICATE_RECIPE_DOCUMENT_CODE = 'duplicate_import'
+
 const DOCUMENTS_DIR = new Directory(Paths.document, 'recipe-documents')
 const DOCUMENTS_BASE_URI = DOCUMENTS_DIR.uri.endsWith('/')
   ? DOCUMENTS_DIR.uri
@@ -99,6 +107,42 @@ async function ensureDir() {
 function buildDestinationPath(name: string) {
   const safeName = name.replace(/[^a-zA-Z0-9._-]/g, '_')
   return `${DOCUMENTS_BASE_URI}${Date.now()}_${safeName || 'recipe.pdf'}`
+}
+
+async function resolveFileFingerprint(uri: string): Promise<string | null> {
+  try {
+    const info = await new File(uri).info({ md5: true })
+    const md5 = typeof info.md5 === 'string' ? info.md5.trim().toLowerCase() : ''
+    return md5 || null
+  } catch {
+    return null
+  }
+}
+
+export async function findDuplicateRecipeDocumentByFile(input: {
+  uri: string
+}): Promise<DuplicateRecipeDocument | null> {
+  await ensureRecipeDocumentStorageReady()
+  const fingerprint = await resolveFileFingerprint(input.uri)
+  if (!fingerprint) return null
+  const rows = await getAllAsync<{
+    id: string
+    title: string | null
+    file_uri: string
+    created_at: string
+  }>('SELECT id, title, file_uri, created_at FROM recipe_documents ORDER BY created_at DESC;')
+
+  for (const row of rows) {
+    const existingFingerprint = await resolveFileFingerprint(row.file_uri)
+    if (!existingFingerprint) continue
+    if (existingFingerprint !== fingerprint) continue
+    return {
+      id: row.id,
+      title: row.title ?? null,
+      createdAt: row.created_at,
+    }
+  }
+  return null
 }
 
 export async function listRecipeDocuments(): Promise<RecipeDocument[]> {
@@ -175,6 +219,14 @@ export async function addRecipeDocument(input: {
     plan: input.plan ?? 'free',
     incomingBytes: resolvedSize,
   })
+
+  const existing = await findDuplicateRecipeDocumentByFile({ uri: input.uri })
+  if (existing) {
+    const duplicateError = new Error('This file has already been imported.')
+    ;(duplicateError as Error & { code?: string }).code = DUPLICATE_RECIPE_DOCUMENT_CODE
+    throw duplicateError
+  }
+
   await ensureDir()
 
   const id = makeId()

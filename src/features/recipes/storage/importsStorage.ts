@@ -1,7 +1,8 @@
 import { Directory, File, Paths } from 'expo-file-system'
 import { Platform } from 'react-native'
 
-import { getFirstAsync, runSqlAsync, runSqlBatchAsync } from '@/lib/sqlite'
+import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
+import { getAllAsync, getFirstAsync, runSqlAsync, runSqlBatchAsync } from '@/lib/sqlite'
 import {
   FREE_PLAN_MAX_IMPORT_FILE_BYTES,
   FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
@@ -17,6 +18,16 @@ export type ImportsUsageSummary = {
 export type ImportPlan = 'free' | 'premium'
 
 type ImportKind = 'document' | 'image'
+
+export type ManagedImport = {
+  id: string
+  kind: ImportKind
+  title: string | null
+  fileName: string | null
+  fileUri: string
+  bytes: number
+  createdAt: string
+}
 
 const IMPORT_IMAGES_DIR = new Directory(Paths.document, 'recipe-import-images')
 const IMPORT_IMAGES_BASE_URI = IMPORT_IMAGES_DIR.uri.endsWith('/')
@@ -47,6 +58,7 @@ const MIGRATION_STATEMENTS = [
 ]
 
 let migrationsPromise: Promise<void> | null = null
+let documentsBackfillPromise: Promise<void> | null = null
 
 function makeId() {
   return `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
@@ -79,6 +91,31 @@ export function ensureImportsStorageReady() {
   return migrationsPromise
 }
 
+async function backfillLegacyDocumentImports() {
+  await ensureImportsStorageReady()
+  try {
+    await runSqlAsync(
+      `INSERT INTO imports (id, kind, file_name, file_uri, bytes, created_at, deleted_at)
+       SELECT lower(hex(randomblob(16))), 'document', rd.file_name, rd.file_uri, rd.file_size, rd.created_at, NULL
+       FROM recipe_documents rd
+       WHERE NOT EXISTS (
+         SELECT 1
+         FROM imports i
+         WHERE i.kind = 'document' AND i.file_uri = rd.file_uri AND i.deleted_at IS NULL
+       );`
+    )
+  } catch {
+    // recipe_documents may not exist in fresh installs.
+  }
+}
+
+async function ensureDocumentImportsBackfilled() {
+  if (!documentsBackfillPromise) {
+    documentsBackfillPromise = backfillLegacyDocumentImports()
+  }
+  await documentsBackfillPromise
+}
+
 export function isManagedLocalImportImageUri(uri: string | null | undefined) {
   if (!uri) return false
   return uri.startsWith(IMPORT_IMAGES_BASE_URI)
@@ -86,6 +123,7 @@ export function isManagedLocalImportImageUri(uri: string | null | undefined) {
 
 export async function getImportsUsageSummary(): Promise<ImportsUsageSummary> {
   await ensureImportsStorageReady()
+  await ensureDocumentImportsBackfilled()
   const row = await getFirstAsync<{ totalCount: number; totalBytes: number }>(
     `SELECT COUNT(*) as totalCount, COALESCE(SUM(bytes), 0) as totalBytes
      FROM imports
@@ -189,6 +227,96 @@ export async function getActiveImportBytesByUri(fileUri: string): Promise<number
     [fileUri]
   )
   return Number(row?.bytes ?? 0)
+}
+
+export async function listManagedImports(): Promise<ManagedImport[]> {
+  await ensureImportsStorageReady()
+  await ensureDocumentImportsBackfilled()
+  let rows: {
+    id: string
+    kind: ImportKind
+    title: string | null
+    file_name: string | null
+    file_uri: string
+    bytes: number
+    created_at: string
+  }[] = []
+
+  try {
+    rows = await getAllAsync<{
+      id: string
+      kind: ImportKind
+      title: string | null
+      file_name: string | null
+      file_uri: string
+      bytes: number
+      created_at: string
+    }>(
+      `SELECT i.id, i.kind, rd.title as title, i.file_name, i.file_uri, i.bytes, i.created_at
+       FROM imports i
+       LEFT JOIN recipe_documents rd ON rd.file_uri = i.file_uri
+       WHERE i.deleted_at IS NULL
+       ORDER BY i.created_at DESC;`
+    )
+  } catch {
+    rows = await getAllAsync<{
+      id: string
+      kind: ImportKind
+      title: string | null
+      file_name: string | null
+      file_uri: string
+      bytes: number
+      created_at: string
+    }>(
+      `SELECT id, kind, NULL as title, file_name, file_uri, bytes, created_at
+       FROM imports
+       WHERE deleted_at IS NULL
+       ORDER BY created_at DESC;`
+    )
+  }
+
+  return rows.map((row) => ({
+    id: row.id,
+    kind: row.kind,
+    title: row.title ?? null,
+    fileName: row.file_name ?? null,
+    fileUri: row.file_uri,
+    bytes: Number(row.bytes ?? 0),
+    createdAt: row.created_at,
+  }))
+}
+
+export async function deleteManagedImport(importId: string): Promise<void> {
+  await ensureImportsStorageReady()
+  const row = await getFirstAsync<{ kind: ImportKind; fileUri: string | null }>(
+    `SELECT kind, file_uri as fileUri
+     FROM imports
+     WHERE id = ? AND deleted_at IS NULL
+     LIMIT 1;`,
+    [importId]
+  )
+
+  const fileUri = row?.fileUri?.trim() ?? ''
+  if (!fileUri) return
+
+  if (row?.kind === 'document') {
+    try {
+      await runSqlAsync('DELETE FROM recipe_documents WHERE file_uri = ?;', [fileUri])
+    } catch {
+      // recipe_documents may not exist yet in fresh installs.
+    }
+  } else if (row?.kind === 'image') {
+    await ensureLocalSqliteMigrationReady()
+    const now = nowIso()
+    await runSqlAsync(
+      `UPDATE local_recipes
+       SET image_url = NULL, updated_at = ?, dirty = 1, version = version + 1
+       WHERE image_url = ? AND deleted_at IS NULL;`,
+      [now, fileUri]
+    )
+  }
+
+  await removeImportByUri(fileUri)
 }
 
 export async function importLocalImage(input: {

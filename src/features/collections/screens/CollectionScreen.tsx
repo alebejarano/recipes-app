@@ -91,6 +91,12 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
         : '/(auth)/(tabs)/collections?segment=recipes'
   )
   const returnToParam = typeof returnTo === 'string' ? returnTo : undefined
+  const manageImportsPath =
+    resolvedMode === 'dev'
+      ? '/(dev)/imports/manage'
+      : resolvedMode === 'public'
+        ? '/(public)/imports/manage'
+        : '/(auth)/imports/manage'
   const recipeCount = recipesQuery.data?.length ?? 0
   const storageBytesUsed = storageUsageQuery.data?.totalBytes ?? 0
   const usageSnapshot = useMemo(
@@ -124,7 +130,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
 
   useEffect(() => {
     if (!showDocSuccess) return
-    const timeout = setTimeout(() => setShowDocSuccess(false), 3500)
+    const timeout = setTimeout(() => setShowDocSuccess(false), 2400)
     return () => clearTimeout(timeout)
   }, [showDocSuccess])
 
@@ -371,6 +377,13 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
                   : '/(auth)/premium'
             )
           }
+          onSecondaryAction={() =>
+            router.push({
+              pathname: manageImportsPath as any,
+              params: { returnTo: returnToParam },
+            })
+          }
+          secondaryActionLabel="Manage imports"
           onDismiss={() => {
             void dismissStorageReminder()
           }}

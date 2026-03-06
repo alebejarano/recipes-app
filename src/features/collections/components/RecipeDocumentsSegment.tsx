@@ -39,7 +39,6 @@ export default function RecipeDocumentsSegment({
       (docsQuery.data ?? []).map((doc) => ({
         id: doc.id,
         title: doc.title?.trim() || FALLBACK_TITLE,
-        fileName: doc.fileName,
         createdAt: doc.createdAt,
         relativeDate: formatRelativeDay(doc.createdAt),
         fileSize: doc.fileSize,
@@ -117,16 +116,10 @@ export default function RecipeDocumentsSegment({
               </View>
 
               <View style={styles.rowText}>
-                <View style={styles.rowTop}>
-                  <Text style={styles.rowTitle} numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                  <Text style={styles.rowDate}>{item.relativeDate}</Text>
-                </View>
-
-                <Text style={styles.rowPreview} numberOfLines={1}>
-                  {item.fileName} · {formatBytes(item.fileSize)}
+                <Text style={styles.rowTitle} numberOfLines={1}>
+                  {item.title}
                 </Text>
+                <Text style={styles.rowDate}>{item.relativeDate}</Text>
               </View>
             </Pressable>
           )}
@@ -150,12 +143,6 @@ export default function RecipeDocumentsSegment({
       )}
     </View>
   )
-}
-
-function formatBytes(bytes: number) {
-  if (bytes <= 0) return '0 MB'
-  const mb = bytes / (1024 * 1024)
-  return `${mb.toFixed(mb >= 10 ? 0 : 1)} MB`
 }
 
 const styles = createThemedStyles((theme) => ({
@@ -252,15 +239,7 @@ const styles = createThemedStyles((theme) => ({
 
   rowText: { flex: 1 },
 
-  rowTop: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    gap: theme.spacing.md,
-  },
-
   rowTitle: {
-    flex: 1,
     fontFamily: theme.fontFamily.semibold,
     fontSize: theme.fontSize.lg,
     lineHeight: theme.lineHeight.lg,
@@ -268,17 +247,10 @@ const styles = createThemedStyles((theme) => ({
   },
 
   rowDate: {
+    marginTop: theme.spacing.xxs,
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.sm,
     lineHeight: theme.lineHeight.sm,
-    color: theme.colors.mutedForeground,
-  },
-
-  rowPreview: {
-    marginTop: theme.spacing.xs,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
     color: theme.colors.mutedForeground,
   },
 

@@ -10,6 +10,8 @@ type KitchenAlmostFullCardProps = {
   line2: string
   onSeePremium: () => void
   onManageRecipes?: () => void
+  onSecondaryAction?: () => void
+  secondaryActionLabel?: string
   onDismiss: () => void
 }
 
@@ -19,6 +21,8 @@ export default function KitchenAlmostFullCard({
   line2,
   onSeePremium,
   onManageRecipes,
+  onSecondaryAction,
+  secondaryActionLabel,
   onDismiss,
 }: KitchenAlmostFullCardProps) {
   const entry = React.useRef(new Animated.Value(0)).current
@@ -36,6 +40,9 @@ export default function KitchenAlmostFullCard({
     inputRange: [0, 1],
     outputRange: [6, 0],
   })
+
+  const secondaryAction = onSecondaryAction ?? onManageRecipes
+  const secondaryLabel = secondaryActionLabel ?? 'Manage recipes'
 
   return (
     <Animated.View
@@ -71,14 +78,14 @@ export default function KitchenAlmostFullCard({
         >
           <Text style={styles.primaryActionText}>See Premium</Text>
         </TouchableOpacity>
-        {onManageRecipes ? (
+        {secondaryAction ? (
           <TouchableOpacity
-            onPress={onManageRecipes}
+            onPress={secondaryAction}
             accessibilityRole="button"
             activeOpacity={0.75}
             style={styles.secondaryAction}
           >
-            <Text style={styles.secondaryActionText}>Manage recipes</Text>
+            <Text style={styles.secondaryActionText}>{secondaryLabel}</Text>
           </TouchableOpacity>
         ) : null}
       </View>

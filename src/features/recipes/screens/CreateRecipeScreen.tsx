@@ -3,6 +3,7 @@
 import { Feather } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { router, useLocalSearchParams, useSegments } from 'expo-router'
+import { usePostHog } from 'posthog-react-native'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
@@ -30,6 +31,10 @@ import RecipeForm, {
   type RecipeFormSubmitValues,
 } from '@/features/recipes/components/RecipeForm'
 import { useAddRecipeDocument } from '@/features/recipes/hooks/useRecipeDocuments'
+import {
+  DUPLICATE_RECIPE_DOCUMENT_CODE,
+  findDuplicateRecipeDocumentByFile,
+} from '@/features/recipes/storage/recipeDocumentStorage'
 import { useStrategyCreateRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
@@ -69,6 +74,12 @@ function inferImportMimeType(fileName: string) {
   return 'application/octet-stream'
 }
 
+function formatDuplicateImportMessage(input: { title: string | null; createdAt: string }) {
+  const title = input.title?.trim() || 'Untitled recipe'
+  const date = new Date(input.createdAt).toLocaleDateString()
+  return `Already imported as "${title}" on ${date}.`
+}
+
 export default function CreateRecipeScreen({
   variant = 'app',
   entry,
@@ -76,6 +87,7 @@ export default function CreateRecipeScreen({
   onBack,
 }: CreateRecipeScreenProps) {
   const insets = useSafeAreaInsets()
+  const posthog = usePostHog()
   const { user } = useAuth()
   const { retryAfterUpgrade } = useLocalSearchParams<{ retryAfterUpgrade?: string }>()
   const segments = useSegments()
@@ -145,6 +157,8 @@ export default function CreateRecipeScreen({
         : '/(auth)/(tabs)/collections'
   const manageRecipesPath =
     routeMode === 'dev' ? '/(dev)/recipes/manage' : routeMode === 'public' ? '/(public)/recipes/manage' : '/(auth)/recipes/manage'
+  const manageImportsPath =
+    routeMode === 'dev' ? '/(dev)/imports/manage' : routeMode === 'public' ? '/(public)/imports/manage' : '/(auth)/imports/manage'
   const createPath =
     routeMode === 'dev' ? '/(dev)/recipes/create' : routeMode === 'public' ? '/(public)/recipes/create' : '/(auth)/recipes/create'
   const pendingRetryKey = `${PENDING_LIMIT_RETRY_PREFIX}${routeMode}:${user?.id ?? 'guest'}`
@@ -187,6 +201,36 @@ export default function CreateRecipeScreen({
 
   const saveDocument = useCallback(
     async (values: RecipeDocumentFormValues, file: { uri: string; name: string; size: number }) => {
+      const duplicate = await findDuplicateRecipeDocumentByFile({ uri: file.uri })
+      if (duplicate) {
+        posthog?.capture('import_duplicate_blocked', {
+          source: 'document',
+          route_mode: routeMode,
+          file_name: file.name,
+          file_size: file.size,
+          existing_title: duplicate.title ?? null,
+          existing_created_at: duplicate.createdAt,
+        })
+        Alert.alert(
+          'File already imported',
+          formatDuplicateImportMessage(duplicate),
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Manage imports',
+              onPress: () =>
+                router.replace({
+                  pathname: manageImportsPath as any,
+                  params: {
+                    returnTo: `${collectionsPath}?segment=recipes&recipesSegment=documents`,
+                  },
+                }),
+            },
+          ]
+        )
+        return
+      }
+
       if (!shouldUseLocalData) {
         setIsUploadingPremiumImport(true)
         await uploadPremiumImport({
@@ -210,7 +254,7 @@ export default function CreateRecipeScreen({
         },
       })
     },
-    [clearPendingRetry, collectionsPath, documentMutation, importPlan, shouldUseLocalData]
+    [clearPendingRetry, collectionsPath, documentMutation, importPlan, manageImportsPath, posthog, routeMode, shouldUseLocalData]
   )
 
   const handleSubmit = useCallback(
@@ -251,6 +295,37 @@ export default function CreateRecipeScreen({
         }
         await saveDocument(values, file)
       } catch (error: any) {
+        if (error?.code === DUPLICATE_RECIPE_DOCUMENT_CODE) {
+          const duplicate = await findDuplicateRecipeDocumentByFile({ uri: file.uri })
+          posthog?.capture('import_duplicate_blocked', {
+            source: 'document',
+            route_mode: routeMode,
+            file_name: file.name,
+            file_size: file.size,
+            existing_title: duplicate?.title ?? null,
+            existing_created_at: duplicate?.createdAt ?? null,
+          })
+          Alert.alert(
+            'File already imported',
+            duplicate
+              ? formatDuplicateImportMessage(duplicate)
+              : 'This file already exists in your imports.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Manage imports',
+                onPress: () =>
+                  router.replace({
+                    pathname: manageImportsPath as any,
+                    params: {
+                      returnTo: `${collectionsPath}?segment=recipes&recipesSegment=documents`,
+                    },
+                  }),
+              },
+            ]
+          )
+          return
+        }
         const limitType = getPlanLimitTypeFromError(error)
         if (limitType === 'storage') {
           const nextPending: PendingLimitRetry = { kind: 'document', values, file }
@@ -264,7 +339,7 @@ export default function CreateRecipeScreen({
         setIsUploadingPremiumImport(false)
       }
     },
-    [isDevMode, overrides.forceStorageLimitErrorOnImport, overrides.storageUsageBandOverride, pendingRetryKey, saveDocument]
+    [collectionsPath, isDevMode, manageImportsPath, overrides.forceStorageLimitErrorOnImport, overrides.storageUsageBandOverride, pendingRetryKey, posthog, routeMode, saveDocument]
   )
 
   const handleCreateFolder = useCallback(
@@ -495,8 +570,10 @@ export default function CreateRecipeScreen({
               return
             }
             router.replace({
-              pathname: collectionsPath as any,
-              params: { segment: 'recipes', recipesSegment: 'documents', sort: 'largest' },
+              pathname: manageImportsPath as any,
+              params: {
+                returnTo: `${collectionsPath}?segment=recipes&recipesSegment=documents`,
+              },
             })
           }}
         />

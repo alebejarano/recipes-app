@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { router, useLocalSearchParams } from 'expo-router'
+import { usePostHog } from 'posthog-react-native'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
@@ -27,6 +28,10 @@ import RecipeForm, {
 } from '@/features/recipes/components/RecipeForm'
 import { useCreateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
 import { useAddRecipeDocument } from '@/features/recipes/hooks/useRecipeDocuments'
+import {
+  DUPLICATE_RECIPE_DOCUMENT_CODE,
+  findDuplicateRecipeDocumentByFile,
+} from '@/features/recipes/storage/recipeDocumentStorage'
 import type { CreateRecipeEntry } from '@/features/recipes/screens/CreateRecipeScreen'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import PlanLimitReachedModal, { type PlanLimitReachedType } from '@/features/subscription/components/PlanLimitReachedModal'
@@ -53,12 +58,19 @@ type PublicCreateRecipeScreenProps = {
   entry?: CreateRecipeEntry
 }
 
+function formatDuplicateImportMessage(input: { title: string | null; createdAt: string }) {
+  const title = input.title?.trim() || 'Untitled recipe'
+  const date = new Date(input.createdAt).toLocaleDateString()
+  return `Already imported as "${title}" on ${date}.`
+}
+
 export default function PublicCreateRecipeScreen({
   onSaved,
   onBack,
   entry,
 }: PublicCreateRecipeScreenProps) {
   const insets = useSafeAreaInsets()
+  const posthog = usePostHog()
   const { retryAfterUpgrade } = useLocalSearchParams<{ retryAfterUpgrade?: string }>()
   const { isPremium } = useStorageStrategy()
   const [entryMode, setEntryMode] = useState<'scratch' | 'pdf' | null>(entry ?? null)
@@ -78,6 +90,7 @@ export default function PublicCreateRecipeScreen({
   const createPath = '/(public)/recipes/create'
   const homePath = '/(public)/(tabs)'
   const manageRecipesPath = '/(public)/recipes/manage'
+  const manageImportsPath = '/(public)/imports/manage'
 
   const isSaving = entryMode === 'pdf' ? documentMutation.isPending : createMutation.isPending
 
@@ -121,6 +134,33 @@ export default function PublicCreateRecipeScreen({
 
   const saveDocument = useCallback(
     async (values: RecipeDocumentFormValues, file: { uri: string; name: string; size: number }) => {
+      const duplicate = await findDuplicateRecipeDocumentByFile({ uri: file.uri })
+      if (duplicate) {
+        posthog?.capture('import_duplicate_blocked', {
+          source: 'document',
+          route_mode: 'public',
+          file_name: file.name,
+          file_size: file.size,
+          existing_title: duplicate.title ?? null,
+          existing_created_at: duplicate.createdAt,
+        })
+        Alert.alert(
+          'File already imported',
+          formatDuplicateImportMessage(duplicate),
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Manage imports',
+              onPress: () =>
+                router.replace({
+                  pathname: manageImportsPath,
+                  params: { returnTo: '/(public)/(tabs)/collections?segment=recipes&recipesSegment=documents' },
+                }),
+            },
+          ]
+        )
+        return
+      }
       await documentMutation.mutateAsync({ title: values.title, file })
       await clearPendingRetry()
       router.replace({
@@ -132,7 +172,7 @@ export default function PublicCreateRecipeScreen({
         },
       })
     },
-    [clearPendingRetry, documentMutation]
+    [clearPendingRetry, documentMutation, manageImportsPath, posthog]
   )
 
   const handleSubmit = useCallback(
@@ -159,6 +199,35 @@ export default function PublicCreateRecipeScreen({
       try {
         await saveDocument(values, file)
       } catch (error: any) {
+        if (error?.code === DUPLICATE_RECIPE_DOCUMENT_CODE) {
+          const duplicate = await findDuplicateRecipeDocumentByFile({ uri: file.uri })
+          posthog?.capture('import_duplicate_blocked', {
+            source: 'document',
+            route_mode: 'public',
+            file_name: file.name,
+            file_size: file.size,
+            existing_title: duplicate?.title ?? null,
+            existing_created_at: duplicate?.createdAt ?? null,
+          })
+          Alert.alert(
+            'File already imported',
+            duplicate
+              ? formatDuplicateImportMessage(duplicate)
+              : 'This file already exists in your imports.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Manage imports',
+                onPress: () =>
+                  router.replace({
+                    pathname: manageImportsPath,
+                    params: { returnTo: '/(public)/(tabs)/collections?segment=recipes&recipesSegment=documents' },
+                  }),
+              },
+            ]
+          )
+          return
+        }
         const limitType = getPlanLimitTypeFromError(error)
         if (limitType === 'storage') {
           const nextPending: PendingLimitRetry = { kind: 'document', values, file }
@@ -170,7 +239,7 @@ export default function PublicCreateRecipeScreen({
         Alert.alert('Save failed', error?.message ?? 'Please try again.')
       }
     },
-    [pendingRetryKey, saveDocument]
+    [manageImportsPath, pendingRetryKey, posthog, saveDocument]
   )
 
   const triggerSave = useCallback(() => {
@@ -414,8 +483,8 @@ export default function PublicCreateRecipeScreen({
               return
             }
             router.replace({
-              pathname: '/(public)/(tabs)/collections',
-              params: { segment: 'recipes', recipesSegment: 'documents', sort: 'largest' },
+              pathname: manageImportsPath,
+              params: { returnTo: '/(public)/(tabs)/collections?segment=recipes&recipesSegment=documents' },
             })
           }}
         />
