@@ -1,19 +1,18 @@
 import React, { useState } from 'react'
 
-import Screen from '@/components/Screen'
-import { createThemedStyles } from '@/styles/createStyles'
-
-import ProfileHeader from '@/features/profile/components/ProfileHeader'
+import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
 import SettingsSection from '@/features/profile/components/SettingsSection'
 
-export default function EmailSettingsScreen() {
+type EmailSettingsScreenProps = {
+  onBack: () => void
+}
+
+export default function EmailSettingsScreen({ onBack }: EmailSettingsScreenProps) {
   const [newsletter, setNewsletter] = useState(true)
   const [tips, setTips] = useState(true)
 
   return (
-    <Screen scroll contentStyle={styles.content}>
-      <ProfileHeader title="Email Settings" />
-
+    <ProfileSubpageLayout title="Email Settings" onBack={onBack}>
       <SettingsSection
         title="Email Updates"
         items={[
@@ -37,12 +36,6 @@ export default function EmailSettingsScreen() {
           },
         ]}
       />
-    </Screen>
+    </ProfileSubpageLayout>
   )
 }
-
-const styles = createThemedStyles((theme) => ({
-  content: {
-    gap: theme.spacing.lg,
-  },
-}))

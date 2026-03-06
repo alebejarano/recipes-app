@@ -28,6 +28,48 @@ const PRESETS: ProgressPreset[] = [
   { key: 'limit', label: 'At limit', recipes: 100, storageMb: 50 },
 ]
 
+function getFreeUsageProgressColor(percent: number) {
+  if (percent >= 100) return theme.colors.destructive
+  if (percent >= 80) return theme.colors.accent
+  if (percent >= 60) return theme.colors.secondaryForeground
+  return theme.colors.warmGray
+}
+
+function getFreeUsageSummaryMessage(recipesUsagePercent: number, storageUsagePercent: number) {
+  const recipesAtLimit = recipesUsagePercent >= 100
+  const storageAtLimit = storageUsagePercent >= 100
+
+  if (recipesAtLimit && storageAtLimit) {
+    return "Your Free kitchen is full for recipes and storage."
+  }
+
+  if (recipesAtLimit) {
+    return "Your Free kitchen is full for recipes."
+  }
+
+  if (storageAtLimit) {
+    return "Your Free kitchen is full for storage."
+  }
+
+  const highestUsage = Math.max(recipesUsagePercent, storageUsagePercent)
+
+  if (highestUsage < 80) return null
+
+  if (recipesUsagePercent >= 80 && storageUsagePercent >= 80) {
+    return "Recipes and storage are both getting close to full."
+  }
+
+  if (recipesUsagePercent >= 80) {
+    return "You're getting close to the recipe limit on Free."
+  }
+
+  if (storageUsagePercent >= 80) {
+    return "You're getting close to the storage limit on Free."
+  }
+
+  return null
+}
+
 type CurrentPlanProgressMockScreenProps = {
   onBack: () => void
 }
@@ -40,6 +82,7 @@ export default function CurrentPlanProgressMockScreen({ onBack }: CurrentPlanPro
     () => buildFreePlanUsageSnapshot(recipesSaved, storageMbUsed * MEGABYTE),
     [recipesSaved, storageMbUsed]
   )
+  const usageSummaryMessage = getFreeUsageSummaryMessage(usage.recipesUsagePercent, usage.storageUsagePercent)
 
   const applyPreset = (preset: ProgressPreset) => {
     setRecipesSaved(preset.recipes)
@@ -129,9 +172,16 @@ export default function CurrentPlanProgressMockScreen({ onBack }: CurrentPlanPro
           </Text>
         </View>
         <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${usage.recipesUsagePercent}%` }]} />
+          <View
+            style={[
+              styles.progressFill,
+              {
+                width: `${usage.recipesUsagePercent}%`,
+                backgroundColor: getFreeUsageProgressColor(usage.recipesUsagePercent),
+              },
+            ]}
+          />
         </View>
-        <Text style={styles.usageMessage}>{usage.recipesUsageMessage}</Text>
 
         <View style={styles.sectionDivider} />
 
@@ -142,9 +192,17 @@ export default function CurrentPlanProgressMockScreen({ onBack }: CurrentPlanPro
           </Text>
         </View>
         <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${usage.storageUsagePercent}%` }]} />
+          <View
+            style={[
+              styles.progressFill,
+              {
+                width: `${usage.storageUsagePercent}%`,
+                backgroundColor: getFreeUsageProgressColor(usage.storageUsagePercent),
+              },
+            ]}
+          />
         </View>
-        <Text style={styles.usageMessage}>{usage.storageUsageMessage}</Text>
+        <Text style={styles.usageMessage}>{usageSummaryMessage}</Text>
       </View>
     </Screen>
   )
@@ -293,7 +351,6 @@ const styles = createThemedStyles((theme) => ({
   progressFill: {
     height: '100%',
     borderRadius: theme.radii.xxl,
-    backgroundColor: theme.colors.primary,
   },
   usageMessage: {
     fontFamily: theme.fontFamily.regular,

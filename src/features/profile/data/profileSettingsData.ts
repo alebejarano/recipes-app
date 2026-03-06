@@ -132,20 +132,3 @@ export function buildSessionItems(args: {
     },
   ]
 }
-
-export function buildDangerZoneItems(args: {
-  onDeleteAccountPress: () => void
-  isDeletingAccount?: boolean
-}): SettingsRowItem[] {
-  return [
-    {
-      id: 'delete',
-      type: 'link',
-      icon: 'trash-2',
-      title: args.isDeletingAccount ? 'Deleting…' : 'Delete Account',
-      subtitle: 'Permanently remove your data',
-      tone: 'danger',
-      onPress: args.isDeletingAccount ? undefined : args.onDeleteAccountPress,
-    },
-  ]
-}

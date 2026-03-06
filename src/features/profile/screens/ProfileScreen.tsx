@@ -16,7 +16,6 @@ import SettingsRow from '@/features/profile/components/SettingsRow';
 import SettingsSection from '@/features/profile/components/SettingsSection';
 
 import {
-  buildDangerZoneItems,
   buildMembershipItems,
   buildNotificationsItems,
   buildSessionItems,
@@ -33,10 +32,9 @@ export default function ProfileScreen() {
   const segments = useSegments()
   const isDevMode = segments[0] === '(dev)'
 
-  const { user, logout, deleteAccount } = useAuth()
+  const { user, logout } = useAuth()
   const { plan } = useContext(SubscriptionContext)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const accountPlan: AccountPlan = plan === 'premium' ? 'premium' : 'free'
 
   const displayName = useMemo(() => {
@@ -78,36 +76,6 @@ export default function ProfileScreen() {
       },
     ])
   }, [isLoggingOut, performLogout])
-
-  const performDeleteAccount = useCallback(async () => {
-    if (isDeletingAccount) return
-
-    setIsDeletingAccount(true)
-    try {
-      await deleteAccount()
-    } catch (e: any) {
-      Alert.alert('Unable to delete account', e?.message ?? 'Please try again.')
-    } finally {
-      setIsDeletingAccount(false)
-    }
-  }, [deleteAccount, isDeletingAccount])
-
-  const onDeleteAccountPress = useCallback(() => {
-    Alert.alert(
-      'Delete account',
-      'This permanently deletes your account and cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            void performDeleteAccount()
-          },
-        },
-      ]
-    )
-  }, [performDeleteAccount])
 
   const membershipItems = useMemo(
     () =>
@@ -168,15 +136,6 @@ export default function ProfileScreen() {
         isLoggingOut,
       }),
     [isLoggingOut, onLogoutPress]
-  )
-
-  const dangerItems = useMemo(
-    () =>
-      buildDangerZoneItems({
-        onDeleteAccountPress,
-        isDeletingAccount,
-      }),
-    [isDeletingAccount, onDeleteAccountPress]
   )
 
   return (
@@ -254,8 +213,6 @@ export default function ProfileScreen() {
       ) : null}
 
       <View style={styles.bigSpace} />
-
-      <SettingsSection title="⚠️ Danger Zone" items={dangerItems} />
     </Screen>
   )
 }

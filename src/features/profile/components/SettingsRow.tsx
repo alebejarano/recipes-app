@@ -153,7 +153,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.creamDark,
   },
   iconWrapDanger: {
-    backgroundColor: theme.colors.secondary,
+    backgroundColor: theme.colors.accentLight,
   },
 
   iconUpgrade: {

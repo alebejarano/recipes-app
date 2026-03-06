@@ -57,10 +57,12 @@ function UsageProgressRow({
   label,
   value,
   percent,
+  fillColor,
 }: {
   label: string
   value: string
   percent: number
+  fillColor?: string
 }) {
   return (
     <View style={styles.usageRowWrap}>
@@ -69,10 +71,60 @@ function UsageProgressRow({
         <Text style={styles.usageRowValue}>{value}</Text>
       </View>
       <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${Math.min(Math.max(percent, 0), 100)}%` }]} />
+        <View
+          style={[
+            styles.progressFill,
+            {
+              width: `${Math.min(Math.max(percent, 0), 100)}%`,
+              backgroundColor: fillColor ?? theme.colors.accent,
+            },
+          ]}
+        />
       </View>
     </View>
   )
+}
+
+function getFreeUsageProgressColor(percent: number) {
+  if (percent >= 100) return theme.colors.destructive
+  if (percent >= 80) return theme.colors.accent
+  if (percent >= 60) return theme.colors.secondaryForeground
+  return theme.colors.warmGray
+}
+
+function getFreeUsageSummaryMessage(recipesUsagePercent: number, storageUsagePercent: number) {
+  const recipesAtLimit = recipesUsagePercent >= 100
+  const storageAtLimit = storageUsagePercent >= 100
+
+  if (recipesAtLimit && storageAtLimit) {
+    return "Your Free kitchen is full for recipes and storage."
+  }
+
+  if (recipesAtLimit) {
+    return "Your Free kitchen is full for recipes."
+  }
+
+  if (storageAtLimit) {
+    return "Your Free kitchen is full for storage."
+  }
+
+  const highestUsage = Math.max(recipesUsagePercent, storageUsagePercent)
+
+  if (highestUsage < 80) return null
+
+  if (recipesUsagePercent >= 80 && storageUsagePercent >= 80) {
+    return "Recipes and storage are both getting close to full."
+  }
+
+  if (recipesUsagePercent >= 80) {
+    return "You're getting close to the recipe limit on Free."
+  }
+
+  if (storageUsagePercent >= 80) {
+    return "You're getting close to the storage limit on Free."
+  }
+
+  return null
 }
 
 function FeatureList({ items, premium = false }: { items: FeatureItem[]; premium?: boolean }) {
@@ -192,10 +244,7 @@ export default function CurrentPlanScreen({
   }
 
   const usage = buildFreePlanUsageSnapshot(recipesSaved, storageBytesUsed)
-  const usageMessage =
-    usage.recipesUsagePercent >= usage.storageUsagePercent
-      ? usage.recipesUsageMessage
-      : usage.storageUsageMessage
+  const usageMessage = getFreeUsageSummaryMessage(usage.recipesUsagePercent, usage.storageUsagePercent)
   const handleManageExistingRecipes = onManageExistingRecipes ?? onBack
 
   return (
@@ -219,12 +268,14 @@ export default function CurrentPlanScreen({
           label="Recipes saved"
           value={`${recipesSaved} / ${FREE_PLAN_MAX_RECIPES}`}
           percent={usage.recipesUsagePercent}
+          fillColor={getFreeUsageProgressColor(usage.recipesUsagePercent)}
         />
 
         <UsageProgressRow
           label="Storage used"
           value={`${usage.storageMbUsed}MB / ${usage.storageMbLimit}MB`}
           percent={usage.storageUsagePercent}
+          fillColor={getFreeUsageProgressColor(usage.storageUsagePercent)}
         />
 
         <Text style={styles.usageMessage}>{usageMessage}</Text>
@@ -371,7 +422,6 @@ const styles = createThemedStyles((theme) => ({
   progressFill: {
     height: '100%',
     borderRadius: theme.radii.full,
-    backgroundColor: theme.colors.accent,
   },
   usageMessage: {
     marginTop: theme.spacing.xs,

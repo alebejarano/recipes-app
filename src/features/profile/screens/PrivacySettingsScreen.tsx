@@ -1,50 +1,146 @@
-import React from 'react';
+import React, { useCallback, useMemo, useState } from 'react'
+import { Alert, Text } from 'react-native'
 
-import Screen from '@/components/Screen';
-import { createThemedStyles } from '@/styles/createStyles';
+import { useAuth } from '@/features/auth/context/AuthContext'
+import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
+import SettingsSection from '@/features/profile/components/SettingsSection'
+import { createThemedStyles } from '@/styles/createStyles'
 
-import ProfileHeader from '@/features/profile/components/ProfileHeader';
-import SettingsSection from '@/features/profile/components/SettingsSection';
+type PrivacySettingsScreenProps = {
+  onBack: () => void
+}
 
-import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments';
-import { FREE_PLAN_MAX_IMPORT_TOTAL_BYTES } from '@/features/subscription/constants/limits';
+export default function PrivacySettingsScreen({ onBack }: PrivacySettingsScreenProps) {
+  const { user, deleteAccount } = useAuth()
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+  const hasAccount = Boolean(user?.id)
 
-export default function PrivacySettingsScreen() {
-  const importsUsageQuery = useRecipeDocumentUsageSummary();
+  const performDeleteAccount = useCallback(async () => {
+    if (!hasAccount || isDeletingAccount) return
 
-  const totalBytes = importsUsageQuery.data?.totalBytes ?? 0;
-  const maxBytes = FREE_PLAN_MAX_IMPORT_TOTAL_BYTES;
-  const usedMB = totalBytes / (1024 * 1024);
-  const maxMB = maxBytes / (1024 * 1024);
-  const usageLabel = `${usedMB.toFixed(1)} / ${maxMB.toFixed(0)} MB`;
+    setIsDeletingAccount(true)
+    try {
+      await deleteAccount()
+    } catch (error: any) {
+      Alert.alert('Unable to delete account', error?.message ?? 'Please try again.')
+    } finally {
+      setIsDeletingAccount(false)
+    }
+  }, [deleteAccount, hasAccount, isDeletingAccount])
+
+  const onDeleteAccountPress = useCallback(() => {
+    if (!hasAccount || isDeletingAccount) return
+
+    Alert.alert(
+      'Delete account',
+      'This permanently deletes your account and cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            void performDeleteAccount()
+          },
+        },
+      ]
+    )
+  }, [hasAccount, isDeletingAccount, performDeleteAccount])
+
+  const unavailableSubtitle = 'Create an account to manage this setting'
+  const settingsItems = useMemo(
+    () => [
+      {
+        id: 'password',
+        type: 'link' as const,
+        icon: 'lock' as const,
+        title: 'Password',
+        subtitle: hasAccount ? 'Update your password to keep your account secure.' : unavailableSubtitle,
+        onPress: hasAccount
+          ? () => Alert.alert('Password', 'Password update controls are coming soon.')
+          : undefined,
+        disabled: !hasAccount,
+      },
+      {
+        id: 'sessions',
+        type: 'link' as const,
+        icon: 'monitor' as const,
+        title: 'Active sessions',
+        subtitle: hasAccount ? 'See where your account is signed in.' : unavailableSubtitle,
+        onPress: hasAccount
+          ? () => Alert.alert('Active sessions', 'Session management is coming soon.')
+          : undefined,
+        disabled: !hasAccount,
+      },
+      {
+        id: 'export',
+        type: 'link' as const,
+        icon: 'download' as const,
+        title: 'Export recipes & data',
+        subtitle: hasAccount
+          ? 'Download a copy of your recipes and account data.'
+          : unavailableSubtitle,
+        onPress: hasAccount
+          ? () => Alert.alert('Export data', 'Data export is coming soon.')
+          : undefined,
+        disabled: !hasAccount,
+      },
+      {
+        id: 'policy',
+        type: 'link' as const,
+        icon: 'file-text' as const,
+        title: 'Privacy policy',
+        subtitle: 'Learn how we handle and protect your data.',
+        onPress: () => Alert.alert('Privacy policy', 'Privacy policy details will be available soon.'),
+      },
+    ],
+    [hasAccount]
+  )
+  const dangerItems = useMemo(
+    () => [
+      {
+        id: 'delete-account',
+        type: 'link' as const,
+        icon: 'trash-2' as const,
+        title: isDeletingAccount ? 'Deleting account…' : 'Delete account',
+        subtitle: hasAccount
+          ? 'Permanently remove your account and all saved recipes.'
+          : unavailableSubtitle,
+        tone: 'danger' as const,
+        onPress: hasAccount && !isDeletingAccount ? onDeleteAccountPress : undefined,
+        disabled: !hasAccount || isDeletingAccount,
+      },
+    ],
+    [hasAccount, isDeletingAccount, onDeleteAccountPress]
+  )
 
   return (
-    <Screen scroll contentStyle={styles.content}>
-      <ProfileHeader
-        title="Privacy & Security"
+    <ProfileSubpageLayout title="Privacy & Security" onBack={onBack}>
+      <Text style={styles.intro}>
+        Your recipes and account are private. Manage your security settings and control your data
+        here.
+      </Text>
+
+      <SettingsSection
+        title="Settings"
+        items={settingsItems}
       />
 
       <SettingsSection
-        title="Data"
-        subtitle="info to put here for later"
-        rightPillText={usageLabel}
-        items={[
-          {
-            id: 'imports-usage',
-            type: 'link',
-            icon: 'hard-drive',
-            title: 'Delete account',
-            subtitle: 'Delete account, 2FA',
-            showChevron: false,
-          },
-        ]}
+        title="Danger Zone"
+        items={dangerItems}
       />
-    </Screen>
-  );
+    </ProfileSubpageLayout>
+  )
 }
 
 const styles = createThemedStyles((theme) => ({
-  content: {
-    gap: theme.spacing.lg,
+  intro: {
+    marginTop: -theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
   },
-}));
+}))

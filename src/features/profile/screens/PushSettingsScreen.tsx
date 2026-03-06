@@ -1,19 +1,18 @@
 import React, { useState } from 'react'
 
-import Screen from '@/components/Screen'
-import { createThemedStyles } from '@/styles/createStyles'
-
-import ProfileHeader from '@/features/profile/components/ProfileHeader'
+import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
 import SettingsSection from '@/features/profile/components/SettingsSection'
 
-export default function PushSettingsScreen() {
+type PushSettingsScreenProps = {
+  onBack: () => void
+}
+
+export default function PushSettingsScreen({ onBack }: PushSettingsScreenProps) {
   const [recipeReminders, setRecipeReminders] = useState(true)
   const [activityAlerts, setActivityAlerts] = useState(false)
 
   return (
-    <Screen scroll contentStyle={styles.content}>
-      <ProfileHeader title="Push Settings" />
-
+    <ProfileSubpageLayout title="Push Settings" onBack={onBack}>
       <SettingsSection
         title="Notifications"
         items={[
@@ -37,12 +36,6 @@ export default function PushSettingsScreen() {
           },
         ]}
       />
-    </Screen>
+    </ProfileSubpageLayout>
   )
 }
-
-const styles = createThemedStyles((theme) => ({
-  content: {
-    gap: theme.spacing.lg,
-  },
-}))

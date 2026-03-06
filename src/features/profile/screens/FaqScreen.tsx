@@ -3,8 +3,8 @@ import { router, useSegments } from 'expo-router'
 import React, { useMemo, useState } from 'react'
 import { Alert, Pressable, Text, TextInput, View } from 'react-native'
 
-import Screen from '@/components/Screen'
 import { FAQ_SECTIONS } from '@/features/help/content/faq'
+import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
 import { createThemedStyles } from '@/styles/createStyles'
 
 export default function FaqScreen() {
@@ -29,11 +29,6 @@ export default function FaqScreen() {
   }, [query])
 
   const onPressBack = () => {
-    if (router.canGoBack()) {
-      router.back()
-      return
-    }
-
     if (routeMode === 'dev') {
       router.replace('/(dev)/(tabs)/profile')
       return
@@ -48,23 +43,7 @@ export default function FaqScreen() {
   }
 
   return (
-    <Screen scroll contentStyle={styles.content}>
-      <View style={styles.headerWrap}>
-        <Pressable
-          onPress={onPressBack}
-          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Feather name="arrow-left" size={22} style={styles.backIcon} />
-        </Pressable>
-
-        <View style={styles.headerTextWrap}>
-          <Text style={styles.title}>Help Center</Text>
-          <Text style={styles.subtitle}>Find answers quickly</Text>
-        </View>
-      </View>
-
+    <ProfileSubpageLayout title="Help Center" subtitle="Find answers quickly" onBack={onPressBack}>
       <View style={styles.searchWrap}>
         <Feather name="search" size={20} style={styles.searchIcon} />
         <TextInput
@@ -132,45 +111,13 @@ export default function FaqScreen() {
           <Text style={styles.supportButtonText}>Contact Support</Text>
         </Pressable>
       </View>
-    </Screen>
+    </ProfileSubpageLayout>
   )
 }
 
 const styles = createThemedStyles((theme) => ({
   content: {
     gap: theme.spacing.lg,
-  },
-  headerWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.md,
-  },
-  backButton: {
-    width: 48,
-    height: 48,
-    borderRadius: theme.radii.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.creamDark,
-  },
-  backIcon: {
-    color: theme.colors.foreground,
-  },
-  headerTextWrap: {
-    flex: 1,
-    gap: theme.spacing.xxs,
-  },
-  title: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.display,
-    lineHeight: theme.lineHeight.display,
-    color: theme.colors.foreground,
-  },
-  subtitle: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.mutedForeground,
   },
   searchWrap: {
     height: 52,

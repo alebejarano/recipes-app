@@ -1,11 +1,10 @@
-import { Feather } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import React, { useMemo, useState } from 'react'
 import { Alert, Pressable, Text, TextInput, View } from 'react-native'
 
-import Screen from '@/components/Screen'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
+import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
 import { createThemedStyles } from '@/styles/createStyles'
 
 export default function EditProfileScreen() {
@@ -69,19 +68,10 @@ export default function EditProfileScreen() {
   }
 
   return (
-    <Screen scroll={false} contentStyle={styles.content}>
-      <View style={styles.topRow}>
-        <Pressable
-          onPress={() => router.replace(profileRoute)}
-          style={styles.iconButton}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Feather name="arrow-left" size={18} style={styles.icon} />
-        </Pressable>
-
-        <Text style={styles.title}>Edit Profile</Text>
-
+    <ProfileSubpageLayout
+      title="Edit Profile"
+      onBack={() => router.replace(profileRoute)}
+      headerRight={
         <Pressable
           onPress={onSave}
           style={({ pressed }) => [
@@ -95,7 +85,8 @@ export default function EditProfileScreen() {
         >
           <Text style={styles.saveText}>{saving ? 'Saving...' : 'Save'}</Text>
         </Pressable>
-      </View>
+      }
+    >
 
       <View style={styles.avatarWrap}>
         <View style={styles.avatar}>
@@ -132,35 +123,13 @@ export default function EditProfileScreen() {
           onSubmitEditing={onSave}
         />
       </View>
-    </Screen>
+    </ProfileSubpageLayout>
   )
 }
 
 const styles = createThemedStyles((theme) => ({
   content: {
     gap: theme.spacing.xl,
-  },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: theme.radii.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.creamDark,
-  },
-  icon: {
-    color: theme.colors.foreground,
-  },
-  title: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xxl,
-    lineHeight: theme.lineHeight.xxl,
-    color: theme.colors.foreground,
   },
   saveButton: {
     minWidth: 72,
