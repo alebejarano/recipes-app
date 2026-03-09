@@ -7,6 +7,7 @@ import {
     MaterialCommunityIcons,
     MaterialIcons,
 } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { usePostHog } from 'posthog-react-native';
 import React, { useState } from 'react';
 import {
@@ -66,6 +67,7 @@ const options = [
 export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
     const [selected, setSelected] = useState<string[]>([]);
     const posthog = usePostHog();
+    const router = useRouter();
 
     const toggleOption = (id: string) => {
         setSelected(prev => {
@@ -91,7 +93,7 @@ export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
                 <View style={styles.content}>
                     {/* Header */}
                     <View style={styles.header}>
-                        <Text style={styles.title}>What brings you here?</Text>
+                        <Text style={styles.title}>What brings you here today?</Text>
                         <Text style={styles.subtitle}>
                             Select all that resonate with you.
                         </Text>
@@ -154,6 +156,21 @@ export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
                                 </TouchableOpacity>
                             );
                         })}
+
+                        <View style={styles.privacyTextWrapper}>
+                            <Text style={styles.privacyText}>
+                                Anonymous feedback to help improve the app.
+                            </Text>
+                            <Text style={styles.privacyText}>
+                                Learn more in our{' '}
+                                <Text
+                                    style={styles.privacyLink}
+                                    onPress={() => router.push('/(public)/privacy-policy')}
+                                >
+                                    Privacy Policy
+                                </Text>
+                            </Text>
+                        </View>
                     </ScrollView>
                 </View>
 
@@ -220,6 +237,20 @@ const styles = createThemedStyles(theme => ({
 
     optionsList: {
         paddingBottom: theme.spacing.xl,
+    },
+    privacyTextWrapper: {
+        marginTop: theme.spacing.sm,
+        gap: theme.spacing.xs,
+    },
+    privacyText: {
+        fontFamily: theme.fontFamily.regular,
+        fontSize: theme.fontSize.sm,
+        lineHeight: theme.lineHeight.base,
+        color: theme.colors.mutedForeground,
+    },
+    privacyLink: {
+        fontFamily: theme.fontFamily.medium,
+        color: theme.colors.primary,
     },
 
     optionCard: {

@@ -36,11 +36,11 @@ export default function SpaceReadyScreen({
           </View>
 
           <Text style={styles.title}>
-            Your recipe space{'\n'}is ready.
+            Your Kitchen is ready.
           </Text>
 
           <Text style={styles.subtitle}>
-            Add your first recipe now, or continue without an account to go home.
+            Start saving your favorite recipes whenever you like.
           </Text>
         </View>
       </View>
@@ -64,6 +64,10 @@ export default function SpaceReadyScreen({
         >
           See the app first
         </Button>
+
+        <Text style={styles.infoText}>
+          Your recipes are stored on your device unless you create an account.
+        </Text>
       </View>
     </View>
   );
@@ -147,5 +151,13 @@ const styles = createThemedStyles(theme => ({
   },
   skipButton: {
     marginTop: theme.spacing.sm,
+  },
+  infoText: {
+    marginTop: theme.spacing.sm,
+    textAlign: 'center',
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
   },
 }));
