@@ -1,3 +1,4 @@
+import { router } from 'expo-router'
 import React, { useCallback, useMemo, useState } from 'react'
 import { Alert, Text } from 'react-native'
 
@@ -91,7 +92,15 @@ export default function PrivacySettingsScreen({ onBack }: PrivacySettingsScreenP
         icon: 'file-text' as const,
         title: 'Privacy policy',
         subtitle: 'Learn how we handle and protect your data.',
-        onPress: () => Alert.alert('Privacy policy', 'Privacy policy details will be available soon.'),
+        onPress: () => router.push('/privacy-policy'),
+      },
+      {
+        id: 'terms',
+        type: 'link' as const,
+        icon: 'file-text' as const,
+        title: 'Terms of service',
+        subtitle: 'Read the rules and conditions for using the app.',
+        onPress: () => router.push('/(public)/terms'),
       },
     ],
     [hasAccount]

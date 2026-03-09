@@ -168,6 +168,13 @@ export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
                                     onPress={() => router.push('/(public)/privacy-policy')}
                                 >
                                     Privacy Policy
+                                </Text>{' '}
+                                and{' '}
+                                <Text
+                                    style={styles.privacyLink}
+                                    onPress={() => router.push('/terms')}
+                                >
+                                    Terms of Service
                                 </Text>
                             </Text>
                         </View>
