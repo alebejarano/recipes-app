@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons'
-import { File } from 'expo-file-system'
+import { File } from '@/lib/fileSystem'
 import { getContentUriAsync } from 'expo-file-system/legacy'
 import * as IntentLauncher from 'expo-intent-launcher'
 import * as Linking from 'expo-linking'

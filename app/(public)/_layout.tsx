@@ -7,11 +7,12 @@ export default function PublicLayout() {
   const segments = useSegments()
   const allowDevPreview = __DEV__ && dev === '1'
   const currentLeaf = segments[1]
-  const isLegalPage = currentLeaf === 'privacy-policy' || currentLeaf === 'terms'
+  const isAllowedWhileAuthenticated =
+    currentLeaf === 'privacy-policy' || currentLeaf === 'terms' || currentLeaf === 'update-password'
 
   if (isLoading) return null
 
-  if (session && !allowDevPreview && !isLegalPage) {
+  if (session && !allowDevPreview && !isAllowedWhileAuthenticated) {
     return <Redirect href="/(auth)/(tabs)" />
   }
 

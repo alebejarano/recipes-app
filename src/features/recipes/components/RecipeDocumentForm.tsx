@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons'
 import * as DocumentPicker from 'expo-document-picker'
-import { File } from 'expo-file-system'
+import { File } from '@/lib/fileSystem'
 import React, {
   forwardRef,
   useCallback,

@@ -58,7 +58,7 @@ export default function PrivacySettingsScreen({ onBack }: PrivacySettingsScreenP
         title: 'Password',
         subtitle: hasAccount ? 'Update your password to keep your account secure.' : unavailableSubtitle,
         onPress: hasAccount
-          ? () => Alert.alert('Password', 'Password update controls are coming soon.')
+          ? () => router.push('/(auth)/settings/password')
           : undefined,
         disabled: !hasAccount,
       },

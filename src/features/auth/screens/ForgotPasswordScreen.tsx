@@ -15,27 +15,42 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Button from '@/components/Button';
+import { useAuth } from '@/features/auth/context/AuthContext';
+import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email';
 import { createThemedStyles } from '@/styles/createStyles';
 
 export default function ForgotPasswordScreen() {
     const router = useRouter();
+    const { sendPasswordResetEmail } = useAuth();
     const [email, setEmail] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [sent, setSent] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    const handleSubmit = () => {
-        if (!email) {
-            console.warn('Email required');
+    const handleSubmit = async () => {
+        const normalizedEmail = normalizeEmail(email);
+        if (!normalizedEmail) {
+            setError('Email is required.');
+            return;
+        }
+
+        if (!isValidEmail(normalizedEmail)) {
+            setError('Please enter a valid email address.');
             return;
         }
 
         setSubmitting(true);
+        setError(null);
+        setSent(false);
 
-        // TODO: call your backend reset endpoint
-        setTimeout(() => {
-            setSubmitting(false);
+        try {
+            await sendPasswordResetEmail(normalizedEmail);
             setSent(true);
-        }, 1000);
+        } catch (submitError: any) {
+            setError(submitError?.message ?? 'Unable to send reset link.');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -94,13 +109,22 @@ export default function ForgotPasswordScreen() {
                     </View>
 
                     <Button
-                        onPress={handleSubmit}
+                        onPress={() => {
+                            void handleSubmit();
+                        }}
                         disabled={submitting}
+                        loading={submitting}
                         size="lg"
                         style={styles.submitButton}
                     >
-                        {submitting ? 'Sending...' : 'Send reset link'}
+                        Send reset link
                     </Button>
+
+                    {error ? (
+                        <Text style={styles.errorText}>
+                            {error}
+                        </Text>
+                    ) : null}
 
                     {sent && (
                         <Text style={styles.infoText}>
@@ -214,6 +238,14 @@ const styles = createThemedStyles(theme => ({
         fontSize: theme.fontSize.xs,
         lineHeight: theme.lineHeight.sm,
         color: theme.colors.mutedForeground,
+        textAlign: 'center',
+    },
+    errorText: {
+        marginTop: theme.spacing.lg,
+        fontFamily: theme.fontFamily.regular,
+        fontSize: theme.fontSize.xs,
+        lineHeight: theme.lineHeight.sm,
+        color: theme.colors.destructive,
         textAlign: 'center',
     },
 }));

@@ -1,7 +1,7 @@
 // src/features/recipes/components/RecipeForm.tsx
 import { Feather } from '@expo/vector-icons'
 import { Image } from 'expo-image'
-import { File } from 'expo-file-system'
+import { File } from '@/lib/fileSystem'
 import * as ImagePicker from 'expo-image-picker'
 import React, {
   forwardRef,

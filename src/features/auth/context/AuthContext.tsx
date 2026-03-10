@@ -2,10 +2,15 @@
 
 import { supabase } from '@/lib/supabase'
 import type { AuthResponse, Session, User } from '@supabase/supabase-js'
+import * as Linking from 'expo-linking'
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { usePostHog } from 'posthog-react-native'
 import { tagLocalDataAsMigratable } from '@/features/storage/localAccountLinking'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
+import {
+  getPasswordRecoveryRedirectUrl,
+  getPasswordRecoverySessionFromUrl,
+} from '@/features/auth/utils/passwordRecovery'
 
 type AuthContextValue = {
   session: Session | null
@@ -16,6 +21,8 @@ type AuthContextValue = {
   register: (email: string, password: string) => Promise<AuthResponse['data']>
   updateProfileName: (name: string) => Promise<void>
   updateEmailAddress: (email: string) => Promise<{ pendingEmail: string | null }>
+  sendPasswordResetEmail: (email: string) => Promise<void>
+  updatePassword: (password: string) => Promise<void>
   deleteAccount: () => Promise<void>
   logout: () => Promise<void>
 }
@@ -61,6 +68,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       sub.subscription.unsubscribe()
     }
   }, [])
+
+  const handleIncomingAuthUrl = useCallback(async (url: string | null) => {
+    if (!url) return
+
+    const recoverySession = getPasswordRecoverySessionFromUrl(url)
+    if (!recoverySession) return
+
+    const { error } = await supabase.auth.setSession({
+      access_token: recoverySession.accessToken,
+      refresh_token: recoverySession.refreshToken,
+    })
+
+    if (error) {
+      throw error
+    }
+  }, [])
+
+  useEffect(() => {
+    void Linking.getInitialURL()
+      .then((url) => handleIncomingAuthUrl(url))
+      .catch(() => {
+        // Ignore invalid boot URLs and continue app startup.
+      })
+
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      void handleIncomingAuthUrl(url).catch(() => {
+        // Ignore malformed or expired auth links and leave UI to surface next steps.
+      })
+    })
+
+    return () => {
+      subscription.remove()
+    }
+  }, [handleIncomingAuthUrl])
 
   useEffect(() => {
     if (!posthog) return
@@ -152,6 +193,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  const sendPasswordResetEmail = useCallback(async (email: string) => {
+    const normalized = normalizeEmail(email)
+    if (!normalized) throw new Error('Email is required')
+    if (!isValidEmail(normalized)) throw new Error('Please enter a valid email address.')
+
+    const { error } = await supabase.auth.resetPasswordForEmail(normalized, {
+      redirectTo: getPasswordRecoveryRedirectUrl(),
+    })
+
+    if (error) throw error
+  }, [])
+
+  const updatePassword = useCallback(async (password: string) => {
+    const trimmed = password.trim()
+    if (!trimmed) throw new Error('Password is required')
+
+    const { data, error } = await supabase.auth.updateUser({
+      password: trimmed,
+    })
+
+    if (error) throw error
+
+    if (data.user) {
+      setSession((prev) => (prev ? { ...prev, user: data.user } : prev))
+    }
+  }, [])
+
   const logout = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
@@ -214,10 +282,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       register,
       updateProfileName,
       updateEmailAddress,
+      sendPasswordResetEmail,
+      updatePassword,
       deleteAccount,
       logout,
     }),
-    [session, isLoading, updateEmailAddress, deleteAccount]
+    [session, isLoading, updateEmailAddress, sendPasswordResetEmail, updatePassword, deleteAccount]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

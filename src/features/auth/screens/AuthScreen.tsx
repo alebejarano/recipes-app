@@ -13,7 +13,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
-import OAuthButtons from '@/features/auth/components/OAuthButtons'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import { createThemedStyles } from '@/styles/createStyles'
@@ -125,16 +124,6 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
   const handleForgotPassword = () => {
     router.push('/(public)/forgot-password')
-  }
-
-  const handleAppleAuth = () => {
-    // TODO
-    console.log('Apple auth')
-  }
-
-  const handleGoogleAuth = () => {
-    // TODO
-    console.log('Google auth')
   }
 
   const goBackToGetStarted = () => {
@@ -301,9 +290,6 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
               <Text style={styles.toggleAction}>{isLogin ? 'Sign up' : 'Sign in'}</Text>
             </TouchableOpacity>
           </View>
-
-          {/* OAuth block */}
-          <OAuthButtons onApplePress={handleAppleAuth} onGooglePress={handleGoogleAuth} />
 
         </ScrollView>
       </KeyboardAvoidingView>

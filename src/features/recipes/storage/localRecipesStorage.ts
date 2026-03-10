@@ -1,6 +1,6 @@
 import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
 import { getAllAsync, getFirstAsync, runSqlAsync, runSqlBatchAsync } from '@/lib/sqlite'
-import { File } from 'expo-file-system'
+import { File } from '@/lib/fileSystem'
 
 import type { Recipe } from '@/features/recipes/api/recipesRepo'
 import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'

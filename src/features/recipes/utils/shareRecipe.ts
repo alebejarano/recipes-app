@@ -1,4 +1,4 @@
-import { Directory, File, Paths } from 'expo-file-system'
+import { Directory, File, Paths } from '@/lib/fileSystem'
 import * as Sharing from 'expo-sharing'
 
 export type ShareRecipeInput = {

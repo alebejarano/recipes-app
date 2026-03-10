@@ -1,4 +1,4 @@
-import { Directory, File, Paths } from 'expo-file-system'
+import { Directory, File, Paths } from '@/lib/fileSystem'
 import { Platform } from 'react-native'
 
 import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
