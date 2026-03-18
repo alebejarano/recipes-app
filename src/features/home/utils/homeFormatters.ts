@@ -1,4 +1,22 @@
+import { inferMealTimes } from '@/features/recipes/types/mealTimes'
 export type MealTime = 'breakfast' | 'lunch' | 'snack' | 'dinner';
+
+type HomePickRecipe = {
+  title: string;
+  subtitle?: string | null;
+  folders?: { name: string }[];
+  mealTimes?: string[];
+  updatedAt?: string;
+  createdAt: string;
+};
+
+type RecommendedPick<TRecipe> = {
+  label: string;
+  recipe: TRecipe;
+};
+
+const EXPLICIT_MATCH_SCORE = 100;
+const GENERIC_LABEL = 'Recommended for you';
 
 export function getMealTime(now: Date): MealTime {
   const h = now.getHours();
@@ -19,6 +37,40 @@ export function getPickLabel(meal: MealTime) {
     case 'dinner':
       return 'Dinner pick';
   }
+}
+
+function getMealInferenceScore(recipe: HomePickRecipe, meal: MealTime) {
+  const normalizedMealTimes = recipe.mealTimes ?? [];
+  if (normalizedMealTimes.includes(meal)) return EXPLICIT_MATCH_SCORE;
+  const inferredMealTimes = inferMealTimes(recipe);
+  return inferredMealTimes.includes(meal) ? 20 : 0;
+}
+
+export function getRecommendedPick<TRecipe extends HomePickRecipe>(
+  recipes: TRecipe[],
+  now: Date
+): RecommendedPick<TRecipe> | null {
+  if (recipes.length === 0) return null;
+
+  const meal = getMealTime(now);
+  const ranked = [...recipes]
+    .map((recipe) => ({
+      recipe,
+      score: getMealInferenceScore(recipe, meal),
+      updatedAt: new Date(recipe.updatedAt ?? recipe.createdAt ?? 0).getTime(),
+    }))
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return b.updatedAt - a.updatedAt;
+    });
+
+  const best = ranked[0];
+  if (!best) return null;
+
+  return {
+    label: best.score >= 20 ? getPickLabel(meal) : GENERIC_LABEL,
+    recipe: best.recipe,
+  };
 }
 
 export function formatRelativeDay(iso?: string) {

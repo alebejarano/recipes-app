@@ -6,6 +6,11 @@ import {
   RECIPE_IMAGE_MASTER_MAX_FILE_BYTES,
   RECIPE_IMAGE_MASTER_TOO_LARGE_MESSAGE,
 } from '@/features/subscription/constants/limits'
+import {
+  normalizeMealTimes,
+  resolveMealTimes,
+  type RecipeMealTime,
+} from '@/features/recipes/types/mealTimes'
 import type { RecipeFormSubmitValues } from '../components/RecipeForm'
 
 const REQUEST_TIMEOUT_MS = 10000
@@ -39,6 +44,8 @@ export type Recipe = {
   ingredients: RecipeIngredient[]
   steps: string[]
   folders: RecipeFolder[]
+  mealTimes: RecipeMealTime[]
+  mealTimesInferred?: boolean
 
   prepTimeMinutes: number | null
   cookTimeMinutes: number | null
@@ -79,6 +86,7 @@ type RecipeRow = {
   updated_at: string
   recipe_ingredients?: RecipeIngredientRow[] | null
   recipe_folders?: RecipeFolderJoinRow[] | null
+  meal_times?: string[] | null
 }
 
 type RecipeIngredientRow = {
@@ -147,7 +155,45 @@ function serializeSteps(steps: string[] | null | undefined): string | null {
   return normalized.length ? normalized.join('\n') : null
 }
 
+function resolveRecipeMealTimes(input: {
+  mealTimes?: readonly string[] | null
+  title?: string | null
+  subtitle?: string | null
+  folders?: { name: string }[] | null
+}): RecipeMealTime[] {
+  return resolveMealTimes(input.mealTimes, {
+    title: input.title,
+    subtitle: input.subtitle,
+    folders: input.folders,
+  })
+}
+
+async function backfillRecipeMealTimesIfNeeded(
+  recipe: Recipe,
+  hadExplicitMealTimes = false
+) {
+  const inferredMealTimes = resolveRecipeMealTimes(recipe)
+  if (hadExplicitMealTimes || inferredMealTimes.length === 0) {
+    return recipe
+  }
+
+  recipe.mealTimes = inferredMealTimes
+  recipe.mealTimesInferred = true
+
+  try {
+    await supabase
+      .from('recipes')
+      .update({ meal_times: inferredMealTimes })
+      .eq('id', recipe.id)
+  } catch {
+    // Keep the inferred meal times in memory even if persistence fails.
+  }
+
+  return recipe
+}
+
 function mapRecipe(row: RecipeRow): Recipe {
+  const folders = mapFolders(row.recipe_folders)
   return {
     id: row.id,
     userId: row.user_id,
@@ -158,7 +204,9 @@ function mapRecipe(row: RecipeRow): Recipe {
     imageUrl: row.image_url ?? null,
     ingredients: mapIngredients(row.recipe_ingredients),
     steps: parseStepsText(row.steps_text),
-    folders: mapFolders(row.recipe_folders),
+    folders,
+    mealTimes: normalizeMealTimes(row.meal_times),
+    mealTimesInferred: false,
     prepTimeMinutes: row.prep_time_minutes,
     cookTimeMinutes: row.cook_time_minutes,
     servings: row.servings,
@@ -222,6 +270,12 @@ export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
       description: input.description,
       emoji: input.emoji,
       image_url: input.imageUrl,
+      meal_times: resolveRecipeMealTimes({
+        mealTimes: input.mealTimes,
+        title: input.title,
+        subtitle: input.subtitle,
+        folders: (input.folders ?? []).map((name) => ({ name })),
+      }),
       steps_text: serializeSteps(input.steps),
       prep_time_minutes: input.prepTimeMinutes,
       cook_time_minutes: input.cookTimeMinutes,
@@ -236,6 +290,7 @@ export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
       description,
       emoji,
       image_url,
+      meal_times,
       steps_text,
       prep_time_minutes,
       cook_time_minutes,
@@ -295,6 +350,7 @@ export async function getRecipeById(id: string): Promise<Recipe> {
         description,
         emoji,
         image_url,
+        meal_times,
         steps_text,
         prep_time_minutes,
         cook_time_minutes,
@@ -327,7 +383,11 @@ export async function getRecipeById(id: string): Promise<Recipe> {
   if (error) throw error
   if (!data) throw new Error('Recipe not found')
 
-  return mapRecipe(data as RecipeRow)
+  const recipeRow = data as RecipeRow
+  return backfillRecipeMealTimesIfNeeded(
+    mapRecipe(recipeRow),
+    normalizeMealTimes(recipeRow.meal_times).length > 0
+  )
 }
 
 /**
@@ -351,6 +411,7 @@ export async function listRecipes(params?: {
       description,
       emoji,
       image_url,
+      meal_times,
       steps_text,
       prep_time_minutes,
       cook_time_minutes,
@@ -385,7 +446,15 @@ export async function listRecipes(params?: {
   const { data, error } = await query
   if (error) throw error
 
-  return (data ?? []).map((row) => mapRecipe(row as RecipeRow))
+  return Promise.all(
+    (data ?? []).map((row) => {
+      const recipeRow = row as RecipeRow
+      return backfillRecipeMealTimesIfNeeded(
+        mapRecipe(recipeRow),
+        normalizeMealTimes(recipeRow.meal_times).length > 0
+      )
+    })
+  )
 }
 
 export type RecipeTagSuggestion = { label: string; count: number }
@@ -404,6 +473,12 @@ export async function updateRecipe(id: string, input: UpdateRecipeInput): Promis
       description: input.description,
       emoji: input.emoji,
       image_url: input.imageUrl,
+      meal_times: resolveRecipeMealTimes({
+        mealTimes: input.mealTimes,
+        title: input.title,
+        subtitle: input.subtitle,
+        folders: (input.folders ?? []).map((name) => ({ name })),
+      }),
       steps_text: serializeSteps(input.steps),
       prep_time_minutes: input.prepTimeMinutes,
       cook_time_minutes: input.cookTimeMinutes,
@@ -419,6 +494,7 @@ export async function updateRecipe(id: string, input: UpdateRecipeInput): Promis
       description,
       emoji,
       image_url,
+      meal_times,
       steps_text,
       prep_time_minutes,
       cook_time_minutes,

@@ -19,6 +19,7 @@ const TABLE_SETUP_STATEMENTS = [
       steps_text TEXT,
       ingredients_json TEXT NOT NULL,
       folders_json TEXT NOT NULL,
+      meal_times_json TEXT NOT NULL DEFAULT '[]',
       prep_time_minutes INTEGER,
       cook_time_minutes INTEGER,
       servings INTEGER,
@@ -129,6 +130,7 @@ function normalizeRecipeRow(row: any) {
     steps_text: stepsText,
     ingredients_json: normalizeArrayJson(row.ingredients),
     folders_json: normalizeArrayJson(row.folders),
+    meal_times_json: normalizeArrayJson(row.meal_times ?? row.mealTimes),
     prep_time_minutes: normalizeNumber(row.prep_time_minutes) ?? normalizeNumber(row.prepTimeMinutes),
     cook_time_minutes: normalizeNumber(row.cook_time_minutes) ?? normalizeNumber(row.cookTimeMinutes),
     servings: normalizeNumber(row.servings),
@@ -200,9 +202,18 @@ async function ensureLocalNotesPinnedColumn() {
   await runSqlAsync('CREATE INDEX IF NOT EXISTS local_notes_pinned_at_idx ON local_notes(pinned_at);')
 }
 
+async function ensureLocalRecipesMealTimesColumn() {
+  const columns = await getAllAsync<{ name: string }>('PRAGMA table_info(local_recipes);')
+  const hasMealTimesJson = columns.some((column) => column.name === 'meal_times_json')
+  if (!hasMealTimesJson) {
+    await runSqlAsync("ALTER TABLE local_recipes ADD COLUMN meal_times_json TEXT NOT NULL DEFAULT '[]';")
+  }
+}
+
 export async function migrateLocalAsyncStorageToSqlite() {
   await runSqlBatchAsync(TABLE_SETUP_STATEMENTS)
   await ensureLocalNotesPinnedColumn()
+  await ensureLocalRecipesMealTimesColumn()
 
   const alreadyDone = await AsyncStorage.getItem(MIGRATION_DONE_KEY)
   if (alreadyDone === '1') return
@@ -221,11 +232,11 @@ export async function migrateLocalAsyncStorageToSqlite() {
     sql: `INSERT OR IGNORE INTO local_recipes
       (
         id, title, subtitle, description, emoji, image_url, steps_text,
-        ingredients_json, folders_json, prep_time_minutes, cook_time_minutes,
-        servings, created_at, updated_at, deleted_at, owner_user_id, cloud_id,
-        dirty, version, last_synced_at
+        ingredients_json, folders_json, meal_times_json, prep_time_minutes,
+        cook_time_minutes, servings, created_at, updated_at, deleted_at,
+        owner_user_id, cloud_id, dirty, version, last_synced_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     params: [
       row.id,
       row.title,
@@ -236,6 +247,7 @@ export async function migrateLocalAsyncStorageToSqlite() {
       row.steps_text,
       row.ingredients_json,
       row.folders_json,
+      row.meal_times_json,
       row.prep_time_minutes,
       row.cook_time_minutes,
       row.servings,

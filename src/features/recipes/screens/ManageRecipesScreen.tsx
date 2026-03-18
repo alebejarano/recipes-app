@@ -1,14 +1,16 @@
 import { Feather } from '@expo/vector-icons'
 import { router, useLocalSearchParams, useSegments } from 'expo-router'
 import React, { useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Alert, FlatList, Pressable, Text, View } from 'react-native'
+import { ActivityIndicator, Alert, FlatList, Pressable, Text, TextInput, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import Screen from '@/components/Screen'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
+import MealTimeChip from '@/features/recipes/components/MealTimeChip'
 import { useStrategyDeleteRecipe, useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
+import { RECIPE_MEAL_TIMES, type RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 type ManageRecipesScreenProps = {
@@ -43,6 +45,8 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
   const deleteRecipeMutation = useStrategyDeleteRecipe(resolvedMode)
 
   const [sortMode, setSortMode] = useState<SortMode>('oldest')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeMealTime, setActiveMealTime] = useState<RecipeMealTime | null>(null)
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedRecipeIds, setSelectedRecipeIds] = useState<string[]>([])
   const [isBulkDeleting, setIsBulkDeleting] = useState(false)
@@ -50,8 +54,32 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
 
   const recipeData = useMemo(() => recipesQuery.data ?? [], [recipesQuery.data])
 
+  const filteredRecipes = useMemo(() => {
+    const normalizedSearch = searchQuery.trim().toLowerCase()
+
+    return recipeData.filter((recipe) => {
+      if (activeMealTime && !(recipe.mealTimes ?? []).includes(activeMealTime)) {
+        return false
+      }
+
+      if (!normalizedSearch) return true
+
+      const searchableText = [
+        recipe.title,
+        recipe.subtitle ?? '',
+        recipe.description ?? '',
+        ...(recipe.folders ?? []).map((folder) => folder.name),
+        ...(recipe.mealTimes ?? []),
+      ]
+        .join(' ')
+        .toLowerCase()
+
+      return searchableText.includes(normalizedSearch)
+    })
+  }, [activeMealTime, recipeData, searchQuery])
+
   const sortedRecipes = useMemo(() => {
-    const list = [...recipeData]
+    const list = [...filteredRecipes]
     if (sortMode === 'oldest') {
       list.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
       return list
@@ -70,7 +98,7 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
       return scoreB - scoreA
     })
     return list
-  }, [recipeData, sortMode])
+  }, [filteredRecipes, sortMode])
 
   useEffect(() => {
     if (!isSelectionMode) {
@@ -213,27 +241,69 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
       </View>
 
       {!isSelectionMode ? (
-        <View style={styles.sortRow}>
-          <Pressable
-            onPress={() => setSortMode('oldest')}
-            style={[styles.sortPill, sortMode === 'oldest' && styles.sortPillActive]}
-            accessibilityRole="button"
-            accessibilityLabel="Sort recipes by oldest"
-          >
-            <Text style={[styles.sortText, sortMode === 'oldest' && styles.sortTextActive]}>
-              Oldest
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setSortMode('largest')}
-            style={[styles.sortPill, sortMode === 'largest' && styles.sortPillActive]}
-            accessibilityRole="button"
-            accessibilityLabel="Sort recipes by largest"
-          >
-            <Text style={[styles.sortText, sortMode === 'largest' && styles.sortTextActive]}>
-              Largest
-            </Text>
-          </Pressable>
+        <View style={styles.controlsBlock}>
+          <View style={styles.searchWrap}>
+            <Feather name="search" size={16} color={styles.searchIcon.color} />
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search titles, folders, meal times..."
+              placeholderTextColor={styles.searchPlaceholder.color}
+              style={styles.searchInput}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="search"
+            />
+            {searchQuery ? (
+              <Pressable
+                onPress={() => setSearchQuery('')}
+                accessibilityRole="button"
+                accessibilityLabel="Clear search"
+                style={styles.clearSearchButton}
+              >
+                <Feather name="x" size={14} color={styles.clearSearchIcon.color} />
+              </Pressable>
+            ) : null}
+          </View>
+
+          <View style={styles.filterSection}>
+            <Text style={styles.filterLabel}>Meal time</Text>
+            <View style={styles.filterChipsRow}>
+              {RECIPE_MEAL_TIMES.map((mealTime) => (
+                <MealTimeChip
+                  key={mealTime}
+                  mealTime={mealTime}
+                  selected={activeMealTime === mealTime}
+                  onPress={() =>
+                    setActiveMealTime((current) => (current === mealTime ? null : mealTime))
+                  }
+                />
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.sortRow}>
+            <Pressable
+              onPress={() => setSortMode('oldest')}
+              style={[styles.sortPill, sortMode === 'oldest' && styles.sortPillActive]}
+              accessibilityRole="button"
+              accessibilityLabel="Sort recipes by oldest"
+            >
+              <Text style={[styles.sortText, sortMode === 'oldest' && styles.sortTextActive]}>
+                Oldest
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setSortMode('largest')}
+              style={[styles.sortPill, sortMode === 'largest' && styles.sortPillActive]}
+              accessibilityRole="button"
+              accessibilityLabel="Sort recipes by largest"
+            >
+              <Text style={[styles.sortText, sortMode === 'largest' && styles.sortTextActive]}>
+                Largest
+              </Text>
+            </Pressable>
+          </View>
         </View>
       ) : null}
 
@@ -412,9 +482,62 @@ const styles = createThemedStyles((theme) => ({
   sortRow: {
     flexDirection: 'row',
     gap: theme.spacing.xs,
+  },
+  controlsBlock: {
+    gap: theme.spacing.sm,
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.md,
     paddingBottom: theme.spacing.xs,
+  },
+  searchWrap: {
+    minHeight: 44,
+    borderRadius: theme.radii.full,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    paddingHorizontal: theme.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  searchIcon: {
+    color: theme.colors.mutedForeground,
+  },
+  searchPlaceholder: {
+    color: theme.colors.mutedForeground,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.foreground,
+    paddingVertical: theme.spacing.sm,
+  },
+  clearSearchButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.muted,
+  },
+  clearSearchIcon: {
+    color: theme.colors.mutedForeground,
+  },
+  filterSection: {
+    gap: theme.spacing.xs,
+  },
+  filterLabel: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.mutedForeground,
+  },
+  filterChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.xs,
   },
   sortPill: {
     paddingHorizontal: theme.spacing.sm,

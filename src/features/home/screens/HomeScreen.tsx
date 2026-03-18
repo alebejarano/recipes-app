@@ -27,6 +27,7 @@ import { useShoppingListStore } from '@/features/shopping-list/store/useShopping
 import { useStrategyNotesList } from '@/features/notes/hooks/useStrategyNotes';
 import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes';
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode';
+import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import {
   FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
   FREE_PLAN_MAX_RECIPES,
@@ -35,7 +36,7 @@ import {
 import {
   formatRelativeDay,
   getMealTime,
-  getPickLabel,
+  getRecommendedPick,
   sortMostRecent,
 } from '@/features/home/utils/homeFormatters';
 
@@ -52,7 +53,7 @@ type HomeRecipe = {
   emoji?: string | null;
   imageUrl?: string | null;
   folders?: { id: string; name: string; emoji: string }[];
-  mealTimes?: string[];
+  mealTimes?: RecipeMealTime[];
   prepTimeMinutes?: number | null;
   cookTimeMinutes?: number | null;
   createdAt: string;
@@ -202,6 +203,7 @@ export default function HomeScreen({
         emoji: recipe.emoji ?? null,
         imageUrl: recipe.imageUrl ?? null,
         folders: recipe.folders ?? [],
+        mealTimes: recipe.mealTimes ?? [],
         prepTimeMinutes: recipe.prepTimeMinutes ?? null,
         cookTimeMinutes: recipe.cookTimeMinutes ?? null,
         createdAt: recipe.createdAt,
@@ -503,17 +505,7 @@ export default function HomeScreen({
     if (isEmpty) return null;
     if (recipes.length < PICK_MIN_RECIPES) return null;
 
-    const meal = getMealTime(new Date());
-    const candidates = recipes.filter((r) => (r.mealTimes ?? []).includes(meal));
-    const pool = candidates.length ? candidates : recipes;
-    const recipe = sortMostRecent(pool)[0] ?? null;
-
-    return recipe
-      ? {
-          label: getPickLabel(meal),
-          recipe,
-        }
-      : null;
+    return getRecommendedPick(recipes, new Date());
   }, [isEmpty, recipes]);
 
   const recentRecipes = useMemo(() => {

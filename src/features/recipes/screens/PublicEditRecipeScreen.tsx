@@ -22,6 +22,7 @@ import RecipeForm, {
   type RecipeFormValues,
 } from '@/features/recipes/components/RecipeForm'
 import { useLocalRecipe, useUpdateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
+import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 const FOOTER_HEIGHT = 72
@@ -38,6 +39,7 @@ function buildInitialValues(recipe: {
   ingredients: { name: string }[]
   steps: string[]
   folders: { name: string }[]
+  mealTimes?: RecipeMealTime[]
 }): RecipeFormValues {
   return {
     title: recipe.title ?? '',
@@ -60,6 +62,7 @@ function buildInitialValues(recipe: {
     ingredientsText: recipe.ingredients?.map((item) => item.name).filter(Boolean).join('\n') ?? '',
     steps: recipe.steps?.length ? recipe.steps : [''],
     folders: recipe.folders?.map((folder) => folder.name) ?? [],
+    mealTimes: recipe.mealTimes ?? [],
   }
 }
 

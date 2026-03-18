@@ -16,8 +16,10 @@ import SearchHeader from '@/features/search/components/SearchHeader';
 
 import { useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders';
 import { useStrategyNotesList } from '@/features/notes/hooks/useStrategyNotes';
+import MealTimeChip from '@/features/recipes/components/MealTimeChip'
 import RecipeRow from '@/features/recipes/components/RecipeRow';
 import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes';
+import { RECIPE_MEAL_TIMES, type RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import {
   SEARCH_FILTERS,
   type BrowseCategory,
@@ -31,6 +33,7 @@ type SearchScreenProps = {
 export default function SearchScreen({ mode }: SearchScreenProps) {
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<SearchFilterId>('all');
+  const [activeMealTime, setActiveMealTime] = useState<RecipeMealTime | null>(null)
   const segments = useSegments();
   const resolvedMode =
     mode ??
@@ -80,7 +83,11 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
       icon: 'folder',
     }));
   }, [foldersQuery.data]);
-  const recipeItems = useMemo(() => recipesQuery.data ?? [], [recipesQuery.data]);
+  const recipeItems = useMemo(() => {
+    const source = recipesQuery.data ?? []
+    if (!activeMealTime) return source
+    return source.filter((recipe) => (recipe.mealTimes ?? []).includes(activeMealTime))
+  }, [activeMealTime, recipesQuery.data]);
   const noteItems = useMemo(() => notesQuery.data ?? [], [notesQuery.data]);
   const folderItems = useMemo(() => foldersQuery.data ?? [], [foldersQuery.data]);
 
@@ -119,6 +126,24 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
         value={activeFilter}
         onChange={setActiveFilter}
       />
+
+      {!isBrowsing && (activeFilter === 'all' || activeFilter === 'recipes') ? (
+        <View style={styles.mealFilterBlock}>
+          <Text style={styles.mealFilterLabel}>Recipe meal time</Text>
+          <View style={styles.mealFilterRow}>
+            {RECIPE_MEAL_TIMES.map((mealTime) => (
+              <MealTimeChip
+                key={mealTime}
+                mealTime={mealTime}
+                selected={activeMealTime === mealTime}
+                onPress={() =>
+                  setActiveMealTime((current) => (current === mealTime ? null : mealTime))
+                }
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
 
       {isBrowsing ? (
         <>
@@ -272,6 +297,20 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
 const styles = createThemedStyles((theme) => ({
   content: {
     gap: theme.spacing.xl,
+  },
+  mealFilterBlock: {
+    gap: theme.spacing.xs,
+  },
+  mealFilterLabel: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.mutedForeground,
+  },
+  mealFilterRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.xs,
   },
   resultsWrap: {
     gap: theme.spacing.lg,

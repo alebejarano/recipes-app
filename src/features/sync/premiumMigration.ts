@@ -15,6 +15,7 @@ type LocalRecipeRow = {
   steps_text: string | null
   ingredients_json: string | null
   folders_json: string | null
+  meal_times_json: string | null
   prep_time_minutes: number | null
   cook_time_minutes: number | null
   servings: number | null
@@ -73,6 +74,13 @@ function parseFolderNames(raw: LocalRecipeRow['folders_json']) {
     .filter(Boolean)
 }
 
+function parseMealTimes(raw: LocalRecipeRow['meal_times_json']) {
+  const list = parseJsonArray<string>(raw)
+  return list
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean)
+}
+
 export async function migrateLocalDataToCloudOnPremium(userId: string): Promise<MigrationSummary> {
   const ownerUserId = userId.trim()
   if (!ownerUserId) {
@@ -111,6 +119,7 @@ export async function migrateLocalDataToCloudOnPremium(userId: string): Promise<
         ingredients: parseIngredientNames(row.ingredients_json),
         steps: parseSteps(row.steps_text),
         folders: parseFolderNames(row.folders_json),
+        mealTimes: parseMealTimes(row.meal_times_json),
         prepTimeMinutes: row.prep_time_minutes ?? null,
         cookTimeMinutes: row.cook_time_minutes ?? null,
         servings: row.servings ?? null,

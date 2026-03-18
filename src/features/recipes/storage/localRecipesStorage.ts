@@ -12,6 +12,11 @@ import {
   removeImportByUri,
 } from '@/features/recipes/storage/importsStorage'
 import { FREE_PLAN_MAX_RECIPES } from '@/features/subscription/constants/limits'
+import {
+  normalizeMealTimes,
+  resolveMealTimes,
+  type RecipeMealTime,
+} from '@/features/recipes/types/mealTimes'
 
 export type LocalRecipeIngredient = {
   id: string
@@ -44,6 +49,7 @@ type LocalRecipeRow = {
   steps_text: string | null
   ingredients_json: string
   folders_json: string
+  meal_times_json: string
   prep_time_minutes: number | null
   cook_time_minutes: number | null
   servings: number | null
@@ -75,6 +81,7 @@ export type LocalRecipeSyncRow = {
   stepsText: string | null
   ingredientsJson: string
   foldersJson: string
+  mealTimesJson: string
   prepTimeMinutes: number | null
   cookTimeMinutes: number | null
   servings: number | null
@@ -91,6 +98,8 @@ export type LocalRecipe = {
   steps: string[]
   ingredients: LocalRecipeIngredient[]
   folders: LocalRecipeFolder[]
+  mealTimes: RecipeMealTime[]
+  mealTimesInferred?: boolean
   prepTimeMinutes: number | null
   cookTimeMinutes: number | null
   servings: number | null
@@ -187,12 +196,59 @@ function toRecipeView(row: LocalRecipeRow): LocalRecipe {
     steps: parseStepsText(row.steps_text),
     ingredients: parseJsonArray<LocalRecipeIngredient>(row.ingredients_json),
     folders: parseJsonArray<LocalRecipeFolder>(row.folders_json),
+    mealTimes: normalizeMealTimes(parseJsonArray<string>(row.meal_times_json)),
+    mealTimesInferred: false,
     prepTimeMinutes: row.prep_time_minutes ?? null,
     cookTimeMinutes: row.cook_time_minutes ?? null,
     servings: row.servings ?? null,
     createdAt: row.created_at ?? new Date().toISOString(),
     updatedAt: row.updated_at ?? new Date().toISOString(),
   }
+}
+
+function resolveLocalRecipeMealTimes(input: {
+  mealTimes?: readonly string[] | null
+  title?: string | null
+  subtitle?: string | null
+  folders?: { name: string }[] | null
+}): RecipeMealTime[] {
+  return resolveMealTimes(input.mealTimes, {
+    title: input.title,
+    subtitle: input.subtitle,
+    folders: input.folders,
+  })
+}
+
+async function backfillLocalRecipeMealTimesIfNeeded(rows: LocalRecipeRow[]) {
+  const inferredIds = new Set<string>()
+  const statements = rows.flatMap((row) => {
+    const existingMealTimes = normalizeMealTimes(parseJsonArray<string>(row.meal_times_json))
+    if (existingMealTimes.length > 0) return []
+
+    const folders = parseJsonArray<LocalRecipeFolder>(row.folders_json)
+    const inferredMealTimes = resolveLocalRecipeMealTimes({
+      mealTimes: existingMealTimes,
+      title: row.title,
+      subtitle: row.subtitle,
+      folders,
+    })
+    if (inferredMealTimes.length === 0) return []
+
+    row.meal_times_json = JSON.stringify(inferredMealTimes)
+    inferredIds.add(row.id)
+    return [
+      {
+        sql: 'UPDATE local_recipes SET meal_times_json = ? WHERE id = ?;',
+        params: [row.meal_times_json, row.id] as (string | number | null)[],
+      },
+    ]
+  })
+
+  if (statements.length > 0) {
+    await runSqlBatchAsync(statements)
+  }
+
+  return inferredIds
 }
 
 function buildIngredients(values: RecipeFormSubmitValues): LocalRecipeIngredient[] {
@@ -273,12 +329,25 @@ async function getRecipeRow(id: string, includeDeleted = false): Promise<LocalRe
 
 export async function listLocalRecipes(params?: LocalRecipeListParams): Promise<LocalRecipe[]> {
   const rows = await listRecipeRows(params)
-  return rows.map(toRecipeView)
+  const inferredIds = await backfillLocalRecipeMealTimesIfNeeded(rows)
+  return rows.map((row) => ({
+    ...toRecipeView(row),
+    mealTimesInferred: inferredIds.has(row.id),
+  }))
 }
 
 export async function getLocalRecipe(id: string): Promise<LocalRecipe | null> {
   const row = await getRecipeRow(id)
-  return row ? toRecipeView(row) : null
+  let inferredIds = new Set<string>()
+  if (row) {
+    inferredIds = await backfillLocalRecipeMealTimesIfNeeded([row])
+  }
+  return row
+    ? {
+        ...toRecipeView(row),
+        mealTimesInferred: inferredIds.has(row.id),
+      }
+    : null
 }
 
 export async function createLocalRecipe(
@@ -314,6 +383,14 @@ export async function createLocalRecipe(
     steps_text: serializeSteps(values.steps),
     ingredients_json: JSON.stringify(buildIngredients(values)),
     folders_json: JSON.stringify(await buildFolders(values)),
+    meal_times_json: JSON.stringify(
+      resolveLocalRecipeMealTimes({
+        mealTimes: values.mealTimes,
+        title: values.title,
+        subtitle: values.subtitle,
+        folders: (values.folders ?? []).map((name) => ({ name })),
+      })
+    ),
     prep_time_minutes: values.prepTimeMinutes ?? null,
     cook_time_minutes: values.cookTimeMinutes ?? null,
     servings: values.servings ?? null,
@@ -331,11 +408,11 @@ export async function createLocalRecipe(
     `INSERT INTO local_recipes
       (
         id, title, subtitle, description, emoji, image_url, steps_text,
-        ingredients_json, folders_json, prep_time_minutes, cook_time_minutes,
-        servings, created_at, updated_at, deleted_at, owner_user_id, cloud_id,
-        dirty, version, last_synced_at
+        ingredients_json, folders_json, meal_times_json, prep_time_minutes,
+        cook_time_minutes, servings, created_at, updated_at, deleted_at,
+        owner_user_id, cloud_id, dirty, version, last_synced_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     [
       row.id,
       row.title,
@@ -346,6 +423,7 @@ export async function createLocalRecipe(
       row.steps_text,
       row.ingredients_json,
       row.folders_json,
+      row.meal_times_json,
       row.prep_time_minutes,
       row.cook_time_minutes,
       row.servings,
@@ -404,6 +482,7 @@ export async function updateLocalRecipe(
         steps_text = ?,
         ingredients_json = ?,
         folders_json = ?,
+        meal_times_json = ?,
         prep_time_minutes = ?,
         cook_time_minutes = ?,
         servings = ?,
@@ -420,6 +499,14 @@ export async function updateLocalRecipe(
       serializeSteps(values.steps),
       JSON.stringify(buildIngredients(values)),
       JSON.stringify(await buildFolders(values)),
+      JSON.stringify(
+        resolveLocalRecipeMealTimes({
+          mealTimes: values.mealTimes,
+          title: values.title,
+          subtitle: values.subtitle,
+          folders: (values.folders ?? []).map((name) => ({ name })),
+        })
+      ),
       values.prepTimeMinutes ?? null,
       values.cookTimeMinutes ?? null,
       values.servings ?? null,
@@ -474,6 +561,7 @@ function toSyncRow(row: LocalRecipeRow): LocalRecipeSyncRow {
     stepsText: row.steps_text ?? null,
     ingredientsJson: row.ingredients_json,
     foldersJson: row.folders_json,
+    mealTimesJson: row.meal_times_json,
     prepTimeMinutes: row.prep_time_minutes ?? null,
     cookTimeMinutes: row.cook_time_minutes ?? null,
     servings: row.servings ?? null,
@@ -571,6 +659,7 @@ export async function mergeCloudRecipesIntoLocal(params: {
             steps_text = ?,
             ingredients_json = ?,
             folders_json = ?,
+            meal_times_json = ?,
             prep_time_minutes = ?,
             cook_time_minutes = ?,
             servings = ?,
@@ -591,6 +680,7 @@ export async function mergeCloudRecipesIntoLocal(params: {
           serializeSteps(cloudRecipe.steps),
           serializeCloudIngredients(cloudRecipe),
           serializeCloudFolders(cloudRecipe),
+          JSON.stringify(normalizeMealTimes(cloudRecipe.mealTimes)),
           cloudRecipe.prepTimeMinutes ?? null,
           cloudRecipe.cookTimeMinutes ?? null,
           cloudRecipe.servings ?? null,
@@ -612,11 +702,11 @@ export async function mergeCloudRecipesIntoLocal(params: {
       `INSERT INTO local_recipes
         (
           id, title, subtitle, description, emoji, image_url, steps_text,
-          ingredients_json, folders_json, prep_time_minutes, cook_time_minutes,
-          servings, created_at, updated_at, deleted_at, owner_user_id, cloud_id,
-          dirty, version, last_synced_at
+          ingredients_json, folders_json, meal_times_json, prep_time_minutes,
+          cook_time_minutes, servings, created_at, updated_at, deleted_at,
+          owner_user_id, cloud_id, dirty, version, last_synced_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       [
         localId,
         cloudRecipe.title,
@@ -627,6 +717,7 @@ export async function mergeCloudRecipesIntoLocal(params: {
         serializeSteps(cloudRecipe.steps),
         serializeCloudIngredients(cloudRecipe),
         serializeCloudFolders(cloudRecipe),
+        JSON.stringify(normalizeMealTimes(cloudRecipe.mealTimes)),
         cloudRecipe.prepTimeMinutes ?? null,
         cloudRecipe.cookTimeMinutes ?? null,
         cloudRecipe.servings ?? null,

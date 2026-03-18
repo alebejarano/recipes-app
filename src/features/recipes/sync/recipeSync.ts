@@ -47,6 +47,7 @@ function toCreateOrUpdateInput(row: LocalRecipeSyncRow): CreateRecipeInput {
           .filter(Boolean)
       : [],
     folders: parseStringList(row.foldersJson),
+    mealTimes: parseStringList(row.mealTimesJson),
     prepTimeMinutes: row.prepTimeMinutes,
     cookTimeMinutes: row.cookTimeMinutes,
     servings: row.servings,

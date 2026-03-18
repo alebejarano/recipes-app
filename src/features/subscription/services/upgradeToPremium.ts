@@ -42,6 +42,7 @@ type RecipeLocalRow = {
   steps_text: string | null
   ingredients_json: string
   folders_json: string
+  meal_times_json: string
   prep_time_minutes: number | null
   cook_time_minutes: number | null
   servings: number | null
@@ -83,6 +84,7 @@ type RecipeUpgradeSnapshotRow = {
     stepsText: string | null
     ingredientsJson: string
     foldersJson: string
+    mealTimesJson: string
     prepTimeMinutes: number | null
     cookTimeMinutes: number | null
     servings: number | null
@@ -245,6 +247,7 @@ async function buildSnapshotEntities() {
       stepsText: row.steps_text ?? null,
       ingredientsJson: row.ingredients_json,
       foldersJson: row.folders_json,
+      mealTimesJson: row.meal_times_json,
       prepTimeMinutes: row.prep_time_minutes ?? null,
       cookTimeMinutes: row.cook_time_minutes ?? null,
       servings: row.servings ?? null,

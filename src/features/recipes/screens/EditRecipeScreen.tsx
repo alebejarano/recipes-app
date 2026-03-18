@@ -28,6 +28,7 @@ import RecipeForm, {
 import { useStrategyRecipe, useStrategyUpdateRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
+import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 const FOOTER_HEIGHT = 72
@@ -44,6 +45,7 @@ type RecipeFormSeed = {
   ingredients: { name: string }[]
   steps: string[]
   folders: { name: string }[]
+  mealTimes?: RecipeMealTime[]
 }
 
 function buildInitialValues(recipe: RecipeFormSeed): RecipeFormValues {
@@ -68,6 +70,7 @@ function buildInitialValues(recipe: RecipeFormSeed): RecipeFormValues {
     ingredientsText: recipe.ingredients?.map((item) => item.name).filter(Boolean).join('\n') ?? '',
     steps: recipe.steps?.length ? recipe.steps : [''],
     folders: recipe.folders?.map((folder) => folder.name) ?? [],
+    mealTimes: recipe.mealTimes ?? [],
   }
 }
 

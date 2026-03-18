@@ -23,6 +23,7 @@ import {
 
 import Button from '@/components/Button'
 import TagChip from '@/components/TagChip'
+import MealTimeChip from '@/features/recipes/components/MealTimeChip'
 import { uploadRecipeImage } from '@/features/recipes/api/recipesRepo'
 import {
   getActiveImportBytesByUri,
@@ -40,6 +41,7 @@ import {
   RECIPE_IMAGE_MASTER_MAX_FILE_BYTES,
   RECIPE_IMAGE_MASTER_TOO_LARGE_MESSAGE,
 } from '@/features/subscription/constants/limits'
+import { RECIPE_MEAL_TIMES, type RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { createThemedStyles } from '@/styles/createStyles'
 
 export type RecipeFormValues = {
@@ -54,6 +56,7 @@ export type RecipeFormValues = {
   ingredientsText: string
   steps: string[]
   folders: string[]
+  mealTimes: RecipeMealTime[]
 }
 
 export type RecipeFormSubmitValues = {
@@ -68,6 +71,7 @@ export type RecipeFormSubmitValues = {
   ingredients: string[] | null
   steps: string[] | null
   folders: string[] | null
+  mealTimes: RecipeMealTime[] | null
 }
 
 export type RecipeFormHandle = {
@@ -101,6 +105,7 @@ export function createEmptyRecipeFormValues(): RecipeFormValues {
     ingredientsText: '',
     steps: [''],
     folders: [],
+    mealTimes: [],
   }
 }
 
@@ -337,6 +342,18 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     }))
   }, [])
 
+  const toggleMealTime = useCallback((mealTime: RecipeMealTime) => {
+    setValues((prev) => {
+      const hasMealTime = prev.mealTimes.includes(mealTime)
+      return {
+        ...prev,
+        mealTimes: hasMealTime
+          ? prev.mealTimes.filter((value) => value !== mealTime)
+          : [...prev.mealTimes, mealTime],
+      }
+    })
+  }, [])
+
   const buildPayload = useCallback((): RecipeFormSubmitValues | null => {
     const title = values.title.trim()
     if (!title) {
@@ -367,6 +384,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       ingredients: normalizedIngredients.length ? normalizedIngredients : null,
       steps: normalizedSteps.length ? normalizedSteps : null,
       folders: normalizedFolders.length ? normalizedFolders : null,
+      mealTimes: values.mealTimes.length ? values.mealTimes : null,
     }
   }, [values])
 
@@ -686,6 +704,23 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
             />
           </View>
         </View>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Best for</Text>
+          <Text style={styles.helperText}>
+            Pick when this recipe makes the most sense. You can choose more than one.
+          </Text>
+          <View style={styles.tagsRow}>
+            {RECIPE_MEAL_TIMES.map((mealTime) => (
+              <MealTimeChip
+                key={mealTime}
+                mealTime={mealTime}
+                selected={values.mealTimes.includes(mealTime)}
+                onPress={() => toggleMealTime(mealTime)}
+              />
+            ))}
+          </View>
+        </View>
       </View>
 
       {/* Ingredients */}
@@ -913,6 +948,12 @@ const styles = createThemedStyles((theme) => ({
     marginBottom: theme.spacing.xs,
   },
   field: { gap: theme.spacing.xs },
+  helperText: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.mutedForeground,
+  },
   label: {
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.base,
