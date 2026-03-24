@@ -47,8 +47,15 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
     }),
     [isBrowsing, trimmedQuery]
   );
+  const recipeSearchParams = useMemo(
+    () => ({
+      search: undefined,
+      limit: 200,
+    }),
+    []
+  )
   const foldersQuery = useStrategyFoldersList(resolvedMode, searchParams);
-  const recipesQuery = useStrategyRecipesList(searchParams, resolvedMode);
+  const recipesQuery = useStrategyRecipesList(recipeSearchParams, resolvedMode);
   const notesQuery = useStrategyNotesList(searchParams, resolvedMode);
 
   const placeholder = useMemo(() => {
@@ -85,9 +92,28 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
   }, [foldersQuery.data]);
   const recipeItems = useMemo(() => {
     const source = recipesQuery.data ?? []
-    if (!activeMealTime) return source
-    return source.filter((recipe) => (recipe.mealTimes ?? []).includes(activeMealTime))
-  }, [activeMealTime, recipesQuery.data]);
+    const normalizedQuery = trimmedQuery.toLowerCase()
+
+    return source.filter((recipe) => {
+      if (activeMealTime && !(recipe.mealTimes ?? []).includes(activeMealTime)) {
+        return false
+      }
+
+      if (!normalizedQuery) return true
+
+      const searchableText = [
+        recipe.title,
+        recipe.subtitle ?? '',
+        recipe.description ?? '',
+        ...(recipe.folders ?? []).map((folder) => folder.name),
+        ...(recipe.mealTimes ?? []),
+      ]
+        .join(' ')
+        .toLowerCase()
+
+      return searchableText.includes(normalizedQuery)
+    })
+  }, [activeMealTime, recipesQuery.data, trimmedQuery]);
   const noteItems = useMemo(() => notesQuery.data ?? [], [notesQuery.data]);
   const folderItems = useMemo(() => foldersQuery.data ?? [], [foldersQuery.data]);
 

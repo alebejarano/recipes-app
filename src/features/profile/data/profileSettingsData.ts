@@ -108,13 +108,13 @@ export const SUPPORT_ITEMS: SettingsRowItem[] = [
     title: 'Help Center',
     subtitle: 'FAQ',
   },
-  {
-    id: 'rate',
-    type: 'link',
-    icon: 'star',
-    title: 'Rate the App',
-    subtitle: 'Open App Store',
-  },
+  // {
+  //   id: 'rate',
+  //   type: 'link',
+  //   icon: 'star',
+  //   title: 'Rate the App',
+  //   subtitle: 'Open App Store',
+  // },
 ]
 
 export function buildSessionItems(args: {

@@ -29,7 +29,6 @@ import { useStrategyRecipe, useStrategyUpdateRecipe } from '@/features/recipes/h
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
 import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
-import { getSafeReturnTo } from '@/lib/navigation'
 
 const FOOTER_HEIGHT = 72
 
@@ -75,12 +74,17 @@ function buildInitialValues(recipe: RecipeFormSeed): RecipeFormValues {
 }
 
 export default function EditRecipeScreen() {
-  const { id, returnTo } = useLocalSearchParams<{ id?: string; returnTo?: string }>()
+  const { id } = useLocalSearchParams<{ id?: string; returnTo?: string }>()
   const recipeId = id ?? ''
-  const safeReturnTo = getSafeReturnTo(returnTo)
   const insets = useSafeAreaInsets()
   const segments = useSegments()
   const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
+  const homePath =
+    routeMode === 'dev'
+      ? '/(dev)/(tabs)'
+      : routeMode === 'public'
+        ? '/(public)/(tabs)'
+        : '/(auth)/(tabs)'
   const { shouldUseLocalData: baseLocalMode } = useStorageDataMode(routeMode)
   const { cloudSyncEnabled, isPremium } = useStorageStrategy()
   const shouldUseLocalData = baseLocalMode || (routeMode === 'auth' && cloudSyncEnabled)
@@ -119,19 +123,20 @@ export default function EditRecipeScreen() {
     async (values: RecipeFormSubmitValues) => {
       try {
         await updateMutation.mutateAsync(values)
-        if (safeReturnTo) {
-          router.replace(safeReturnTo)
-        } else {
-          router.replace({
-            pathname: '/(auth)/recipes/[id]',
-            params: { id: recipeId },
-          })
-        }
+        router.replace({
+          pathname:
+            routeMode === 'dev'
+              ? '/(dev)/recipes/[id]'
+              : routeMode === 'public'
+                ? '/(public)/recipes/[id]'
+                : '/(auth)/recipes/[id]',
+          params: { id: recipeId, returnTo: homePath },
+        })
       } catch (e: any) {
         Alert.alert('Save failed', e?.message ?? 'Please try again.')
       }
     },
-    [recipeId, safeReturnTo, updateMutation]
+    [homePath, recipeId, routeMode, updateMutation]
   )
 
   const triggerSave = useCallback(() => {

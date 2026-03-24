@@ -23,7 +23,6 @@ import RecipeForm, {
 } from '@/features/recipes/components/RecipeForm'
 import { useLocalRecipe, useUpdateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
 import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
-import { getSafeReturnTo } from '@/lib/navigation'
 
 const FOOTER_HEIGHT = 72
 
@@ -67,10 +66,10 @@ function buildInitialValues(recipe: {
 }
 
 export default function PublicEditRecipeScreen() {
-  const { id, returnTo } = useLocalSearchParams<{ id?: string; returnTo?: string }>()
+  const { id } = useLocalSearchParams<{ id?: string; returnTo?: string }>()
   const recipeId = id ?? ''
-  const safeReturnTo = getSafeReturnTo(returnTo)
   const insets = useSafeAreaInsets()
+  const homePath = '/(public)/(tabs)'
 
   const { data: recipe, isLoading, isError } = useLocalRecipe(recipeId)
   const updateMutation = useUpdateLocalRecipe(recipeId)
@@ -87,19 +86,15 @@ export default function PublicEditRecipeScreen() {
     async (values: RecipeFormSubmitValues) => {
       try {
         await updateMutation.mutateAsync(values)
-        if (safeReturnTo) {
-          router.replace(safeReturnTo)
-        } else {
-          router.replace({
-            pathname: '/(public)/recipes/[id]',
-            params: { id: recipeId },
-          })
-        }
+        router.replace({
+          pathname: '/(public)/recipes/[id]',
+          params: { id: recipeId, returnTo: homePath },
+        })
       } catch (e: any) {
         Alert.alert('Save failed', e?.message ?? 'Please try again.')
       }
     },
-    [recipeId, safeReturnTo, updateMutation]
+    [homePath, recipeId, updateMutation]
   )
 
   const triggerSave = useCallback(() => {

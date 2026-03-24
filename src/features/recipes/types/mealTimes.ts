@@ -29,11 +29,12 @@ const MEAL_TIME_KEYWORDS: Record<RecipeMealTime, string[]> = {
     'salad',
     'sandwich',
     'wrap',
-    'bowl',
     'soup',
     'quiche',
     'taco',
     'rice bowl',
+    'grain bowl',
+    'power bowl',
   ],
   snack: [
     'snack',
@@ -104,6 +105,7 @@ function getMealTimeInferenceScore(
 
   if (mealTime === 'lunch' && haystack.includes('dinner')) score -= 8
   if (mealTime === 'dinner' && haystack.includes('lunch')) score -= 4
+  if ((mealTime === 'lunch' || mealTime === 'dinner') && haystack.includes('yogurt')) score -= 16
   if ((mealTime === 'lunch' || mealTime === 'dinner') && haystack.includes('dessert')) score -= 16
   if ((mealTime === 'lunch' || mealTime === 'dinner') && haystack.includes('dates')) score -= 12
   if (mealTime === 'snack' && (haystack.includes('quick') || haystack.includes('bite'))) score += 8
