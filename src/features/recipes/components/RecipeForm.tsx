@@ -92,6 +92,12 @@ function normalizeOptionalText(value: string): string | null {
   return trimmed.length ? trimmed : null
 }
 
+function normalizeFolderName(value?: unknown): string {
+  if (value === null || value === undefined) return ''
+  const text = typeof value === 'string' ? value : String(value)
+  return text.trim().replace(/\s+/g, ' ')
+}
+
 export function createEmptyRecipeFormValues(): RecipeFormValues {
   return {
     title: '',
@@ -236,13 +242,22 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const normalizedSuggestedFolders = useMemo(() => {
     if (!suggestedFolders.length) return []
-    const selected = new Set(values.folders.map((folder) => folder.toLowerCase()))
+    const selected = new Set(
+      values.folders.map((folder) => normalizeFolderName(folder).toLowerCase())
+    )
     const query = folderInput.trim().toLowerCase()
+    const seen = new Set<string>()
     const filtered = suggestedFolders
-      .map((folder) => ({ label: folder.label.trim(), emoji: folder.emoji }))
+      .map((folder) => ({ label: normalizeFolderName(folder.label), emoji: folder.emoji }))
       .filter((folder) => folder.label)
       .filter((folder) => !selected.has(folder.label.toLowerCase()))
       .filter((folder) => (query ? folder.label.toLowerCase().includes(query) : true))
+      .filter((folder) => {
+        const key = folder.label.toLowerCase()
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
     return filtered.slice(0, 8)
   }, [suggestedFolders, folderInput, values.folders])
 
@@ -281,23 +296,19 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     })
   }, [])
 
-  const normalizeFolder = useCallback((value?: unknown) => {
-    if (value === null || value === undefined) return ''
-    const text = typeof value === 'string' ? value : String(value)
-    return text.trim().replace(/\s+/g, ' ')
-  }, [])
-
   const addFolder = useCallback(
     (nextValue?: unknown) => {
       const candidate = typeof nextValue === 'string' ? nextValue : undefined
-      const nextFolder = normalizeFolder(candidate ?? folderInput)
+      const nextFolder = normalizeFolderName(candidate ?? folderInput)
       if (!nextFolder) return
       const lower = nextFolder.toLowerCase()
       const exists = suggestedFolders.some(
-        (folder) => folder.label.trim().toLowerCase() === lower
+        (folder) => normalizeFolderName(folder.label).toLowerCase() === lower
       )
       setValues((prev) => {
-        if (prev.folders.some((folder) => folder.toLowerCase() === lower)) return prev
+        if (prev.folders.some((folder) => normalizeFolderName(folder).toLowerCase() === lower)) {
+          return prev
+        }
         return { ...prev, folders: [...prev.folders, nextFolder] }
       })
       if (exists) {
@@ -327,7 +338,6 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       setFolderEmojiInput('')
     },
     [
-      normalizeFolder,
       folderInput,
       folderEmojiInput,
       suggestedFolders,
@@ -846,9 +856,9 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
 
           {values.folders.length > 0 ? (
             <View style={styles.tagsRow}>
-              {values.folders.map((folder) => (
+              {values.folders.map((folder, index) => (
                 <TagChip
-                  key={folder}
+                  key={`${normalizeFolderName(folder).toLowerCase()}-${index}`}
                   label={folder}
                   selected
                   onPress={() => removeFolder(folder)}
