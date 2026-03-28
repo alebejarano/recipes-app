@@ -3,6 +3,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { createThemedStyles } from '@/styles/createStyles';
+import { layout } from '@/styles/layout';
 import { theme } from '@/styles/theme';
 
 type Props = {
@@ -86,7 +87,7 @@ export default function ActionCard({
 const styles = createThemedStyles((theme) => ({
   card: {
     marginTop: theme.spacing.md,
-    padding: theme.spacing.lg,
+    padding: layout.cardPadding,
     borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.card,
     borderWidth: 1,
@@ -113,7 +114,7 @@ const styles = createThemedStyles((theme) => ({
   left: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.md,
+    gap: layout.cardGap,
     flex: 1,
   },
   iconCircle: {

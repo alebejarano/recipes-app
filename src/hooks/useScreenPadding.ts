@@ -1,4 +1,5 @@
 import { theme } from '@/styles/theme';
+import { layout } from '@/styles/layout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Options = {
@@ -12,7 +13,7 @@ export function useScreenPadding(options: Options = {}) {
 
   const topExtra = options.top ?? theme.spacing.xl;
   const bottomExtra = options.bottom ?? 0;
-  const horizontal = options.horizontal ?? theme.spacing.lg;
+  const horizontal = options.horizontal ?? layout.screenPadding;
 
   return {
     paddingTop: insets.top + topExtra,

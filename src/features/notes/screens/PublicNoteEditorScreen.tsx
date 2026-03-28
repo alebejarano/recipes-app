@@ -15,6 +15,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
 import { createThemedStyles } from '@/styles/createStyles'
+import { layout } from '@/styles/layout'
 
 import {
   useCreateLocalNote,
@@ -280,8 +281,8 @@ const styles = createThemedStyles((theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.lg,
+    paddingHorizontal: layout.screenPadding,
+    paddingTop: layout.screenPadding,
     paddingBottom: theme.spacing.md,
   },
   backButton: { paddingHorizontal: 0 },
@@ -299,7 +300,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   scroll: {
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: layout.screenPadding,
   },
   title: {
     fontFamily: theme.fontFamily.semibold,
@@ -357,8 +358,8 @@ const styles = createThemedStyles((theme) => ({
   },
   footer: {
     flexDirection: 'row',
-    gap: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.lg,
+    gap: layout.listGap,
+    paddingHorizontal: layout.screenPadding,
     paddingTop: theme.spacing.md,
     paddingBottom: theme.spacing.lg,
     borderTopWidth: 1,

@@ -9,6 +9,7 @@ import { ActivityIndicator, Platform, Pressable, Text, View, useWindowDimensions
 import Screen from '@/components/Screen';
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
 import { createThemedStyles } from '@/styles/createStyles';
+import { layout } from '@/styles/layout';
 import { theme } from '@/styles/theme';
 
 import { useAuth } from '@/features/auth/context/AuthContext';
@@ -166,8 +167,8 @@ export default function HomeScreen({
   const { width: screenWidth } = useWindowDimensions();
 
   // Horizontal carousel sizing
-  const PAGE_PADDING = theme.spacing.lg; // Screen default
-  const CARD_GAP = theme.spacing.md;
+  const PAGE_PADDING = layout.screenPadding;
+  const CARD_GAP = layout.cardGap;
   const PEEK = 16;
 
   const MIN_CARD_WIDTH = 180;
@@ -922,10 +923,10 @@ export default function HomeScreen({
 const styles = createThemedStyles((theme) => ({
   content: {
     paddingTop: theme.spacing.xl,
-    gap: theme.spacing.xl,
+    gap: layout.sectionGap,
   },
   section: {
-    gap: theme.spacing.md,
+    gap: layout.cardGap,
   },
   sectionSubtitleLarge: {
     fontSize: theme.fontSize.xl,
@@ -952,7 +953,7 @@ const styles = createThemedStyles((theme) => ({
     fontSize: 20,
   },
   ideasSection: {
-    gap: theme.spacing.sm,
+    gap: layout.listGap,
   },
   ideasTitle: {
     fontSize: theme.fontSize.xl,
@@ -969,7 +970,7 @@ const styles = createThemedStyles((theme) => ({
   },
   ideasRow: {
     flexDirection: 'row',
-    gap: theme.spacing.md,
+    gap: layout.cardGap,
   },
   ideaCardWrap: {
     flex: 1,
@@ -977,7 +978,7 @@ const styles = createThemedStyles((theme) => ({
   loadingState: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: theme.spacing.sm,
+    gap: layout.listGap,
     paddingVertical: theme.spacing.xl,
   },
   loadingText: {
@@ -987,18 +988,18 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
   contextBannerCard: {
-    padding: theme.spacing.lg,
+    padding: layout.cardPadding,
     borderRadius: theme.radii.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.card,
-    gap: theme.spacing.sm,
+    gap: layout.listGap,
   },
   contextBannerHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: theme.spacing.sm,
+    gap: layout.listGap,
   },
   contextBannerTitleRow: {
     flexDirection: 'row',

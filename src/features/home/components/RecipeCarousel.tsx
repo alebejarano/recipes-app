@@ -3,6 +3,7 @@ import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { createThemedStyles } from '@/styles/createStyles';
+import { layout } from '@/styles/layout';
 
 export type RecipePreview = {
   id: string;
@@ -110,7 +111,7 @@ const styles = createThemedStyles((theme) => ({
     flexDirection: 'row',
   },
   card: {
-    padding: theme.spacing.lg,
+    padding: layout.cardPadding,
     borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.card,
     borderWidth: 1,

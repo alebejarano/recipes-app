@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
 import { createThemedStyles } from '@/styles/createStyles'
+import { layout } from '@/styles/layout'
 import { theme } from '@/styles/theme'
 
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
@@ -301,13 +302,13 @@ const styles = createThemedStyles((theme) => ({
   headerRightSpacer: { width: 40 },
 
   scrollContent: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.lg,
+    paddingHorizontal: layout.screenPadding,
+    paddingTop: layout.screenPadding,
     paddingBottom: theme.spacing.xl,
-    gap: theme.spacing.xl,
+    gap: layout.sectionGap,
   },
 
-  section: { gap: theme.spacing.sm },
+  section: { gap: layout.listGap },
 
   sectionTitle: {
     fontFamily: theme.fontFamily.medium,
@@ -323,7 +324,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
 
-  addRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md },
+  addRow: { flexDirection: 'row', alignItems: 'center', gap: layout.cardGap },
 
   inputWrapper: {
     flex: 1,
@@ -359,7 +360,7 @@ const styles = createThemedStyles((theme) => ({
 
   addButtonPressed: { opacity: 0.95, transform: [{ scale: 0.99 }] },
 
-  quickWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm },
+  quickWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: layout.listGap },
 
   quickChip: {
     flexDirection: 'row',
@@ -399,7 +400,7 @@ const styles = createThemedStyles((theme) => ({
     paddingVertical: theme.spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: theme.spacing.md,
+    gap: layout.cardGap,
   },
 
   emptyIcon: { color: theme.colors.mutedForeground, opacity: 0.4 },
@@ -411,7 +412,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
 
-  list: { gap: theme.spacing.sm },
+  list: { gap: layout.listGap },
 
   listRow: {
     flexDirection: 'row',
@@ -419,7 +420,7 @@ const styles = createThemedStyles((theme) => ({
     justifyContent: 'space-between',
     backgroundColor: theme.colors.secondary,
     borderRadius: theme.radii.lg,
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: layout.cardPadding,
     paddingVertical: theme.spacing.md,
     borderWidth: 1,
     borderColor: theme.colors.border,

@@ -16,6 +16,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
 import { createThemedStyles } from '@/styles/createStyles'
+import { layout } from '@/styles/layout'
 
 import {
   useStrategyCreateNote,
@@ -271,7 +272,7 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
 
 const styles = createThemedStyles((theme) => ({
   safeArea: { flex: 1, backgroundColor: theme.colors.background },
-  container: { flex: 1, paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.lg },
+  container: { flex: 1, paddingHorizontal: layout.screenPadding, paddingTop: layout.screenPadding },
   flex1: { flex: 1 },
 
   headerRow: {
@@ -355,7 +356,7 @@ const styles = createThemedStyles((theme) => ({
 
   footer: {
     flexDirection: 'row',
-    gap: theme.spacing.sm,
+    gap: layout.listGap,
     paddingTop: theme.spacing.md,
     paddingBottom: theme.spacing.lg,
     borderTopWidth: 1,
@@ -368,9 +369,9 @@ const styles = createThemedStyles((theme) => ({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: theme.spacing.sm,
+    gap: layout.listGap,
     backgroundColor: theme.colors.background,
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: layout.screenPadding,
   },
   loadingText: {
     fontFamily: theme.fontFamily.medium,

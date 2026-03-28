@@ -229,7 +229,7 @@ export default function CurrentPlanScreen({
           <Text style={styles.subscriptionAmount}>{premiumPlanLabel}</Text>
           <Text style={styles.subscriptionRenewal}>{premiumNextRenewalLabel}</Text>
 
-          <Button onPress={manageSubscription} variant="soft" size="md" style={styles.manageButton}>
+          <Button onPress={manageSubscription} variant="secondary" size="md" style={styles.manageButton}>
             Manage Subscription
           </Button>
         </View>

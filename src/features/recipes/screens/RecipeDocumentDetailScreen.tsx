@@ -12,6 +12,7 @@ import Button from '@/components/Button'
 import { useDeleteRecipeDocument, useRecipeDocument } from '@/features/recipes/hooks/useRecipeDocuments'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { createThemedStyles } from '@/styles/createStyles'
+import { layout } from '@/styles/layout'
 
 const FALLBACK_TITLE = 'Recipe file'
 
@@ -261,7 +262,7 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
           <Text style={styles.errorMessage}>
             This document could not be loaded. It may have been deleted or is no longer available.
           </Text>
-          <Button variant="primary" size="md" onPress={handleGoBack}>
+          <Button variant="secondary" size="md" onPress={handleGoBack}>
             Go Back
           </Button>
         </View>
@@ -352,10 +353,10 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.background,
   },
   scrollContent: {
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: layout.screenPadding,
     paddingTop: theme.spacing.md,
     paddingBottom: theme.spacing.xl,
-    gap: theme.spacing.lg,
+    gap: layout.sectionGap,
   },
   centeredContainer: {
     flex: 1,
@@ -412,12 +413,12 @@ const styles = createThemedStyles((theme) => ({
 
   // Metadata card
   metadataCard: {
-    padding: theme.spacing.lg,
+    padding: layout.cardPadding,
     borderRadius: theme.radii.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.card,
-    gap: theme.spacing.md,
+    gap: layout.cardGap,
   },
   metadataTitle: {
     fontFamily: theme.fontFamily.semibold,

@@ -11,7 +11,7 @@ type ScreenProps = {
   contentStyle?: StyleProp<ViewStyle>;
   style?: StyleProp<ViewStyle>;
   topSpacing?: number;        // extra spacing below status bar
-  horizontalPadding?: number; // defaults to theme.spacing.lg via hook
+  horizontalPadding?: number; // defaults to layout.screenPadding via hook
   bottomPadding?: number;     // extra beyond safe-area
 };
 

@@ -3,6 +3,7 @@ import React from 'react'
 import { Animated, Easing, Pressable, Text, TouchableOpacity, View } from 'react-native'
 
 import { createThemedStyles } from '@/styles/createStyles'
+import { layout } from '@/styles/layout'
 
 type KitchenAlmostFullCardProps = {
   title: string
@@ -99,17 +100,17 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: layout.cardPadding,
     paddingTop: theme.spacing.md,
     paddingBottom: theme.spacing.md,
-    gap: theme.spacing.sm,
+    gap: layout.listGap,
     marginBottom: theme.spacing.lg,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: theme.spacing.sm,
+    gap: layout.listGap,
   },
   title: {
     flex: 1,
@@ -127,7 +128,7 @@ const styles = createThemedStyles((theme) => ({
   actions: {
     marginTop: theme.spacing.xs,
     flexDirection: 'row',
-    gap: theme.spacing.sm,
+    gap: layout.listGap,
   },
   primaryAction: {
     flex: 1,

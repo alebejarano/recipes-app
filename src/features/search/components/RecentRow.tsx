@@ -3,6 +3,7 @@ import React from 'react';
 import { Pressable, Text } from 'react-native';
 
 import { createThemedStyles } from '@/styles/createStyles';
+import { layout } from '@/styles/layout';
 
 type Props = {
   label: string;
@@ -25,11 +26,11 @@ const styles = createThemedStyles(theme => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.md,
+    gap: layout.cardGap,
     backgroundColor: theme.colors.card,
     borderRadius: theme.radii.lg,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: layout.cardPadding,
+    paddingVertical: layout.cardPadding,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },

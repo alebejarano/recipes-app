@@ -42,18 +42,23 @@ export const textVariants = {
         lineHeight: lineHeight.xxl,
     },
     subtitle: {
-        fontFamily: fontFamily.medium,
+        fontFamily: fontFamily.semibold,
         fontSize: fontSize.lg,
-        lineHeight: lineHeight.xl,
+         lineHeight: lineHeight.lg,
     },
     body: {
         fontFamily: fontFamily.regular,
         fontSize: fontSize.base,
         lineHeight: lineHeight.base,
     },
-    caption: {
-        fontFamily: fontFamily.medium,
+   caption: {
+        fontFamily: fontFamily.regular, 
         fontSize: fontSize.sm,
         lineHeight: lineHeight.sm,
     },
+    emphasis: {
+        fontFamily: fontFamily.semibold,
+        fontSize: fontSize.base,
+        lineHeight: lineHeight.base,
+    }
 } as const;

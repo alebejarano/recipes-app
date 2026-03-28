@@ -16,6 +16,7 @@ import Button from '@/components/Button'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import { createThemedStyles } from '@/styles/createStyles'
+import { layout } from '@/styles/layout'
 
 export type AuthMode = 'login' | 'register'
 
@@ -307,7 +308,7 @@ const styles = createThemedStyles((theme) => ({
 
   content: {
     flexGrow: 1,
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: layout.screenPadding,
     paddingVertical: theme.spacing.xl,
   },
 
@@ -363,7 +364,7 @@ const styles = createThemedStyles((theme) => ({
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.card,
     borderRadius: theme.radii.xl,
-    padding: theme.spacing.md,
+    padding: layout.cardPadding,
     marginBottom: theme.spacing.lg,
   },
 

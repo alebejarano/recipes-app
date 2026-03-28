@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { createThemedStyles } from '@/styles/createStyles';
+import { layout } from '@/styles/layout';
 
 type Props = {
   name: string;
@@ -41,7 +42,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    padding: theme.spacing.lg,
+    padding: layout.cardPadding,
     marginBottom: theme.spacing.xl,
     overflow: 'hidden',
   },

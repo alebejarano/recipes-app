@@ -3,6 +3,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { createThemedStyles } from '@/styles/createStyles';
+import { layout } from '@/styles/layout';
 import { theme } from '@/styles/theme';
 
 type Props = {
@@ -33,8 +34,8 @@ const styles = createThemedStyles((theme) => ({
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.lg,
+    gap: layout.listGap,
+    paddingHorizontal: layout.cardPadding,
     paddingVertical: theme.spacing.md,
     borderRadius: theme.radii.full,
     backgroundColor: theme.colors.muted,

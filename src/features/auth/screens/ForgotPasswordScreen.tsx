@@ -18,6 +18,7 @@ import Button from '@/components/Button';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email';
 import { createThemedStyles } from '@/styles/createStyles';
+import { layout } from '@/styles/layout';
 
 export default function ForgotPasswordScreen() {
     const router = useRouter();
@@ -146,7 +147,7 @@ const styles = createThemedStyles(theme => ({
     },
     content: {
         flexGrow: 1,
-        paddingHorizontal: theme.spacing.lg,
+        paddingHorizontal: layout.screenPadding,
         paddingVertical: theme.spacing.xl,
     },
 

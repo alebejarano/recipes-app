@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { createThemedStyles } from '@/styles/createStyles';
+import { layout } from '@/styles/layout';
 
 type Props = {
   title: string;
@@ -40,7 +41,7 @@ export default function EmptyHomeCard({
 
 const styles = createThemedStyles((theme) => ({
   card: {
-    padding: theme.spacing.xl,
+    padding: layout.cardPadding,
     borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.card,
     borderWidth: 1,
@@ -62,7 +63,7 @@ const styles = createThemedStyles((theme) => ({
   },
   actions: {
     marginTop: theme.spacing.lg,
-    gap: theme.spacing.sm,
+    gap: layout.listGap,
   },
   primary: {
     paddingVertical: theme.spacing.md,

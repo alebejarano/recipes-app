@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import Button from '@/components/Button'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { createThemedStyles } from '@/styles/createStyles'
+import { layout } from '@/styles/layout'
 
 export default function UpdatePasswordScreen() {
   const { isLoading, session, updatePassword } = useAuth()
@@ -174,7 +175,7 @@ const styles = createThemedStyles((theme) => ({
   },
   content: {
     flexGrow: 1,
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: layout.screenPadding,
     paddingVertical: theme.spacing.xl,
   },
   backRow: {
@@ -227,8 +228,8 @@ const styles = createThemedStyles((theme) => ({
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.card,
     borderRadius: theme.radii.xl,
-    padding: theme.spacing.lg,
-    gap: theme.spacing.md,
+    padding: layout.cardPadding,
+    gap: layout.cardGap,
   },
   noticeTitle: {
     fontFamily: theme.fontFamily.semibold,

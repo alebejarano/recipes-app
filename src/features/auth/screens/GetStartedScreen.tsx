@@ -1,6 +1,7 @@
 import Button from '@/components/Button'
 import IllustrationHero from '@/components/IllustrationHero'
 import { createThemedStyles } from '@/styles/createStyles'
+import { layout } from '@/styles/layout'
 
 import welcomeKitchenIllustration from '@assets/illustrations/welcome-kitchen.png'
 import { Feather } from '@expo/vector-icons'
@@ -121,7 +122,7 @@ function Actions({
 
       <Button
         onPress={onLogin}
-        variant="soft"
+        variant="secondary"
         size="lg"
         style={styles.secondaryButton}
       >
@@ -139,7 +140,7 @@ const styles = createThemedStyles((theme) => ({
 
   content: {
     flexGrow: 1,
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: layout.screenPadding,
     paddingVertical: theme.spacing.xl,
   },
 
@@ -228,7 +229,7 @@ const styles = createThemedStyles((theme) => ({
   actions: {
     marginTop: theme.spacing.md,
     marginBottom: theme.spacing.md,
-    gap: theme.spacing.sm,
+    gap: layout.listGap,
   },
 
   primaryButton: {

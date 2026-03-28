@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
 import { createThemedStyles } from '@/styles/createStyles'
+import { layout } from '@/styles/layout'
 
 import {
   ensureShoppingList,
@@ -162,8 +163,8 @@ const styles = createThemedStyles((theme) => ({
   },
   container: {
     flex: 1,
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.lg,
+    paddingHorizontal: layout.screenPadding,
+    paddingTop: layout.screenPadding,
   },
 
   headerRow: {
@@ -194,7 +195,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   cards: {
-    gap: theme.spacing.lg,
+    gap: layout.sectionGap,
   },
 
   icon: {

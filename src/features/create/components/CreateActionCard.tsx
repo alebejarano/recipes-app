@@ -3,6 +3,7 @@ import React from 'react'
 import { Pressable, Text, View, ViewStyle } from 'react-native'
 
 import { createThemedStyles } from '@/styles/createStyles'
+import { layout } from '@/styles/layout'
 import { theme } from '@/styles/theme'
 
 type Props = {
@@ -74,7 +75,7 @@ const styles = createThemedStyles((theme) => ({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: theme.spacing.lg,
+    padding: layout.cardPadding,
     borderRadius: theme.radii.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,

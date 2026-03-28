@@ -1,10 +1,9 @@
 export const radii = {
-    xs: 4,
     sm: 8,
     md: 12,
     lg: 16,
-    xl: 24,   // cards / big buttons
-    xxl: 999,
+    xl: 20,   // cards (main)
+    xxl: 24,  // modals / big surfaces
     full: 9999,
 } as const;
 

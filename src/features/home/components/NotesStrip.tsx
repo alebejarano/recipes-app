@@ -3,6 +3,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { createThemedStyles } from '@/styles/createStyles';
+import { layout } from '@/styles/layout';
 import { theme } from '@/styles/theme';
 
 type NotePreview = {
@@ -46,8 +47,8 @@ const styles = createThemedStyles((theme) => ({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.sm,
-    marginBottom: theme.spacing.sm,
+    gap: layout.listGap,
+    marginBottom: layout.listGap,
   },
   headerTitle: {
     fontSize: theme.fontSize.base,
@@ -56,7 +57,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
   pill: {
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: layout.cardPadding,
     paddingVertical: theme.spacing.md,
     borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.muted,
@@ -65,7 +66,7 @@ const styles = createThemedStyles((theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: theme.spacing.md,
+    gap: layout.cardGap,
   },
   pillTitle: {
     flex: 1,
