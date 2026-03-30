@@ -21,7 +21,7 @@ export default function PublicAccountScreen() {
         id: 'create-account',
         type: 'link' as const,
         title: 'Create an account',
-        subtitle: 'Upgrade later to sync and back up your recipes',
+        subtitle: 'Upgrade to sync and back up your recipes',
         icon: 'user-plus' as const,
         tone: 'accent' as const,
         onPress: () => router.push('/(public)/register'),
