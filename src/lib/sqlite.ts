@@ -1,4 +1,5 @@
 import { Platform } from 'react-native'
+import type { SQLiteDatabase, SQLiteRunResult } from 'expo-sqlite'
 
 type SqlParam = string | number | null
 
@@ -12,7 +13,7 @@ type SqlRunResult = {
   lastInsertRowId: number
 }
 
-let dbPromise: Promise<any> | null = null
+let dbPromise: Promise<SQLiteDatabase> | null = null
 let hasWarned = false
 
 function warnOnce() {
@@ -21,7 +22,7 @@ function warnOnce() {
   console.warn('SQLite is not enabled on web in this build. Falling back to no-op storage.')
 }
 
-async function getDatabaseAsync() {
+async function getDatabaseAsync(): Promise<SQLiteDatabase | null> {
   if (Platform.OS === 'web') {
     return null
   }
@@ -38,7 +39,7 @@ async function getDatabaseAsync() {
 export async function runSqlAsync(
   sql: string,
   params: SqlParam[] = []
-): Promise<SqlRunResult | import('expo-sqlite').SQLiteRunResult> {
+): Promise<SqlRunResult | SQLiteRunResult> {
   if (Platform.OS === 'web') {
     warnOnce()
     return {
@@ -48,6 +49,12 @@ export async function runSqlAsync(
   }
 
   const database = await getDatabaseAsync()
+  if (!database) {
+    return {
+      changes: 0,
+      lastInsertRowId: 0,
+    }
+  }
   return database.runAsync(sql, params)
 }
 
@@ -58,7 +65,9 @@ export async function runSqlBatchAsync(statements: SqlBatchStatement[]) {
   }
 
   const database = await getDatabaseAsync()
-  await database.withExclusiveTransactionAsync(async (txn: any) => {
+  if (!database) return
+
+  await database.withExclusiveTransactionAsync(async (txn) => {
     for (const statement of statements) {
       await txn.runAsync(statement.sql, statement.params ?? [])
     }
@@ -75,6 +84,7 @@ export async function getAllAsync<T>(
   }
 
   const database = await getDatabaseAsync()
+  if (!database) return []
   return database.getAllAsync<T>(sql, params)
 }
 
@@ -88,5 +98,6 @@ export async function getFirstAsync<T>(
   }
 
   const database = await getDatabaseAsync()
+  if (!database) return null
   return database.getFirstAsync<T>(sql, params)
 }

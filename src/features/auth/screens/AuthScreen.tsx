@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import React, { useMemo, useState } from 'react'
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -178,9 +179,11 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {/* Header */}
           <View style={styles.header}>
-            <View style={styles.iconWrapper}>
-              <Text style={styles.emoji}>🍳</Text>
-            </View>
+            <Image
+              source={require('@assets/images/logo-mark-transparent.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
 
             <Text style={styles.title}>{isLogin ? 'Welcome back' : 'Create account'}</Text>
 
@@ -334,6 +337,13 @@ const styles = createThemedStyles((theme) => ({
 
   emoji: {
     fontSize: 28,
+  },
+
+  logo: {
+    width: 160,
+    height: 160,
+    marginBottom: theme.spacing.lg,
+    marginTop: theme.spacing.xl,
   },
 
   title: {

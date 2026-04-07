@@ -36,10 +36,17 @@ import {
   findDuplicateRecipeDocumentByFile,
 } from '@/features/recipes/storage/recipeDocumentStorage'
 import { useStrategyCreateRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
+import { optimizeImageUri } from '@/features/recipes/utils/optimizeImageAsset'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
 import PlanLimitReachedModal, { type PlanLimitReachedType } from '@/features/subscription/components/PlanLimitReachedModal'
 import { useLimitQaOverrides } from '@/features/subscription/dev/limitQaOverrides'
+import {
+  IMPORT_IMAGE_COMPRESS_QUALITY,
+  IMPORT_IMAGE_MAX_DIMENSION_PX,
+  IMPORT_IMAGE_MAX_FILE_BYTES,
+  IMPORT_IMAGE_TOO_LARGE_MESSAGE,
+} from '@/features/subscription/constants/limits'
 import { getPlanLimitTypeFromError } from '@/features/subscription/utils/limitErrors'
 
 export type CreateRecipeVariant = 'onboarding' | 'app'
@@ -54,6 +61,11 @@ interface CreateRecipeScreenProps {
 
 const FOOTER_HEIGHT = 72
 const PENDING_LIMIT_RETRY_PREFIX = 'recipes:create:pending-retry:'
+const IMPORT_IMAGE_QUALITY_STEPS = [
+  IMPORT_IMAGE_COMPRESS_QUALITY,
+  0.74,
+  0.68,
+]
 
 type PendingLimitRetry =
   | {
@@ -72,6 +84,11 @@ function inferImportMimeType(fileName: string) {
   if (lower.endsWith('.png')) return 'image/png'
   if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg'
   return 'application/octet-stream'
+}
+
+function isOptimizableImportImage(fileName: string) {
+  const mimeType = inferImportMimeType(fileName)
+  return mimeType === 'image/jpeg' || mimeType === 'image/png'
 }
 
 function formatDuplicateImportMessage(input: { title: string | null; createdAt: string }) {
@@ -201,13 +218,35 @@ export default function CreateRecipeScreen({
 
   const saveDocument = useCallback(
     async (values: RecipeDocumentFormValues, file: { uri: string; name: string; size: number }) => {
-      const duplicate = await findDuplicateRecipeDocumentByFile({ uri: file.uri })
+      const optimizedFile = isOptimizableImportImage(file.name)
+        ? await optimizeImageUri(
+            {
+              uri: file.uri,
+              fileName: file.name,
+            },
+            {
+              maxDimensionPx: IMPORT_IMAGE_MAX_DIMENSION_PX,
+              maxFileBytes: IMPORT_IMAGE_MAX_FILE_BYTES,
+              qualities: IMPORT_IMAGE_QUALITY_STEPS,
+              fallbackBaseName: 'recipe-import',
+              tooLargeMessage: IMPORT_IMAGE_TOO_LARGE_MESSAGE,
+            }
+          )
+        : null
+      const normalizedFile = optimizedFile
+        ? {
+            uri: optimizedFile.uri,
+            name: optimizedFile.fileName,
+            size: optimizedFile.fileSize,
+          }
+        : file
+      const duplicate = await findDuplicateRecipeDocumentByFile({ uri: normalizedFile.uri })
       if (duplicate) {
         posthog?.capture('import_duplicate_blocked', {
           source: 'document',
           route_mode: routeMode,
-          file_name: file.name,
-          file_size: file.size,
+          file_name: normalizedFile.name,
+          file_size: normalizedFile.size,
           existing_title: duplicate.title ?? null,
           existing_created_at: duplicate.createdAt,
         })
@@ -234,14 +273,14 @@ export default function CreateRecipeScreen({
       if (!shouldUseLocalData) {
         setIsUploadingPremiumImport(true)
         await uploadPremiumImport({
-          uri: file.uri,
-          fileName: file.name,
-          mimeType: inferImportMimeType(file.name),
+          uri: normalizedFile.uri,
+          fileName: normalizedFile.name,
+          mimeType: inferImportMimeType(normalizedFile.name),
         })
       }
       await documentMutation.mutateAsync({
         title: values.title,
-        file,
+        file: normalizedFile,
         plan: importPlan,
       })
       await clearPendingRetry()
@@ -387,14 +426,15 @@ export default function CreateRecipeScreen({
     if (retryAfterUpgrade !== '1' || !isPremium || !pendingRetry) return
     if (isSaving || hasTriedAutoRetryRef.current) return
     hasTriedAutoRetryRef.current = true
+    const retry = pendingRetry
 
     async function runAutoRetry() {
       try {
-        if (pendingRetry.kind === 'recipe') {
-          await saveRecipe(pendingRetry.values)
+        if (retry.kind === 'recipe') {
+          await saveRecipe(retry.values)
           return
         }
-        await saveDocument(pendingRetry.values, pendingRetry.file)
+        await saveDocument(retry.values, retry.file)
       } catch {
         Alert.alert(
           'Could not save automatically',

@@ -41,6 +41,10 @@ import {
   RECIPE_IMAGE_MASTER_MAX_FILE_BYTES,
   RECIPE_IMAGE_MASTER_TOO_LARGE_MESSAGE,
 } from '@/features/subscription/constants/limits'
+import {
+  optimizePickerImageAsset,
+  type OptimizedImageAsset,
+} from '@/features/recipes/utils/optimizeImageAsset'
 import { RECIPE_MEAL_TIMES, type RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { createThemedStyles } from '@/styles/createStyles'
 
@@ -136,85 +140,16 @@ const IMAGE_QUALITY_STEPS = [
   0.66,
 ]
 
-type ImageManipulatorModule = {
-  SaveFormat: {
-    JPEG: string
-  }
-  manipulateAsync: (
-    uri: string,
-    actions: { resize: { width?: number; height?: number } }[],
-    saveOptions: { compress: number; format: string }
-  ) => Promise<{ uri: string }>
-}
-
-type OptimizedImageAsset = {
-  uri: string
-  fileName: string
-  mimeType: string
-  fileSize: number
-}
-
-function getOptimizedFileName(fileName?: string | null): string {
-  const base = (fileName?.trim() || `recipe-${Date.now()}`).replace(/\.[^/.]+$/, '')
-  return `${base}.jpg`
-}
-
-function getResizeAction(asset: ImagePicker.ImagePickerAsset) {
-  const width = asset.width ?? 0
-  const height = asset.height ?? 0
-  if (!width || !height) return []
-  const longestSide = Math.max(width, height)
-  if (longestSide <= RECIPE_IMAGE_MASTER_MAX_DIMENSION_PX) return []
-
-  if (width >= height) {
-    return [{ resize: { width: RECIPE_IMAGE_MASTER_MAX_DIMENSION_PX } }]
-  }
-  return [{ resize: { height: RECIPE_IMAGE_MASTER_MAX_DIMENSION_PX } }]
-}
-
-async function getFileSizeBytes(uri: string): Promise<number> {
-  try {
-    const info = await new File(uri).info()
-    if (info.exists && 'size' in info && typeof info.size === 'number') return info.size
-  } catch {
-    // Ignore info lookup errors and return 0 as unknown size.
-  }
-  return 0
-}
-
-function loadImageManipulatorModule(): ImageManipulatorModule {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const module = require('expo-image-manipulator') as ImageManipulatorModule
-  if (!module?.manipulateAsync || !module?.SaveFormat?.JPEG) {
-    throw new Error('Image optimizer is not available on this build.')
-  }
-  return module
-}
-
 async function optimizeRecipeImageAsset(
   asset: ImagePicker.ImagePickerAsset
 ): Promise<OptimizedImageAsset> {
-  const imageManipulator = loadImageManipulatorModule()
-  const actions = getResizeAction(asset)
-  const fileName = getOptimizedFileName(asset.fileName)
-
-  for (const quality of IMAGE_QUALITY_STEPS) {
-    const result = await imageManipulator.manipulateAsync(asset.uri, actions, {
-      compress: quality,
-      format: imageManipulator.SaveFormat.JPEG,
-    })
-    const size = await getFileSizeBytes(result.uri)
-    if (size > 0 && size <= RECIPE_IMAGE_MASTER_MAX_FILE_BYTES) {
-      return {
-        uri: result.uri,
-        fileName,
-        mimeType: 'image/jpeg',
-        fileSize: size,
-      }
-    }
-  }
-
-  throw new Error(RECIPE_IMAGE_MASTER_TOO_LARGE_MESSAGE)
+  return optimizePickerImageAsset(asset, {
+    maxDimensionPx: RECIPE_IMAGE_MASTER_MAX_DIMENSION_PX,
+    maxFileBytes: RECIPE_IMAGE_MASTER_MAX_FILE_BYTES,
+    qualities: IMAGE_QUALITY_STEPS,
+    fallbackBaseName: 'recipe',
+    tooLargeMessage: RECIPE_IMAGE_MASTER_TOO_LARGE_MESSAGE,
+  })
 }
 
 const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(

@@ -2,6 +2,7 @@ import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
 import { getAllAsync, runSqlAsync } from '@/lib/sqlite'
 import { createNote } from '@/features/notes/api/notesRepo'
 import { createRecipe } from '@/features/recipes/api/recipesRepo'
+import { normalizeMealTimes } from '@/features/recipes/types/mealTimes'
 
 type LocalRecipeRow = {
   id: string
@@ -76,9 +77,11 @@ function parseFolderNames(raw: LocalRecipeRow['folders_json']) {
 
 function parseMealTimes(raw: LocalRecipeRow['meal_times_json']) {
   const list = parseJsonArray<string>(raw)
-  return list
-    .map((item) => (typeof item === 'string' ? item.trim() : ''))
-    .filter(Boolean)
+  return normalizeMealTimes(
+    list
+      .map((item) => (typeof item === 'string' ? item.trim() : ''))
+      .filter(Boolean)
+  )
 }
 
 export async function migrateLocalDataToCloudOnPremium(userId: string): Promise<MigrationSummary> {

@@ -8,6 +8,7 @@ import {
   purgeLocalRecipeRow,
   type LocalRecipeSyncRow,
 } from '@/features/recipes/storage/localRecipesStorage'
+import { normalizeMealTimes } from '@/features/recipes/types/mealTimes'
 import { supabase } from '@/lib/supabase'
 
 let syncInFlight: Promise<void> | null = null
@@ -47,7 +48,7 @@ function toCreateOrUpdateInput(row: LocalRecipeSyncRow): CreateRecipeInput {
           .filter(Boolean)
       : [],
     folders: parseStringList(row.foldersJson),
-    mealTimes: parseStringList(row.mealTimesJson),
+    mealTimes: normalizeMealTimes(parseStringList(row.mealTimesJson)),
     prepTimeMinutes: row.prepTimeMinutes,
     cookTimeMinutes: row.cookTimeMinutes,
     servings: row.servings,
