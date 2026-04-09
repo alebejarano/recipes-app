@@ -651,9 +651,9 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>Best for</Text>
+          <Text style={styles.label}>Best for (optional)</Text>
           <Text style={styles.helperText}>
-            Pick when this recipe makes the most sense. You can choose more than one.
+            Pick when this recipe makes the most sense, if any. You can choose more than one.
           </Text>
           <View style={styles.tagsRow}>
             {RECIPE_MEAL_TIMES.map((mealTime) => (
@@ -892,7 +892,10 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
   },
-  field: { gap: theme.spacing.xs },
+  field: { 
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.md
+  },
   helperText: {
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.sm,

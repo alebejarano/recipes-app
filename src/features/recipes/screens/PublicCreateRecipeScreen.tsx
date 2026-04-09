@@ -378,7 +378,7 @@ export default function PublicCreateRecipeScreen({
   )
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
         <View style={styles.topBar}>
           <Button
@@ -481,7 +481,13 @@ export default function PublicCreateRecipeScreen({
             ) : null}
           </ScrollView>
 
-          <View style={[styles.footer, entryMode ? null : styles.footerCompact]}>
+          <View
+            style={[
+              styles.footer,
+              { paddingBottom: Math.max(insets.bottom, 8) },
+              entryMode ? null : styles.footerCompact,
+            ]}
+          >
             <Button
               variant="secondary"
               size="md"

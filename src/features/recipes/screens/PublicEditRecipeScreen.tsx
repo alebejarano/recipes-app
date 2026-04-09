@@ -139,7 +139,7 @@ export default function PublicEditRecipeScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.loadingState}>
           <ActivityIndicator size="small" color={styles.loadingText.color} />
           <Text style={styles.loadingText}>Loading recipe…</Text>
@@ -150,7 +150,7 @@ export default function PublicEditRecipeScreen() {
 
   if (isError || !recipe || !initialValues) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.loadingState}>
           <Text style={styles.loadingText}>Unable to load this recipe.</Text>
         </View>
@@ -159,7 +159,7 @@ export default function PublicEditRecipeScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
         <View style={styles.topBar}>
           <Button
@@ -216,7 +216,7 @@ export default function PublicEditRecipeScreen() {
             ) : null}
           </ScrollView>
 
-          <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
             <Button
               variant="secondary"
               size="md"

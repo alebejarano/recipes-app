@@ -23,7 +23,6 @@ import { useAuth } from '@/features/auth/context/AuthContext'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
 import IngredientImportSheet from '@/features/recipes/components/IngredientImportSheet'
 import KitchenAlmostFullCard from '@/features/recipes/components/KitchenAlmostFullCard'
-import MealTimeChip from '@/features/recipes/components/MealTimeChip'
 import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
 import {
   useStrategyDeleteRecipe,
@@ -517,25 +516,8 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
 
           {recipe.subtitle ? <Text style={styles.subtitle}>{recipe.subtitle}</Text> : null}
 
-          {recipe.mealTimes?.length ? (
-            <View style={styles.attributeBlock}>
-              <Text style={styles.attributeLabel}>Best for</Text>
-              <View style={styles.tagsRow}>
-                {recipe.mealTimes.map((mealTime) => (
-                  <MealTimeChip key={mealTime} mealTime={mealTime} />
-                ))}
-              </View>
-              {recipe.mealTimesInferred ? (
-                <Text style={styles.attributeHint}>
-                  Suggested automatically from the recipe title or folders. You can change it in Edit.
-                </Text>
-              ) : null}
-            </View>
-          ) : null}
-
           {folders.length > 0 ? (
             <View style={styles.attributeBlock}>
-              <Text style={styles.attributeLabel}>Folders</Text>
               <View style={styles.tagsRow}>
                 {folders.map((folder) => (
                   <View key={folder} style={styles.tagPill}>

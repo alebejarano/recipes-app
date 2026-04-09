@@ -453,7 +453,7 @@ export default function CreateRecipeScreen({
 
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
         {/* Header / Back */}
         <View style={styles.topBar}>
@@ -560,7 +560,7 @@ export default function CreateRecipeScreen({
           </ScrollView>
 
           {/* Sticky footer */}
-          <View style={[styles.footer, { paddingBottom: insets.bottom + 8 }]}>
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
             <Button
               variant="secondary"
               size="md"
