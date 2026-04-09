@@ -40,7 +40,7 @@ export default function SpaceReadyScreen({
           </Text>
 
           <Text style={styles.subtitle}>
-            Start saving your favorite recipes whenever you like.
+            Start with one recipe.
           </Text>
         </View>
       </View>
@@ -53,7 +53,7 @@ export default function SpaceReadyScreen({
           variant="primary"
           icon={<Feather name="plus" size={20} style={styles.addIconColor} />}
         >
-          Add a Recipe
+          Add your first recipe
         </Button>
 
         <Button
@@ -62,11 +62,11 @@ export default function SpaceReadyScreen({
           size="lg"
           style={styles.skipButton}
         >
-          See the app first
+          Look around first
         </Button>
 
         <Text style={styles.infoText}>
-          Your recipes are stored on your device unless you create an account.
+          Your recipes stay on your device unless you choose to create an account.
         </Text>
       </View>
     </View>

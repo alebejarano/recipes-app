@@ -28,11 +28,11 @@ import RecipeForm, {
 } from '@/features/recipes/components/RecipeForm'
 import { useCreateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
 import { useAddRecipeDocument } from '@/features/recipes/hooks/useRecipeDocuments'
+import type { CreateRecipeEntry } from '@/features/recipes/screens/CreateRecipeScreen'
 import {
   DUPLICATE_RECIPE_DOCUMENT_CODE,
   findDuplicateRecipeDocumentByFile,
 } from '@/features/recipes/storage/recipeDocumentStorage'
-import type { CreateRecipeEntry } from '@/features/recipes/screens/CreateRecipeScreen'
 import { optimizeImageUri } from '@/features/recipes/utils/optimizeImageAsset'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import PlanLimitReachedModal, { type PlanLimitReachedType } from '@/features/subscription/components/PlanLimitReachedModal'
@@ -416,7 +416,7 @@ export default function PublicCreateRecipeScreen({
                   <Text style={styles.subtitle}>
                     {entryMode === 'pdf'
                       ? 'Upload a recipe file (PDF, JPG, or PNG) and add a title.'
-                      : 'Add the basics—you can always edit later.'}
+                      : 'Start simple — you can always refine it later.'}
                   </Text>
                 </View>
 
@@ -548,7 +548,6 @@ const styles = createThemedStyles((theme) => ({
 
   topBar: {
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.lg,
     paddingBottom: theme.spacing.md,
   },
 

@@ -4,11 +4,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import OnboardingLayout from '@/features/onboarding/components/OnboardingLayout';
-import AddRecipeScreen from '@/features/onboarding/screens/AddRecipeScreen';
+import ChooseAddMethodScreen from '@/features/onboarding/screens/ChooseAddMethodScreen';
 import IdentityScreen from '@/features/onboarding/screens/IdentityScreen';
 import SpaceReadyScreen from '@/features/onboarding/screens/SpaceReadyScreen';
 import WelcomeScreen from '@/features/onboarding/screens/WelcomeScreen';
 import PublicCreateRecipeScreen from '@/features/recipes/screens/PublicCreateRecipeScreen';
+import type { CreateRecipeEntry } from '@/features/recipes/screens/CreateRecipeScreen';
 
 import {
   useOnboarding,
@@ -89,7 +90,17 @@ export default function OnboardingFlowScreen() {
   };
 
   const handleAddRecipePath = async () => {
-    await setPath('a');
+    await setPath('choose');
+    await setStep(3);
+  };
+
+  const handleSelectEntry = async (entry: CreateRecipeEntry) => {
+    await setPath(entry);
+    await setStep(4);
+  };
+
+  const handleCreateBack = async () => {
+    await setPath('choose');
     await setStep(3);
   };
 
@@ -118,15 +129,21 @@ export default function OnboardingFlowScreen() {
       );
     }
 
-    if (path === 'a') {
+    if (path === 'choose' || path === 'scratch' || path === 'pdf') {
       switch (step) {
         case 3:
-          return <AddRecipeScreen onSelectManual={() => setStep(4)} />;
+          return (
+            <ChooseAddMethodScreen
+              onSelectScratch={() => handleSelectEntry('scratch')}
+              onSelectFile={() => handleSelectEntry('pdf')}
+            />
+          );
         case 4:
           return (
             <PublicCreateRecipeScreen
+              entry={path === 'pdf' ? 'pdf' : 'scratch'}
               onSaved={(id) => handleRecipeSaved(id)}
-              onBack={() => setStep(3)}
+              onBack={handleCreateBack}
             />
           );
         default:
@@ -138,13 +155,15 @@ export default function OnboardingFlowScreen() {
   };
 
   const getProgress = () => {
-    if (path === 'a') return { current: step + 1, total: 5 };
+    if (path === 'choose' || path === 'scratch' || path === 'pdf') {
+      return { current: Math.min(step + 1, 4), total: 4 };
+    }
     return { current: step + 1, total: 3 };
   };
 
   const { current, total } = getProgress();
 
-  const isEmbeddedScrollStep = path === 'a' && step === 4;
+  const isEmbeddedScrollStep = (path === 'scratch' || path === 'pdf') && step === 4;
 
   return (
     <OnboardingLayout

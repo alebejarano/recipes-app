@@ -1,8 +1,8 @@
 // src/features/recipes/screens/RecipeDetailScreen.tsx
 
 import { Feather, Ionicons } from '@expo/vector-icons'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Image } from 'expo-image'
 import { router, useLocalSearchParams, useSegments } from 'expo-router'
 import React, { useContext, useEffect, useMemo, useState } from 'react'
@@ -19,8 +19,8 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { createThemedStyles } from '@/styles/createStyles'
 
-import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
 import { useAuth } from '@/features/auth/context/AuthContext'
+import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
 import IngredientImportSheet from '@/features/recipes/components/IngredientImportSheet'
 import KitchenAlmostFullCard from '@/features/recipes/components/KitchenAlmostFullCard'
 import MealTimeChip from '@/features/recipes/components/MealTimeChip'
@@ -31,18 +31,18 @@ import {
   useStrategyRecipesList,
   useStrategyUpdateRecipe,
 } from '@/features/recipes/hooks/useStrategyRecipes'
-import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
+import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
+import { buildRecipeShareText, shareRecipeAsTextFile } from '@/features/recipes/utils/shareRecipe'
+import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
 import { FREE_PLAN_MAX_RECIPES } from '@/features/subscription/constants/limits'
 import { KITCHEN_ALMOST_FULL_RECIPE_DISMISS_UNTIL_PREFIX } from '@/features/subscription/constants/reminderKeys'
+import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
+import { useLimitQaOverrides } from '@/features/subscription/dev/limitQaOverrides'
 import {
   hasShownKitchenCapacityReminderInSession,
   markKitchenCapacityReminderShownInSession,
 } from '@/features/subscription/dev/reminderSession'
-import { useLimitQaOverrides } from '@/features/subscription/dev/limitQaOverrides'
 import { buildFreePlanUsageSnapshot } from '@/features/subscription/utils/planUsage'
-import { buildRecipeShareText, shareRecipeAsTextFile } from '@/features/recipes/utils/shareRecipe'
-import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
-import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 const FALLBACK_FOLDERS: string[] = []
@@ -600,7 +600,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
                 size={16}
                 style={styles.sectionActionIcon}
               />
-              <Text style={styles.sectionActionText}>Add to shopping list</Text>
+              <Text style={styles.sectionActionText}>Add ingredients to your list</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.card}>

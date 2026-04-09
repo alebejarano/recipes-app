@@ -1,7 +1,7 @@
 // src/features/recipes/components/RecipeForm.tsx
+import { File } from '@/lib/fileSystem'
 import { Feather } from '@expo/vector-icons'
 import { Image } from 'expo-image'
-import { File } from '@/lib/fileSystem'
 import * as ImagePicker from 'expo-image-picker'
 import React, {
   forwardRef,
@@ -23,14 +23,19 @@ import {
 
 import Button from '@/components/Button'
 import TagChip from '@/components/TagChip'
-import MealTimeChip from '@/features/recipes/components/MealTimeChip'
 import { uploadRecipeImage } from '@/features/recipes/api/recipesRepo'
+import MealTimeChip from '@/features/recipes/components/MealTimeChip'
 import {
   getActiveImportBytesByUri,
   getImportsUsageSummary,
   isManagedLocalImportImageUri,
   type ImportPlan,
 } from '@/features/recipes/storage/importsStorage'
+import { RECIPE_MEAL_TIMES, type RecipeMealTime } from '@/features/recipes/types/mealTimes'
+import {
+  optimizePickerImageAsset,
+  type OptimizedImageAsset,
+} from '@/features/recipes/utils/optimizeImageAsset'
 import {
   FREE_PLAN_MAX_IMPORT_FILE_BYTES,
   FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
@@ -41,11 +46,6 @@ import {
   RECIPE_IMAGE_MASTER_MAX_FILE_BYTES,
   RECIPE_IMAGE_MASTER_TOO_LARGE_MESSAGE,
 } from '@/features/subscription/constants/limits'
-import {
-  optimizePickerImageAsset,
-  type OptimizedImageAsset,
-} from '@/features/recipes/utils/optimizeImageAsset'
-import { RECIPE_MEAL_TIMES, type RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { createThemedStyles } from '@/styles/createStyles'
 
 export type RecipeFormValues = {
@@ -534,7 +534,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
             pressed && styles.coverCardPressed,
           ]}
           accessibilityRole="button"
-          accessibilityLabel="Add emoji or photo"
+          accessibilityLabel="Add a photo or emoji"
         >
           {values.imageUrl ? (
             <Image
@@ -550,7 +550,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
               <View style={styles.coverIconWrap}>
                 <Feather name="camera" size={20} color={styles.coverHint.color} />
               </View>
-              <Text style={styles.coverHint}>Add emoji or photo</Text>
+              <Text style={styles.coverHint}>Add a photo or emoji</Text>
             </View>
           )}
 

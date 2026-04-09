@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-export type OnboardingPath = 'a' | null;
+export type OnboardingPath = 'choose' | 'scratch' | 'pdf' | null;
 
 type OnboardingState = {
   path: OnboardingPath;
@@ -36,7 +36,8 @@ const DEFAULT_STATE: OnboardingState = {
 };
 
 const normalizePath = (path: unknown): OnboardingPath => {
-  return path === 'a' ? 'a' : null;
+  if (path === 'a') return 'choose';
+  return path === 'choose' || path === 'scratch' || path === 'pdf' ? path : null;
 };
 
 const OnboardingContext = createContext<OnboardingContextValue | null>(null);

@@ -31,22 +31,22 @@ import RecipeForm, {
   type RecipeFormSubmitValues,
 } from '@/features/recipes/components/RecipeForm'
 import { useAddRecipeDocument } from '@/features/recipes/hooks/useRecipeDocuments'
+import { useStrategyCreateRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
 import {
   DUPLICATE_RECIPE_DOCUMENT_CODE,
   findDuplicateRecipeDocumentByFile,
 } from '@/features/recipes/storage/recipeDocumentStorage'
-import { useStrategyCreateRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
 import { optimizeImageUri } from '@/features/recipes/utils/optimizeImageAsset'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
 import PlanLimitReachedModal, { type PlanLimitReachedType } from '@/features/subscription/components/PlanLimitReachedModal'
-import { useLimitQaOverrides } from '@/features/subscription/dev/limitQaOverrides'
 import {
   IMPORT_IMAGE_COMPRESS_QUALITY,
   IMPORT_IMAGE_MAX_DIMENSION_PX,
   IMPORT_IMAGE_MAX_FILE_BYTES,
   IMPORT_IMAGE_TOO_LARGE_MESSAGE,
 } from '@/features/subscription/constants/limits'
+import { useLimitQaOverrides } from '@/features/subscription/dev/limitQaOverrides'
 import { getPlanLimitTypeFromError } from '@/features/subscription/utils/limitErrors'
 
 export type CreateRecipeVariant = 'onboarding' | 'app'
@@ -492,7 +492,7 @@ export default function CreateRecipeScreen({
                   <Text style={styles.subtitle}>
                     {entryMode === 'pdf'
                       ? 'Upload a recipe file (PDF, JPG, or PNG) and add a title.'
-                      : 'Add the basics—you can always edit later.'}
+                      : 'Start simple — you can always refine it later.'}
                   </Text>
                 </View>
 

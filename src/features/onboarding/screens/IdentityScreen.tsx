@@ -32,14 +32,14 @@ const options = [
     },
     {
         id: 'screenshots',
-        label: 'I want to stop losing screenshots and bookmarks.',
+        label: 'Stop losing recipes everywhere.',
         icon: (style: any) => (
             <Feather name="camera" size={20} style={style} />
         ),
     },
     {
         id: 'healthy',
-        label: 'I want to eat healthier with less decision fatigue.',
+        label: 'Eat better, with less thinking.',
         icon: (style: any) => (
             <MaterialCommunityIcons
                 name="food-apple-outline"

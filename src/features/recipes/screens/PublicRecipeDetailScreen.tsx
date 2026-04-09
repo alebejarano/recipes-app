@@ -21,9 +21,9 @@ import IngredientImportSheet from '@/features/recipes/components/IngredientImpor
 import MealTimeChip from '@/features/recipes/components/MealTimeChip'
 import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
 import { useDeleteLocalRecipe, useLocalRecipe, useUpdateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
+import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { buildRecipeShareText, shareRecipeAsTextFile } from '@/features/recipes/utils/shareRecipe'
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
-import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 const FALLBACK_FOLDERS: string[] = []
@@ -389,7 +389,6 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
 
           {recipe.mealTimes?.length ? (
             <View style={styles.attributeBlock}>
-              <Text style={styles.attributeLabel}>Best for</Text>
               <View style={styles.tagsRow}>
                 {recipe.mealTimes.map((mealTime) => (
                   <MealTimeChip key={mealTime} mealTime={mealTime} />
@@ -452,7 +451,7 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
                 size={16}
                 style={styles.sectionActionIcon}
               />
-              <Text style={styles.sectionActionText}>Add to shopping list</Text>
+              <Text style={styles.sectionActionText}>Add ingredients to your listt</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.card}>

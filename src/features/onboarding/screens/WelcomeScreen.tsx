@@ -24,18 +24,18 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
 
       <View style={styles.textBlock}>
         <Text style={styles.title}>
-          Welcome to your calm,{'\n'}
-          <Text style={styles.titleHighlight}>organized recipe space.</Text>
+          Welcome to your kitchen.{'\n'}
+          <Text style={styles.titleHighlight}>A calm place for everything you love to cook.</Text>
         </Text>
 
         <Text style={styles.subtitle}>
-          Collect your favorite recipes from everywhere, in one peaceful place.
+          Keep your recipes in one peaceful space — no clutter, no noise.
         </Text>
       </View>
 
       <View style={styles.buttonWrapper}>
         <Button variant="primary" size="xl" onPress={onContinue}>
-          Continue
+          Start your kitchen
         </Button>
       </View>
     </View>
