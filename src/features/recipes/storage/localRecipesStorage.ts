@@ -66,6 +66,7 @@ type LocalRecipeRow = {
 type LocalRecipeFoldersRow = {
   id: string
   folders_json: string
+  meal_times_json?: string | null
   version: number | null
 }
 
@@ -142,6 +143,10 @@ function parseJsonArray<T>(value: string | null | undefined): T[] {
   } catch {
     return []
   }
+}
+
+function normalizeFolderName(value: string) {
+  return value.trim().toLowerCase()
 }
 
 function isRemoteUri(uri: string) {
@@ -751,7 +756,7 @@ export async function purgeLocalRecipeRow(localId: string) {
 export async function removeFolderFromLocalRecipesByName(folderName: string): Promise<number> {
   await ensureLocalSqliteMigrationReady()
 
-  const normalizedFolderName = folderName.trim().toLowerCase()
+  const normalizedFolderName = normalizeFolderName(folderName)
   if (!normalizedFolderName) return 0
 
   const rows = await getAllAsync<LocalRecipeFoldersRow>(
@@ -769,6 +774,78 @@ export async function removeFolderFromLocalRecipesByName(folderName: string): Pr
       (folder) => folder.name.trim().toLowerCase() !== normalizedFolderName
     )
     if (nextFolders.length === folders.length) continue
+
+    statements.push({
+      sql: `UPDATE local_recipes
+            SET folders_json = ?, updated_at = ?, dirty = ?, version = ?
+            WHERE id = ?;`,
+      params: [JSON.stringify(nextFolders), now, 1, (row.version ?? 1) + 1, row.id],
+    })
+  }
+
+  if (statements.length === 0) return 0
+  await runSqlBatchAsync(statements)
+  return statements.length
+}
+
+export async function renameFolderInLocalRecipesByName(input: {
+  fromName: string
+  toName: string
+  emoji?: string | null
+}): Promise<number> {
+  await ensureLocalSqliteMigrationReady()
+
+  const fromName = input.fromName.trim()
+  const toName = input.toName.trim()
+  const normalizedFromName = normalizeFolderName(fromName)
+  const normalizedToName = normalizeFolderName(toName)
+  if (!normalizedFromName || !normalizedToName || normalizedFromName === normalizedToName) {
+    return 0
+  }
+
+  const rows = await getAllAsync<LocalRecipeFoldersRow>(
+    `SELECT id, folders_json, version
+      FROM local_recipes
+      WHERE deleted_at IS NULL;`
+  )
+
+  const now = new Date().toISOString()
+  const statements: { sql: string; params?: (string | number | null)[] }[] = []
+
+  for (const row of rows) {
+    const folders = parseJsonArray<LocalRecipeFolder>(row.folders_json)
+    let changed = false
+    const seen = new Set<string>()
+    const nextFolders: LocalRecipeFolder[] = []
+
+    for (const folder of folders) {
+      const normalizedName = normalizeFolderName(folder.name)
+      const nextFolder =
+        normalizedName === normalizedFromName
+          ? {
+              ...folder,
+              name: toName,
+              emoji: input.emoji?.trim() || folder.emoji || '📁',
+            }
+          : folder
+
+      if (normalizedName === normalizedFromName) {
+        changed = true
+      }
+
+      const dedupeKey = normalizeFolderName(nextFolder.name)
+      if (!dedupeKey || seen.has(dedupeKey)) {
+        if (normalizedName === normalizedFromName) {
+          changed = true
+        }
+        continue
+      }
+
+      seen.add(dedupeKey)
+      nextFolders.push(nextFolder)
+    }
+
+    if (!changed) continue
 
     statements.push({
       sql: `UPDATE local_recipes

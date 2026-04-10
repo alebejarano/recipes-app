@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { createThemedStyles } from '@/styles/createStyles'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
+import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
 import IngredientImportSheet from '@/features/recipes/components/IngredientImportSheet'
 import KitchenAlmostFullCard from '@/features/recipes/components/KitchenAlmostFullCard'
@@ -102,6 +103,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
   const [isImportingIngredients, setIsImportingIngredients] = useState(false)
   const [shouldShowCapacityReminder, setShouldShowCapacityReminder] = useState(false)
   const { user } = useAuth()
+  const showSnackbar = useTransientSnackbarStore((state) => state.show)
 
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
@@ -264,6 +266,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
               onPress: async () => {
                 try {
                   await deleteMutation.mutateAsync(recipeId)
+                  showSnackbar('Recipe deleted')
                   if (safeReturnTo) {
                     router.replace(safeReturnTo)
                   } else {

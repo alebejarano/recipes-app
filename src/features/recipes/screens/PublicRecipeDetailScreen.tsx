@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { createThemedStyles } from '@/styles/createStyles'
 
+import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
 import IngredientImportSheet from '@/features/recipes/components/IngredientImportSheet'
 import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
@@ -84,6 +85,7 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
   const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
+  const showSnackbar = useTransientSnackbarStore((state) => state.show)
   const deleteMutation = useDeleteLocalRecipe()
   const updateMutation = useUpdateLocalRecipe(recipeId)
   const foldersQuery = useStrategyFoldersList('public')
@@ -134,6 +136,7 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
               onPress: async () => {
                 try {
                   await deleteMutation.mutateAsync(recipeId)
+                  showSnackbar('Recipe deleted')
                   if (safeReturnTo) {
                     router.replace(safeReturnTo)
                   } else {

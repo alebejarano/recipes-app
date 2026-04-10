@@ -1,4 +1,5 @@
 import type { Folder } from '@/features/folders/api/foldersCloudRepo'
+import { renameFolderInLocalRecipesByName } from '@/features/recipes/storage/localRecipesStorage'
 import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
 import { getAllAsync, getFirstAsync, runSqlAsync } from '@/lib/sqlite'
 
@@ -160,6 +161,14 @@ export async function updateLocalFolder(input: {
       WHERE id = ?;`,
     [input.name.trim(), input.emoji ?? null, updatedAt, 1, nextVersion, input.id]
   )
+
+  if (existing.name.trim().toLowerCase() !== input.name.trim().toLowerCase()) {
+    await renameFolderInLocalRecipesByName({
+      fromName: existing.name,
+      toName: input.name.trim(),
+      emoji: input.emoji ?? existing.emoji ?? '📁',
+    })
+  }
 
   const next = await getById(input.id)
   if (!next) throw new Error('Folder not found')

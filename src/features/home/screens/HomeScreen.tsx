@@ -23,12 +23,12 @@ import PickCard from '@/features/home/components/PickCard';
 import RecipeCarousel, { type RecipePreview } from '@/features/home/components/RecipeCarousel';
 import SectionHeaderRow from '@/features/home/components/SectionHeaderRow';
 import SuccessBanner from '@/features/home/components/SuccessBanner';
-import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments';
-import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore';
 import { useStrategyNotesList } from '@/features/notes/hooks/useStrategyNotes';
+import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments';
 import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes';
+import type { RecipeMealTime } from '@/features/recipes/types/mealTimes';
+import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore';
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode';
-import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import {
   FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
   FREE_PLAN_MAX_RECIPES,
@@ -363,10 +363,8 @@ export default function HomeScreen({
     !recipesQuery.data &&
     !notesQuery.data;
 
-  const emptyStateTitle = isPublic ? 'Start your recipe collection' : 'Your recipe space is ready.';
-  const emptyStateBody = isPublic
-    ? 'Add a recipe or a note. Everything stays on this device while you use the free local plan.'
-    : 'Add a recipe or a note. Home will show recent activity and quick access once you do.';
+  const emptyStateTitle = 'Your kitchen is just getting started.';
+  const emptyStateBody = 'Add your first recipe and make this space yours.';
 
   const handlePrimaryCta = () => {
     router.push(
@@ -605,14 +603,16 @@ export default function HomeScreen({
       />
 
       {isEmpty ? (
-        <EmptyHomeCard
-          title={emptyStateTitle}
-          body={emptyStateBody}
-          primaryLabel="Add your first recipe"
-          secondaryLabel="Create a note"
-          onPressPrimary={handlePrimaryCta}
-          onPressSecondary={handleSecondaryCta}
-        />
+        <View style={styles.emptyStateWrap}>
+          <EmptyHomeCard
+            title={emptyStateTitle}
+            body={emptyStateBody}
+            primaryLabel="Add your first recipe"
+            secondaryLabel="Create a note"
+            onPressPrimary={handlePrimaryCta}
+            onPressSecondary={handleSecondaryCta}
+          />
+        </View>
       ) : null}
 
       {showRiskBanner ? (
@@ -924,6 +924,10 @@ const styles = createThemedStyles((theme) => ({
   content: {
     paddingTop: theme.spacing.xl,
     gap: layout.sectionGap,
+  },
+  emptyStateWrap: {
+    flex: 1,
+    justifyContent: 'center',
   },
   section: {
     gap: layout.cardGap,

@@ -15,6 +15,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
+import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 
@@ -41,6 +42,7 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
   const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
+  const showSnackbar = useTransientSnackbarStore((state) => state.show)
 
   const noteQuery = useStrategyNote(resolvedNoteId, routeMode)
   const createMutation = useStrategyCreateNote(routeMode)
@@ -87,6 +89,12 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
     ? 'Update your note anytime.'
     : 'Capture ideas, tips, and quick thoughts.'
   const saveLabel = isEditing ? 'Save changes' : 'Save note'
+  const detailPath =
+    routeMode === 'dev'
+      ? '/(dev)/notes/[id]'
+      : routeMode === 'public'
+        ? '/(public)/notes/[id]'
+        : '/(auth)/notes/[id]'
 
   const handleBack = () => {
     if (isSaving || isDeleting) return
@@ -104,14 +112,14 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
       if (isEditing) {
         await updateMutation.mutateAsync({ title, content })
         router.replace({
-          pathname: '/(auth)/notes/[id]',
+          pathname: detailPath,
           params: { id: resolvedNoteId, returnTo: returnToParam },
         })
         return
       } else {
         const note = await createMutation.mutateAsync({ title, content })
         router.replace({
-          pathname: '/(auth)/notes/[id]',
+          pathname: detailPath,
           params: { id: note.id, returnTo: returnToParam },
         })
         return
@@ -132,6 +140,7 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
         onPress: async () => {
           try {
             await deleteMutation.mutateAsync(resolvedNoteId)
+            showSnackbar('Note deleted')
             router.back()
           } catch (error: any) {
             Alert.alert('Delete failed', error?.message ?? 'Please try again.')

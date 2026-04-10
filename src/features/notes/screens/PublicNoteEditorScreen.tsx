@@ -14,6 +14,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
+import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 
@@ -38,6 +39,7 @@ export default function PublicNoteEditorScreen({ noteId }: NoteEditorScreenProps
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
   const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
+  const showSnackbar = useTransientSnackbarStore((state) => state.show)
 
   const noteQuery = useLocalNote(resolvedNoteId)
   const createMutation = useCreateLocalNote()
@@ -129,6 +131,7 @@ export default function PublicNoteEditorScreen({ noteId }: NoteEditorScreenProps
         onPress: async () => {
           try {
             await deleteMutation.mutateAsync(resolvedNoteId)
+            showSnackbar('Note deleted')
             router.back()
           } catch (error: any) {
             Alert.alert('Delete failed', error?.message ?? 'Please try again.')

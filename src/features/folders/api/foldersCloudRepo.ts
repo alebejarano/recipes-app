@@ -1,5 +1,8 @@
 import { supabase } from '@/lib/supabase'
-import { removeFolderFromLocalRecipesByName } from '@/features/recipes/storage/localRecipesStorage'
+import {
+  removeFolderFromLocalRecipesByName,
+  renameFolderInLocalRecipesByName,
+} from '@/features/recipes/storage/localRecipesStorage'
 
 async function requireAuth() {
   const { data, error } = await supabase.auth.getSession()
@@ -74,6 +77,13 @@ export async function updateFolder(input: {
   if (!name) throw new Error('Folder name is required')
 
   const emoji = input.emoji?.trim() || '📁'
+  const { data: existing, error: existingError } = await supabase
+    .from('folders')
+    .select('name,emoji')
+    .eq('id', input.id)
+    .maybeSingle()
+
+  if (existingError) throw existingError
 
   const { data, error } = await supabase
     .from('folders')
@@ -84,6 +94,15 @@ export async function updateFolder(input: {
 
   if (error) throw error
   if (!data) throw new Error('Update folder failed')
+
+  const previousName = typeof existing?.name === 'string' ? existing.name : ''
+  if (previousName.trim().toLowerCase() !== name.toLowerCase()) {
+    await renameFolderInLocalRecipesByName({
+      fromName: previousName,
+      toName: name,
+      emoji,
+    })
+  }
 
   return mapFolder(data as FolderRow)
 }

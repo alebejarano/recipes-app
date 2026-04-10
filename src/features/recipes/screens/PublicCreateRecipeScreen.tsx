@@ -89,6 +89,13 @@ function isOptimizableImportImage(fileName: string) {
   return mimeType === 'image/jpeg' || mimeType === 'image/png'
 }
 
+function normalizeRequestedFolder(value?: string | string[]) {
+  const raw = Array.isArray(value) ? value[0] : value
+  if (typeof raw !== 'string') return null
+  const normalized = raw.trim().replace(/\s+/g, ' ')
+  return normalized.length ? normalized : null
+}
+
 export default function PublicCreateRecipeScreen({
   onSaved,
   onBack,
@@ -96,7 +103,10 @@ export default function PublicCreateRecipeScreen({
 }: PublicCreateRecipeScreenProps) {
   const insets = useSafeAreaInsets()
   const posthog = usePostHog()
-  const { retryAfterUpgrade } = useLocalSearchParams<{ retryAfterUpgrade?: string }>()
+  const { retryAfterUpgrade, folder } = useLocalSearchParams<{
+    retryAfterUpgrade?: string
+    folder?: string | string[]
+  }>()
   const { isPremium } = useStorageStrategy()
   const [entryMode, setEntryMode] = useState<'scratch' | 'pdf' | null>(entry ?? null)
   const [limitModalType, setLimitModalType] = useState<PlanLimitReachedType | null>(null)
@@ -116,6 +126,14 @@ export default function PublicCreateRecipeScreen({
   const homePath = '/(public)/(tabs)'
   const manageRecipesPath = '/(public)/recipes/manage'
   const manageImportsPath = '/(public)/imports/manage'
+  const requestedFolder = useMemo(() => normalizeRequestedFolder(folder), [folder])
+  const folderContextMessage = useMemo(
+    () =>
+      requestedFolder
+        ? `Saving in ${requestedFolder}. You can add this recipe to other folders too.`
+        : null,
+    [requestedFolder]
+  )
 
   const isSaving = entryMode === 'pdf' ? documentMutation.isPending : createMutation.isPending
 
@@ -350,7 +368,13 @@ export default function PublicCreateRecipeScreen({
     void runAutoRetry()
   }, [isPremium, isSaving, pendingRetry, retryAfterUpgrade, saveDocument, saveRecipe, triggerSave])
 
-  const initialValues = useMemo(() => createEmptyRecipeFormValues(), [])
+  const initialValues = useMemo(() => {
+    const nextValues = createEmptyRecipeFormValues()
+    if (requestedFolder) {
+      nextValues.folders = [requestedFolder]
+    }
+    return nextValues
+  }, [requestedFolder])
   const folderSuggestions = useMemo(
     () =>
       (foldersQuery.data ?? []).map((folder) => ({
@@ -416,7 +440,7 @@ export default function PublicCreateRecipeScreen({
                   <Text style={styles.subtitle}>
                     {entryMode === 'pdf'
                       ? 'Upload a recipe file (PDF, JPG, or PNG) and add a title.'
-                      : 'Start simple — you can always refine it later.'}
+                      : folderContextMessage ?? 'Start simple — you can always refine it later.'}
                   </Text>
                 </View>
 
@@ -436,6 +460,7 @@ export default function PublicCreateRecipeScreen({
                     onSubmit={handleSubmit}
                     showActions={false}
                     suggestedFolders={folderSuggestions}
+                    folderContextMessage={folderContextMessage}
                     onCreateFolder={handleCreateFolder}
                     imageUploadMode="local"
                   />
@@ -523,7 +548,7 @@ export default function PublicCreateRecipeScreen({
             router.push({
               pathname: '/(public)/premium',
               params: {
-                returnTo: `${createPath}?entry=${entryMode ?? 'scratch'}&retryAfterUpgrade=1`,
+                returnTo: `${createPath}?entry=${entryMode ?? 'scratch'}&retryAfterUpgrade=1${requestedFolder ? `&folder=${encodeURIComponent(requestedFolder)}` : ''}`,
               },
             })
           }}

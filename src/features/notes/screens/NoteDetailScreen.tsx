@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { createThemedStyles } from '@/styles/createStyles'
 
+import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import {
   useStrategyDeleteNote,
   useStrategyNote,
@@ -33,6 +34,7 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
   const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
+  const showSnackbar = useTransientSnackbarStore((state) => state.show)
   const noteQuery = useStrategyNote(noteId, routeMode)
   const note = noteQuery.data
   const isLoading = noteQuery.isLoading
@@ -46,7 +48,12 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
 
   const handleEdit = () => {
     router.push({
-      pathname: '/(auth)/notes/[id]/edit',
+      pathname:
+        routeMode === 'dev'
+          ? '/(dev)/notes/[id]/edit'
+          : routeMode === 'public'
+            ? '/(public)/notes/[id]/edit'
+            : '/(auth)/notes/[id]/edit',
       params: { id: noteId, returnTo: returnToParam },
     })
   }
@@ -66,6 +73,7 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
               onPress: async () => {
                 try {
                   await deleteMutation.mutateAsync(noteId)
+                  showSnackbar('Note deleted')
                   if (safeReturnTo) {
                     router.replace(safeReturnTo)
                   } else {
@@ -156,6 +164,7 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
               accessibilityRole="button"
               accessibilityLabel="More actions"
               style={styles.iconButton}
+              disabled={deleteMutation.isPending}
             >
               <Feather name="more-vertical" size={18} style={styles.icon} />
             </TouchableOpacity>

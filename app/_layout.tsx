@@ -6,6 +6,7 @@ import React, { useEffect } from 'react'
 
 import { AnalyticsConsentProvider, useAnalyticsConsent } from '@/features/analytics/context/AnalyticsConsentContext'
 import { AuthProvider } from '@/features/auth/context/AuthContext'
+import GlobalSnackbar from '@/features/feedback/components/GlobalSnackbar'
 import { OnboardingProvider } from '@/features/onboarding/context/OnboardingContext'
 import { ensureRecipePdfStorageReady } from '@/features/recipes/storage/recipePdfStorage'
 import RecipeSyncBootstrap from '@/features/recipes/sync/RecipeSyncBootstrap'
@@ -46,6 +47,7 @@ export default function RootLayout() {
             <RecipeSyncBootstrap />
             <OnboardingProvider>
               <Slot />
+              <GlobalSnackbar />
             </OnboardingProvider>
           </StorageStrategyProvider>
         </SubscriptionProvider>

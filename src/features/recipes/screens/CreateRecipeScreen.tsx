@@ -97,6 +97,13 @@ function formatDuplicateImportMessage(input: { title: string | null; createdAt: 
   return `Already imported as "${title}" on ${date}.`
 }
 
+function normalizeRequestedFolder(value?: string | string[]) {
+  const raw = Array.isArray(value) ? value[0] : value
+  if (typeof raw !== 'string') return null
+  const normalized = raw.trim().replace(/\s+/g, ' ')
+  return normalized.length ? normalized : null
+}
+
 export default function CreateRecipeScreen({
   variant = 'app',
   entry,
@@ -106,7 +113,10 @@ export default function CreateRecipeScreen({
   const insets = useSafeAreaInsets()
   const posthog = usePostHog()
   const { user } = useAuth()
-  const { retryAfterUpgrade } = useLocalSearchParams<{ retryAfterUpgrade?: string }>()
+  const { retryAfterUpgrade, folder } = useLocalSearchParams<{
+    retryAfterUpgrade?: string
+    folder?: string | string[]
+  }>()
   const segments = useSegments()
   const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
   const isDevMode = routeMode === 'dev'
@@ -179,6 +189,21 @@ export default function CreateRecipeScreen({
   const createPath =
     routeMode === 'dev' ? '/(dev)/recipes/create' : routeMode === 'public' ? '/(public)/recipes/create' : '/(auth)/recipes/create'
   const pendingRetryKey = `${PENDING_LIMIT_RETRY_PREFIX}${routeMode}:${user?.id ?? 'guest'}`
+  const requestedFolder = useMemo(() => normalizeRequestedFolder(folder), [folder])
+  const folderContextMessage = useMemo(
+    () =>
+      requestedFolder
+        ? `Saving in ${requestedFolder}. You can add this recipe to other folders too.`
+        : null,
+    [requestedFolder]
+  )
+  const initialValues = useMemo(() => {
+    const nextValues = createEmptyRecipeFormValues()
+    if (requestedFolder) {
+      nextValues.folders = [requestedFolder]
+    }
+    return nextValues
+  }, [requestedFolder])
 
   const handleBack = useCallback(() => {
     if (isSaving) return
@@ -492,7 +517,7 @@ export default function CreateRecipeScreen({
                   <Text style={styles.subtitle}>
                     {entryMode === 'pdf'
                       ? 'Upload a recipe file (PDF, JPG, or PNG) and add a title.'
-                      : 'Start simple — you can always refine it later.'}
+                      : folderContextMessage ?? 'Start simple — you can always refine it later.'}
                   </Text>
                 </View>
 
@@ -507,12 +532,13 @@ export default function CreateRecipeScreen({
                 ) : (
                   <RecipeForm
                     ref={recipeFormRef}
-                    initialValues={createEmptyRecipeFormValues()}
+                    initialValues={initialValues}
                     submitLabel={submitLabel}
                     isSubmitting={createMutation.isPending}
                     onSubmit={handleSubmit}
                     showActions={false}
                     suggestedFolders={folderSuggestions}
+                    folderContextMessage={folderContextMessage}
                     onCreateFolder={handleCreateFolder}
                     imageUploadMode={shouldUseLocalData ? 'local' : 'cloud'}
                     plan={importPlan}
@@ -596,7 +622,7 @@ export default function CreateRecipeScreen({
             router.push({
               pathname: premiumPath as any,
               params: {
-                returnTo: `${createPath}?entry=${entryMode ?? 'scratch'}&retryAfterUpgrade=1`,
+                returnTo: `${createPath}?entry=${entryMode ?? 'scratch'}&retryAfterUpgrade=1${requestedFolder ? `&folder=${encodeURIComponent(requestedFolder)}` : ''}`,
               },
             })
           }}

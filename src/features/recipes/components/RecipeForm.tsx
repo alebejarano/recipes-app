@@ -130,6 +130,7 @@ type Props = {
   onCancel?: () => void
   showActions?: boolean
   suggestedFolders?: FolderSuggestion[]
+  folderContextMessage?: string | null
   imageUploadMode?: 'cloud' | 'local'
   plan?: ImportPlan
 }
@@ -162,6 +163,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     onCancel,
     showActions = true,
     suggestedFolders = [],
+    folderContextMessage,
     imageUploadMode = 'cloud',
     plan = 'free',
   },
@@ -752,6 +754,9 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         <Text style={styles.sectionTitle}>Add to a folder (optional)</Text>
 
         <View style={styles.field}>
+          {folderContextMessage ? (
+            <Text style={styles.helperText}>{folderContextMessage}</Text>
+          ) : null}
           <Text style={styles.label}>Folders</Text>
 
           <View style={styles.tagInputRow}>

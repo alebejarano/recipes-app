@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useEffect, useMemo, useState } from 
 
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { FREE_PLAN_MAX_RECIPES } from '@/features/subscription/constants/limits'
+import { supabase } from '@/lib/supabase'
 
 export type Plan = 'free' | 'premium'
 export type BillingCycle = 'month' | 'year'
@@ -22,6 +23,22 @@ type SubscriptionContextValue = {
 const PLAN_KEY_PREFIX = 'subscription:plan:user:'
 const BILLING_CYCLE_KEY_PREFIX = 'subscription:billing-cycle:user:'
 const UPGRADE_STATUS_KEY_PREFIX = 'subscription:upgrade-status:user:'
+
+type UserEntitlementsRow = {
+  plan: Plan
+  billing_cycle: BillingCycle
+}
+
+async function inferPremiumFromCloudData(userId: string): Promise<boolean> {
+  const [recipesResult, notesResult, foldersResult] = await Promise.all([
+    supabase.from('recipes').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+    supabase.from('notes').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+    supabase.from('folders').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+  ])
+
+  const results = [recipesResult, notesResult, foldersResult]
+  return results.some((result) => !result.error && Number(result.count ?? 0) > 0)
+}
 
 export const SubscriptionContext = createContext<SubscriptionContextValue>({
   plan: 'free',
@@ -69,10 +86,48 @@ export function SubscriptionProvider({
           AsyncStorage.getItem(`${BILLING_CYCLE_KEY_PREFIX}${user.id}`),
           AsyncStorage.getItem(`${UPGRADE_STATUS_KEY_PREFIX}${user.id}`),
         ])
+        const cachedPlan: Plan = rawPlan === 'premium' ? 'premium' : 'free'
+        const cachedBillingCycle: BillingCycle = rawBillingCycle === 'year' ? 'year' : 'month'
+        const cachedUpgradeStatus: UpgradeStatus =
+          rawUpgradeStatus === 'running' || rawUpgradeStatus === 'failed' ? rawUpgradeStatus : 'idle'
+
         if (!isMounted) return
-        setPlanState(rawPlan === 'premium' ? 'premium' : 'free')
-        setBillingCycleState(rawBillingCycle === 'year' ? 'year' : 'month')
-        setUpgradeStatusState(rawUpgradeStatus === 'running' || rawUpgradeStatus === 'failed' ? rawUpgradeStatus : 'idle')
+        setPlanState(cachedPlan)
+        setBillingCycleState(cachedBillingCycle)
+        setUpgradeStatusState(cachedUpgradeStatus)
+
+        const { data: remoteEntitlements, error: remoteError } = await supabase
+          .from('user_entitlements')
+          .select('plan,billing_cycle')
+          .eq('user_id', user.id)
+          .maybeSingle<UserEntitlementsRow>()
+
+        if (!isMounted) return
+        if (remoteError || !remoteEntitlements) {
+          const hasCloudData = await inferPremiumFromCloudData(user.id)
+          if (!isMounted || !hasCloudData) return
+
+          setPlanState('premium')
+          setBillingCycleState(cachedBillingCycle)
+
+          await Promise.all([
+            AsyncStorage.setItem(`${PLAN_KEY_PREFIX}${user.id}`, 'premium'),
+            AsyncStorage.setItem(`${BILLING_CYCLE_KEY_PREFIX}${user.id}`, cachedBillingCycle),
+          ])
+          return
+        }
+
+        const remotePlan: Plan = remoteEntitlements.plan === 'premium' ? 'premium' : 'free'
+        const remoteBillingCycle: BillingCycle =
+          remoteEntitlements.billing_cycle === 'year' ? 'year' : 'month'
+
+        setPlanState(remotePlan)
+        setBillingCycleState(remoteBillingCycle)
+
+        await Promise.all([
+          AsyncStorage.setItem(`${PLAN_KEY_PREFIX}${user.id}`, remotePlan),
+          AsyncStorage.setItem(`${BILLING_CYCLE_KEY_PREFIX}${user.id}`, remoteBillingCycle),
+        ])
       } catch {
         if (!isMounted) return
         setPlanState('free')

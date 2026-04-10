@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { createThemedStyles } from '@/styles/createStyles'
 
+import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import { useDeleteLocalNote, useLocalNote, useUpdateLocalNote } from '@/features/notes/hooks/useLocalNotes'
 import { getSafeReturnTo } from '@/lib/navigation'
 
@@ -26,6 +27,7 @@ export default function PublicNoteDetailScreen({ noteId }: NoteDetailScreenProps
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
   const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
+  const showSnackbar = useTransientSnackbarStore((state) => state.show)
   const { data: note, isLoading, isError } = useLocalNote(noteId)
   const deleteMutation = useDeleteLocalNote()
   const updateMutation = useUpdateLocalNote(noteId)
@@ -56,6 +58,7 @@ export default function PublicNoteDetailScreen({ noteId }: NoteDetailScreenProps
               onPress: async () => {
                 try {
                   await deleteMutation.mutateAsync(noteId)
+                  showSnackbar('Note deleted')
                   if (safeReturnTo) {
                     router.replace(safeReturnTo)
                   } else {
@@ -146,6 +149,7 @@ export default function PublicNoteDetailScreen({ noteId }: NoteDetailScreenProps
               accessibilityRole="button"
               accessibilityLabel="More actions"
               style={styles.iconButton}
+              disabled={deleteMutation.isPending}
             >
               <Feather name="more-vertical" size={18} style={styles.icon} />
             </TouchableOpacity>

@@ -201,14 +201,14 @@ const styles = createThemedStyles((theme) => ({
     overflow: 'hidden',
   },
   heroWrap: {
-    height: 220,
+    height: 184,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
   heroImage: {
-    width: 200,
-    height: 500,
+    width: 500,
+    height: 400,
   },
   confettiLayer: {
     position: 'absolute',

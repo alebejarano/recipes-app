@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
+import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import { useStrategyDeleteFolder, useStrategyFoldersList, useStrategyUpdateFolder } from '@/features/folders/hooks/useStrategyFolders'
 import RecipeRow from '@/features/recipes/components/RecipeRow'
 import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
@@ -46,6 +47,7 @@ export default function CollectionDetailScreen() {
   const key = decodeKey(Array.isArray(rawKey) ? rawKey[0] : rawKey)
   const safeReturnTo = getSafeReturnTo(params.returnTo)
   const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
+  const showSnackbar = useTransientSnackbarStore((state) => state.show)
 
   const isUncategorized = isUncategorizedKey(key)
   const title = isUncategorized ? 'Uncategorized' : key
@@ -56,6 +58,7 @@ export default function CollectionDetailScreen() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editName, setEditName] = useState(title)
   const [editEmoji, setEditEmoji] = useState('')
+  const [isSavingFolder, setIsSavingFolder] = useState(false)
 
   const recipes = useMemo(() => {
     const list = recipesQuery.data ?? []
@@ -87,12 +90,14 @@ export default function CollectionDetailScreen() {
     const name = editName.trim()
     if (!name) return
     const emoji = editEmoji.trim() || '📁'
+    setIsSavingFolder(true)
     try {
       const updated = await updateFolderMutation.mutateAsync({
         id: folderId,
         name,
         emoji,
       })
+      await Promise.all([recipesQuery.refetch(), foldersQuery.refetch()])
       setIsEditOpen(false)
       if (updated.name !== title) {
         router.replace({
@@ -105,6 +110,8 @@ export default function CollectionDetailScreen() {
       }
     } catch {
       // handled by query state
+    } finally {
+      setIsSavingFolder(false)
     }
   }
 
@@ -124,6 +131,7 @@ export default function CollectionDetailScreen() {
           onPress: async () => {
             try {
               await deleteFolderMutation.mutateAsync(folderId)
+              showSnackbar('Folder deleted')
               if (safeReturnTo) {
                 router.replace(safeReturnTo)
               } else {
@@ -205,7 +213,15 @@ export default function CollectionDetailScreen() {
           </Text>
 
           <View style={styles.emptyCta}>
-            <Button size="lg" onPress={() => router.push('/(dev)/recipes/create')}>
+            <Button
+              size="lg"
+              onPress={() =>
+                router.push({
+                  pathname: '/(dev)/recipes/create',
+                  params: !isUncategorized ? { folder: title } : undefined,
+                })
+              }
+            >
               Add a recipe
             </Button>
           </View>
@@ -256,6 +272,7 @@ export default function CollectionDetailScreen() {
                 placeholderTextColor={styles.modalPlaceholder.color}
                 style={styles.modalInput}
                 autoCapitalize="none"
+                editable={!isSavingFolder}
               />
             </View>
 
@@ -270,6 +287,7 @@ export default function CollectionDetailScreen() {
                 autoCapitalize="words"
                 returnKeyType="done"
                 onSubmitEditing={handleSaveFolder}
+                editable={!isSavingFolder}
               />
             </View>
 
@@ -277,6 +295,7 @@ export default function CollectionDetailScreen() {
               <Pressable
                 onPress={() => setIsEditOpen(false)}
                 style={[styles.modalButton, styles.modalButtonGhost]}
+                disabled={isSavingFolder}
               >
                 <Text style={[styles.modalButtonText, styles.modalButtonTextGhost]}>
                   Cancel
@@ -285,8 +304,11 @@ export default function CollectionDetailScreen() {
               <Pressable
                 onPress={handleSaveFolder}
                 style={[styles.modalButton, styles.modalButtonPrimary]}
+                disabled={isSavingFolder}
               >
-                <Text style={styles.modalButtonText}>Save</Text>
+                <Text style={styles.modalButtonText}>
+                  {isSavingFolder ? 'Updating…' : 'Save'}
+                </Text>
               </Pressable>
             </View>
 
