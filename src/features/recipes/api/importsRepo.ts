@@ -13,27 +13,46 @@ export type UploadPremiumImportResult = {
   size: number
 }
 
+const RECIPE_IMPORTS_BUCKET = 'recipe-imports'
+
+async function requireAuth() {
+  const { data, error } = await supabase.auth.getSession()
+  if (error) throw error
+  if (!data.session?.user) throw new Error('You need to be signed in to upload files.')
+  return data.session.user
+}
+
+function sanitizeName(name: string) {
+  return name.replace(/[^a-zA-Z0-9._-]/g, '_')
+}
+
 export async function uploadPremiumImport(
   input: UploadPremiumImportInput
 ): Promise<UploadPremiumImportResult> {
-  const formData = new FormData()
-  formData.append('file', {
-    uri: input.uri,
-    name: input.fileName,
-    type: input.mimeType,
-  } as any)
+  const user = await requireAuth()
+  const safeName = sanitizeName(input.fileName.trim() || 'import')
+  const objectPath = `${user.id}/${Date.now()}_${safeName}`
 
-  const { data, error } = await supabase.functions.invoke('validate-and-upload-import', {
-    body: formData,
-  })
+  const fileResponse = await fetch(input.uri)
+  if (!fileResponse.ok) {
+    throw new Error(`Unable to read selected file (${fileResponse.status}).`)
+  }
+  const arrayBuffer = await fileResponse.arrayBuffer()
+  const bytes = new Uint8Array(arrayBuffer)
+
+  const { error } = await supabase.storage
+    .from(RECIPE_IMPORTS_BUCKET)
+    .upload(objectPath, bytes, {
+      contentType: input.mimeType,
+      upsert: false,
+    })
 
   if (error) throw error
-  if (!data) throw new Error('Import upload failed')
 
   return {
-    bucket: String((data as any).bucket ?? ''),
-    path: String((data as any).path ?? ''),
-    mimeType: String((data as any).mimeType ?? ''),
-    size: Number((data as any).size ?? 0),
+    bucket: RECIPE_IMPORTS_BUCKET,
+    path: objectPath,
+    mimeType: input.mimeType,
+    size: bytes.byteLength,
   }
 }

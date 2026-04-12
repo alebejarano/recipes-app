@@ -85,9 +85,8 @@ export default function EditRecipeScreen() {
       : routeMode === 'public'
         ? '/(public)/(tabs)'
         : '/(auth)/(tabs)'
-  const { shouldUseLocalData: baseLocalMode } = useStorageDataMode(routeMode)
-  const { cloudSyncEnabled, isPremium } = useStorageStrategy()
-  const shouldUseLocalData = baseLocalMode || (routeMode === 'auth' && cloudSyncEnabled)
+  const { shouldUseLocalData } = useStorageDataMode(routeMode)
+  const { isPremium } = useStorageStrategy()
   const importPlan = isPremium ? 'premium' : 'free'
 
   const recipeQuery = useStrategyRecipe(recipeId, routeMode)

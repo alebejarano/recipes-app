@@ -3,7 +3,7 @@ import { File } from '@/lib/fileSystem'
 import { getContentUriAsync } from 'expo-file-system/legacy'
 import * as IntentLauncher from 'expo-intent-launcher'
 import * as Linking from 'expo-linking'
-import { router, useLocalSearchParams } from 'expo-router'
+import { router, useLocalSearchParams, useSegments } from 'expo-router'
 import React, { useCallback, useMemo } from 'react'
 import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -38,10 +38,12 @@ type RecipeDocumentDetailScreenProps = {
 
 export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumentDetailScreenProps) {
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
+  const segments = useSegments()
+  const routeMode = segments[0] === '(public)' ? 'public' : segments[0] === '(dev)' ? 'dev' : 'auth'
   const safeReturnTo = getSafeReturnTo(returnTo)
   
-  const { data: document, isLoading, isError } = useRecipeDocument(documentId)
-  const deleteMutation = useDeleteRecipeDocument()
+  const { data: document, isLoading, isError } = useRecipeDocument(documentId, routeMode)
+  const deleteMutation = useDeleteRecipeDocument(routeMode)
 
   // Computed values
   const title = useMemo(() => {
@@ -151,6 +153,16 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
           type: fileInfo.mimeType,
         })
       } else {
+        if (/^https?:\/\//i.test(document.fileUri)) {
+          const canOpenRemote = await Linking.canOpenURL(document.fileUri)
+          if (!canOpenRemote) {
+            Alert.alert('Cannot Open File', 'No application available to open this file.')
+            return
+          }
+          await Linking.openURL(document.fileUri)
+          return
+        }
+
         const file = new File(document.fileUri)
 
         // iOS: use the local file URI directly

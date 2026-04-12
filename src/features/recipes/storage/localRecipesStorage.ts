@@ -586,6 +586,21 @@ export async function listDirtyLocalRecipeRowsForSync(limit = 100): Promise<Loca
   return rows.map(toSyncRow)
 }
 
+export async function listLocalRecipeRowsForImageRepair(ownerUserId: string): Promise<LocalRecipeSyncRow[]> {
+  await ensureLocalSqliteMigrationReady()
+  const rows = await getAllAsync<LocalRecipeRow>(
+    `SELECT * FROM local_recipes
+      WHERE deleted_at IS NULL
+        AND cloud_id IS NOT NULL
+        AND image_url IS NOT NULL
+        AND image_url != ''
+        AND (owner_user_id = ? OR owner_user_id IS NULL)
+      ORDER BY updated_at ASC;`,
+    [ownerUserId]
+  )
+  return rows.map(toSyncRow)
+}
+
 export async function markLocalRecipeSynced(params: {
   localId: string
   ownerUserId: string

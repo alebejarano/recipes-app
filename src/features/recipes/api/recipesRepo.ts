@@ -227,6 +227,10 @@ type UploadRecipeImageInput = {
 const RECIPE_IMAGES_BUCKET = 'recipe-images'
 const ALLOWED_IMAGE_MIME_TYPES = new Set<string>(IMPORT_ALLOWED_IMAGE_MIME_TYPES)
 
+function isRemoteUrl(uri: string) {
+  return /^https?:\/\//i.test(uri)
+}
+
 export async function uploadRecipeImage(input: UploadRecipeImageInput): Promise<string> {
   const user = await requireAuth()
   const fileName = input.fileName?.trim() || input.uri.split('/').pop() || 'recipe.jpg'
@@ -257,6 +261,13 @@ export async function uploadRecipeImage(input: UploadRecipeImageInput): Promise<
   if (!data?.publicUrl) throw new Error('Unable to get image URL')
 
   return data.publicUrl
+}
+
+export async function ensureCloudRecipeImageUrl(imageUrl: string | null | undefined): Promise<string | null> {
+  const normalized = imageUrl?.trim() ?? ''
+  if (!normalized) return null
+  if (isRemoteUrl(normalized)) return normalized
+  return uploadRecipeImage({ uri: normalized })
 }
 
 export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {

@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { router, useLocalSearchParams, useSegments } from 'expo-router'
 import { usePostHog } from 'posthog-react-native'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Alert,
   KeyboardAvoidingView,
@@ -111,6 +112,7 @@ export default function CreateRecipeScreen({
   onBack,
 }: CreateRecipeScreenProps) {
   const insets = useSafeAreaInsets()
+  const queryClient = useQueryClient()
   const posthog = usePostHog()
   const { user } = useAuth()
   const { retryAfterUpgrade, folder } = useLocalSearchParams<{
@@ -120,10 +122,9 @@ export default function CreateRecipeScreen({
   const segments = useSegments()
   const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
   const isDevMode = routeMode === 'dev'
-  const { shouldUseLocalData: baseLocalMode } = useStorageDataMode(routeMode)
-  const { cloudSyncEnabled, isPremium } = useStorageStrategy()
+  const { shouldUseLocalData } = useStorageDataMode(routeMode)
+  const { isPremium } = useStorageStrategy()
   const { overrides } = useLimitQaOverrides()
-  const shouldUseLocalData = baseLocalMode || (routeMode === 'auth' && cloudSyncEnabled)
   const importPlan = isPremium ? 'premium' : 'free'
 
   const isOnboarding = variant === 'onboarding'
@@ -302,6 +303,17 @@ export default function CreateRecipeScreen({
           fileName: normalizedFile.name,
           mimeType: inferImportMimeType(normalizedFile.name),
         })
+        await queryClient.invalidateQueries({ queryKey: ['recipes', 'documents'] })
+        await clearPendingRetry()
+        router.replace({
+          pathname: collectionsPath as any,
+          params: {
+            segment: 'recipes',
+            recipesSegment: 'documents',
+            docSuccess: '1',
+          },
+        })
+        return
       }
       await documentMutation.mutateAsync({
         title: values.title,
@@ -318,7 +330,7 @@ export default function CreateRecipeScreen({
         },
       })
     },
-    [clearPendingRetry, collectionsPath, documentMutation, importPlan, manageImportsPath, posthog, routeMode, shouldUseLocalData]
+    [clearPendingRetry, collectionsPath, documentMutation, importPlan, manageImportsPath, posthog, queryClient, routeMode, shouldUseLocalData]
   )
 
   const handleSubmit = useCallback(

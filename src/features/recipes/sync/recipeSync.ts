@@ -1,8 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { CreateRecipeInput } from '@/features/recipes/api/recipesRepo'
-import { createRecipe, deleteRecipeById, listRecipes, updateRecipe } from '@/features/recipes/api/recipesRepo'
+import {
+  createRecipe,
+  deleteRecipeById,
+  ensureCloudRecipeImageUrl,
+  listRecipes,
+  updateRecipe,
+} from '@/features/recipes/api/recipesRepo'
 import {
   listDirtyLocalRecipeRowsForSync,
+  listLocalRecipeRowsForImageRepair,
   mergeCloudRecipesIntoLocal,
   markLocalRecipeSynced,
   purgeLocalRecipeRow,
@@ -33,13 +40,13 @@ function parseStringList(raw: string): string[] {
   }
 }
 
-function toCreateOrUpdateInput(row: LocalRecipeSyncRow): CreateRecipeInput {
+async function toCreateOrUpdateInput(row: LocalRecipeSyncRow): Promise<CreateRecipeInput> {
   return {
     title: row.title,
     subtitle: row.subtitle,
     description: row.description,
     emoji: row.emoji,
-    imageUrl: row.imageUrl,
+    imageUrl: await ensureCloudRecipeImageUrl(row.imageUrl),
     ingredients: parseStringList(row.ingredientsJson),
     steps: row.stepsText
       ? row.stepsText
@@ -107,7 +114,7 @@ async function runRecipeSync() {
         continue
       }
 
-      const input = toCreateOrUpdateInput(row)
+      const input = await toCreateOrUpdateInput(row)
       if (row.cloudId) {
         await updateRecipe(row.cloudId, input)
         await markLocalRecipeSynced({
@@ -132,9 +139,51 @@ async function runRecipeSync() {
 
   try {
     const cloudRecipes = await listRecipes({ limit: 1000 })
+    const cloudById = new Map(cloudRecipes.map((recipe) => [recipe.id, recipe]))
+    const repairCandidates = await listLocalRecipeRowsForImageRepair(userId)
+
+    for (const row of repairCandidates) {
+      if (!row.cloudId || !row.imageUrl) continue
+
+      const normalizedImageUrl = row.imageUrl.trim()
+      if (!normalizedImageUrl || /^https?:\/\//i.test(normalizedImageUrl)) continue
+
+      const cloudRecipe = cloudById.get(row.cloudId)
+      const cloudImageUrl = cloudRecipe?.imageUrl?.trim() ?? ''
+      if (cloudImageUrl && /^https?:\/\//i.test(cloudImageUrl)) continue
+
+      try {
+        const repairedImageUrl = await ensureCloudRecipeImageUrl(normalizedImageUrl)
+        if (!repairedImageUrl) continue
+
+        await updateRecipe(row.cloudId, {
+          title: row.title,
+          subtitle: row.subtitle,
+          description: row.description,
+          emoji: row.emoji,
+          imageUrl: repairedImageUrl,
+          ingredients: parseStringList(row.ingredientsJson),
+          steps: row.stepsText
+            ? row.stepsText
+                .split('\n')
+                .map((line) => line.trim())
+                .filter(Boolean)
+            : [],
+          folders: parseStringList(row.foldersJson),
+          mealTimes: normalizeMealTimes(parseStringList(row.mealTimesJson)),
+          prepTimeMinutes: row.prepTimeMinutes,
+          cookTimeMinutes: row.cookTimeMinutes,
+          servings: row.servings,
+        })
+      } catch {
+        continue
+      }
+    }
+
+    const refreshedCloudRecipes = await listRecipes({ limit: 1000 })
     await mergeCloudRecipesIntoLocal({
       ownerUserId: userId,
-      cloudRecipes,
+      cloudRecipes: refreshedCloudRecipes,
     })
   } catch (pullError) {
     if (isConnectivityError(pullError)) return

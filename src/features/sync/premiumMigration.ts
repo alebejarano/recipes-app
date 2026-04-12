@@ -1,7 +1,7 @@
 import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
 import { getAllAsync, runSqlAsync } from '@/lib/sqlite'
 import { createNote } from '@/features/notes/api/notesRepo'
-import { createRecipe } from '@/features/recipes/api/recipesRepo'
+import { createRecipe, ensureCloudRecipeImageUrl } from '@/features/recipes/api/recipesRepo'
 import { normalizeMealTimes } from '@/features/recipes/types/mealTimes'
 
 type LocalRecipeRow = {
@@ -113,12 +113,13 @@ export async function migrateLocalDataToCloudOnPremium(userId: string): Promise<
     if (!belongsToUser || alreadySynced || isDeleted) continue
 
     try {
+      const imageUrl = await ensureCloudRecipeImageUrl(row.image_url ?? null)
       const created = await createRecipe({
         title: row.title?.trim() || 'Untitled recipe',
         subtitle: row.subtitle ?? null,
         description: row.description ?? null,
         emoji: row.emoji ?? null,
-        imageUrl: row.image_url ?? null,
+        imageUrl,
         ingredients: parseIngredientNames(row.ingredients_json),
         steps: parseSteps(row.steps_text),
         folders: parseFolderNames(row.folders_json),

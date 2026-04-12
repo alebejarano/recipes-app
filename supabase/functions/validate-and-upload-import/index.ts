@@ -5,10 +5,21 @@ const MAX_FILE_BYTES = 10 * 1024 * 1024
 const IMPORTS_BUCKET = Deno.env.get('IMPORTS_BUCKET') ?? 'recipe-imports'
 const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png'])
 
-function json(body: Record<string, unknown>, status = 200) {
+function buildCorsHeaders(origin: string | null) {
+  return {
+    'Access-Control-Allow-Origin': origin ?? '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Max-Age': '86400',
+    Vary: 'Origin',
+  }
+}
+
+function json(body: Record<string, unknown>, status = 200, origin: string | null = null) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
+      ...buildCorsHeaders(origin),
       'Content-Type': 'application/json',
     },
   })
@@ -32,20 +43,29 @@ function mapGuardFailureToHttpStatus(reason: string | undefined) {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('Origin')
+
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', {
+      status: 200,
+      headers: buildCorsHeaders(origin),
+    })
+  }
+
   if (req.method !== 'POST') {
-    return json({ error: 'Method not allowed' }, 405)
+    return json({ error: 'Method not allowed' }, 405, origin)
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')
   if (!supabaseUrl || !serviceRoleKey || !anonKey) {
-    return json({ error: 'Missing Supabase environment variables' }, 500)
+    return json({ error: 'Missing Supabase environment variables' }, 500, origin)
   }
 
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) {
-    return json({ error: 'Missing authorization header' }, 401)
+    return json({ error: 'Missing authorization header' }, 401, origin)
   }
 
   const authClient = createClient(supabaseUrl, anonKey, {
@@ -56,37 +76,37 @@ serve(async (req) => {
     error: authError,
   } = await authClient.auth.getUser()
   if (authError || !user) {
-    return json({ error: 'Unauthorized' }, 401)
+    return json({ error: 'Unauthorized' }, 401, origin)
   }
 
   let formData: FormData
   try {
     formData = await req.formData()
   } catch {
-    return json({ error: 'Expected multipart/form-data' }, 400)
+    return json({ error: 'Expected multipart/form-data' }, 400, origin)
   }
 
   const file = formData.get('file')
   if (!(file instanceof File)) {
-    return json({ error: 'Missing file' }, 400)
+    return json({ error: 'Missing file' }, 400, origin)
   }
 
   const mimeType = (file.type || '').toLowerCase()
   if (!ALLOWED_MIME_TYPES.has(mimeType)) {
-    return json({ error: 'Unsupported file type. Allowed: PDF, JPG, PNG.' }, 400)
+    return json({ error: 'Unsupported file type. Allowed: PDF, JPG, PNG.' }, 400, origin)
   }
 
   const arrayBuffer = await file.arrayBuffer()
   const bytes = new Uint8Array(arrayBuffer)
   if (!Number.isFinite(bytes.byteLength) || bytes.byteLength <= 0) {
-    return json({ error: 'Invalid file size.' }, 400)
+    return json({ error: 'Invalid file size.' }, 400, origin)
   }
   if (bytes.byteLength > MAX_FILE_BYTES) {
-    return json({ error: 'This file is too large. Max 10 MB per file.' }, 400)
+    return json({ error: 'This file is too large. Max 10 MB per file.' }, 400, origin)
   }
 
   if (mimeType === 'application/pdf' && isEncryptedPdf(bytes)) {
-    return json({ error: 'Password-protected or encrypted PDFs are not supported.' }, 400)
+    return json({ error: 'Password-protected or encrypted PDFs are not supported.' }, 400, origin)
   }
 
   const originalName = (file.name || 'import').trim() || 'import'
@@ -104,7 +124,7 @@ serve(async (req) => {
     }
   )
   if (guardError) {
-    return json({ error: `Fair-use guard failed: ${guardError.message}` }, 500)
+    return json({ error: `Fair-use guard failed: ${guardError.message}` }, 500, origin)
   }
 
   const guard = (guardResult ?? {}) as {
@@ -125,7 +145,8 @@ serve(async (req) => {
         reason: guard.reason,
         retry_after_seconds: guard.retry_after_seconds ?? null,
       },
-      status
+      status,
+      origin
     )
   }
 
@@ -148,7 +169,7 @@ serve(async (req) => {
         p_reason: uploadError.message,
       })
     }
-    return json({ error: uploadError.message }, 400)
+    return json({ error: uploadError.message }, 400, origin)
   }
 
   if (eventId) {
@@ -159,10 +180,14 @@ serve(async (req) => {
     })
   }
 
-  return json({
-    bucket: IMPORTS_BUCKET,
-    path: objectPath,
-    mimeType,
-    size: bytes.byteLength,
-  })
+  return json(
+    {
+      bucket: IMPORTS_BUCKET,
+      path: objectPath,
+      mimeType,
+      size: bytes.byteLength,
+    },
+    200,
+    origin
+  )
 })
