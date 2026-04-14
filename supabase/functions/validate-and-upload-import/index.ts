@@ -5,6 +5,12 @@ const MAX_FILE_BYTES = 10 * 1024 * 1024
 const IMPORTS_BUCKET = Deno.env.get('IMPORTS_BUCKET') ?? 'recipe-imports'
 const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png'])
 
+function bytesToHex(buffer: ArrayBuffer) {
+  return Array.from(new Uint8Array(buffer))
+    .map((value) => value.toString(16).padStart(2, '0'))
+    .join('')
+}
+
 function buildCorsHeaders(origin: string | null) {
   return {
     'Access-Control-Allow-Origin': origin ?? '*',
@@ -90,6 +96,8 @@ serve(async (req) => {
   if (!(file instanceof File)) {
     return json({ error: 'Missing file' }, 400, origin)
   }
+  const rawTitle = formData.get('title')
+  const title = typeof rawTitle === 'string' && rawTitle.trim() ? rawTitle.trim() : null
 
   const mimeType = (file.type || '').toLowerCase()
   if (!ALLOWED_MIME_TYPES.has(mimeType)) {
@@ -98,6 +106,7 @@ serve(async (req) => {
 
   const arrayBuffer = await file.arrayBuffer()
   const bytes = new Uint8Array(arrayBuffer)
+  const checksumSha256 = bytesToHex(await crypto.subtle.digest('SHA-256', arrayBuffer))
   if (!Number.isFinite(bytes.byteLength) || bytes.byteLength <= 0) {
     return json({ error: 'Invalid file size.' }, 400, origin)
   }
@@ -172,6 +181,56 @@ serve(async (req) => {
     return json({ error: uploadError.message }, 400, origin)
   }
 
+  const { data: metadataRow, error: metadataError } = await adminClient
+    .from('recipe_document_imports')
+    .insert({
+      user_id: user.id,
+      title,
+      original_file_name: originalName,
+      storage_bucket: IMPORTS_BUCKET,
+      storage_path: objectPath,
+      mime_type: mimeType,
+      bytes: bytes.byteLength,
+      checksum_sha256: checksumSha256,
+      source: 'upload',
+    })
+    .select('id,title,original_file_name,storage_bucket,storage_path,mime_type,bytes,created_at')
+    .single()
+
+  if (metadataError) {
+    await adminClient.storage.from(IMPORTS_BUCKET).remove([objectPath])
+
+    if (eventId) {
+      await adminClient.rpc('finish_import_upload_guard', {
+        p_event_id: eventId,
+        p_status: 'failed',
+        p_reason: metadataError.message,
+      })
+    }
+
+    if (metadataError.code === '23505') {
+      const { data: duplicateRow } = await adminClient
+        .from('recipe_document_imports')
+        .select('id,title,created_at')
+        .eq('user_id', user.id)
+        .eq('checksum_sha256', checksumSha256)
+        .is('deleted_at', null)
+        .maybeSingle()
+
+      return json(
+        {
+          error: 'This file has already been imported.',
+          code: 'duplicate_import',
+          duplicate: duplicateRow ?? null,
+        },
+        409,
+        origin
+      )
+    }
+
+    return json({ error: metadataError.message }, 400, origin)
+  }
+
   if (eventId) {
     await adminClient.rpc('finish_import_upload_guard', {
       p_event_id: eventId,
@@ -186,6 +245,7 @@ serve(async (req) => {
       path: objectPath,
       mimeType,
       size: bytes.byteLength,
+      document: metadataRow,
     },
     200,
     origin

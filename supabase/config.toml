@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.premium-upgrade-sync]
 verify_jwt = false
+
+[functions.validate-and-upload-import]
+verify_jwt = false

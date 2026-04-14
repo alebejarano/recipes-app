@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
   deleteCloudRecipeDocument,
+  getCloudRecipeDocumentUsageSummary,
   getCloudRecipeDocument,
   listCloudRecipeDocuments,
 } from '@/features/recipes/api/recipeDocumentsCloudRepo'
@@ -15,6 +16,7 @@ import {
   type PendingRecipeDocument,
   type RecipeDocument,
 } from '@/features/recipes/storage/recipeDocumentStorage'
+import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { useStorageDataMode, type StorageScreenMode } from '@/features/storage/hooks/useStorageDataMode'
 
 const DOCS_KEY = ['recipes', 'documents']
@@ -37,10 +39,18 @@ export function useRecipeDocument(id: string, mode: StorageScreenMode = 'auth') 
   })
 }
 
-export function useRecipeDocumentUsageSummary(options?: { enabled?: boolean }) {
+export function useRecipeDocumentUsageSummary(options?: {
+  enabled?: boolean
+  mode?: StorageScreenMode
+}) {
+  const strategy = useStorageStrategy()
+  const resolvedMode = options?.mode
+  const { shouldUseLocalData } = useStorageDataMode(resolvedMode ?? 'auth')
+  const useCloudUsage = resolvedMode ? !shouldUseLocalData : strategy.cloudSyncEnabled
+
   return useQuery({
-    queryKey: USAGE_KEY,
-    queryFn: getRecipeDocumentUsageSummary,
+    queryKey: [...USAGE_KEY, useCloudUsage ? 'cloud' : 'local'],
+    queryFn: useCloudUsage ? getCloudRecipeDocumentUsageSummary : getRecipeDocumentUsageSummary,
     enabled: options?.enabled,
   })
 }

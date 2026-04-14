@@ -40,8 +40,8 @@ export default function ManageImportsScreen({ mode }: ManageImportsScreenProps) 
 
   const insets = useSafeAreaInsets()
   const bottomPadding = insets.bottom + theme.spacing.lg
-  const importsQuery = useManagedImports()
-  const deleteImportMutation = useDeleteManagedImport()
+  const importsQuery = useManagedImports(resolvedMode)
+  const deleteImportMutation = useDeleteManagedImport(resolvedMode)
 
   const [sortMode, setSortMode] = useState<SortMode>('oldest')
   const [isSelectionMode, setIsSelectionMode] = useState(false)

@@ -12,7 +12,9 @@ import React, {
 import { ActivityIndicator, Alert, Pressable, Text, TextInput, View } from 'react-native'
 
 import Button from '@/components/Button'
+import { getCloudRecipeDocumentUsageSummary } from '@/features/recipes/api/recipeDocumentsCloudRepo'
 import { createThemedStyles } from '@/styles/createStyles'
+import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 
 import {
   type PendingRecipeDocument,
@@ -146,17 +148,21 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
   const [usage, setUsage] = useState<RecipeDocumentUsageSummary>({ totalBytes: 0, totalCount: 0 })
   const [isPicking, setIsPicking] = useState(false)
   const autoPickAttempted = useRef(false)
+  const { cloudSyncEnabled } = useStorageStrategy()
 
   const canSubmit = Boolean(file) && !isSubmitting && !isPicking
 
   const refreshUsage = useCallback(async () => {
     try {
-      const summary = await getRecipeDocumentUsageSummary()
+      const summary =
+        plan === 'premium' && cloudSyncEnabled
+          ? await getCloudRecipeDocumentUsageSummary()
+          : await getRecipeDocumentUsageSummary()
       setUsage(summary)
     } catch {
       // ignore
     }
-  }, [])
+  }, [cloudSyncEnabled, plan])
 
   const pickFile = useCallback(async () => {
     if (isPicking) return

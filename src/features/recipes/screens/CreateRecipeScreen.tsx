@@ -302,6 +302,7 @@ export default function CreateRecipeScreen({
           uri: normalizedFile.uri,
           fileName: normalizedFile.name,
           mimeType: inferImportMimeType(normalizedFile.name),
+          title: values.title,
         })
         await queryClient.invalidateQueries({ queryKey: ['recipes', 'documents'] })
         await clearPendingRetry()
@@ -372,7 +373,9 @@ export default function CreateRecipeScreen({
         await saveDocument(values, file)
       } catch (error: any) {
         if (error?.code === DUPLICATE_RECIPE_DOCUMENT_CODE) {
-          const duplicate = await findDuplicateRecipeDocumentByFile({ uri: file.uri })
+          const duplicate =
+            error?.duplicate ??
+            (await findDuplicateRecipeDocumentByFile({ uri: file.uri }))
           posthog?.capture('import_duplicate_blocked', {
             source: 'document',
             route_mode: routeMode,
