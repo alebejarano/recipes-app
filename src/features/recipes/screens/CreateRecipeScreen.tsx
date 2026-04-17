@@ -266,7 +266,9 @@ export default function CreateRecipeScreen({
             size: optimizedFile.fileSize,
           }
         : file
-      const duplicate = await findDuplicateRecipeDocumentByFile({ uri: normalizedFile.uri })
+      const duplicate = shouldUseLocalData
+        ? await findDuplicateRecipeDocumentByFile({ uri: normalizedFile.uri })
+        : null
       if (duplicate) {
         posthog?.capture('import_duplicate_blocked', {
           source: 'document',
@@ -375,7 +377,9 @@ export default function CreateRecipeScreen({
         if (error?.code === DUPLICATE_RECIPE_DOCUMENT_CODE) {
           const duplicate =
             error?.duplicate ??
-            (await findDuplicateRecipeDocumentByFile({ uri: file.uri }))
+            (shouldUseLocalData
+              ? await findDuplicateRecipeDocumentByFile({ uri: file.uri })
+              : null)
           posthog?.capture('import_duplicate_blocked', {
             source: 'document',
             route_mode: routeMode,
@@ -418,7 +422,7 @@ export default function CreateRecipeScreen({
         setIsUploadingPremiumImport(false)
       }
     },
-    [collectionsPath, isDevMode, manageImportsPath, overrides.forceStorageLimitErrorOnImport, overrides.storageUsageBandOverride, pendingRetryKey, posthog, routeMode, saveDocument]
+    [collectionsPath, isDevMode, manageImportsPath, overrides.forceStorageLimitErrorOnImport, overrides.storageUsageBandOverride, pendingRetryKey, posthog, routeMode, saveDocument, shouldUseLocalData]
   )
 
   const handleCreateFolder = useCallback(

@@ -63,6 +63,7 @@ const MIGRATION_STATEMENTS = [
 
 let migrationsPromise: Promise<void> | null = null
 let importsBackfillPromise: Promise<void> | null = null
+let orphanCleanupPromise: Promise<void> | null = null
 
 export function ensureRecipeDocumentStorageReady() {
   if (!migrationsPromise) {
@@ -91,6 +92,49 @@ async function ensureDocumentImportsBackfilled() {
     importsBackfillPromise = backfillLegacyDocumentImports()
   }
   await importsBackfillPromise
+}
+
+async function purgeOrphanedLocalRecipeDocuments() {
+  if (Platform.OS === 'web') return
+
+  await ensureRecipeDocumentStorageReady()
+  const rows = await getAllAsync<{
+    id: string
+    file_uri: string
+  }>('SELECT id, file_uri FROM recipe_documents;')
+
+  for (const row of rows) {
+    const fileUri = row.file_uri?.trim() ?? ''
+    if (!fileUri) {
+      await runSqlAsync('DELETE FROM recipe_documents WHERE id = ?;', [row.id])
+      continue
+    }
+
+    try {
+      const file = new File(fileUri)
+      if (file.exists) continue
+    } catch {
+      // Treat unreadable entries as stale local records.
+    }
+
+    await runSqlAsync('DELETE FROM recipe_documents WHERE id = ?;', [row.id])
+    await runSqlAsync(
+      `UPDATE imports
+       SET deleted_at = COALESCE(deleted_at, ?)
+       WHERE kind = 'document' AND file_uri = ? AND deleted_at IS NULL;`,
+      [new Date().toISOString(), fileUri]
+    )
+  }
+}
+
+export async function ensureLocalRecipeDocumentCleanup() {
+  if (!orphanCleanupPromise) {
+    orphanCleanupPromise = purgeOrphanedLocalRecipeDocuments().catch((error) => {
+      orphanCleanupPromise = null
+      throw error
+    })
+  }
+  await orphanCleanupPromise
 }
 
 function makeId() {
@@ -123,6 +167,7 @@ export async function findDuplicateRecipeDocumentByFile(input: {
   uri: string
 }): Promise<DuplicateRecipeDocument | null> {
   await ensureRecipeDocumentStorageReady()
+  await ensureLocalRecipeDocumentCleanup()
   const fingerprint = await resolveFileFingerprint(input.uri)
   if (!fingerprint) return null
   const rows = await getAllAsync<{
@@ -147,6 +192,7 @@ export async function findDuplicateRecipeDocumentByFile(input: {
 
 export async function listRecipeDocuments(): Promise<RecipeDocument[]> {
   await ensureRecipeDocumentStorageReady()
+  await ensureLocalRecipeDocumentCleanup()
   const rows = await getAllAsync<{
     id: string
     title: string | null
@@ -167,6 +213,7 @@ export async function listRecipeDocuments(): Promise<RecipeDocument[]> {
 
 export async function getRecipeDocument(id: string): Promise<RecipeDocument | null> {
   await ensureRecipeDocumentStorageReady()
+  await ensureLocalRecipeDocumentCleanup()
   const row = await getFirstAsync<{
     id: string
     title: string | null
@@ -187,6 +234,7 @@ export async function getRecipeDocument(id: string): Promise<RecipeDocument | nu
 }
 
 export async function getRecipeDocumentUsageSummary(): Promise<RecipeDocumentUsageSummary> {
+  await ensureLocalRecipeDocumentCleanup()
   await ensureDocumentImportsBackfilled()
   return getImportsUsageSummary()
 }
@@ -210,6 +258,7 @@ export async function addRecipeDocument(input: {
   plan?: ImportPlan
 }): Promise<RecipeDocument> {
   await ensureRecipeDocumentStorageReady()
+  await ensureLocalRecipeDocumentCleanup()
   await ensureDocumentImportsBackfilled()
   const resolvedSize = await resolveImportBytes({
     incomingBytes: input.size,
@@ -267,6 +316,7 @@ export async function addRecipeDocument(input: {
 
 export async function deleteRecipeDocument(id: string): Promise<void> {
   await ensureRecipeDocumentStorageReady()
+  await ensureLocalRecipeDocumentCleanup()
   const row = await getFirstAsync<{ fileUri: string | null }>(
     'SELECT file_uri as fileUri FROM recipe_documents WHERE id = ?;',
     [id]
