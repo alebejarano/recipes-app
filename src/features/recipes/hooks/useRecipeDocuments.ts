@@ -1,10 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
+  CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
+  listCloudRecipeDocumentsPage,
   deleteCloudRecipeDocument,
   getCloudRecipeDocumentUsageSummary,
   getCloudRecipeDocument,
-  listCloudRecipeDocuments,
+  type CloudRecipeDocumentsCursor,
+  type CloudRecipeDocumentsPage,
 } from '@/features/recipes/api/recipeDocumentsCloudRepo'
 import type { ImportPlan } from '@/features/recipes/storage/importsStorage'
 import {
@@ -24,10 +27,35 @@ const USAGE_KEY = ['recipes', 'documents', 'usage']
 
 export function useRecipeDocuments(mode: StorageScreenMode = 'auth') {
   const { shouldUseLocalData } = useStorageDataMode(mode)
-  return useQuery<RecipeDocument[]>({
+  const query = useInfiniteQuery<
+    CloudRecipeDocumentsPage<RecipeDocument>,
+    Error,
+    CloudRecipeDocumentsPage<RecipeDocument>,
+    string[],
+    CloudRecipeDocumentsCursor | null
+  >({
     queryKey: [...DOCS_KEY, shouldUseLocalData ? 'local' : 'cloud'],
-    queryFn: shouldUseLocalData ? listRecipeDocuments : listCloudRecipeDocuments,
+    initialPageParam: null,
+    queryFn: async ({ pageParam }) => {
+      if (shouldUseLocalData) {
+        return {
+          items: await listRecipeDocuments(),
+          nextCursor: null,
+        }
+      }
+
+      return listCloudRecipeDocumentsPage({
+        cursor: pageParam,
+        limit: CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
+      })
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
   })
+
+  return {
+    ...query,
+    data: query.data?.pages.flatMap((page) => page.items) ?? [],
+  }
 }
 
 export function useRecipeDocument(id: string, mode: StorageScreenMode = 'auth') {

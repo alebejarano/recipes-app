@@ -1,13 +1,16 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 import {
   deleteManagedImport,
-  listManagedImports,
   type ManagedImport,
+  listManagedImports,
 } from '@/features/recipes/storage/importsStorage'
 import {
+  CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
   deleteCloudRecipeDocument,
-  listCloudManagedImports,
+  listCloudManagedImportsPage,
+  type CloudRecipeDocumentsCursor,
+  type CloudRecipeDocumentsPage,
 } from '@/features/recipes/api/recipeDocumentsCloudRepo'
 import { triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
 import { useStorageDataMode, type StorageScreenMode } from '@/features/storage/hooks/useStorageDataMode'
@@ -18,10 +21,35 @@ const DOCS_USAGE_KEY = ['recipes', 'documents', 'usage']
 
 export function useManagedImports(mode: StorageScreenMode = 'auth') {
   const { shouldUseLocalData } = useStorageDataMode(mode)
-  return useQuery<ManagedImport[]>({
+  const query = useInfiniteQuery<
+    CloudRecipeDocumentsPage<ManagedImport>,
+    Error,
+    CloudRecipeDocumentsPage<ManagedImport>,
+    string[],
+    CloudRecipeDocumentsCursor | null
+  >({
     queryKey: [...IMPORTS_KEY, shouldUseLocalData ? 'local' : 'cloud'],
-    queryFn: shouldUseLocalData ? listManagedImports : listCloudManagedImports,
+    initialPageParam: null,
+    queryFn: async ({ pageParam }) => {
+      if (shouldUseLocalData) {
+        return {
+          items: await listManagedImports(),
+          nextCursor: null,
+        }
+      }
+
+      return listCloudManagedImportsPage({
+        cursor: pageParam,
+        limit: CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
+      })
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
   })
+
+  return {
+    ...query,
+    data: query.data?.pages.flatMap((page) => page.items) ?? [],
+  }
 }
 
 export function useDeleteManagedImport(mode: StorageScreenMode = 'auth') {

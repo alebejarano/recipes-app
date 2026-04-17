@@ -42,6 +42,29 @@ To learn more about developing your project with Expo, look at the following res
 - [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
 - [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
 
+## Import Reconciliation
+
+Recipe document imports use a metadata table, private Storage bucket, and scheduled reconciliation job to keep metadata and Storage objects in sync.
+
+- Nightly repair job: `recipe-document-imports-nightly-repair`
+- Schedule: `15 3 * * *`
+- Current behavior: runs `select public.reconcile_recipe_document_imports(1000, false);`
+- Effect: repairs metadata rows whose Storage object is missing, but does not automatically delete orphaned Storage objects
+
+The scheduler setup lives in:
+
+- [20260417143000_recipe_document_imports_nightly_reconciliation.sql](supabase/migrations/20260417143000_recipe_document_imports_nightly_reconciliation.sql)
+
+Related production-hardening schema changes live in:
+
+- [20260417140000_recipe_document_imports_production_hardening.sql](supabase/migrations/20260417140000_recipe_document_imports_production_hardening.sql)
+
+Notes:
+
+- Cron time is interpreted by the database scheduler timezone, not the Expo app timezone.
+- The nightly job is intentionally non-destructive for MVP.
+- A future weekly cleanup template is included as commented SQL in the scheduler migration. If enabled later, it would call `select public.reconcile_recipe_document_imports(1000, true);` to delete orphaned Storage objects automatically.
+
 ## Join the community
 
 Join our community of developers creating universal apps.

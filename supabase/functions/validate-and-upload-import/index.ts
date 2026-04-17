@@ -48,6 +48,16 @@ function mapGuardFailureToHttpStatus(reason: string | undefined) {
   return 429
 }
 
+function mapReservationFailureToHttpStatus(message: string) {
+  if (
+    message.includes('Premium plan required') ||
+    message.includes('Storage limit reached')
+  ) {
+    return 403
+  }
+  return 400
+}
+
 serve(async (req) => {
   const origin = req.headers.get('Origin')
 
@@ -164,51 +174,32 @@ serve(async (req) => {
     await new Promise((resolve) => setTimeout(resolve, guard.delay_ms))
   }
 
-  const { error: uploadError } = await adminClient.storage
-    .from(IMPORTS_BUCKET)
-    .upload(objectPath, bytes, {
-      contentType: mimeType,
-      upsert: false,
-    })
-  if (uploadError) {
+  let documentId: string | null = null
+  const { data: reservedDocumentId, error: reserveError } = await adminClient.rpc(
+    'reserve_recipe_document_import',
+    {
+      p_user_id: user.id,
+      p_original_file_name: originalName,
+      p_title: title,
+      p_storage_bucket: IMPORTS_BUCKET,
+      p_storage_path: objectPath,
+      p_mime_type: mimeType,
+      p_bytes: bytes.byteLength,
+      p_checksum_sha256: checksumSha256,
+      p_source_type: 'upload',
+    }
+  )
+
+  if (reserveError) {
     if (eventId) {
       await adminClient.rpc('finish_import_upload_guard', {
         p_event_id: eventId,
-        p_status: 'failed',
-        p_reason: uploadError.message,
-      })
-    }
-    return json({ error: uploadError.message }, 400, origin)
-  }
-
-  const { data: metadataRow, error: metadataError } = await adminClient
-    .from('recipe_document_imports')
-    .insert({
-      user_id: user.id,
-      title,
-      original_file_name: originalName,
-      storage_bucket: IMPORTS_BUCKET,
-      storage_path: objectPath,
-      mime_type: mimeType,
-      bytes: bytes.byteLength,
-      checksum_sha256: checksumSha256,
-      source: 'upload',
-    })
-    .select('id,title,original_file_name,storage_bucket,storage_path,mime_type,bytes,created_at')
-    .single()
-
-  if (metadataError) {
-    await adminClient.storage.from(IMPORTS_BUCKET).remove([objectPath])
-
-    if (eventId) {
-      await adminClient.rpc('finish_import_upload_guard', {
-        p_event_id: eventId,
-        p_status: 'failed',
-        p_reason: metadataError.message,
+        p_status: 'rejected',
+        p_reason: reserveError.message,
       })
     }
 
-    if (metadataError.code === '23505') {
+    if (reserveError.code === '23505') {
       const { data: duplicateRow } = await adminClient
         .from('recipe_document_imports')
         .select('id,title,created_at')
@@ -226,6 +217,95 @@ serve(async (req) => {
         409,
         origin
       )
+    }
+
+    return json({ error: reserveError.message }, mapReservationFailureToHttpStatus(reserveError.message), origin)
+  }
+
+  documentId = typeof reservedDocumentId === 'string' ? reservedDocumentId : null
+  if (!documentId) {
+    if (eventId) {
+      await adminClient.rpc('finish_import_upload_guard', {
+        p_event_id: eventId,
+        p_status: 'failed',
+        p_reason: 'Failed to reserve document import metadata.',
+      })
+    }
+    return json({ error: 'Failed to reserve document import metadata.' }, 500, origin)
+  }
+
+  const { error: uploadError } = await adminClient.storage
+    .from(IMPORTS_BUCKET)
+    .upload(objectPath, bytes, {
+      contentType: mimeType,
+      upsert: false,
+    })
+  if (uploadError) {
+    if (documentId) {
+      await adminClient.rpc('mark_recipe_document_import_failed', {
+        p_user_id: user.id,
+        p_document_id: documentId,
+        p_reason: uploadError.message,
+      })
+    }
+    if (eventId) {
+      await adminClient.rpc('finish_import_upload_guard', {
+        p_event_id: eventId,
+        p_status: 'failed',
+        p_reason: uploadError.message,
+      })
+    }
+    return json({ error: uploadError.message }, 400, origin)
+  }
+
+  const { error: finalizeError } = await adminClient.rpc(
+    'mark_recipe_document_import_uploaded',
+    {
+      p_user_id: user.id,
+      p_document_id: documentId,
+      p_extracted_metadata: null,
+    }
+  )
+
+  if (finalizeError) {
+    await adminClient.storage.from(IMPORTS_BUCKET).remove([objectPath])
+    await adminClient.rpc('mark_recipe_document_import_failed', {
+      p_user_id: user.id,
+      p_document_id: documentId,
+      p_reason: finalizeError.message,
+    })
+
+    if (eventId) {
+      await adminClient.rpc('finish_import_upload_guard', {
+        p_event_id: eventId,
+        p_status: 'failed',
+        p_reason: finalizeError.message,
+      })
+    }
+
+    return json({ error: finalizeError.message }, 400, origin)
+  }
+
+  const { data: metadataRow, error: metadataError } = await adminClient
+    .from('recipe_document_imports')
+    .select('id,title,original_file_name,storage_bucket,storage_path,mime_type,bytes,created_at')
+    .eq('id', documentId)
+    .single()
+
+  if (metadataError) {
+    await adminClient.storage.from(IMPORTS_BUCKET).remove([objectPath])
+    await adminClient.rpc('mark_recipe_document_import_failed', {
+      p_user_id: user.id,
+      p_document_id: documentId,
+      p_reason: metadataError.message,
+    })
+
+    if (eventId) {
+      await adminClient.rpc('finish_import_upload_guard', {
+        p_event_id: eventId,
+        p_status: 'failed',
+        p_reason: metadataError.message,
+      })
     }
 
     return json({ error: metadataError.message }, 400, origin)

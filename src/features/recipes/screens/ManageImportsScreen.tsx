@@ -245,6 +245,12 @@ export default function ManageImportsScreen({ mode }: ManageImportsScreenProps) 
               styles.listContent,
               { paddingBottom: bottomPadding },
             ]}
+            onEndReached={() => {
+              if (importsQuery.hasNextPage && !importsQuery.isFetchingNextPage) {
+                void importsQuery.fetchNextPage()
+              }
+            }}
+            onEndReachedThreshold={0.4}
             ItemSeparatorComponent={() => <View style={{ height: theme.spacing.sm }} />}
             renderItem={({ item }) => {
               const isSelected = selectedImportIds.includes(item.id)
@@ -288,6 +294,14 @@ export default function ManageImportsScreen({ mode }: ManageImportsScreenProps) 
                 </View>
               )
             }}
+            ListFooterComponent={
+              importsQuery.isFetchingNextPage ? (
+                <View style={styles.loadingMoreState}>
+                  <ActivityIndicator size="small" color={styles.loadingText.color} />
+                  <Text style={styles.loadingText}>Loading more imports…</Text>
+                </View>
+              ) : null
+            }
           />
         )}
 
@@ -545,6 +559,12 @@ const styles = createThemedStyles((theme) => ({
     alignItems: 'center',
     justifyContent: 'center',
     gap: theme.spacing.sm,
+  },
+  loadingMoreState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+    paddingVertical: theme.spacing.lg,
   },
   loadingText: {
     fontFamily: theme.fontFamily.medium,

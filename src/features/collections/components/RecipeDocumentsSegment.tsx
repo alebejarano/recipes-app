@@ -98,6 +98,12 @@ export default function RecipeDocumentsSegment({
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.listContent, { paddingBottom: bottomPadding }]}
+          onEndReached={() => {
+            if (docsQuery.hasNextPage && !docsQuery.isFetchingNextPage) {
+              void docsQuery.fetchNextPage()
+            }
+          }}
+          onEndReachedThreshold={0.4}
           ItemSeparatorComponent={() => <View style={{ height: theme.spacing.md }} />}
           renderItem={({ item }) => (
             <Pressable
@@ -124,20 +130,28 @@ export default function RecipeDocumentsSegment({
             </Pressable>
           )}
           ListFooterComponent={
-            <Pressable
-              onPress={() =>
-                router.push({
-                  pathname: createPath,
-                  params: { entry: 'pdf', returnTo: returnToParam },
-                })
-              }
-              style={styles.newItem}
-              accessibilityRole="button"
-              accessibilityLabel="Import file"
-            >
-              <Feather name="upload" size={18} color={theme.colors.mutedForeground} />
-              <Text style={styles.newItemText}>Import file</Text>
-            </Pressable>
+            <View>
+              {docsQuery.isFetchingNextPage ? (
+                <View style={styles.loadingMoreState}>
+                  <ActivityIndicator size="small" color={styles.loadingText.color} />
+                  <Text style={styles.loadingText}>Loading more files…</Text>
+                </View>
+              ) : null}
+              <Pressable
+                onPress={() =>
+                  router.push({
+                    pathname: createPath,
+                    params: { entry: 'pdf', returnTo: returnToParam },
+                  })
+                }
+                style={styles.newItem}
+                accessibilityRole="button"
+                accessibilityLabel="Import file"
+              >
+                <Feather name="upload" size={18} color={theme.colors.mutedForeground} />
+                <Text style={styles.newItemText}>Import file</Text>
+              </Pressable>
+            </View>
           }
         />
       )}
@@ -165,6 +179,12 @@ const styles = createThemedStyles((theme) => ({
     justifyContent: 'center',
     gap: theme.spacing.sm,
     paddingVertical: theme.spacing.lg,
+  },
+  loadingMoreState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+    paddingTop: theme.spacing.lg,
   },
   loadingText: {
     fontFamily: theme.fontFamily.medium,

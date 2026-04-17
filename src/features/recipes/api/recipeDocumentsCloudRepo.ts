@@ -4,6 +4,7 @@ import type { ManagedImport } from '@/features/recipes/storage/importsStorage'
 import type { RecipeDocument, RecipeDocumentUsageSummary } from '@/features/recipes/storage/recipeDocumentStorage'
 
 const SIGNED_URL_TTL_SECONDS = 60 * 60
+export const CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE = 50
 
 type RecipeDocumentImportRow = {
   id: string
@@ -13,12 +14,23 @@ type RecipeDocumentImportRow = {
   storage_path: string
   mime_type: string
   bytes: number
+  status?: string
   created_at: string
 }
 
 type RecipeDocumentUsageRow = {
   total_count: number | null
   total_bytes: number | null
+}
+
+export type CloudRecipeDocumentsCursor = {
+  createdAt: string
+  id: string
+}
+
+export type CloudRecipeDocumentsPage<TItem> = {
+  items: TItem[]
+  nextCursor: CloudRecipeDocumentsCursor | null
 }
 
 function inferTitleFromFileName(fileName: string) {
@@ -51,33 +63,68 @@ function mapManagedImport(row: RecipeDocumentImportRow): ManagedImport {
 }
 
 export async function listCloudRecipeDocuments(): Promise<RecipeDocument[]> {
-  const { data, error } = await supabase
-    .from('recipe_document_imports')
-    .select('id,title,original_file_name,storage_bucket,storage_path,mime_type,bytes,created_at')
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false })
-
-  if (error) throw error
-  return (data ?? []).map((row) => mapRecipeDocument(row as RecipeDocumentImportRow))
+  const firstPage = await listCloudRecipeDocumentsPage()
+  return firstPage.items
 }
 
 export async function listCloudManagedImports(): Promise<ManagedImport[]> {
-  const { data, error } = await supabase
-    .from('recipe_document_imports')
-    .select('id,title,original_file_name,storage_bucket,storage_path,mime_type,bytes,created_at')
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false })
+  const firstPage = await listCloudManagedImportsPage()
+  return firstPage.items
+}
+
+async function fetchCloudRecipeDocumentImportsPage(params?: {
+  cursor?: CloudRecipeDocumentsCursor | null
+  limit?: number
+}): Promise<RecipeDocumentImportRow[]> {
+  const { data, error } = await supabase.rpc('list_recipe_document_imports_page', {
+    p_limit: params?.limit ?? CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
+    p_before_created_at: params?.cursor?.createdAt ?? null,
+    p_before_id: params?.cursor?.id ?? null,
+  })
 
   if (error) throw error
-  return (data ?? []).map((row) => mapManagedImport(row as RecipeDocumentImportRow))
+  return (data ?? []) as RecipeDocumentImportRow[]
+}
+
+function buildNextCursor(rows: RecipeDocumentImportRow[]): CloudRecipeDocumentsCursor | null {
+  if (rows.length < CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE) return null
+  const lastRow = rows[rows.length - 1]
+  if (!lastRow?.created_at || !lastRow?.id) return null
+  return {
+    createdAt: lastRow.created_at,
+    id: lastRow.id,
+  }
+}
+
+export async function listCloudRecipeDocumentsPage(params?: {
+  cursor?: CloudRecipeDocumentsCursor | null
+  limit?: number
+}): Promise<CloudRecipeDocumentsPage<RecipeDocument>> {
+  const rows = await fetchCloudRecipeDocumentImportsPage(params)
+  return {
+    items: rows.map((row) => mapRecipeDocument(row)),
+    nextCursor: buildNextCursor(rows),
+  }
+}
+
+export async function listCloudManagedImportsPage(params?: {
+  cursor?: CloudRecipeDocumentsCursor | null
+  limit?: number
+}): Promise<CloudRecipeDocumentsPage<ManagedImport>> {
+  const rows = await fetchCloudRecipeDocumentImportsPage(params)
+  return {
+    items: rows.map((row) => mapManagedImport(row)),
+    nextCursor: buildNextCursor(rows),
+  }
 }
 
 export async function getCloudRecipeDocument(id: string): Promise<RecipeDocument | null> {
   const { data, error } = await supabase
     .from('recipe_document_imports')
-    .select('id,title,original_file_name,storage_bucket,storage_path,mime_type,bytes,created_at')
+    .select('id,title,original_file_name,storage_bucket,storage_path,mime_type,bytes,status,created_at')
     .eq('id', id)
     .is('deleted_at', null)
+    .in('status', ['uploaded', 'processing', 'ready'])
     .maybeSingle()
 
   if (error) throw error

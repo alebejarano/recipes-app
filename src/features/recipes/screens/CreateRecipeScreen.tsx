@@ -307,6 +307,8 @@ export default function CreateRecipeScreen({
           title: values.title,
         })
         await queryClient.invalidateQueries({ queryKey: ['recipes', 'documents'] })
+        await queryClient.invalidateQueries({ queryKey: ['recipes', 'documents', 'usage'] })
+        await queryClient.invalidateQueries({ queryKey: ['recipes', 'imports', 'managed'] })
         await clearPendingRetry()
         router.replace({
           pathname: collectionsPath as any,
