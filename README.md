@@ -16,6 +16,92 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
+### Environment setup
+
+Use separate Supabase environments for development and production, and let Expo load the matching `EXPO_PUBLIC_*` values from dotenv files.
+
+Recommended file layout:
+
+- `.env.example`: shared variable list only
+- `.env.development.local`: your real local dev values
+- `.env.production.local`: your real local prod values for release/preflight work
+
+Environment identity:
+
+- `EXPO_PUBLIC_APP_ENV=development` for local/dev builds
+- `EXPO_PUBLIC_APP_ENV=preview` for internal preview builds
+- `EXPO_PUBLIC_APP_ENV=production` for release builds
+
+Expo exposes this value at runtime through `extra.appEnv` from [app.config.ts](/Users/alejandra/projects/recipes-app/app.config.ts), and app code can read it through [src/lib/appEnv.ts](/Users/alejandra/projects/recipes-app/src/lib/appEnv.ts).
+
+Committed templates in this repo:
+
+- [.env.example](/Users/alejandra/projects/recipes-app/.env.example)
+- [.env.development.example](/Users/alejandra/projects/recipes-app/.env.development.example)
+- [.env.production.example](/Users/alejandra/projects/recipes-app/.env.production.example)
+
+Recommended workflow:
+
+1. Keep your current Supabase project as development.
+2. Put its values in `.env.development.local`.
+3. Put future production Supabase values in `.env.production.local`.
+4. Run `npx expo start` for normal local development. Expo resolves development env files for that workflow.
+5. Use production env values only for release builds or explicit production validation.
+
+Current local setup in this repo:
+
+- real dev values live in `.env.development.local`
+- tracked `.env` has been removed so local credentials are not kept in a generic root env file
+
+### EAS build strategy
+
+This repo now includes [eas.json](/Users/alejandra/projects/recipes-app/eas.json) with three profiles:
+
+- `development`: dev client builds, intended to point at your dev Supabase project
+- `preview`: internal test builds, also intended to point at dev Supabase unless you choose otherwise
+- `production`: store/release builds, intended to point at your future prod Supabase project
+
+Recommended EAS env setup:
+
+1. Put dev public values in the `development` and `preview` build environment.
+2. Put prod public values in the `production` build environment.
+3. Keep service-role keys only in Supabase function secrets or secure backend tooling, never in EAS client env.
+
+Minimal mapping:
+
+- `development` and `preview`
+  `EXPO_PUBLIC_APP_ENV=development` or `preview`
+  `EXPO_PUBLIC_SUPABASE_URL=https://<dev-project>.supabase.co`
+  `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<dev-publishable-key>`
+- `production`
+  `EXPO_PUBLIC_APP_ENV=production`
+  `EXPO_PUBLIC_SUPABASE_URL=https://<prod-project>.supabase.co`
+  `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<prod-publishable-key>`
+
+Useful commands later:
+
+```bash
+eas build --profile development
+eas build --profile preview
+eas build --profile production
+```
+
+Practical rules for this app:
+
+- `EXPO_PUBLIC_SUPABASE_URL` should point to your dev Supabase project in development and your prod Supabase project in production.
+- `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is the preferred client key used by [src/lib/supabase.ts](/Users/alejandra/projects/recipes-app/src/lib/supabase.ts:18).
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY` is kept only as a fallback for compatibility.
+- `EXPO_PUBLIC_ENABLE_POSTHOG=0` is a sensible default for local dev.
+
+Do not commit:
+
+- `.env`
+- `.env.development.local`
+- `.env.production.local`
+- any service-role key
+
+This repo already ignores local env files via `.gitignore`.
+
 In the output, you'll find options to open the app in a
 
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)

@@ -25,6 +25,7 @@ import {
 } from '@/features/profile/data/profileSettingsData';
 
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { appEnv, isProductionAppEnv } from '@/lib/appEnv';
 import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext';
 
 export default function ProfileScreen() {
@@ -138,10 +139,13 @@ export default function ProfileScreen() {
     [isLoggingOut, onLogoutPress]
   )
 
+  const environmentLabel = isProductionAppEnv ? null : `${appEnv} environment`
+
   return (
     <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
       <ProfileHeader
         title="Profile"
+        environmentLabel={environmentLabel}
       />
 
       <ProfileUserCard
