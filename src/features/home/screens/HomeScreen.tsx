@@ -549,6 +549,12 @@ export default function HomeScreen({
       : root === '(public)'
         ? '/(public)/notes/[id]'
         : '/(auth)/notes/[id]';
+  const homePath =
+    root === '(dev)'
+      ? '/(dev)/(tabs)'
+      : root === '(public)'
+        ? '/(public)/(tabs)'
+        : '/(auth)/(tabs)';
   const collectionDetailPath =
     root === '(dev)' ? '/(dev)/collections/[key]' : '/(auth)/collections/[key]';
   const collectionsPath =
@@ -780,7 +786,7 @@ export default function HomeScreen({
           emoji={pick.recipe.emoji ?? undefined}
           imageUrl={pick.recipe.imageUrl ?? undefined}
           onPress={() => {
-            router.push({ pathname: recipeDetailPath, params: { id: pick.recipe.id } });
+            router.push({ pathname: recipeDetailPath, params: { id: pick.recipe.id, returnTo: homePath } });
           }}
         />
       ) : null}
@@ -802,7 +808,7 @@ export default function HomeScreen({
               rightPadding={theme.spacing.lg}
               formatMeta={(r) => formatRelativeDay(r.createdAt ?? r.updatedAt)}
               onPressItem={(id) => {
-                router.push({ pathname: recipeDetailPath, params: { id } });
+                router.push({ pathname: recipeDetailPath, params: { id, returnTo: homePath } });
               }}
             />
           ) : (
@@ -819,7 +825,7 @@ export default function HomeScreen({
           note={{ title: firstRecentNote.title, updatedAt: firstRecentNote.updatedAt }}
           meta={formatRelativeDay(firstRecentNote.updatedAt)}
           onPress={() => {
-            router.push({ pathname: noteDetailPath, params: { id: firstRecentNote.id } });
+            router.push({ pathname: noteDetailPath, params: { id: firstRecentNote.id, returnTo: homePath } });
           }}
         />
       ) : null}
@@ -886,7 +892,7 @@ export default function HomeScreen({
                       noTopMargin
                       leftIcon={<Text style={styles.actionEmoji}>{recipe.emoji ?? '🍽️'}</Text>}
                       onPress={() => {
-                        router.push({ pathname: recipeDetailPath, params: { id: recipe.id } });
+                        router.push({ pathname: recipeDetailPath, params: { id: recipe.id, returnTo: homePath } });
                       }}
                     />
                   </View>

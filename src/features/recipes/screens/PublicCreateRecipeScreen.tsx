@@ -119,7 +119,7 @@ export default function PublicCreateRecipeScreen({
   const recipeFormRef = useRef<RecipeFormHandle>(null)
   const documentFormRef = useRef<RecipeDocumentFormHandle>(null)
 
-  const screenTitle = 'Create your recipe'
+  const screenTitle = 'Create recipe'
   const submitLabel = entryMode === 'pdf' ? 'Save' : 'Add Recipe'
   const pendingRetryKey = `${PENDING_LIMIT_RETRY_PREFIX}public:guest`
   const createPath = '/(public)/recipes/create'
@@ -440,7 +440,7 @@ export default function PublicCreateRecipeScreen({
                   <Text style={styles.subtitle}>
                     {entryMode === 'pdf'
                       ? 'Upload a recipe file (PDF, JPG, or PNG) and add a title.'
-                      : folderContextMessage ?? 'Start simple — you can always refine it later.'}
+                      : folderContextMessage ?? 'Save the basics now. You can add more later.'}
                   </Text>
                 </View>
 
@@ -454,6 +454,7 @@ export default function PublicCreateRecipeScreen({
                 ) : (
                   <RecipeForm
                     ref={recipeFormRef}
+                    mode="create"
                     initialValues={initialValues}
                     submitLabel={submitLabel}
                     isSubmitting={createMutation.isPending}

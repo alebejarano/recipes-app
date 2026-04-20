@@ -79,12 +79,6 @@ export default function EditRecipeScreen() {
   const insets = useSafeAreaInsets()
   const segments = useSegments()
   const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
-  const homePath =
-    routeMode === 'dev'
-      ? '/(dev)/(tabs)'
-      : routeMode === 'public'
-        ? '/(public)/(tabs)'
-        : '/(auth)/(tabs)'
   const { shouldUseLocalData } = useStorageDataMode(routeMode)
   const { isPremium } = useStorageStrategy()
   const importPlan = isPremium ? 'premium' : 'free'
@@ -122,20 +116,12 @@ export default function EditRecipeScreen() {
     async (values: RecipeFormSubmitValues) => {
       try {
         await updateMutation.mutateAsync(values)
-        router.replace({
-          pathname:
-            routeMode === 'dev'
-              ? '/(dev)/recipes/[id]'
-              : routeMode === 'public'
-                ? '/(public)/recipes/[id]'
-                : '/(auth)/recipes/[id]',
-          params: { id: recipeId, returnTo: homePath },
-        })
+        router.back()
       } catch (e: any) {
         Alert.alert('Save failed', e?.message ?? 'Please try again.')
       }
     },
-    [homePath, recipeId, routeMode, updateMutation]
+    [updateMutation]
   )
 
   const triggerSave = useCallback(() => {
@@ -221,6 +207,7 @@ export default function EditRecipeScreen() {
 
             <RecipeForm
               ref={formRef}
+              mode="edit"
               initialValues={initialValues}
               submitLabel="Save changes"
               isSubmitting={updateMutation.isPending}

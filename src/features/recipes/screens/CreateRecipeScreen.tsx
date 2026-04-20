@@ -153,7 +153,7 @@ export default function CreateRecipeScreen({
   const documentFormRef = useRef<RecipeDocumentFormHandle>(null)
 
   const screenTitle = useMemo(
-    () => (isOnboarding ? 'Create your first recipe' : 'Create your recipe'),
+    () => (isOnboarding ? 'Create your first recipe' : 'Create recipe'),
     [isOnboarding]
   )
 
@@ -538,7 +538,7 @@ export default function CreateRecipeScreen({
                   <Text style={styles.subtitle}>
                     {entryMode === 'pdf'
                       ? 'Upload a recipe file (PDF, JPG, or PNG) and add a title.'
-                      : folderContextMessage ?? 'Start simple — you can always refine it later.'}
+                      : folderContextMessage ?? 'Save the basics now. You can add more later.'}
                   </Text>
                 </View>
 
@@ -553,6 +553,7 @@ export default function CreateRecipeScreen({
                 ) : (
                   <RecipeForm
                     ref={recipeFormRef}
+                    mode="create"
                     initialValues={initialValues}
                     submitLabel={submitLabel}
                     isSubmitting={createMutation.isPending}

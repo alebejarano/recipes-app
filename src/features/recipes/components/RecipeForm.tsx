@@ -16,6 +16,7 @@ import {
   Alert,
   Modal,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   View,
@@ -102,6 +103,11 @@ function normalizeFolderName(value?: unknown): string {
   return text.trim().replace(/\s+/g, ' ')
 }
 
+function isPrefilledValue(currentValue: string, initialValue?: string) {
+  if (!currentValue.trim()) return false
+  return currentValue === (initialValue ?? '')
+}
+
 export function createEmptyRecipeFormValues(): RecipeFormValues {
   return {
     title: '',
@@ -122,6 +128,7 @@ export function createEmptyRecipeFormValues(): RecipeFormValues {
 type FolderSuggestion = { label: string; emoji?: string | null }
 
 type Props = {
+  mode?: 'create' | 'edit'
   initialValues?: RecipeFormValues
   submitLabel: string
   isSubmitting?: boolean
@@ -155,6 +162,7 @@ async function optimizeRecipeImageAsset(
 
 const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   {
+    mode = 'create',
     initialValues,
     submitLabel,
     isSubmitting,
@@ -173,10 +181,29 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     initialValues ?? createEmptyRecipeFormValues()
   )
   const [folderInput, setFolderInput] = useState('')
-  const [folderEmojiInput, setFolderEmojiInput] = useState('')
   const [isEmojiModalOpen, setIsEmojiModalOpen] = useState(false)
   const [emojiDraft, setEmojiDraft] = useState('')
   const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [focusedStepIndex, setFocusedStepIndex] = useState<number | null>(null)
+  const [isMoreDetailsExpanded, setIsMoreDetailsExpanded] = useState(() => {
+    const source = initialValues ?? createEmptyRecipeFormValues()
+    return Boolean(
+      source.description.trim() ||
+      source.subtitle.trim() ||
+      source.emoji.trim() ||
+      source.imageUrl.trim() ||
+      source.prepTimeMinutes.trim() ||
+      source.cookTimeMinutes.trim() ||
+      source.servings.trim() ||
+      source.mealTimes.length
+    )
+  })
+  const [isFoldersExpanded, setIsFoldersExpanded] = useState(() => {
+    const source = initialValues ?? createEmptyRecipeFormValues()
+    return source.folders.length > 0
+  })
+  const initialFormValues = initialValues ?? createEmptyRecipeFormValues()
+  const shouldTintPrefilledValues = mode === 'create'
   const normalizedSuggestedFolders = useMemo(() => {
     if (!suggestedFolders.length) return []
     const selected = new Set(
@@ -224,7 +251,11 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       const nextSteps = [...prev.steps, '']
       return { ...prev, steps: nextSteps }
     })
-  }, [])
+    requestAnimationFrame(() => {
+      const nextIndex = values.steps.length
+      stepInputRefs.current[nextIndex]?.focus()
+    })
+  }, [values.steps.length])
 
   const removeStep = useCallback((index: number) => {
     setValues((prev) => {
@@ -234,7 +265,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   }, [])
 
   const addFolder = useCallback(
-    (nextValue?: unknown) => {
+    (nextValue?: unknown, options?: { silentIfExisting?: boolean }) => {
       const candidate = typeof nextValue === 'string' ? nextValue : undefined
       const nextFolder = normalizeFolderName(candidate ?? folderInput)
       if (!nextFolder) return
@@ -242,6 +273,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       const exists = suggestedFolders.some(
         (folder) => normalizeFolderName(folder.label).toLowerCase() === lower
       )
+      const silentIfExisting = options?.silentIfExisting ?? false
       setValues((prev) => {
         if (prev.folders.some((folder) => normalizeFolderName(folder).toLowerCase() === lower)) {
           return prev
@@ -249,16 +281,18 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         return { ...prev, folders: [...prev.folders, nextFolder] }
       })
       if (exists) {
-        if (folderEmojiInput.trim()) {
-          Alert.alert(
-            'Folder already exists',
-            "We’ll use the existing folder. Its emoji will not be changed here."
-          )
+        if (silentIfExisting) {
+          setFolderInput('')
+          return
         }
+        Alert.alert(
+          'Folder already exists',
+          'We used the existing folder instead.'
+        )
       } else {
         void onCreateFolder({
           name: nextFolder,
-          emoji: folderEmojiInput.trim() || null,
+          emoji: null,
         }).catch((error: any) => {
           const code = error?.code ?? error?.cause?.code
           if (code === '23505') {
@@ -272,11 +306,9 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         })
       }
       setFolderInput('')
-      setFolderEmojiInput('')
     },
     [
       folderInput,
-      folderEmojiInput,
       suggestedFolders,
       onCreateFolder,
     ]
@@ -524,182 +556,96 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     Alert.alert('Add cover', 'Choose an emoji or a photo.', options)
   }, [clearCover, handlePickImage, handleTakePhoto, openEmojiModal, values])
 
+  const moreDetailsSummary = useMemo(() => {
+    const filledCount = [
+      values.imageUrl || values.emoji,
+      values.description,
+      values.prepTimeMinutes,
+      values.cookTimeMinutes,
+      values.servings,
+      values.mealTimes.length > 0,
+    ].filter(Boolean).length
+
+    if (!filledCount) return 'optional'
+    return `${filledCount} added`
+  }, [
+    values.cookTimeMinutes,
+    values.description,
+    values.emoji,
+    values.imageUrl,
+    values.mealTimes.length,
+    values.prepTimeMinutes,
+    values.servings,
+  ])
+
+  const folderSummary = useMemo(() => {
+    if (!values.folders.length) return 'optional'
+    return values.folders.length === 1 ? '1 folder' : `${values.folders.length} folders`
+  }, [values.folders.length])
+
+  const coverPreview = values.imageUrl ? (
+    <Image
+      source={{ uri: values.imageUrl }}
+      style={styles.coverPreviewImage}
+      contentFit="cover"
+      cachePolicy="memory-disk"
+    />
+  ) : values.emoji ? (
+    <Text style={styles.coverPreviewEmoji}>{values.emoji}</Text>
+  ) : (
+    <Feather name="image" size={28} color={styles.coverPreviewIcon.color} />
+  )
+
   return (
     <View style={styles.form}>
-      {/* Basics */}
-      <View style={styles.section}>
-
-        <Pressable
-          onPress={openCoverOptions}
-          style={({ pressed }) => [
-            styles.coverCard,
-            pressed && styles.coverCardPressed,
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel="Add a photo or emoji"
-        >
-          {values.imageUrl ? (
-            <Image
-              source={{ uri: values.imageUrl }}
-              style={styles.coverImage}
-              contentFit="cover"
-              cachePolicy="memory-disk"
-            />
-          ) : values.emoji ? (
-            <Text style={styles.coverEmoji}>{values.emoji}</Text>
-          ) : (
-            <View style={styles.coverPlaceholder}>
-              <View style={styles.coverIconWrap}>
-                <Feather name="camera" size={20} color={styles.coverHint.color} />
-              </View>
-              <Text style={styles.coverHint}>Add a photo or emoji</Text>
-            </View>
-          )}
-
-          {isUploadingImage ? (
-            <View style={styles.coverOverlay}>
-              <ActivityIndicator size="small" color={styles.coverHint.color} />
-              <Text style={styles.coverHint}>Uploading…</Text>
-            </View>
-          ) : null}
-        </Pressable>
-
-        <View style={styles.field}>
-          <Text style={styles.sectionTitle}>Title</Text>
+      <View style={styles.primarySection}>
+        <View style={styles.fieldCompact}>
+          <Text style={styles.primaryFieldLabel}>Title</Text>
           <TextInput
             value={values.title}
             onChangeText={(t) => update('title', t)}
-            placeholder="e.g. Lemon Chicken"
+            placeholder="Recipe name"
             placeholderTextColor={styles.placeholder.color}
-            style={styles.input}
+            style={[
+              styles.titleInput,
+              shouldTintPrefilledValues &&
+                isPrefilledValue(values.title, initialFormValues.title) &&
+                styles.prefilledValue,
+            ]}
             editable={!isSubmitting}
             autoCapitalize="sentences"
             returnKeyType="next"
           />
         </View>
 
-        <View style={styles.field}>
-          <Text style={styles.sectionTitle}>Subtitle</Text>
-          <TextInput
-            value={values.subtitle}
-            onChangeText={(t) => update('subtitle', t)}
-            placeholder="Optional"
-            placeholderTextColor={styles.placeholder.color}
-            style={styles.input}
-            editable={!isSubmitting}
-            autoCapitalize="sentences"
-            returnKeyType="next"
-          />
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.sectionTitle}>Commentary or notes</Text>
-          <TextInput
-            value={values.description}
-            onChangeText={(t) => update('description', t)}
-            placeholder="Optional comments, context, serving ideas…"
-            placeholderTextColor={styles.placeholder.color}
-            multiline
-            style={[styles.input, styles.textarea]}
-            editable={!isSubmitting}
-            autoCapitalize="sentences"
-          />
-        </View>
-      </View>
-
-      {/* Details */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Details</Text>
-
-        <View style={styles.row}>
-          <View style={[styles.field, styles.flex1]}>
-            <Text style={styles.label}>Prep (min)</Text>
-            <TextInput
-              value={values.prepTimeMinutes}
-              onChangeText={(t) => update('prepTimeMinutes', t)}
-              placeholder="e.g. 10"
-              placeholderTextColor={styles.placeholder.color}
-              keyboardType="number-pad"
-              style={styles.input}
-              editable={!isSubmitting}
-            />
-          </View>
-
-          <View style={[styles.field, styles.flex1]}>
-            <Text style={styles.label}>Cook (min)</Text>
-            <TextInput
-              value={values.cookTimeMinutes}
-              onChangeText={(t) => update('cookTimeMinutes', t)}
-              placeholder="e.g. 25"
-              placeholderTextColor={styles.placeholder.color}
-              keyboardType="number-pad"
-              style={styles.input}
-              editable={!isSubmitting}
-            />
-          </View>
-
-          <View style={[styles.field, styles.flex1]}>
-            <Text style={styles.label}>Servings</Text>
-            <TextInput
-              value={values.servings}
-              onChangeText={(t) => update('servings', t)}
-              placeholder="e.g. 2"
-              placeholderTextColor={styles.placeholder.color}
-              keyboardType="number-pad"
-              style={styles.input}
-              editable={!isSubmitting}
-            />
-          </View>
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Best for (optional)</Text>
-          <Text style={styles.helperText}>
-            Pick when this recipe makes the most sense, if any. You can choose more than one.
-          </Text>
-          <View style={styles.tagsRow}>
-            {RECIPE_MEAL_TIMES.map((mealTime) => (
-              <MealTimeChip
-                key={mealTime}
-                mealTime={mealTime}
-                selected={values.mealTimes.includes(mealTime)}
-                onPress={() => toggleMealTime(mealTime)}
-              />
-            ))}
-          </View>
-        </View>
-      </View>
-
-      {/* Ingredients */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Ingredients</Text>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Paste one ingredient per line</Text>
+        <View style={styles.fieldCompact}>
+          <Text style={styles.primarySectionLabel}>Ingredients</Text>
           <TextInput
             value={values.ingredientsText}
             onChangeText={(t) => update('ingredientsText', t)}
-            placeholder={'2 chicken breasts\n1 tbsp olive oil\n1 lemon, juiced'}
+            placeholder={'2 cups flour\n1 tsp salt\n3 eggs...'}
             placeholderTextColor={styles.placeholder.color}
-            style={[styles.input, styles.textarea]}
+            style={[
+              styles.textareaInput,
+              styles.ingredientsInput,
+              shouldTintPrefilledValues &&
+                isPrefilledValue(values.ingredientsText, initialFormValues.ingredientsText) &&
+                styles.prefilledValue,
+            ]}
             editable={!isSubmitting}
             multiline
             autoCapitalize="sentences"
             textAlignVertical="top"
           />
         </View>
-      </View>
 
-      {/* Steps */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Steps</Text>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Instructions</Text>
-
+        <View style={styles.fieldCompact}>
+          <Text style={styles.primarySectionLabel}>Steps</Text>
           <View style={styles.stepsStack}>
             {values.steps.map((step, index) => {
               const n = index + 1
+              const showStepClear = focusedStepIndex === index || step.trim().length > 0
+
               return (
                 <View
                   key={`step-${index}`}
@@ -709,28 +655,42 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
                     <Text style={styles.stepBadgeText}>{n}</Text>
                   </View>
 
-                  <TextInput
-                    value={step}
-                    onChangeText={(t) => updateStep(index, t)}
-                    placeholder={`Step ${n}`}
-                    placeholderTextColor={styles.placeholder.color}
-                    style={[styles.input, styles.stepInput]}
-                    editable={!isSubmitting}
-                    autoCapitalize="sentences"
-                    ref={(node) => {
-                      stepInputRefs.current[index] = node
-                    }}
-                  />
+                  <View style={styles.stepInputWrap}>
+                    <TextInput
+                      value={step}
+                      onChangeText={(t) => updateStep(index, t)}
+                      onFocus={() => setFocusedStepIndex(index)}
+                      onBlur={() => {
+                        setFocusedStepIndex((current) => (current === index ? null : current))
+                      }}
+                      placeholder={n === 1 ? 'What happens first...' : `Step ${n}`}
+                      placeholderTextColor={styles.placeholder.color}
+                      style={[
+                        styles.stepInput,
+                        showStepClear && styles.stepInputWithClear,
+                        shouldTintPrefilledValues &&
+                          isPrefilledValue(step, initialFormValues.steps[index]) &&
+                          styles.prefilledValue,
+                      ]}
+                      editable={!isSubmitting}
+                      autoCapitalize="sentences"
+                      ref={(node) => {
+                        stepInputRefs.current[index] = node
+                      }}
+                    />
 
-                  {values.steps.length > 1 ? (
-                    <Text
-                      style={styles.removeStep}
-                      onPress={() => removeStep(index)}
-                      accessibilityRole="button"
-                    >
-                      Remove
-                    </Text>
-                  ) : null}
+                    {showStepClear ? (
+                      <Pressable
+                        onPress={() => removeStep(index)}
+                        hitSlop={8}
+                        style={styles.stepClearButton}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove step ${n}`}
+                      >
+                        <Feather name="x" size={16} color={styles.stepClearIcon.color} />
+                      </Pressable>
+                    ) : null}
+                  </View>
                 </View>
               )
             })}
@@ -743,82 +703,276 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
             disabled={isSubmitting}
             style={styles.addStepButton}
             textStyle={styles.addStepText}
+            icon={<Feather name="plus" size={18} color={styles.addStepIcon.color} />}
           >
             Add step
           </Button>
         </View>
       </View>
 
-      {/* Tags */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Add to a folder (optional)</Text>
-
-        <View style={styles.field}>
-          {folderContextMessage ? (
-            <Text style={styles.helperText}>{folderContextMessage}</Text>
-          ) : null}
-          <Text style={styles.label}>Folders</Text>
-
-          <View style={styles.tagInputRow}>
-            <TextInput
-              value={folderEmojiInput}
-              onChangeText={setFolderEmojiInput}
-              placeholder="📁"
-              placeholderTextColor={styles.placeholder.color}
-              style={[styles.input, styles.folderEmojiInput]}
-              editable={!isSubmitting}
-              autoCapitalize="none"
-              returnKeyType="done"
-              onSubmitEditing={() => addFolder()}
-            />
-            <TextInput
-              value={folderInput}
-              onChangeText={setFolderInput}
-              placeholder="e.g. Healthy"
-              placeholderTextColor={styles.placeholder.color}
-              style={[styles.input, styles.tagInput]}
-              editable={!isSubmitting}
-              autoCapitalize="words"
-              returnKeyType="done"
-              onSubmitEditing={() => addFolder()}
-            />
-            <Button
-              variant="soft"
-              size="md"
-              onPress={addFolder}
-              disabled={isSubmitting}
-              style={styles.tagAddButton}
-              textStyle={styles.tagAddText}
-            >
-              Add
-            </Button>
+      <View style={styles.collapsibleSection}>
+        <Pressable
+          onPress={() => setIsMoreDetailsExpanded((current) => !current)}
+          style={styles.collapsibleHeader}
+          accessibilityRole="button"
+          accessibilityLabel="Toggle more details"
+        >
+          <View style={styles.collapsibleHeaderText}>
+            <Text style={styles.collapsibleTitle}>More details</Text>
+            <Text style={styles.collapsibleMeta}>· {moreDetailsSummary}</Text>
           </View>
+          <Feather
+            name={isMoreDetailsExpanded ? 'chevron-up' : 'chevron-down'}
+            size={20}
+            color={styles.collapsibleChevron.color}
+          />
+        </Pressable>
 
-          {values.folders.length > 0 ? (
-            <View style={styles.tagsRow}>
-              {values.folders.map((folder, index) => (
-                <TagChip
-                  key={`${normalizeFolderName(folder).toLowerCase()}-${index}`}
-                  label={folder}
-                  selected
-                  onPress={() => removeFolder(folder)}
-                />
-              ))}
-            </View>
-          ) : null}
+        {isMoreDetailsExpanded ? (
+          <View style={styles.collapsibleBody}>
+            <View style={styles.fieldCompact}>
+              <Text style={styles.label}>Cover</Text>
+              <View style={styles.coverRow}>
+                <Pressable
+                  onPress={openCoverOptions}
+                  style={({ pressed }) => [
+                    styles.coverPreview,
+                    pressed && styles.coverPreviewPressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit cover"
+                >
+                  {coverPreview}
+                  {isUploadingImage ? (
+                    <View style={styles.coverUploadingOverlay}>
+                      <ActivityIndicator size="small" color={styles.coverPreviewIcon.color} />
+                    </View>
+                  ) : null}
+                </Pressable>
 
-          {normalizedSuggestedFolders.length > 0 ? (
-            <View style={styles.suggestedTags}>
-              {normalizedSuggestedFolders.map((folder) => (
-                <TagChip
-                  key={folder.label}
-                  label={`${folder.emoji ?? '📁'} ${folder.label}`}
-                  onPress={() => addFolder(folder.label)}
-                />
-              ))}
+                <View style={styles.coverActions}>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onPress={handlePickImage}
+                    disabled={isSubmitting || isUploadingImage}
+                    style={styles.coverActionButton}
+                    icon={<Feather name="camera" size={18} color={styles.coverActionIcon.color} />}
+                  >
+                    Photo
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onPress={openEmojiModal}
+                    disabled={isSubmitting || isUploadingImage}
+                    style={styles.coverActionButton}
+                    icon={<Feather name="smile" size={18} color={styles.coverActionIcon.color} />}
+                  >
+                    Emoji
+                  </Button>
+                </View>
+              </View>
             </View>
-          ) : null}
-        </View>
+
+            <View style={styles.fieldCompact}>
+              <Text style={styles.label}>Notes</Text>
+              <TextInput
+                value={values.description}
+                onChangeText={(t) => update('description', t)}
+                placeholder="Anything helpful to remember later..."
+                placeholderTextColor={styles.placeholder.color}
+                multiline
+                style={[
+                  styles.textareaInput,
+                  styles.notesInput,
+                  shouldTintPrefilledValues &&
+                    isPrefilledValue(values.description, initialFormValues.description) &&
+                    styles.prefilledValue,
+                ]}
+                editable={!isSubmitting}
+                autoCapitalize="sentences"
+              />
+            </View>
+
+            {mode === 'edit' ? (
+              <View style={styles.fieldCompact}>
+                <Text style={styles.label}>Subtitle</Text>
+                <TextInput
+                  value={values.subtitle}
+                  onChangeText={(t) => update('subtitle', t)}
+                  placeholder="Optional"
+                  placeholderTextColor={styles.placeholder.color}
+                  style={[
+                    styles.detailInput,
+                    shouldTintPrefilledValues &&
+                      isPrefilledValue(values.subtitle, initialFormValues.subtitle) &&
+                      styles.prefilledValue,
+                  ]}
+                  editable={!isSubmitting}
+                  autoCapitalize="sentences"
+                  returnKeyType="next"
+                />
+              </View>
+            ) : null}
+
+            <View style={styles.detailsGrid}>
+              <View style={styles.detailField}>
+                <Text style={styles.label}>Prep time</Text>
+                <TextInput
+                  value={values.prepTimeMinutes}
+                  onChangeText={(t) => update('prepTimeMinutes', t)}
+                  placeholder="10 min"
+                  placeholderTextColor={styles.placeholder.color}
+                  keyboardType="number-pad"
+                  style={[
+                    styles.detailInput,
+                    shouldTintPrefilledValues &&
+                      isPrefilledValue(values.prepTimeMinutes, initialFormValues.prepTimeMinutes) &&
+                      styles.prefilledValue,
+                  ]}
+                  editable={!isSubmitting}
+                />
+              </View>
+
+              <View style={styles.detailField}>
+                <Text style={styles.label}>Cook time</Text>
+                <TextInput
+                  value={values.cookTimeMinutes}
+                  onChangeText={(t) => update('cookTimeMinutes', t)}
+                  placeholder="25 min"
+                  placeholderTextColor={styles.placeholder.color}
+                  keyboardType="number-pad"
+                  style={[
+                    styles.detailInput,
+                    shouldTintPrefilledValues &&
+                      isPrefilledValue(values.cookTimeMinutes, initialFormValues.cookTimeMinutes) &&
+                      styles.prefilledValue,
+                  ]}
+                  editable={!isSubmitting}
+                />
+              </View>
+
+              <View style={styles.detailField}>
+                <Text style={styles.label}>Servings</Text>
+                <TextInput
+                  value={values.servings}
+                  onChangeText={(t) => update('servings', t)}
+                  placeholder="2"
+                  placeholderTextColor={styles.placeholder.color}
+                  keyboardType="number-pad"
+                  style={[
+                    styles.detailInput,
+                    shouldTintPrefilledValues &&
+                      isPrefilledValue(values.servings, initialFormValues.servings) &&
+                      styles.prefilledValue,
+                  ]}
+                  editable={!isSubmitting}
+                />
+              </View>
+            </View>
+
+            <View style={styles.fieldCompact}>
+              <Text style={styles.label}>Best for</Text>
+              <View style={styles.tagsRow}>
+                {RECIPE_MEAL_TIMES.map((mealTime) => (
+                  <MealTimeChip
+                    key={mealTime}
+                    mealTime={mealTime}
+                    selected={values.mealTimes.includes(mealTime)}
+                    onPress={() => toggleMealTime(mealTime)}
+                  />
+                ))}
+              </View>
+            </View>
+          </View>
+        ) : null}
+      </View>
+
+      <View style={styles.sectionDivider} />
+
+      <View style={styles.collapsibleSection}>
+        <Pressable
+          onPress={() => setIsFoldersExpanded((current) => !current)}
+          style={styles.collapsibleHeader}
+          accessibilityRole="button"
+          accessibilityLabel="Toggle folder assignment"
+        >
+          <View style={styles.collapsibleHeaderText}>
+            <Text style={styles.collapsibleTitle}>Add to folder</Text>
+            <Text style={styles.collapsibleMeta}>· {folderSummary}</Text>
+          </View>
+          <Feather
+            name={isFoldersExpanded ? 'chevron-up' : 'chevron-down'}
+            size={20}
+            color={styles.collapsibleChevron.color}
+          />
+        </Pressable>
+
+        {isFoldersExpanded ? (
+          <View style={styles.collapsibleBody}>
+            {folderContextMessage ? (
+              <Text style={styles.helperText}>{folderContextMessage}</Text>
+            ) : (
+              <Text style={styles.helperText}>
+                Keep this light. You can organize it later if you want.
+              </Text>
+            )}
+
+            <View style={styles.folderInputRow}>
+              <TextInput
+                value={folderInput}
+                onChangeText={setFolderInput}
+                placeholder="Add to folder"
+                placeholderTextColor={styles.placeholder.color}
+                style={[styles.detailInput, styles.folderInput]}
+                editable={!isSubmitting}
+                autoCapitalize="words"
+                returnKeyType="done"
+                onSubmitEditing={() => addFolder()}
+              />
+              <Button
+                variant="soft"
+                size="md"
+                onPress={addFolder}
+                disabled={isSubmitting}
+                style={styles.tagAddButton}
+                textStyle={styles.tagAddText}
+              >
+                Add
+              </Button>
+            </View>
+
+            {values.folders.length > 0 ? (
+              <View style={styles.tagsRow}>
+                {values.folders.map((folder, index) => (
+                  <TagChip
+                    key={`${normalizeFolderName(folder).toLowerCase()}-${index}`}
+                    label={folder}
+                    selected
+                    onPress={() => removeFolder(folder)}
+                  />
+                ))}
+              </View>
+            ) : null}
+
+            {normalizedSuggestedFolders.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.suggestedFoldersScroll}
+              >
+                {normalizedSuggestedFolders.map((folder) => (
+                  <TagChip
+                    key={folder.label}
+                    label={`${folder.emoji ?? '📁'} ${folder.label}`}
+                    onPress={() => addFolder(folder.label, { silentIfExisting: true })}
+                  />
+                ))}
+              </ScrollView>
+            ) : null}
+          </View>
+        ) : null}
       </View>
 
       {/* Actions (optional) */}
@@ -889,7 +1043,8 @@ export default RecipeForm
 
 const styles = createThemedStyles((theme) => ({
   form: { gap: theme.spacing.lg },
-  section: { gap: theme.spacing.sm },
+  primarySection: { gap: theme.spacing.xl },
+  collapsibleSection: { gap: theme.spacing.md },
   sectionTitle: {
     fontFamily: theme.fontFamily.semibold,
     fontSize: theme.fontSize.lg,
@@ -897,9 +1052,26 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
   },
-  field: { 
+  field: {
     gap: theme.spacing.sm,
-    marginTop: theme.spacing.md
+    marginTop: theme.spacing.md,
+  },
+  fieldCompact: {
+    gap: theme.spacing.sm,
+  },
+  primaryFieldLabel: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
+    color: theme.colors.foreground,
+  },
+  primarySectionLabel: {
+    fontFamily: theme.fontFamily.semibold,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.foreground,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
   },
   helperText: {
     fontFamily: theme.fontFamily.regular,
@@ -925,65 +1097,40 @@ const styles = createThemedStyles((theme) => ({
     lineHeight: theme.lineHeight.base,
     color: theme.colors.foreground,
   },
+  titleInput: {
+    borderBottomWidth: 1,
+    borderColor: theme.colors.border,
+    paddingBottom: theme.spacing.md,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
+    color: theme.colors.foreground,
+  },
+  textareaInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radii.xl,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.foreground,
+    textAlignVertical: 'top',
+  },
+  ingredientsInput: {
+    minHeight: 148,
+  },
+  notesInput: {
+    minHeight: 112,
+  },
   textarea: { minHeight: 120, textAlignVertical: 'top' },
   placeholder: { color: theme.colors.mutedForeground },
+  prefilledValue: { color: theme.colors.warmGray },
   row: { flexDirection: 'row', gap: theme.spacing.sm },
   flex1: { flex: 1 },
   flex2: { flex: 2 },
-  coverCard: {
-    width: 300,
-    height: 200,
-    resizeMode: 'contain',
-    aspectRatio: 1,
-    alignSelf: 'center',
-    borderRadius: theme.radii.lg,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  coverCardPressed: {
-    opacity: 0.96,
-    transform: [{ scale: 0.99 }],
-  },
-  coverPlaceholder: {
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-  },
-  coverIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.secondary,
-  },
-  coverHint: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    color: theme.colors.mutedForeground,
-  },
-  coverEmoji: {
-    fontSize: 48,
-  },
-  coverImage: {
-    width: '100%',
-    height: '100%',
-  },
-  coverOverlay: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing.sm,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-  },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
@@ -1026,8 +1173,6 @@ const styles = createThemedStyles((theme) => ({
     flex: 1,
     width: 'auto',
   },
-
-
   stepsStack: { gap: theme.spacing.sm },
   stepRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
   stepBadge: {
@@ -1043,20 +1188,47 @@ const styles = createThemedStyles((theme) => ({
     fontSize: theme.fontSize.sm,
     color: theme.colors.foreground,
   },
-  stepInput: { flex: 1, paddingVertical: theme.spacing.xs },
-  removeStep: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+  stepInputWrap: {
+    flex: 1,
+    position: 'relative',
+  },
+  stepInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.primarySoft,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radii.full,
+    minHeight: 46,
+    paddingLeft: theme.spacing.md,
+    paddingRight: theme.spacing.md,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.foreground,
+  },
+  stepInputWithClear: {
+    paddingRight: 40,
+  },
+  stepClearButton: {
+    position: 'absolute',
+    right: theme.spacing.md,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepClearIcon: {
     color: theme.colors.mutedForeground,
   },
   addStepButton: { alignSelf: 'flex-start', paddingHorizontal: 0 },
-  addStepText: { fontSize: theme.fontSize.base },
+  addStepText: { fontSize: theme.fontSize.base, color: theme.colors.primary },
+  addStepIcon: { color: theme.colors.primary },
   tagInputRow: { flexDirection: 'row', gap: theme.spacing.sm, alignItems: 'center' },
-  folderEmojiInput: {
-    width: 56,
-    textAlign: 'center',
+  folderInputRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    alignItems: 'center',
   },
-  tagInput: { flex: 1 },
+  folderInput: { flex: 1 },
   tagAddButton: {
     width: 'auto',
     alignSelf: 'flex-start',
@@ -1066,7 +1238,119 @@ const styles = createThemedStyles((theme) => ({
   tagAddText: { fontSize: theme.fontSize.sm },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm },
   suggestedTags: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm },
-
+  suggestedFoldersScroll: {
+    gap: theme.spacing.sm,
+    paddingRight: theme.spacing.md,
+  },
+  collapsibleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing.md,
+  },
+  collapsibleHeaderText: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    flexWrap: 'wrap',
+    gap: theme.spacing.xs,
+    flex: 1,
+  },
+  collapsibleTitle: {
+    fontFamily: theme.fontFamily.semibold,
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
+    color: theme.colors.foreground,
+  },
+  collapsibleMeta: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    color: theme.colors.mutedForeground,
+  },
+  collapsibleChevron: {
+    color: theme.colors.foreground,
+  },
+  collapsibleBody: {
+    gap: theme.spacing.lg,
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: theme.colors.border,
+  },
+  coverRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    flexWrap: 'wrap',
+  },
+  coverPreview: {
+    width: 104,
+    height: 104,
+    borderRadius: 52,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  coverPreviewPressed: {
+    opacity: 0.96,
+  },
+  coverPreviewImage: {
+    width: '100%',
+    height: '100%',
+  },
+  coverPreviewEmoji: {
+    fontSize: 36,
+  },
+  coverPreviewIcon: {
+    color: theme.colors.warmGray,
+  },
+  coverUploadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.7)',
+  },
+  coverActions: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    flexWrap: 'wrap',
+  },
+  coverActionButton: {
+    width: 'auto',
+    minWidth: 138,
+    borderRadius: theme.radii.full,
+  },
+  coverActionIcon: {
+    color: theme.colors.warmGray,
+  },
+  detailsGrid: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+  detailField: {
+    flex: 1,
+    gap: theme.spacing.sm,
+  },
+  detailInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radii.lg,
+    minHeight: 46,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.foreground,
+  },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',

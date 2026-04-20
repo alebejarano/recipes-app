@@ -69,7 +69,6 @@ export default function PublicEditRecipeScreen() {
   const { id } = useLocalSearchParams<{ id?: string; returnTo?: string }>()
   const recipeId = id ?? ''
   const insets = useSafeAreaInsets()
-  const homePath = '/(public)/(tabs)'
 
   const { data: recipe, isLoading, isError } = useLocalRecipe(recipeId)
   const updateMutation = useUpdateLocalRecipe(recipeId)
@@ -86,15 +85,12 @@ export default function PublicEditRecipeScreen() {
     async (values: RecipeFormSubmitValues) => {
       try {
         await updateMutation.mutateAsync(values)
-        router.replace({
-          pathname: '/(public)/recipes/[id]',
-          params: { id: recipeId, returnTo: homePath },
-        })
+        router.back()
       } catch (e: any) {
         Alert.alert('Save failed', e?.message ?? 'Please try again.')
       }
     },
-    [homePath, recipeId, updateMutation]
+    [updateMutation]
   )
 
   const triggerSave = useCallback(() => {
@@ -197,6 +193,7 @@ export default function PublicEditRecipeScreen() {
 
             <RecipeForm
               ref={formRef}
+              mode="edit"
               initialValues={initialValues}
               submitLabel="Save changes"
               isSubmitting={updateMutation.isPending}
