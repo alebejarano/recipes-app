@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
@@ -37,50 +38,64 @@ export default function PickCard({
   return (
     <Pressable
       onPress={onPress}
-      style={styles.card}
+      style={({ pressed }) => [styles.cardPressable, pressed && styles.cardPressablePressed]}
       accessibilityRole="button"
       accessibilityLabel={`Open ${title}`}
     >
-      <View style={styles.left}>
-        {hasMedia ? (
-          <View style={styles.iconCircle}>
-            {hasImage ? (
-              <Image
-                source={{ uri: normalizedImageUrl }}
-                style={styles.image}
-                contentFit="cover"
-                cachePolicy="memory-disk"
-                onError={() => setImageFailed(true)}
-              />
-            ) : (
-              <Text style={styles.emoji}>{emoji}</Text>
-            )}
+      <LinearGradient
+        colors={[theme.colors.primary15, theme.colors.primary10, theme.colors.accent10]}
+        locations={[0, 0.52, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.card}
+      >
+        <View style={styles.left}>
+          {hasMedia ? (
+            <View style={styles.iconCircle}>
+              {hasImage ? (
+                <Image
+                  source={{ uri: normalizedImageUrl }}
+                  style={styles.image}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  onError={() => setImageFailed(true)}
+                />
+              ) : (
+                <Text style={styles.emoji}>{emoji}</Text>
+              )}
+            </View>
+          ) : null}
+
+          <View style={styles.textBlock}>
+            <Text style={styles.label}>{label}</Text>
+            <Text style={styles.title} numberOfLines={1}>
+              {title}
+            </Text>
+            <Text style={styles.subtitle} numberOfLines={1}>
+              {subtitle ?? 'Light & satisfying'}
+            </Text>
           </View>
-        ) : null}
-
-        <View style={styles.textBlock}>
-          <Text style={styles.label}>{label}</Text>
-          <Text style={styles.title} numberOfLines={1}>
-            {title}
-          </Text>
-          <Text style={styles.subtitle} numberOfLines={1}>
-            {subtitle ?? 'Light & satisfying'}
-          </Text>
         </View>
-      </View>
 
-      <Feather name="chevron-right" size={22} color={theme.colors.mutedForeground} />
+        <Feather name="chevron-right" size={22} color={theme.colors.primary} />
+      </LinearGradient>
     </Pressable>
   );
 }
 
 const styles = createThemedStyles((theme) => ({
+  cardPressable: {
+    borderRadius: theme.radii.lg,
+    overflow: 'hidden',
+  },
+  cardPressablePressed: {
+    opacity: 0.92,
+  },
   card: {
     padding: layout.cardPadding,
     borderRadius: theme.radii.lg,
-    backgroundColor: theme.colors.muted,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.primary16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

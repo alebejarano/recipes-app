@@ -46,6 +46,10 @@ export default function DevLandingScreen() {
             Dev profile
         </Link>
 
+         <Link href="/(dev)/home-preview">
+            Dev Home test
+        </Link>
+
         <Link href="/(dev)/limit-qa">
             Limit QA mode
         </Link>

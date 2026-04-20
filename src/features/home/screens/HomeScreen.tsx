@@ -40,11 +40,17 @@ import {
   getRecommendedPick,
   sortMostRecent,
 } from '@/features/home/utils/homeFormatters';
+import {
+  getEmptyHomeMocks,
+  getMatureHomeMocks,
+  getTransitionalHomeMocks,
+} from '@/__mocks__/home';
 
 type HomeProps = {
   showAccountSuccessBanner?: boolean;
   showRecipeSuccessBanner?: boolean;
   mode?: 'auth' | 'public' | 'dev';
+  devScenario?: 'empty' | 'few' | 'many';
 };
 
 type HomeRecipe = {
@@ -153,6 +159,7 @@ export default function HomeScreen({
   showAccountSuccessBanner,
   showRecipeSuccessBanner,
   mode,
+  devScenario,
 }: HomeProps) {
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl);
   const segments = useSegments();
@@ -212,6 +219,33 @@ export default function HomeScreen({
       }));
     },
     [recipesQuery.data]
+  );
+
+  const mockedHomeData = useMemo(() => {
+    if (resolvedMode !== 'dev' || !devScenario) return null;
+    if (devScenario === 'empty') return getEmptyHomeMocks();
+    if (devScenario === 'few') return getTransitionalHomeMocks();
+    return getMatureHomeMocks();
+  }, [devScenario, resolvedMode]);
+
+  const visibleRecipes = useMemo<HomeRecipe[]>(
+    () => {
+      if (!mockedHomeData) return recipes;
+      return mockedHomeData.recipes.map((recipe) => ({
+        id: recipe.id,
+        title: recipe.title,
+        subtitle: recipe.subtitle ?? null,
+        emoji: recipe.emoji ?? null,
+        imageUrl: null,
+        folders: [],
+        mealTimes: recipe.mealTimes ?? [],
+        prepTimeMinutes: null,
+        cookTimeMinutes: null,
+        createdAt: recipe.createdAt,
+        updatedAt: recipe.updatedAt ?? recipe.createdAt,
+      }));
+    },
+    [mockedHomeData, recipes]
   );
 
   useEffect(() => {
@@ -287,6 +321,18 @@ export default function HomeScreen({
     [notesQuery.data]
   );
 
+  const visibleNotes = useMemo<HomeNote[]>(
+    () => {
+      if (!mockedHomeData) return notes;
+      return mockedHomeData.notes.map((note) => ({
+        id: note.id,
+        title: note.title?.trim() || 'Untitled note',
+        updatedAt: note.updatedAt,
+      }));
+    },
+    [mockedHomeData, notes]
+  );
+
   const shoppingList = useMemo(() => {
     if (!isShoppingHydrated || isShoppingHydrating) return null;
     const totalCount = shoppingItems.length;
@@ -294,6 +340,8 @@ export default function HomeScreen({
     const checkedCount = shoppingItems.reduce((acc, item) => acc + (item.checked ? 1 : 0), 0);
     return { totalCount, checkedCount };
   }, [isShoppingHydrated, isShoppingHydrating, shoppingItems]);
+
+  const visibleShoppingList = mockedHomeData?.shoppingList ?? shoppingList;
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [storageBannerDismissed, setStorageBannerDismissed] = useState<boolean | null>(null);
@@ -358,6 +406,7 @@ export default function HomeScreen({
   }, []);
 
   const isInitialLoading =
+    !mockedHomeData &&
     !shouldUseLocalData &&
     (recipesQuery.isLoading || notesQuery.isLoading) &&
     !recipesQuery.data &&
@@ -386,20 +435,21 @@ export default function HomeScreen({
     );
   };
 
-  const totalItems = recipes.length + notes.length;
+  const totalItems = visibleRecipes.length + visibleNotes.length;
   const isEmpty = totalItems === 0;
   const importsCount = importsUsageQuery.data?.totalCount ?? 0;
   const importsTotalBytes = importsUsageQuery.data?.totalBytes ?? 0;
-  const hasUserGeneratedContent = recipes.length > 0 || notes.length > 0 || importsCount > 0;
+  const hasUserGeneratedContent =
+    visibleRecipes.length > 0 || visibleNotes.length > 0 || importsCount > 0;
   const conversionTrigger = useMemo(
     () =>
       getConversionBannerTrigger({
-        recipesCount: recipes.length,
-        notesCount: notes.length,
+        recipesCount: visibleRecipes.length,
+        notesCount: visibleNotes.length,
         importsCount,
         importsTotalBytes,
       }),
-    [importsCount, importsTotalBytes, notes.length, recipes.length]
+    [importsCount, importsTotalBytes, visibleNotes.length, visibleRecipes.length]
   );
 
   const showRiskBanner =
@@ -459,16 +509,16 @@ export default function HomeScreen({
 
   const isTransitional = totalItems >= 1 && totalItems <= 4;
 
-  const shoppingListVisible = (shoppingList?.totalCount ?? 0) > 0;
-  const activeShoppingList = shoppingListVisible ? shoppingList : null;
-  const recipeCount = recipes.length;
+  const shoppingListVisible = (visibleShoppingList?.totalCount ?? 0) > 0;
+  const activeShoppingList = shoppingListVisible ? visibleShoppingList : null;
+  const recipeCount = visibleRecipes.length;
   const isVeryFewRecipes = recipeCount < 5;
   const isMediumRecipeLibrary = recipeCount >= 5 && recipeCount < 20;
   const isLargeRecipeLibrary = recipeCount >= 20;
 
   const weeklyDinnerIdeas = useMemo(() => {
     if (!isLargeRecipeLibrary) return [];
-    const sortedByLeastRecent = [...recipes].sort((a, b) => {
+    const sortedByLeastRecent = [...visibleRecipes].sort((a, b) => {
       const aTime = new Date(a.updatedAt ?? a.createdAt).getTime();
       const bTime = new Date(b.updatedAt ?? b.createdAt).getTime();
       return aTime - bTime;
@@ -489,7 +539,7 @@ export default function HomeScreen({
       picks.push(sortedByLeastRecent[(startIndex + i) % sortedByLeastRecent.length]);
     }
     return picks;
-  }, [isLargeRecipeLibrary, recipes]);
+  }, [isLargeRecipeLibrary, visibleRecipes]);
 
   const greeting = useMemo(() => {
     const meal = getMealTime(new Date());
@@ -502,15 +552,15 @@ export default function HomeScreen({
   const pick = useMemo(() => {
     const PICK_MIN_RECIPES = 5;
     if (isEmpty) return null;
-    if (recipes.length < PICK_MIN_RECIPES) return null;
+    if (visibleRecipes.length < PICK_MIN_RECIPES) return null;
 
-    return getRecommendedPick(recipes, new Date());
-  }, [isEmpty, recipes]);
+    return getRecommendedPick(visibleRecipes, new Date());
+  }, [isEmpty, visibleRecipes]);
 
   const recentRecipes = useMemo(() => {
     const sliceCount = isTransitional ? 2 : 6;
-    return sortMostRecent(recipes).slice(0, sliceCount);
-  }, [recipes, isTransitional]);
+    return sortMostRecent(visibleRecipes).slice(0, sliceCount);
+  }, [isTransitional, visibleRecipes]);
 
   const recentRecipeCards = useMemo<RecipePreview[]>(
     () =>
@@ -525,7 +575,7 @@ export default function HomeScreen({
     [recentRecipes]
   );
 
-  const firstRecentNote = useMemo(() => sortMostRecent(notes)[0], [notes]);
+  const firstRecentNote = useMemo(() => sortMostRecent(visibleNotes)[0], [visibleNotes]);
 
   const formatRecipeDuration = (recipe: HomeRecipe) => {
     const prep = recipe.prepTimeMinutes ?? 0;

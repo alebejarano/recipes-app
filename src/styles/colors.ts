@@ -13,6 +13,9 @@ export const lightColors = {
     primaryForeground: 'hsl(45 30% 98%)',
     primarySoft: 'hsla(142, 15%, 75%, 0.6)',
     primaryDark: 'hsl(143, 39%, 25%)',
+    primary10: 'hsla(142, 25%, 45%, 0.10)',
+    primary15: 'hsla(142, 25%, 45%, 0.15)',
+    primary16: 'hsla(142, 25%, 45%, 0.16)',
 
     secondary: 'hsl(35 30% 92%)',
     secondaryForeground: 'hsl(30 15% 30%)',
@@ -23,6 +26,7 @@ export const lightColors = {
     accent: 'hsl(25,100%,27%)',
     accentLight: 'hsl(25 60% 90%)',
     accentForeground: 'hsl(45 30% 98%)',
+    accent10: 'hsla(25, 100%, 27%, 0.10)',
 
     destructive: 'hsl(0 60% 55%)',
     destructiveForeground: 'hsl(45 30% 98%)',
@@ -53,6 +57,9 @@ export const darkColors = {
     primaryForeground: 'hsl(30 15% 10%)',
     primarySoft: 'hsl(142 15% 20%)',
     primaryDark: 'hsl(142 30% 65%)',
+    primary10: 'hsla(142, 25%, 55%, 0.10)',
+    primary15: 'hsla(142, 25%, 55%, 0.15)',
+    primary16: 'hsla(142, 25%, 55%, 0.16)',
 
     secondary: 'hsl(30 15% 18%)',
     secondaryForeground: 'hsl(45 20% 92%)',
@@ -63,6 +70,7 @@ export const darkColors = {
     accent: 'hsl(18 45% 55%)',
     accentLight: 'hsl(25 60% 90%)',
     accentForeground: 'hsl(45 30% 98%)',
+    accent10: 'hsla(18, 45%, 55%, 0.10)',
 
     destructive: 'hsl(0 55% 45%)',
     destructiveForeground: 'hsl(45 30% 98%)',
