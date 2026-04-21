@@ -512,7 +512,8 @@ export default function HomeScreen({
   const shoppingListVisible = (visibleShoppingList?.totalCount ?? 0) > 0;
   const activeShoppingList = shoppingListVisible ? visibleShoppingList : null;
   const recipeCount = visibleRecipes.length;
-  const isVeryFewRecipes = recipeCount < 5;
+  const isVeryFewRecipes = recipeCount > 0 && recipeCount < 5;
+  const isFirstRecipesState = recipeCount >= 1 && recipeCount <= 3;
   const isMediumRecipeLibrary = recipeCount >= 5 && recipeCount < 20;
   const isLargeRecipeLibrary = recipeCount >= 20;
 
@@ -576,6 +577,7 @@ export default function HomeScreen({
   );
 
   const firstRecentNote = useMemo(() => sortMostRecent(visibleNotes)[0], [visibleNotes]);
+  const lowContentHeroRecipe = useMemo(() => sortMostRecent(visibleRecipes)[0] ?? null, [visibleRecipes]);
 
   const formatRecipeDuration = (recipe: HomeRecipe) => {
     const prep = recipe.prepTimeMinutes ?? 0;
@@ -841,14 +843,34 @@ export default function HomeScreen({
         />
       ) : null}
 
+      {!pick && isVeryFewRecipes && lowContentHeroRecipe ? (
+        <PickCard
+          label={isFirstRecipesState ? 'Your first recipes' : 'Try this tonight'}
+          title={lowContentHeroRecipe.title}
+          subtitle={lowContentHeroRecipe.subtitle ?? 'A recipe you saved'}
+          emoji={lowContentHeroRecipe.emoji ?? undefined}
+          imageUrl={lowContentHeroRecipe.imageUrl ?? undefined}
+          onPress={() => {
+            router.push({
+              pathname: recipeDetailPath,
+              params: { id: lowContentHeroRecipe.id, returnTo: homePath },
+            });
+          }}
+        />
+      ) : null}
+
       {!isEmpty ? (
         <View style={styles.section}>
-          <SectionHeaderRow
-            title="Recent Activity"
-            subtitle="Recently added recipes"
-            ctaLabel={isPublic ? undefined : 'See all'}
-            onPressCta={isPublic ? undefined : () => router.push(collectionsPath)}
-          />
+          {isVeryFewRecipes ? (
+            <SectionHeaderRow title="Keep cooking →" />
+          ) : (
+            <SectionHeaderRow
+              title="Recent Activity"
+              subtitle="Recently added recipes"
+              ctaLabel={isPublic ? undefined : 'See all'}
+              onPressCta={isPublic ? undefined : () => router.push(collectionsPath)}
+            />
+          )}
 
           {recentRecipeCards.length > 0 ? (
             <RecipeCarousel
@@ -869,7 +891,7 @@ export default function HomeScreen({
         </View>
       ) : null}
 
-      {!isEmpty && firstRecentNote ? (
+      {!isEmpty && !isVeryFewRecipes && firstRecentNote ? (
         <NotesStrip
           title="Recently edited notes"
           note={{ title: firstRecentNote.title, updatedAt: firstRecentNote.updatedAt }}
@@ -882,7 +904,7 @@ export default function HomeScreen({
 
       {!isEmpty ? (
         <View style={styles.section}>
-          <Text style={styles.sectionSubtitleLarge}>This Week</Text>
+          {!isVeryFewRecipes ? <Text style={styles.sectionSubtitleLarge}>This Week</Text> : null}
 
           {activeShoppingList ? (
             <ActionCard
@@ -906,17 +928,7 @@ export default function HomeScreen({
             />
           )}
 
-          {isVeryFewRecipes ? (
-            <ActionCard
-              title="Add your first staples"
-              meta="Save 3-5 recipes you cook often"
-              variant="nextAction"
-              leftIcon={<Ionicons name="star" size={22} color="#F49D0C" />}
-              onPress={handlePrimaryCta}
-            />
-          ) : null}
-
-          {isMediumRecipeLibrary ? (
+          {isVeryFewRecipes ? null : isMediumRecipeLibrary ? (
             <ActionCard
               title="What's cooking this week?"
               meta="Pick a recipe and add ingredients to your list"
@@ -926,9 +938,7 @@ export default function HomeScreen({
                 router.push(collectionsPath);
               }}
             />
-          ) : null}
-
-          {isLargeRecipeLibrary ? (
+          ) : isLargeRecipeLibrary ? (
             <View style={styles.ideasSection}>
               <Text style={styles.ideasTitle}>Ideas for this week</Text>
               <Text style={styles.ideasMeta}>A couple of recipes to keep in mind</Text>
@@ -951,7 +961,7 @@ export default function HomeScreen({
             </View>
           ) : null}
 
-          {!isPublic && featuredCollection && featuredCollectionChips.length > 0 ? (
+          {!isVeryFewRecipes && !isPublic && featuredCollection && featuredCollectionChips.length > 0 ? (
             <CollectionCard
               title={featuredCollection.label}
               meta={`${featuredCollection.count} recipe${
