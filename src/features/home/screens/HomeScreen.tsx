@@ -35,16 +35,16 @@ import {
 } from '@/features/subscription/constants/limits';
 
 import {
+  getEmptyHomeMocks,
+  getMatureHomeMocks,
+  getTransitionalHomeMocks,
+} from '@/__mocks__/home';
+import {
   formatRelativeDay,
   getMealTime,
   getRecommendedPick,
   sortMostRecent,
 } from '@/features/home/utils/homeFormatters';
-import {
-  getEmptyHomeMocks,
-  getMatureHomeMocks,
-  getTransitionalHomeMocks,
-} from '@/__mocks__/home';
 
 type HomeProps = {
   showAccountSuccessBanner?: boolean;
@@ -889,7 +889,7 @@ export default function HomeScreen({
               title="Shopping List"
               meta={`${activeShoppingList.checkedCount}/${activeShoppingList.totalCount} items checked`}
               variant="shoppingActive"
-              leftIcon={<Feather name="shopping-cart" size={24} color={theme.colors.primary} />}
+              leftIcon={<Feather name="shopping-cart" size={24} color={theme.colors.primaryDark} />}
               onPress={() => {
                 router.push(shoppingListPath);
               }}
@@ -899,7 +899,7 @@ export default function HomeScreen({
               title="Start a shopping list"
               meta="Keep track of ingredients"
               variant="shoppingEmpty"
-              leftIcon={<Feather name="plus" size={28} color={theme.colors.primary} />}
+              leftIcon={<Feather name="plus" size={28} color={theme.colors.primaryDark} />}
               onPress={() => {
                 router.push(shoppingListPath);
               }}

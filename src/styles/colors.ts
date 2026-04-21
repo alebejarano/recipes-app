@@ -36,7 +36,7 @@ export const lightColors = {
     inputBackground: 'hsl(35 25% 90%)',
     ring: 'hsl(142 25% 45%)',
 
-    cream: 'hsla(37, 50%, 94%, 1.00)',
+    cream: 'hsla(36, 43%, 92%, 1.00)',
     creamDark: 'hsl(35 25% 90%)',
 
     terracottaLight: 'hsla(16, 52%, 76%, 0.4)',

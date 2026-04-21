@@ -105,11 +105,11 @@ const styles = createThemedStyles((theme) => ({
   shoppingEmpty: {
     borderStyle: 'dashed',
     borderColor: theme.colors.primarySoft,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.cream,
   },
   shoppingActive: {
     borderColor: theme.colors.primarySoft,
-    backgroundColor: theme.colors.primarySoft,
+    backgroundColor: theme.colors.muted,
   },
   left: {
     flexDirection: 'row',
@@ -131,14 +131,14 @@ const styles = createThemedStyles((theme) => ({
   shoppingIconCircle: {
     width: 50,
     height: 50,
-    borderRadius: theme.radii.lg,
-    backgroundColor: theme.colors.muted,
+    borderRadius: theme.radii.full,
+    backgroundColor: theme.colors.primary16,
   },
   shoppingIconCircleActive: {
     width: 50,
     height: 50,
-    borderRadius: theme.radii.lg,
-    backgroundColor: theme.colors.muted,
+    borderRadius: theme.radii.full,
+    backgroundColor: theme.colors.primary16,
   },
   nextActionIconCircle: {
     width: 50,
