@@ -512,9 +512,9 @@ export default function HomeScreen({
   const shoppingListVisible = (visibleShoppingList?.totalCount ?? 0) > 0;
   const activeShoppingList = shoppingListVisible ? visibleShoppingList : null;
   const recipeCount = visibleRecipes.length;
-  const isVeryFewRecipes = recipeCount > 0 && recipeCount < 5;
+  const isVeryFewRecipes = recipeCount > 0 && recipeCount <= 5;
   const isFirstRecipesState = recipeCount >= 1 && recipeCount <= 3;
-  const isMediumRecipeLibrary = recipeCount >= 5 && recipeCount < 20;
+  const isMediumRecipeLibrary = recipeCount >= 6 && recipeCount < 20;
   const isLargeRecipeLibrary = recipeCount >= 20;
 
   const weeklyDinnerIdeas = useMemo(() => {
@@ -551,7 +551,7 @@ export default function HomeScreen({
   }, []);
 
   const pick = useMemo(() => {
-    const PICK_MIN_RECIPES = 5;
+    const PICK_MIN_RECIPES = 6;
     if (isEmpty) return null;
     if (visibleRecipes.length < PICK_MIN_RECIPES) return null;
 
