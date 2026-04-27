@@ -8,7 +8,7 @@ import TabScreenPreview from '@/components/TabScreenPreview';
 import HomeScreen from '@/features/home/screens/HomeScreen';
 import { createThemedStyles } from '@/styles/createStyles';
 
-type HomeScenario = 'empty' | 'few' | 'many';
+type HomeScenario = 'empty' | 'few' | 'medium' | 'many';
 
 const scenarios: { key: HomeScenario; title: string; body: string }[] = [
   {
@@ -22,9 +22,14 @@ const scenarios: { key: HomeScenario; title: string; body: string }[] = [
     body: 'Shows the transitional state with only a couple of recipes.',
   },
   {
+    key: 'medium',
+    title: 'Medium',
+    body: 'Shows the 6-19 recipe state with the intentional "Try this" hero.',
+  },
+  {
     key: 'many',
     title: 'A lot',
-    body: 'Shows the more mature state with notes and shopping activity.',
+    body: 'Shows the 20+ recipe state with grouping, notes, and shopping activity.',
   },
 ];
 

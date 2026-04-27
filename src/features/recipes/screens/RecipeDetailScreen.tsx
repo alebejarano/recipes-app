@@ -4,8 +4,8 @@ import { Feather, Ionicons } from '@expo/vector-icons'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Image } from 'expo-image'
-import { router, useLocalSearchParams, useSegments } from 'expo-router'
-import React, { useContext, useEffect, useMemo, useState } from 'react'
+import { router, useFocusEffect, useLocalSearchParams, useSegments } from 'expo-router'
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -43,6 +43,7 @@ import {
   markKitchenCapacityReminderShownInSession,
 } from '@/features/subscription/dev/reminderSession'
 import { buildFreePlanUsageSnapshot } from '@/features/subscription/utils/planUsage'
+import { recordRecipeOpen } from '@/features/home/utils/recipeOpenHistory'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 const FALLBACK_FOLDERS: string[] = []
@@ -228,6 +229,13 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
       isCancelled = true
     }
   }, [routeMode, shouldOfferRecipeReminder, user?.id])
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!recipeId) return;
+      void recordRecipeOpen(recipeId);
+    }, [recipeId])
+  )
 
   const dismissKitchenCapacityReminder = async () => {
     setShouldShowCapacityReminder(false)

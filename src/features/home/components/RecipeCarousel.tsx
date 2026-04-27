@@ -19,8 +19,10 @@ type Props = {
   cardWidth: number;
   gap: number;
   rightPadding: number;
-  formatMeta: (item: RecipePreview) => string;
+  formatMeta?: (item: RecipePreview) => string;
   onPressItem?: (id: string) => void;
+  showMeta?: boolean;
+  variant?: 'default' | 'compact';
 };
 
 export default function RecipeCarousel({
@@ -30,8 +32,11 @@ export default function RecipeCarousel({
   rightPadding,
   formatMeta,
   onPressItem,
+  showMeta = true,
+  variant = 'default',
 }: Props) {
   if (items.length === 0) return null;
+  const isCompact = variant === 'compact';
 
   return (
     <ScrollView
@@ -53,6 +58,7 @@ export default function RecipeCarousel({
               onPress={() => onPressItem?.(r.id)}
               style={[
                 styles.card,
+                isCompact ? styles.cardCompact : null,
                 { width: cardWidth },
                 isMinimal ? styles.cardMinimal : null,
               ]}
@@ -60,7 +66,7 @@ export default function RecipeCarousel({
               accessibilityLabel={`Open ${r.title}`}
             >
               {hasMedia ? (
-                <View style={styles.iconWrap}>
+                <View style={[styles.iconWrap, isCompact ? styles.iconWrapCompact : null]}>
                   {r.imageUrl ? (
                     <Image
                       source={{ uri: r.imageUrl }}
@@ -69,30 +75,34 @@ export default function RecipeCarousel({
                       cachePolicy="memory-disk"
                     />
                   ) : (
-                    <Text style={styles.emoji}>{r.emoji}</Text>
+                    <Text style={[styles.emoji, isCompact ? styles.emojiCompact : null]}>{r.emoji}</Text>
                   )}
                 </View>
               ) : null}
 
               {isMinimal ? (
                 <View style={styles.minimalContent}>
-                  <Text style={styles.title} numberOfLines={2}>
+                  <Text style={[styles.title, isCompact ? styles.titleCompact : null]} numberOfLines={2}>
                     {r.title}
                   </Text>
 
-                  <Text style={styles.meta} numberOfLines={1}>
-                    {formatMeta(r)}
-                  </Text>
+                  {showMeta && formatMeta ? (
+                    <Text style={[styles.meta, isCompact ? styles.metaCompact : null]} numberOfLines={1}>
+                      {formatMeta(r)}
+                    </Text>
+                  ) : null}
                 </View>
               ) : (
                 <>
-                  <Text style={styles.title} numberOfLines={2}>
+                  <Text style={[styles.title, isCompact ? styles.titleCompact : null]} numberOfLines={2}>
                     {r.title}
                   </Text>
 
-                  <Text style={styles.meta} numberOfLines={1}>
-                    {formatMeta(r)}
-                  </Text>
+                  {showMeta && formatMeta ? (
+                    <Text style={[styles.meta, isCompact ? styles.metaCompact : null]} numberOfLines={1}>
+                      {formatMeta(r)}
+                    </Text>
+                  ) : null}
                 </>
               )}
             </Pressable>
@@ -116,6 +126,16 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.cream,
     ...theme.shadows.soft,
   },
+  cardCompact: {
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.radii.md,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
   cardMinimal: {
     justifyContent: 'center',
   },
@@ -132,6 +152,11 @@ const styles = createThemedStyles((theme) => ({
     marginBottom: theme.spacing.md,
     overflow: 'hidden',
   },
+  iconWrapCompact: {
+    width: 36,
+    height: 36,
+    marginBottom: theme.spacing.sm,
+  },
   image: {
     width: '100%',
     height: '100%',
@@ -139,11 +164,19 @@ const styles = createThemedStyles((theme) => ({
   emoji: {
     fontSize: 20,
   },
+  emojiCompact: {
+    fontSize: 18,
+  },
   title: {
     fontSize: theme.fontSize.lg,
     lineHeight: theme.lineHeight.lg,
     fontFamily: theme.fontFamily.semibold,
     color: theme.colors.foreground,
+  },
+  titleCompact: {
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    fontFamily: theme.fontFamily.medium,
   },
   meta: {
     marginTop: theme.spacing.sm,
@@ -151,5 +184,10 @@ const styles = createThemedStyles((theme) => ({
     lineHeight: theme.lineHeight.base,
     fontFamily: theme.fontFamily.regular,
     color: theme.colors.mutedForeground,
+  },
+  metaCompact: {
+    marginTop: theme.spacing.xs,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
   },
 }));

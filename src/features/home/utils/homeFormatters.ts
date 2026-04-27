@@ -29,13 +29,13 @@ export function getMealTime(now: Date): MealTime {
 export function getPickLabel(meal: MealTime) {
   switch (meal) {
     case 'breakfast':
-      return 'Breakfast pick';
+      return 'Breakfast';
     case 'lunch':
-      return 'Lunch pick';
+      return 'Lunch';
     case 'snack':
-      return 'Snack pick';
+      return 'Snack';
     case 'dinner':
-      return 'Dinner pick';
+      return 'Dinner';
   }
 }
 

@@ -1,8 +1,8 @@
 import { Feather, Ionicons } from '@expo/vector-icons'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { Image } from 'expo-image'
-import { router, useLocalSearchParams } from 'expo-router'
-import React, { useMemo, useState } from 'react'
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router'
+import React, { useCallback, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -18,6 +18,7 @@ import { createThemedStyles } from '@/styles/createStyles'
 
 import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
+import { recordRecipeOpen } from '@/features/home/utils/recipeOpenHistory'
 import IngredientImportSheet from '@/features/recipes/components/IngredientImportSheet'
 import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
 import { useDeleteLocalRecipe, useLocalRecipe, useUpdateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
@@ -113,6 +114,13 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
 
   const editPath = '/(public)/recipes/[id]/edit'
   const detailPath = `/(public)/recipes/${recipeId}`
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!recipeId) return
+      void recordRecipeOpen(recipeId)
+    }, [recipeId])
+  )
 
   const handleEdit = () => {
     router.push({

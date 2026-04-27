@@ -1,9 +1,9 @@
 import { Feather, Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image as ExpoImage } from 'expo-image';
-import { router, useSegments } from 'expo-router';
+import { router, useFocusEffect, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
 
 import Screen from '@/components/Screen';
@@ -15,10 +15,9 @@ import { theme } from '@/styles/theme';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { buildCollectionsForSegment } from '@/features/collections/utils/collections';
 import ActionCard from '@/features/home/components/ActionCard';
-import CollectionCard from '@/features/home/components/CollectionCard';
 import EmptyHomeCard from '@/features/home/components/EmptyHomeCard';
+import FolderSpotlightCard from '@/features/home/components/FolderSpotlightCard';
 import HomeHeader from '@/features/home/components/HomeHeader';
-import NotesStrip from '@/features/home/components/NotesStrip';
 import PickCard from '@/features/home/components/PickCard';
 import RecipeCarousel, { type RecipePreview } from '@/features/home/components/RecipeCarousel';
 import SectionHeaderRow from '@/features/home/components/SectionHeaderRow';
@@ -33,9 +32,14 @@ import {
   FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
   FREE_PLAN_MAX_RECIPES,
 } from '@/features/subscription/constants/limits';
+import {
+  loadRecipeOpenHistory,
+  type RecipeOpenHistory,
+} from '@/features/home/utils/recipeOpenHistory';
 
 import {
   getEmptyHomeMocks,
+  getMediumHomeMocks,
   getMatureHomeMocks,
   getTransitionalHomeMocks,
 } from '@/__mocks__/home';
@@ -50,7 +54,7 @@ type HomeProps = {
   showAccountSuccessBanner?: boolean;
   showRecipeSuccessBanner?: boolean;
   mode?: 'auth' | 'public' | 'dev';
-  devScenario?: 'empty' | 'few' | 'many';
+  devScenario?: 'empty' | 'few' | 'medium' | 'many';
 };
 
 type HomeRecipe = {
@@ -155,6 +159,124 @@ function getWeekKey(date: Date) {
   return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
 }
 
+function hashSeed(seed: string) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
+function getSeededRecipeOrder<T extends { id: string }>(items: T[], seed: string) {
+  return [...items].sort((a, b) => {
+    const aRank = hashSeed(`${seed}|${a.id}`);
+    const bRank = hashSeed(`${seed}|${b.id}`);
+    if (aRank !== bRank) return aRank - bRank;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+function getRecipePreferenceTags(recipe: HomeRecipe) {
+  const tags = new Set<string>();
+
+  for (const mealTime of recipe.mealTimes ?? []) {
+    tags.add(`meal:${mealTime}`);
+  }
+
+  for (const folder of recipe.folders ?? []) {
+    const normalized = folder.name.trim().toLowerCase();
+    if (normalized) tags.add(`folder:${normalized}`);
+  }
+
+  const totalMinutes = (recipe.prepTimeMinutes ?? 0) + (recipe.cookTimeMinutes ?? 0);
+  if (totalMinutes > 0 && totalMinutes <= 30) {
+    tags.add('trait:quick');
+  }
+
+  return [...tags];
+}
+
+function buildWeeklyIdeaRecipes(
+  recipes: HomeRecipe[],
+  recipeOpenHistory: RecipeOpenHistory,
+  now: Date
+) {
+  if (recipes.length === 0) return [];
+
+  const weekKey = getWeekKey(now);
+  const seededRecipes = getSeededRecipeOrder(recipes, `${weekKey}|ideas`);
+  const sortedHistory = Object.entries(recipeOpenHistory)
+    .sort((a, b) => {
+      if (b[1].count !== a[1].count) return b[1].count - a[1].count;
+      return b[1].lastOpenedAt - a[1].lastOpenedAt;
+    })
+    .filter(([recipeId]) => recipes.some((recipe) => recipe.id === recipeId));
+
+  const frequentlyOpenedIds = new Set(sortedHistory.slice(0, 3).map(([recipeId]) => recipeId));
+  const tagScores = new Map<string, number>();
+
+  for (const [recipeId, entry] of sortedHistory) {
+    const recipe = recipes.find((item) => item.id === recipeId);
+    if (!recipe) continue;
+
+    for (const tag of getRecipePreferenceTags(recipe)) {
+      tagScores.set(tag, (tagScores.get(tag) ?? 0) + entry.count);
+    }
+  }
+
+  const preferredTags = [...tagScores.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([tag]) => tag);
+
+  const selected: HomeRecipe[] = [];
+  const selectedIds = new Set<string>();
+
+  for (const tag of preferredTags) {
+    const match = seededRecipes.find((recipe) => {
+      if (selectedIds.has(recipe.id) || frequentlyOpenedIds.has(recipe.id)) return false;
+      return getRecipePreferenceTags(recipe).includes(tag);
+    });
+
+    if (!match) continue;
+    selected.push(match);
+    selectedIds.add(match.id);
+    if (selected.length === 3) break;
+  }
+
+  if (selected.length < 3) {
+    for (const recipe of seededRecipes) {
+      if (selectedIds.has(recipe.id) || frequentlyOpenedIds.has(recipe.id)) continue;
+      selected.push(recipe);
+      selectedIds.add(recipe.id);
+      if (selected.length === 3) break;
+    }
+  }
+
+  const selectedTagSet = new Set(selected.flatMap((recipe) => getRecipePreferenceTags(recipe)));
+  const remaining = seededRecipes.filter((recipe) => !selectedIds.has(recipe.id));
+
+  for (const recipe of remaining) {
+    const tags = getRecipePreferenceTags(recipe);
+    const addsVariety = tags.some((tag) => !selectedTagSet.has(tag));
+    if (!addsVariety) continue;
+    selected.push(recipe);
+    selectedIds.add(recipe.id);
+    for (const tag of tags) selectedTagSet.add(tag);
+    if (selected.length === 5) break;
+  }
+
+  if (selected.length < 5) {
+    for (const recipe of remaining) {
+      if (selectedIds.has(recipe.id)) continue;
+      selected.push(recipe);
+      selectedIds.add(recipe.id);
+      if (selected.length === 5) break;
+    }
+  }
+
+  return selected.slice(0, 5);
+}
+
 export default function HomeScreen({
   showAccountSuccessBanner,
   showRecipeSuccessBanner,
@@ -225,6 +347,7 @@ export default function HomeScreen({
     if (resolvedMode !== 'dev' || !devScenario) return null;
     if (devScenario === 'empty') return getEmptyHomeMocks();
     if (devScenario === 'few') return getTransitionalHomeMocks();
+    if (devScenario === 'medium') return getMediumHomeMocks();
     return getMatureHomeMocks();
   }, [devScenario, resolvedMode]);
 
@@ -237,7 +360,7 @@ export default function HomeScreen({
         subtitle: recipe.subtitle ?? null,
         emoji: recipe.emoji ?? null,
         imageUrl: null,
-        folders: [],
+        folders: recipe.folders ?? [],
         mealTimes: recipe.mealTimes ?? [],
         prepTimeMinutes: null,
         cookTimeMinutes: null,
@@ -260,12 +383,12 @@ export default function HomeScreen({
   const recipeCollections = useMemo(() => {
     const items = buildCollectionsForSegment(
       'recipes',
-      (recipesQuery.data ?? []) as any
+      visibleRecipes as any
     );
     return items.filter(
       (item) => item.kind === 'tag' && item.count > 0 && item.label !== 'Uncategorized'
     );
-  }, [recipesQuery.data]);
+  }, [visibleRecipes]);
 
   const featuredCollection = useMemo(() => {
     const eligibleCollections = recipeCollections.filter(
@@ -275,18 +398,15 @@ export default function HomeScreen({
 
     const eligibleCollectionsKey = eligibleCollections.map((collection) => collection.key).join('|');
     const weekKey = getWeekKey(new Date());
-    let hash = 0;
     const seed = `${weekKey}|${eligibleCollectionsKey}`;
-    for (let i = 0; i < seed.length; i += 1) {
-      hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-    }
+    const hash = hashSeed(seed);
     const index = hash % eligibleCollections.length;
     return eligibleCollections[index] ?? null;
   }, [recipeCollections]);
 
   const featuredCollectionRecipes = useMemo(() => {
     if (!featuredCollection) return [];
-    const list = recipesQuery.data ?? [];
+    const list = visibleRecipes;
 
     if (featuredCollection.label === 'Uncategorized') {
       return list.filter((recipe) => (recipe.folders?.length ?? 0) === 0);
@@ -295,19 +415,35 @@ export default function HomeScreen({
     return list.filter((recipe) =>
       (recipe.folders ?? []).map((folder) => folder.name.trim()).includes(featuredCollection.label)
     );
-  }, [featuredCollection, recipesQuery.data]);
+  }, [featuredCollection, visibleRecipes]);
 
-  const featuredCollectionChips = useMemo(() => {
-    const chips = featuredCollectionRecipes.slice(0, 2).map((recipe) => {
-      if (recipe.emoji) return `${recipe.emoji} ${recipe.title}`;
-      return recipe.title;
-    });
-    const remainingCount = featuredCollectionRecipes.length - chips.length;
-    if (remainingCount > 0) {
-      chips.push(`+${remainingCount} more`);
+  const folderSpotlightRecipes = useMemo(() => {
+    if (!featuredCollection) return [];
+
+    const recipesInCollection = sortMostRecent(featuredCollectionRecipes);
+    const totalRecipes = recipesInCollection.length;
+    if (totalRecipes <= 3) return recipesInCollection.slice(0, 3);
+
+    const now = new Date();
+    const weekKey = getWeekKey(now);
+    const ordered = getSeededRecipeOrder(
+      recipesInCollection,
+      `${weekKey}|${featuredCollection.key}|spotlight`
+    );
+
+    if (totalRecipes >= 6) {
+      const dayOfWeek = now.getUTCDay() || 7;
+      const phase = dayOfWeek <= 3 ? 0 : 1;
+      const start = (phase * 3) % ordered.length;
+      return Array.from({ length: 3 }, (_, index) => ordered[(start + index) % ordered.length]);
     }
-    return chips;
-  }, [featuredCollectionRecipes]);
+
+    const fixed = ordered.slice(0, 2);
+    const rotating = ordered.slice(2);
+    const dayOfWeek = now.getUTCDay() || 7;
+    const rotatingRecipe = rotating[(dayOfWeek - 1) % rotating.length];
+    return [...fixed, rotatingRecipe];
+  }, [featuredCollection, featuredCollectionRecipes]);
 
   const notes = useMemo<HomeNote[]>(
     () => {
@@ -349,6 +485,16 @@ export default function HomeScreen({
   const [seenConversionTriggerIds, setSeenConversionTriggerIds] = useState<string[] | null>(null);
   const [activeConversionTriggerId, setActiveConversionTriggerId] = useState<string | null>(null);
   const [storageBannerStateReady, setStorageBannerStateReady] = useState(false);
+  const [recipeOpenHistory, setRecipeOpenHistory] = useState<RecipeOpenHistory>({});
+
+  const refreshRecipeOpenHistory = useCallback(async () => {
+    try {
+      const next = await loadRecipeOpenHistory();
+      setRecipeOpenHistory(next);
+    } catch {
+      setRecipeOpenHistory({});
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -404,6 +550,12 @@ export default function HomeScreen({
       isMounted = false;
     };
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void refreshRecipeOpenHistory();
+    }, [refreshRecipeOpenHistory])
+  );
 
   const isInitialLoading =
     !mockedHomeData &&
@@ -517,30 +669,10 @@ export default function HomeScreen({
   const isMediumRecipeLibrary = recipeCount >= 6 && recipeCount < 20;
   const isLargeRecipeLibrary = recipeCount >= 20;
 
-  const weeklyDinnerIdeas = useMemo(() => {
+  const weeklyIdeaRecipes = useMemo(() => {
     if (!isLargeRecipeLibrary) return [];
-    const sortedByLeastRecent = [...visibleRecipes].sort((a, b) => {
-      const aTime = new Date(a.updatedAt ?? a.createdAt).getTime();
-      const bTime = new Date(b.updatedAt ?? b.createdAt).getTime();
-      return aTime - bTime;
-    });
-    if (sortedByLeastRecent.length === 0) return [];
-
-    const weekKey = getWeekKey(new Date());
-    let hash = 0;
-    const seed = `${weekKey}|${sortedByLeastRecent.map((recipe) => recipe.id).join('|')}`;
-    for (let i = 0; i < seed.length; i += 1) {
-      hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-    }
-
-    const startIndex = hash % sortedByLeastRecent.length;
-    const count = Math.min(2, sortedByLeastRecent.length);
-    const picks: HomeRecipe[] = [];
-    for (let i = 0; i < count; i += 1) {
-      picks.push(sortedByLeastRecent[(startIndex + i) % sortedByLeastRecent.length]);
-    }
-    return picks;
-  }, [isLargeRecipeLibrary, visibleRecipes]);
+    return buildWeeklyIdeaRecipes(visibleRecipes, recipeOpenHistory, new Date());
+  }, [isLargeRecipeLibrary, recipeOpenHistory, visibleRecipes]);
 
   const greeting = useMemo(() => {
     const meal = getMealTime(new Date());
@@ -557,6 +689,10 @@ export default function HomeScreen({
 
     return getRecommendedPick(visibleRecipes, new Date());
   }, [isEmpty, visibleRecipes]);
+  const mediumHeroRecipe = useMemo(() => {
+    if (!isMediumRecipeLibrary) return null;
+    return getRecommendedPick(visibleRecipes, new Date())?.recipe ?? null;
+  }, [isMediumRecipeLibrary, visibleRecipes]);
 
   const recentRecipes = useMemo(() => {
     const sliceCount = isTransitional ? 2 : 6;
@@ -575,17 +711,17 @@ export default function HomeScreen({
       })),
     [recentRecipes]
   );
-
-  const firstRecentNote = useMemo(() => sortMostRecent(visibleNotes)[0], [visibleNotes]);
+  const weeklyIdeaCards = useMemo<RecipePreview[]>(
+    () =>
+      weeklyIdeaRecipes.map((recipe) => ({
+        id: recipe.id,
+        title: recipe.title,
+        emoji: recipe.emoji ?? undefined,
+        imageUrl: recipe.imageUrl ?? undefined,
+      })),
+    [weeklyIdeaRecipes]
+  );
   const lowContentHeroRecipe = useMemo(() => sortMostRecent(visibleRecipes)[0] ?? null, [visibleRecipes]);
-
-  const formatRecipeDuration = (recipe: HomeRecipe) => {
-    const prep = recipe.prepTimeMinutes ?? 0;
-    const cook = recipe.cookTimeMinutes ?? 0;
-    const total = prep + cook;
-    if (total > 0) return `${total} min`;
-    return 'Quick recipe';
-  };
 
   const root =
     resolvedMode === 'dev' ? '(dev)' : resolvedMode === 'public' ? '(public)' : '(auth)';
@@ -595,12 +731,6 @@ export default function HomeScreen({
       : root === '(public)'
         ? '/(public)/recipes/[id]'
         : '/(auth)/recipes/[id]';
-  const noteDetailPath =
-    root === '(dev)'
-      ? '/(dev)/notes/[id]'
-      : root === '(public)'
-        ? '/(public)/notes/[id]'
-        : '/(auth)/notes/[id]';
   const homePath =
     root === '(dev)'
       ? '/(dev)/(tabs)'
@@ -621,6 +751,27 @@ export default function HomeScreen({
       : root === '(public)'
         ? '/(public)/shopping-list'
         : '/(auth)/shopping-list';
+  const shoppingListCard = activeShoppingList ? (
+    <ActionCard
+      title="Shopping List"
+      meta={`${activeShoppingList.checkedCount}/${activeShoppingList.totalCount} items checked`}
+      variant="shoppingActive"
+      leftIcon={<Feather name="shopping-cart" size={24} color={theme.colors.primaryDark} />}
+      onPress={() => {
+        router.push(shoppingListPath);
+      }}
+    />
+  ) : (
+    <ActionCard
+      title="Start a shopping list"
+      meta="Keep track of ingredients"
+      variant="shoppingEmpty"
+      leftIcon={<Feather name="plus" size={28} color={theme.colors.primaryDark} />}
+      onPress={() => {
+        router.push(shoppingListPath);
+      }}
+    />
+  );
 
   if (isInitialLoading) {
     return (
@@ -830,7 +981,23 @@ export default function HomeScreen({
         </View>
       ) : null}
 
-      {pick ? (
+      {isMediumRecipeLibrary && mediumHeroRecipe ? (
+        <PickCard
+          label="Try this →"
+          title={mediumHeroRecipe.title}
+          subtitle={mediumHeroRecipe.subtitle ?? 'A recipe that fits right now'}
+          emoji={mediumHeroRecipe.emoji ?? undefined}
+          imageUrl={mediumHeroRecipe.imageUrl ?? undefined}
+          onPress={() => {
+            router.push({
+              pathname: recipeDetailPath,
+              params: { id: mediumHeroRecipe.id, returnTo: homePath },
+            });
+          }}
+        />
+      ) : null}
+
+      {!isMediumRecipeLibrary && pick ? (
         <PickCard
           label={pick.label}
           title={pick.recipe.title}
@@ -859,16 +1026,61 @@ export default function HomeScreen({
         />
       ) : null}
 
-      {!isEmpty ? (
+      {!isEmpty && isLargeRecipeLibrary ? (
+        <View style={styles.section}>
+          <SectionHeaderRow title="Ideas for this week" />
+
+          {weeklyIdeaCards.length > 0 ? (
+            <RecipeCarousel
+              items={weeklyIdeaCards}
+              cardWidth={recipeCardWidth}
+              gap={CARD_GAP}
+              rightPadding={theme.spacing.lg}
+              onPressItem={(id) => {
+                router.push({ pathname: recipeDetailPath, params: { id, returnTo: homePath } });
+              }}
+              showMeta={false}
+            />
+          ) : (
+            <View style={styles.mutedRow}>
+              <Text style={styles.mutedRowText}>No suggestions yet.</Text>
+            </View>
+          )}
+
+          {!isPublic && featuredCollection && folderSpotlightRecipes.length > 0 ? (
+            <FolderSpotlightCard
+              title={featuredCollection.label}
+              recipes={folderSpotlightRecipes}
+              onPress={() => {
+                const collectionKey =
+                  featuredCollection.label === 'Uncategorized'
+                    ? 'uncategorized'
+                    : encodeURIComponent(featuredCollection.label);
+                router.push({
+                  pathname: collectionDetailPath,
+                  params: { key: collectionKey },
+                });
+              }}
+            />
+          ) : null}
+        </View>
+      ) : !isEmpty ? (
         <View style={styles.section}>
           {isVeryFewRecipes ? (
-            <SectionHeaderRow title="Keep cooking →" />
-          ) : (
+            <SectionHeaderRow title="Your first recipes" />
+          ) : isMediumRecipeLibrary ? (
             <SectionHeaderRow
-              title="Recent Activity"
-              subtitle="Recently added recipes"
+              title="Recently added"
               ctaLabel={isPublic ? undefined : 'See all'}
               onPressCta={isPublic ? undefined : () => router.push(collectionsPath)}
+              inlineTitleCta
+            />
+          ) : (
+            <SectionHeaderRow
+              title="Recently added"
+              ctaLabel={isPublic ? undefined : 'See all'}
+              onPressCta={isPublic ? undefined : () => router.push(collectionsPath)}
+              inlineTitleCta
             />
           )}
 
@@ -891,83 +1103,12 @@ export default function HomeScreen({
         </View>
       ) : null}
 
-      {!isEmpty && !isVeryFewRecipes && firstRecentNote ? (
-        <NotesStrip
-          title="Recently edited notes"
-          note={{ title: firstRecentNote.title, updatedAt: firstRecentNote.updatedAt }}
-          meta={formatRelativeDay(firstRecentNote.updatedAt)}
-          onPress={() => {
-            router.push({ pathname: noteDetailPath, params: { id: firstRecentNote.id, returnTo: homePath } });
-          }}
-        />
-      ) : null}
-
-      {!isEmpty ? (
+      {!isEmpty && isMediumRecipeLibrary ? (
         <View style={styles.section}>
-          {!isVeryFewRecipes ? <Text style={styles.sectionSubtitleLarge}>This Week</Text> : null}
-
-          {activeShoppingList ? (
-            <ActionCard
-              title="Shopping List"
-              meta={`${activeShoppingList.checkedCount}/${activeShoppingList.totalCount} items checked`}
-              variant="shoppingActive"
-              leftIcon={<Feather name="shopping-cart" size={24} color={theme.colors.primaryDark} />}
-              onPress={() => {
-                router.push(shoppingListPath);
-              }}
-            />
-          ) : (
-            <ActionCard
-              title="Start a shopping list"
-              meta="Keep track of ingredients"
-              variant="shoppingEmpty"
-              leftIcon={<Feather name="plus" size={28} color={theme.colors.primaryDark} />}
-              onPress={() => {
-                router.push(shoppingListPath);
-              }}
-            />
-          )}
-
-          {isVeryFewRecipes ? null : isMediumRecipeLibrary ? (
-            <ActionCard
-              title="What's cooking this week?"
-              meta="Pick a recipe and add ingredients to your list"
-              variant="nextAction"
-              leftIcon={<Text style={styles.actionEmoji}>🍽️</Text>}
-              onPress={() => {
-                router.push(collectionsPath);
-              }}
-            />
-          ) : isLargeRecipeLibrary ? (
-            <View style={styles.ideasSection}>
-              <Text style={styles.ideasTitle}>Ideas for this week</Text>
-              <Text style={styles.ideasMeta}>A couple of recipes to keep in mind</Text>
-
-              <View style={styles.ideasRow}>
-                {weeklyDinnerIdeas.slice(0, 2).map((recipe) => (
-                  <View key={recipe.id} style={styles.ideaCardWrap}>
-                    <ActionCard
-                      title={recipe.title}
-                      meta={formatRecipeDuration(recipe)}
-                      noTopMargin
-                      leftIcon={<Text style={styles.actionEmoji}>{recipe.emoji ?? '🍽️'}</Text>}
-                      onPress={() => {
-                        router.push({ pathname: recipeDetailPath, params: { id: recipe.id, returnTo: homePath } });
-                      }}
-                    />
-                  </View>
-                ))}
-              </View>
-            </View>
-          ) : null}
-
-          {!isVeryFewRecipes && !isPublic && featuredCollection && featuredCollectionChips.length > 0 ? (
-            <CollectionCard
+          {!isPublic && featuredCollection && folderSpotlightRecipes.length > 0 ? (
+            <FolderSpotlightCard
               title={featuredCollection.label}
-              meta={`${featuredCollection.count} recipe${
-                featuredCollection.count === 1 ? '' : 's'
-              }`}
-              chips={featuredCollectionChips}
+              recipes={folderSpotlightRecipes}
               onPress={() => {
                 const collectionKey =
                   featuredCollection.label === 'Uncategorized'
@@ -980,6 +1121,11 @@ export default function HomeScreen({
               }}
             />
           ) : null}
+          {shoppingListCard}
+        </View>
+      ) : !isEmpty ? (
+        <View style={styles.section}>
+          {shoppingListCard}
         </View>
       ) : null}
     </Screen>
@@ -998,13 +1144,6 @@ const styles = createThemedStyles((theme) => ({
   section: {
     gap: layout.cardGap,
   },
-  sectionSubtitleLarge: {
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
-    fontFamily: theme.fontFamily.regular,
-    color: theme.colors.foreground,
-    marginBottom: theme.spacing.sm,
-  },
   mutedRow: {
     padding: theme.spacing.md,
     borderRadius: theme.radii.xl,
@@ -1018,32 +1157,6 @@ const styles = createThemedStyles((theme) => ({
   },
   wave: {
     fontSize: theme.fontSize.hero,
-  },
-  actionEmoji: {
-    fontSize: 20,
-  },
-  ideasSection: {
-    gap: layout.listGap,
-  },
-  ideasTitle: {
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
-    fontFamily: theme.fontFamily.regular,
-    color: theme.colors.foreground,
-  },
-  ideasMeta: {
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.regular,
-    color: theme.colors.mutedForeground,
-    marginBottom: theme.spacing.xs,
-  },
-  ideasRow: {
-    flexDirection: 'row',
-    gap: layout.cardGap,
-  },
-  ideaCardWrap: {
-    flex: 1,
   },
   loadingState: {
     alignItems: 'center',

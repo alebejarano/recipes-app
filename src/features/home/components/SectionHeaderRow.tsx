@@ -10,9 +10,31 @@ type Props = {
   subtitle?: string;
   ctaLabel?: string;
   onPressCta?: () => void;
+  inlineTitleCta?: boolean;
 };
 
-export default function SectionHeaderRow({ title, subtitle, ctaLabel, onPressCta }: Props) {
+export default function SectionHeaderRow({
+  title,
+  subtitle,
+  ctaLabel,
+  onPressCta,
+  inlineTitleCta = false,
+}: Props) {
+  if (inlineTitleCta && ctaLabel && onPressCta && !subtitle) {
+    return (
+      <View style={styles.inlineRow}>
+        <Text style={[styles.title, styles.inlineTitle]} numberOfLines={1}>
+          {title}
+        </Text>
+
+        <Pressable onPress={onPressCta} style={styles.cta} accessibilityRole="button">
+          <Text style={styles.ctaText}>{ctaLabel}</Text>
+          <Feather name="chevron-right" size={18} color={theme.colors.primary} />
+        </Pressable>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.wrap}>
       <Text style={styles.title}>{title}</Text>
@@ -37,11 +59,20 @@ const styles = createThemedStyles((theme) => ({
   wrap: {
     gap: theme.spacing.md,
   },
+  inlineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing.md,
+  },
   title: {
     fontSize: theme.fontSize.xl,
     lineHeight: theme.lineHeight.xl,
     fontFamily: theme.fontFamily.bold,
     color: theme.colors.foreground,
+  },
+  inlineTitle: {
+    flex: 1,
   },
   row: {
     flexDirection: 'row',
