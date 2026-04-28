@@ -94,6 +94,11 @@ export default function OnboardingFlowScreen() {
     await setStep(3);
   };
 
+  const handleChooseBack = async () => {
+    await setPath(null);
+    await setStep(2);
+  };
+
   const handleSelectEntry = async (entry: CreateRecipeEntry) => {
     await setPath(entry);
     await setStep(4);
@@ -164,11 +169,22 @@ export default function OnboardingFlowScreen() {
   const { current, total } = getProgress();
 
   const isEmbeddedScrollStep = (path === 'scratch' || path === 'pdf') && step === 4;
+  const showBackButton =
+    (path === 'choose' && step === 3) ||
+    ((path === 'scratch' || path === 'pdf') && step === 4);
 
   return (
     <OnboardingLayout
       step={current}
       totalSteps={total}
+      showBackButton={showBackButton}
+      onBackPress={
+        showBackButton
+          ? step === 4
+            ? handleCreateBack
+            : handleChooseBack
+          : undefined
+      }
       scrollEnabled={!isEmbeddedScrollStep}
     >
       <View style={{ flex: 1 }}>{renderScreen()}</View>

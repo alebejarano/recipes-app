@@ -113,8 +113,6 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.card,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     overflow: 'hidden',
   },
   emoji: { fontSize: 22 },

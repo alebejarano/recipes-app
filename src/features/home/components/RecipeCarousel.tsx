@@ -146,7 +146,7 @@ const styles = createThemedStyles((theme) => ({
     width: 44,
     height: 44,
     borderRadius: theme.radii.md,
-    backgroundColor: theme.colors.muted,
+    backgroundColor: theme.colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: theme.spacing.md,

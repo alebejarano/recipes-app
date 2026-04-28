@@ -136,6 +136,10 @@ export default function PublicCreateRecipeScreen({
   )
 
   const isSaving = entryMode === 'pdf' ? documentMutation.isPending : createMutation.isPending
+  const showInlineBackButton = !onBack
+  const footerBottomPadding = showInlineBackButton
+    ? Math.max(insets.bottom, 8)
+    : Math.max(insets.bottom - 24, 2)
 
   const handleBack = useCallback(() => {
     if (isSaving) return
@@ -404,18 +408,20 @@ export default function PublicCreateRecipeScreen({
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
-        <View style={styles.topBar}>
-          <Button
-            variant="ghost"
-            size="md"
-            onPress={handleBack}
-            style={styles.backButton}
-            icon={<Feather name="arrow-left" size={16} style={styles.backIcon} />}
-            disabled={isSaving}
-          >
-            Back
-          </Button>
-        </View>
+        {showInlineBackButton ? (
+          <View style={styles.topBar}>
+            <Button
+              variant="ghost"
+              size="md"
+              onPress={handleBack}
+              style={styles.backButton}
+              icon={<Feather name="arrow-left" size={16} style={styles.backIcon} />}
+              disabled={isSaving}
+            >
+              Back
+            </Button>
+          </View>
+        ) : null}
 
         <KeyboardAvoidingView
           style={styles.flex1}
@@ -510,7 +516,7 @@ export default function PublicCreateRecipeScreen({
           <View
             style={[
               styles.footer,
-              { paddingBottom: Math.max(insets.bottom, 8) },
+              { paddingBottom: footerBottomPadding },
               entryMode ? null : styles.footerCompact,
             ]}
           >
