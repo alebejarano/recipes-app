@@ -219,7 +219,7 @@ export default function PublicCollectionDetailScreen({
               onPress={() =>
                 router.push({
                   pathname: '/(public)/recipes/create',
-                  params: !isUncategorized ? { folder: title } : undefined,
+                  params: !isUncategorized ? { folder: title, entry: 'scratch' } : undefined,
                 })
               }
             >

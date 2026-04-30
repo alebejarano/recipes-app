@@ -216,7 +216,7 @@ export default function CollectionDetailScreen() {
               onPress={() =>
                 router.push({
                   pathname: '/(dev)/recipes/create',
-                  params: !isUncategorized ? { folder: title } : undefined,
+                  params: !isUncategorized ? { folder: title, entry: 'scratch' } : undefined,
                 })
               }
             >
