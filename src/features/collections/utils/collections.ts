@@ -1,5 +1,24 @@
 import type { CollectionItem, Recipe, SegmentKey } from '../types';
 
+export function isFavoritesFolderName(name: string) {
+  const normalized = name.trim().toLowerCase();
+  return normalized === 'favorites' || normalized === 'favourites';
+}
+
+export function getCategorizingFolders<T extends { name: string }>(folders: T[] | null | undefined): T[] {
+  return (folders ?? []).filter((folder) => !isFavoritesFolderName(folder.name));
+}
+
+export function recipeMatchesCollection(
+  recipe: { folders?: { name: string }[] | null },
+  collectionName: string
+) {
+  const normalizedCollectionName = collectionName.trim().toLowerCase();
+  return (recipe.folders ?? []).some(
+    (folder) => folder.name.trim().toLowerCase() === normalizedCollectionName
+  );
+}
+
 export function buildCollectionsForSegment(
   segment: SegmentKey,
   recipes: Recipe[]
@@ -18,10 +37,9 @@ export function buildCollectionsForSegment(
         emoji: folder.emoji,
       })).filter((folder) => folder.name) ?? [];
 
-    if (folders.length === 0) {
+    if (getCategorizingFolders(folders).length === 0) {
       const current = map.get('Uncategorized');
       map.set('Uncategorized', { count: (current?.count ?? 0) + 1 });
-      continue;
     }
 
     for (const folder of folders) {

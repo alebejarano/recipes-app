@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query'
 
 import {
   CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
@@ -30,7 +30,7 @@ export function useRecipeDocuments(mode: StorageScreenMode = 'auth') {
   const query = useInfiniteQuery<
     CloudRecipeDocumentsPage<RecipeDocument>,
     Error,
-    CloudRecipeDocumentsPage<RecipeDocument>,
+    InfiniteData<CloudRecipeDocumentsPage<RecipeDocument>>,
     string[],
     CloudRecipeDocumentsCursor | null
   >({

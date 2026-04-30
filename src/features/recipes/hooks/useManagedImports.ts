@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQueryClient, type InfiniteData } from '@tanstack/react-query'
 
 import {
   deleteManagedImport,
@@ -24,7 +24,7 @@ export function useManagedImports(mode: StorageScreenMode = 'auth') {
   const query = useInfiniteQuery<
     CloudRecipeDocumentsPage<ManagedImport>,
     Error,
-    CloudRecipeDocumentsPage<ManagedImport>,
+    InfiniteData<CloudRecipeDocumentsPage<ManagedImport>>,
     string[],
     CloudRecipeDocumentsCursor | null
   >({

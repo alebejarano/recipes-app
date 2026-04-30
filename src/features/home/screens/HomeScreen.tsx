@@ -13,7 +13,11 @@ import { layout } from '@/styles/layout';
 import { theme } from '@/styles/theme';
 
 import { useAuth } from '@/features/auth/context/AuthContext';
-import { buildCollectionsForSegment } from '@/features/collections/utils/collections';
+import {
+  buildCollectionsForSegment,
+  getCategorizingFolders,
+  recipeMatchesCollection,
+} from '@/features/collections/utils/collections';
 import ActionCard from '@/features/home/components/ActionCard';
 import EmptyHomeCard from '@/features/home/components/EmptyHomeCard';
 import FolderSpotlightCard from '@/features/home/components/FolderSpotlightCard';
@@ -409,12 +413,10 @@ export default function HomeScreen({
     const list = visibleRecipes;
 
     if (featuredCollection.label === 'Uncategorized') {
-      return list.filter((recipe) => (recipe.folders?.length ?? 0) === 0);
+      return list.filter((recipe) => getCategorizingFolders(recipe.folders).length === 0);
     }
 
-    return list.filter((recipe) =>
-      (recipe.folders ?? []).map((folder) => folder.name.trim()).includes(featuredCollection.label)
-    );
+    return list.filter((recipe) => recipeMatchesCollection(recipe, featuredCollection.label));
   }, [featuredCollection, visibleRecipes]);
 
   const folderSpotlightRecipes = useMemo(() => {

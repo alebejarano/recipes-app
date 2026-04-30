@@ -16,6 +16,11 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
 import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
+import {
+  getCategorizingFolders,
+  isFavoritesFolderName,
+  recipeMatchesCollection,
+} from '@/features/collections/utils/collections'
 import { useStrategyDeleteFolder, useStrategyFoldersList, useStrategyUpdateFolder } from '@/features/folders/hooks/useStrategyFolders'
 import RecipeRow from '@/features/recipes/components/RecipeRow'
 import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
@@ -25,11 +30,6 @@ import { theme } from '@/styles/theme'
 
 function isUncategorizedKey(key: string) {
   return key === 'uncategorized'
-}
-
-function isFavoritesFolderName(name: string) {
-  const normalized = name.trim().toLowerCase()
-  return normalized === 'favorites' || normalized === 'favourites'
 }
 
 function decodeKey(key: string) {
@@ -63,12 +63,10 @@ export default function CollectionDetailScreen() {
   const recipes = useMemo(() => {
     const list = recipesQuery.data ?? []
     if (isUncategorized) {
-      return list.filter((r) => (r.folders?.length ?? 0) === 0)
+      return list.filter((r) => getCategorizingFolders(r.folders).length === 0)
     }
 
-    return list.filter((r) =>
-      (r.folders ?? []).map((folder) => folder.name.trim()).includes(title)
-    )
+    return list.filter((r) => recipeMatchesCollection(r, title))
   }, [isUncategorized, title, recipesQuery.data])
 
   const subtitle = `${recipes.length} recipe${recipes.length === 1 ? '' : 's'}`

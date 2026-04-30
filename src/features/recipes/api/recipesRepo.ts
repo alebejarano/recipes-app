@@ -567,7 +567,7 @@ export async function updateRecipe(id: string, input: UpdateRecipeInput): Promis
     }
   }
 
-  return mapRecipe(data as RecipeRow)
+  return getRecipeById((data as RecipeRow).id)
 }
 
 async function getOrCreateFolderIds(names: string[], userId: string): Promise<string[]> {

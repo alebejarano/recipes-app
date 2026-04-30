@@ -229,6 +229,13 @@ export default function ManageImportsScreen({ mode }: ManageImportsScreenProps) 
             <ActivityIndicator size="small" color={styles.loadingText.color} />
             <Text style={styles.loadingText}>Loading imports…</Text>
           </View>
+        ) : importsQuery.isError ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>Unable to load imports</Text>
+            <Text style={styles.emptyBody}>
+              {importsQuery.error?.message ?? 'Please try again.'}
+            </Text>
+          </View>
         ) : sortedImports.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>No imports to manage</Text>

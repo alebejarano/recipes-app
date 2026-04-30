@@ -68,6 +68,16 @@ export default function RecipeDocumentsSegment({
           <ActivityIndicator size="small" color={styles.loadingText.color} />
           <Text style={styles.loadingText}>Loading files…</Text>
         </View>
+      ) : docsQuery.isError ? (
+        <View style={styles.emptyState}>
+          <View style={styles.emptyIcon}>
+            <Feather name="alert-circle" size={22} color={theme.colors.mutedForeground} />
+          </View>
+          <Text style={styles.emptyTitle}>Unable to load imports</Text>
+          <Text style={styles.emptyBody}>
+            {docsQuery.error?.message ?? 'Please try again.'}
+          </Text>
+        </View>
       ) : data.length === 0 ? (
         <View style={styles.emptyState}>
           <View style={styles.emptyIcon}>

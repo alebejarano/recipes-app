@@ -62,6 +62,10 @@ function mapManagedImport(row: RecipeDocumentImportRow): ManagedImport {
   }
 }
 
+function isMissingStatusColumnError(error: { message?: string; code?: string } | null | undefined) {
+  return error?.code === '42703' || /status.*does not exist/i.test(error?.message ?? '')
+}
+
 export async function listCloudRecipeDocuments(): Promise<RecipeDocument[]> {
   const firstPage = await listCloudRecipeDocumentsPage()
   return firstPage.items
@@ -82,12 +86,84 @@ async function fetchCloudRecipeDocumentImportsPage(params?: {
     p_before_id: params?.cursor?.id ?? null,
   })
 
-  if (error) throw error
+  if (error) {
+    return fetchCloudRecipeDocumentImportsPageDirect(params)
+  }
   return (data ?? []) as RecipeDocumentImportRow[]
 }
 
-function buildNextCursor(rows: RecipeDocumentImportRow[]): CloudRecipeDocumentsCursor | null {
-  if (rows.length < CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE) return null
+async function fetchCloudRecipeDocumentImportsPageDirect(params?: {
+  cursor?: CloudRecipeDocumentsCursor | null
+  limit?: number
+}): Promise<RecipeDocumentImportRow[]> {
+  const limit = Math.max(1, Math.min(params?.limit ?? CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE, 100))
+
+  let query = supabase
+    .from('recipe_document_imports')
+    .select('id,title,original_file_name,storage_bucket,storage_path,mime_type,bytes,status,created_at')
+    .is('deleted_at', null)
+    .in('status', ['uploaded', 'processing', 'ready'])
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(limit)
+
+  if (params?.cursor?.createdAt && params.cursor.id) {
+    query = query.or(
+      `created_at.lt.${params.cursor.createdAt},and(created_at.eq.${params.cursor.createdAt},id.lt.${params.cursor.id})`
+    )
+  }
+
+  const { data, error } = await query
+  if (!error) return (data ?? []) as RecipeDocumentImportRow[]
+  if (!isMissingStatusColumnError(error)) throw error
+
+  let legacyQuery = supabase
+    .from('recipe_document_imports')
+    .select('id,title,original_file_name,storage_bucket,storage_path,mime_type,bytes,created_at')
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(limit)
+
+  if (params?.cursor?.createdAt && params.cursor.id) {
+    legacyQuery = legacyQuery.or(
+      `created_at.lt.${params.cursor.createdAt},and(created_at.eq.${params.cursor.createdAt},id.lt.${params.cursor.id})`
+    )
+  }
+
+  const { data: legacyData, error: legacyError } = await legacyQuery
+  if (legacyError) throw legacyError
+  return (legacyData ?? []) as RecipeDocumentImportRow[]
+}
+
+async function fetchCloudRecipeDocumentDirect(id: string): Promise<RecipeDocumentImportRow | null> {
+  const { data, error } = await supabase
+    .from('recipe_document_imports')
+    .select('id,title,original_file_name,storage_bucket,storage_path,mime_type,bytes,status,created_at')
+    .is('deleted_at', null)
+    .in('status', ['uploaded', 'processing', 'ready'])
+    .eq('id', id)
+    .maybeSingle()
+
+  if (!error) return data as RecipeDocumentImportRow | null
+  if (!isMissingStatusColumnError(error)) throw error
+
+  const { data: legacyData, error: legacyError } = await supabase
+    .from('recipe_document_imports')
+    .select('id,title,original_file_name,storage_bucket,storage_path,mime_type,bytes,created_at')
+    .is('deleted_at', null)
+    .eq('id', id)
+    .maybeSingle()
+
+  if (legacyError) throw legacyError
+  return legacyData as RecipeDocumentImportRow | null
+}
+
+function buildNextCursor(
+  rows: RecipeDocumentImportRow[],
+  limit = CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE
+): CloudRecipeDocumentsCursor | null {
+  if (rows.length < limit) return null
   const lastRow = rows[rows.length - 1]
   if (!lastRow?.created_at || !lastRow?.id) return null
   return {
@@ -103,7 +179,7 @@ export async function listCloudRecipeDocumentsPage(params?: {
   const rows = await fetchCloudRecipeDocumentImportsPage(params)
   return {
     items: rows.map((row) => mapRecipeDocument(row)),
-    nextCursor: buildNextCursor(rows),
+    nextCursor: buildNextCursor(rows, params?.limit),
   }
 }
 
@@ -114,23 +190,14 @@ export async function listCloudManagedImportsPage(params?: {
   const rows = await fetchCloudRecipeDocumentImportsPage(params)
   return {
     items: rows.map((row) => mapManagedImport(row)),
-    nextCursor: buildNextCursor(rows),
+    nextCursor: buildNextCursor(rows, params?.limit),
   }
 }
 
 export async function getCloudRecipeDocument(id: string): Promise<RecipeDocument | null> {
-  const { data, error } = await supabase
-    .from('recipe_document_imports')
-    .select('id,title,original_file_name,storage_bucket,storage_path,mime_type,bytes,status,created_at')
-    .eq('id', id)
-    .is('deleted_at', null)
-    .in('status', ['uploaded', 'processing', 'ready'])
-    .maybeSingle()
+  const row = await fetchCloudRecipeDocumentDirect(id)
+  if (!row) return null
 
-  if (error) throw error
-  if (!data) return null
-
-  const row = data as RecipeDocumentImportRow
   const { data: signedData, error: signedError } = await supabase.storage
     .from(row.storage_bucket)
     .createSignedUrl(row.storage_path, SIGNED_URL_TTL_SECONDS)
@@ -155,6 +222,15 @@ export async function getCloudRecipeDocumentUsageSummary(): Promise<RecipeDocume
 }
 
 export async function deleteCloudRecipeDocument(id: string): Promise<void> {
+  const row = await fetchCloudRecipeDocumentDirect(id)
+  if (!row) return
+
+  const { error: storageError } = await supabase.storage
+    .from(row.storage_bucket)
+    .remove([row.storage_path])
+
+  if (storageError) throw storageError
+
   const { error } = await supabase.rpc('delete_recipe_document_import', {
     p_document_id: id,
   })

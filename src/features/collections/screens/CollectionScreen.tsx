@@ -33,7 +33,10 @@ import ShoppingSegment from '@/features/collections/components/ShoppingSegment'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
 import type { CollectionItem, RecipeSegmentKey, SegmentKey } from '@/features/collections/types'
-import { buildCollectionsForSegment } from '@/features/collections/utils/collections'
+import {
+  buildCollectionsForSegment,
+  getCategorizingFolders,
+} from '@/features/collections/utils/collections'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
 import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments'
 import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
@@ -209,9 +212,8 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     let uncategorized = 0
     for (const recipe of recipeData) {
       const folders = recipe.folders ?? []
-      if (folders.length === 0) {
+      if (getCategorizingFolders(folders).length === 0) {
         uncategorized += 1
-        continue
       }
       for (const folder of folders) {
         const key = folder.name.toLowerCase()
