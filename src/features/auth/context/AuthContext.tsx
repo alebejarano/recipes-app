@@ -20,11 +20,17 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string) => Promise<AuthResponse['data']>
   updateProfileName: (name: string) => Promise<void>
+  updateEmailPreferences: (preferences: EmailPreferences) => Promise<void>
   updateEmailAddress: (email: string) => Promise<{ pendingEmail: string | null }>
   sendPasswordResetEmail: (email: string) => Promise<void>
   updatePassword: (password: string) => Promise<void>
   deleteAccount: () => Promise<void>
   logout: () => Promise<void>
+}
+
+export type EmailPreferences = {
+  weeklyDigest: boolean
+  cookingTips: boolean
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -171,6 +177,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const updateEmailPreferences = useCallback(async (preferences: EmailPreferences) => {
+    const { data, error } = await supabase.auth.updateUser({
+      data: {
+        email_updates: preferences,
+      },
+    })
+    if (error) throw error
+
+    if (data.user) {
+      setSession((prev) => (prev ? { ...prev, user: data.user } : prev))
+    }
+  }, [])
+
   const updateEmailAddress = useCallback(async (email: string) => {
     const normalized = normalizeEmail(email)
     if (!normalized) throw new Error('Email is required')
@@ -281,13 +300,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       register,
       updateProfileName,
+      updateEmailPreferences,
       updateEmailAddress,
       sendPasswordResetEmail,
       updatePassword,
       deleteAccount,
       logout,
     }),
-    [session, isLoading, updateEmailAddress, sendPasswordResetEmail, updatePassword, deleteAccount]
+    [
+      session,
+      isLoading,
+      updateEmailPreferences,
+      updateEmailAddress,
+      sendPasswordResetEmail,
+      updatePassword,
+      deleteAccount,
+    ]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

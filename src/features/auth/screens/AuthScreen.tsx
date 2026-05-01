@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
 import { useAuth } from '@/features/auth/context/AuthContext'
@@ -30,8 +30,11 @@ type SubmitError = {
   message: string
 } | null
 
+const KEYBOARD_SCROLL_PADDING = 96
+
 export default function AuthScreen({ initialMode }: AuthScreenProps) {
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const { login, register } = useAuth()
 
   const [mode, setMode] = useState<AuthMode>(initialMode)
@@ -46,6 +49,22 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
   const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false)
 
   const isLogin = mode === 'login'
+
+  const keyboardVerticalOffset = Platform.select({
+    ios: insets.top,
+    android: 0,
+  })
+
+  const emailError = useMemo(() => {
+    const normalizedEmail = normalizeEmail(email)
+    if (isLogin || !normalizedEmail || isValidEmail(normalizedEmail)) return null
+    return 'Enter a valid email address.'
+  }, [email, isLogin])
+
+  const confirmPasswordError = useMemo(() => {
+    if (isLogin || !confirmPassword || password === confirmPassword) return null
+    return 'Passwords do not match.'
+  }, [confirmPassword, isLogin, password])
 
   const canSubmit = useMemo(() => {
     const normalizedEmail = normalizeEmail(email)
@@ -175,8 +194,22 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={keyboardVerticalOffset}
+      >
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: insets.bottom + KEYBOARD_SCROLL_PADDING },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          showsVerticalScrollIndicator={false}
+          automaticallyAdjustKeyboardInsets
+        >
           {/* Header */}
           <View style={styles.header}>
             <Image
@@ -203,7 +236,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
           {/* Email */}
           <View style={styles.field}>
             <Text style={styles.label}>Email</Text>
-            <View style={styles.inputWrapper}>
+            <View style={[styles.inputWrapper, emailError && styles.inputWrapperError]}>
               <Feather name="mail" size={18} style={styles.inputIcon} />
               <TextInput
                 placeholder="you@example.com"
@@ -217,6 +250,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
                 editable={!loading}
               />
             </View>
+            {emailError ? <Text style={styles.fieldError}>{emailError}</Text> : null}
           </View>
 
           {/* Password */}
@@ -251,7 +285,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
             <View style={styles.field}>
               <Text style={styles.label}>Confirm Password</Text>
 
-              <View style={styles.inputWrapper}>
+              <View style={[styles.inputWrapper, confirmPasswordError && styles.inputWrapperError]}>
                 <Feather name="lock" size={18} style={styles.inputIcon} />
 
                 <TextInput
@@ -264,6 +298,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
                   editable={!loading}
                 />
               </View>
+              {confirmPasswordError ? <Text style={styles.fieldError}>{confirmPasswordError}</Text> : null}
             </View>
           )}
 
@@ -417,6 +452,10 @@ const styles = createThemedStyles((theme) => ({
     paddingHorizontal: theme.spacing.md,
   },
 
+  inputWrapperError: {
+    borderColor: theme.colors.destructive,
+  },
+
   inputIcon: {
     color: theme.colors.mutedForeground,
     marginRight: theme.spacing.sm,
@@ -435,6 +474,14 @@ const styles = createThemedStyles((theme) => ({
 
   eyeIcon: {
     color: theme.colors.mutedForeground,
+  },
+
+  fieldError: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.destructive,
+    marginTop: theme.spacing.xs,
   },
 
   /* Forgot */

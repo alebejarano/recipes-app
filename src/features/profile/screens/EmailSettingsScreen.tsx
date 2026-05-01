@@ -1,5 +1,7 @@
-import React, { useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { Alert } from 'react-native'
 
+import { type EmailPreferences, useAuth } from '@/features/auth/context/AuthContext'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
 import SettingsSection from '@/features/profile/components/SettingsSection'
 
@@ -7,9 +9,65 @@ type EmailSettingsScreenProps = {
   onBack: () => void
 }
 
+const DEFAULT_EMAIL_PREFERENCES: EmailPreferences = {
+  weeklyDigest: false,
+  cookingTips: false,
+}
+
+function getSavedEmailPreferences(value: unknown): EmailPreferences {
+  if (!value || typeof value !== 'object') return DEFAULT_EMAIL_PREFERENCES
+
+  const preferences = value as Partial<Record<keyof EmailPreferences, unknown>>
+  return {
+    weeklyDigest:
+      typeof preferences.weeklyDigest === 'boolean'
+        ? preferences.weeklyDigest
+        : DEFAULT_EMAIL_PREFERENCES.weeklyDigest,
+    cookingTips:
+      typeof preferences.cookingTips === 'boolean'
+        ? preferences.cookingTips
+        : DEFAULT_EMAIL_PREFERENCES.cookingTips,
+  }
+}
+
 export default function EmailSettingsScreen({ onBack }: EmailSettingsScreenProps) {
-  const [newsletter, setNewsletter] = useState(true)
-  const [tips, setTips] = useState(true)
+  const { updateEmailPreferences, user } = useAuth()
+  const hasAccountEmail = Boolean(user?.email)
+  const savedPreferences = useMemo(
+    () => getSavedEmailPreferences(user?.user_metadata?.email_updates),
+    [user?.user_metadata?.email_updates]
+  )
+  const [preferences, setPreferences] = useState<EmailPreferences>(savedPreferences)
+  const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    setPreferences(savedPreferences)
+  }, [savedPreferences])
+
+  const updatePreference = useCallback(
+    (key: keyof EmailPreferences, next: boolean) => {
+      if (!hasAccountEmail || isSaving) return
+
+      const previousPreferences = preferences
+      const nextPreferences = {
+        ...previousPreferences,
+        [key]: next,
+      }
+
+      setPreferences(nextPreferences)
+      setIsSaving(true)
+
+      void updateEmailPreferences(nextPreferences)
+        .catch((e: any) => {
+          setPreferences(previousPreferences)
+          Alert.alert('Unable to save email settings', e?.message ?? 'Please try again.')
+        })
+        .finally(() => {
+          setIsSaving(false)
+        })
+    },
+    [hasAccountEmail, isSaving, preferences, updateEmailPreferences]
+  )
 
   return (
     <ProfileSubpageLayout title="Email Settings" onBack={onBack}>
@@ -21,18 +79,20 @@ export default function EmailSettingsScreen({ onBack }: EmailSettingsScreenProps
             type: 'toggle',
             icon: 'mail',
             title: 'Weekly digest',
-            subtitle: 'Recipes and curated collections',
-            value: newsletter,
-            onValueChange: setNewsletter,
+            subtitle: hasAccountEmail ? 'Recipes and curated collections' : 'Create an account to receive emails',
+            value: preferences.weeklyDigest,
+            disabled: !hasAccountEmail || isSaving,
+            onValueChange: (next) => updatePreference('weeklyDigest', next),
           },
           {
             id: 'tips',
             type: 'toggle',
             icon: 'book-open',
             title: 'Cooking tips',
-            subtitle: 'Short guides and feature education',
-            value: tips,
-            onValueChange: setTips,
+            subtitle: hasAccountEmail ? 'Short guides and feature education' : 'Create an account to receive emails',
+            value: preferences.cookingTips,
+            disabled: !hasAccountEmail || isSaving,
+            onValueChange: (next) => updatePreference('cookingTips', next),
           },
         ]}
       />
