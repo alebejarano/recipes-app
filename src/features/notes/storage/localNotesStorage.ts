@@ -312,7 +312,19 @@ export async function mergeCloudNotesIntoLocal(params: {
           id, title, content, pinned_at, created_at, updated_at, deleted_at,
           owner_user_id, cloud_id, dirty, version, last_synced_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          title = excluded.title,
+          content = excluded.content,
+          pinned_at = excluded.pinned_at,
+          created_at = excluded.created_at,
+          updated_at = excluded.updated_at,
+          deleted_at = excluded.deleted_at,
+          owner_user_id = excluded.owner_user_id,
+          cloud_id = excluded.cloud_id,
+          dirty = excluded.dirty,
+          last_synced_at = excluded.last_synced_at
+        WHERE local_notes.dirty IS NULL OR local_notes.dirty != 1;`,
       [
         localId,
         cloudNote.title ?? null,

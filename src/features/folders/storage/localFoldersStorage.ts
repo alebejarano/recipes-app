@@ -297,7 +297,18 @@ export async function mergeCloudFoldersIntoLocal(params: {
           id, name, emoji, created_at, updated_at, deleted_at,
           owner_user_id, cloud_id, dirty, version, last_synced_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          name = excluded.name,
+          emoji = excluded.emoji,
+          created_at = excluded.created_at,
+          updated_at = excluded.updated_at,
+          deleted_at = excluded.deleted_at,
+          owner_user_id = excluded.owner_user_id,
+          cloud_id = excluded.cloud_id,
+          dirty = excluded.dirty,
+          last_synced_at = excluded.last_synced_at
+        WHERE local_folders.dirty IS NULL OR local_folders.dirty != 1;`,
       [
         localId,
         cloudFolder.name,

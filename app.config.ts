@@ -14,6 +14,7 @@ const appEnv = resolveAppEnv()
 const config: ExpoConfig = {
   name: 'Dropsauce',
   slug: 'dropsauce',
+  owner: 'lejitas',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/images/icon.png',
@@ -75,6 +76,9 @@ const config: ExpoConfig = {
   },
   extra: {
     appEnv,
+    eas: {
+      projectId: '915e1a2c-c53f-4768-90d5-6774b0589f7a',
+    },
   },
 }
 

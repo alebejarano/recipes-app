@@ -726,7 +726,28 @@ export async function mergeCloudRecipesIntoLocal(params: {
           cook_time_minutes, servings, created_at, updated_at, deleted_at,
           owner_user_id, cloud_id, dirty, version, last_synced_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          title = excluded.title,
+          subtitle = excluded.subtitle,
+          description = excluded.description,
+          emoji = excluded.emoji,
+          image_url = excluded.image_url,
+          steps_text = excluded.steps_text,
+          ingredients_json = excluded.ingredients_json,
+          folders_json = excluded.folders_json,
+          meal_times_json = excluded.meal_times_json,
+          prep_time_minutes = excluded.prep_time_minutes,
+          cook_time_minutes = excluded.cook_time_minutes,
+          servings = excluded.servings,
+          created_at = excluded.created_at,
+          updated_at = excluded.updated_at,
+          deleted_at = excluded.deleted_at,
+          owner_user_id = excluded.owner_user_id,
+          cloud_id = excluded.cloud_id,
+          dirty = excluded.dirty,
+          last_synced_at = excluded.last_synced_at
+        WHERE local_recipes.dirty IS NULL OR local_recipes.dirty != 1;`,
       [
         localId,
         cloudRecipe.title,
