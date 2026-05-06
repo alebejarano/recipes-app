@@ -14,6 +14,7 @@ type SqlRunResult = {
 }
 
 let dbPromise: Promise<SQLiteDatabase> | null = null
+let operationQueue: Promise<void> = Promise.resolve()
 let hasWarned = false
 
 function warnOnce() {
@@ -30,10 +31,22 @@ async function getDatabaseAsync(): Promise<SQLiteDatabase | null> {
   if (!dbPromise) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const SQLite = require('expo-sqlite') as typeof import('expo-sqlite')
-    dbPromise = SQLite.openDatabaseAsync('recipes.db')
+    dbPromise = SQLite.openDatabaseAsync('recipes.db').then(async (database) => {
+      await database.execAsync('PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;')
+      return database
+    })
   }
 
   return dbPromise
+}
+
+function enqueueDatabaseOperation<T>(operation: () => Promise<T>): Promise<T> {
+  const result = operationQueue.then(operation, operation)
+  operationQueue = result.then(
+    () => undefined,
+    () => undefined
+  )
+  return result
 }
 
 export async function runSqlAsync(
@@ -55,7 +68,7 @@ export async function runSqlAsync(
       lastInsertRowId: 0,
     }
   }
-  return database.runAsync(sql, params)
+  return enqueueDatabaseOperation(() => database.runAsync(sql, params))
 }
 
 export async function runSqlBatchAsync(statements: SqlBatchStatement[]) {
@@ -67,10 +80,12 @@ export async function runSqlBatchAsync(statements: SqlBatchStatement[]) {
   const database = await getDatabaseAsync()
   if (!database) return
 
-  await database.withExclusiveTransactionAsync(async (txn) => {
-    for (const statement of statements) {
-      await txn.runAsync(statement.sql, statement.params ?? [])
-    }
+  await enqueueDatabaseOperation(async () => {
+    await database.withExclusiveTransactionAsync(async (txn) => {
+      for (const statement of statements) {
+        await txn.runAsync(statement.sql, statement.params ?? [])
+      }
+    })
   })
 }
 
@@ -85,7 +100,7 @@ export async function getAllAsync<T>(
 
   const database = await getDatabaseAsync()
   if (!database) return []
-  return database.getAllAsync<T>(sql, params)
+  return enqueueDatabaseOperation(() => database.getAllAsync<T>(sql, params))
 }
 
 export async function getFirstAsync<T>(
@@ -99,5 +114,5 @@ export async function getFirstAsync<T>(
 
   const database = await getDatabaseAsync()
   if (!database) return null
-  return database.getFirstAsync<T>(sql, params)
+  return enqueueDatabaseOperation(() => database.getFirstAsync<T>(sql, params))
 }
