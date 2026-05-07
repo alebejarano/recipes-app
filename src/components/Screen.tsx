@@ -1,6 +1,13 @@
 import React from 'react';
-import { ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useScreenPadding } from '@/hooks/useScreenPadding';
 import { createThemedStyles } from '@/styles/createStyles';
@@ -13,6 +20,7 @@ type ScreenProps = {
   topSpacing?: number;        // extra spacing below status bar
   horizontalPadding?: number; // defaults to layout.screenPadding via hook
   bottomPadding?: number;     // extra beyond safe-area
+  keyboardAware?: boolean;
 };
 
 export default function Screen({
@@ -23,7 +31,9 @@ export default function Screen({
   topSpacing,
   horizontalPadding,
   bottomPadding,
+  keyboardAware = false,
 }: ScreenProps) {
+  const insets = useSafeAreaInsets();
   const padding = useScreenPadding({
     top: topSpacing,
     horizontal: horizontalPadding,
@@ -31,15 +41,32 @@ export default function Screen({
   });
 
   if (scroll) {
+    const scrollView = (
+      <ScrollView
+        style={styles.flex}
+        contentContainerStyle={[styles.content, padding, contentStyle]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+        showsVerticalScrollIndicator={false}
+        automaticallyAdjustKeyboardInsets={keyboardAware}
+      >
+        {children}
+      </ScrollView>
+    );
+
     return (
       <SafeAreaView style={[styles.safe, style]}>
-        <ScrollView
-          style={styles.flex}
-          contentContainerStyle={[styles.content, padding, contentStyle]}
-          keyboardShouldPersistTaps="handled"
-        >
-          {children}
-        </ScrollView>
+        {keyboardAware ? (
+          <KeyboardAvoidingView
+            style={styles.flex}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
+          >
+            {scrollView}
+          </KeyboardAvoidingView>
+        ) : (
+          scrollView
+        )}
       </SafeAreaView>
     );
   }

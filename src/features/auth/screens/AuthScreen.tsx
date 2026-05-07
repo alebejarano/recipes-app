@@ -16,6 +16,11 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import Button from '@/components/Button'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
+import {
+  PASSWORD_REQUIREMENTS,
+  getPasswordPolicyIssues,
+  isPasswordStrong,
+} from '@/features/auth/utils/passwordPolicy'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 
@@ -66,17 +71,21 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
     return 'Passwords do not match.'
   }, [confirmPassword, isLogin, password])
 
+  const passwordPolicyIssues = useMemo(() => getPasswordPolicyIssues(password), [password])
+  const passwordMeetsPolicy = useMemo(() => isPasswordStrong(password), [password])
+
   const canSubmit = useMemo(() => {
     const normalizedEmail = normalizeEmail(email)
     if (!normalizedEmail) return false
     if (!isLogin && !isValidEmail(normalizedEmail)) return false
     if (!password) return false
     if (!isLogin) {
+      if (!passwordMeetsPolicy) return false
       if (!confirmPassword) return false
       if (password !== confirmPassword) return false
     }
     return true
-  }, [email, password, confirmPassword, isLogin])
+  }, [email, password, confirmPassword, isLogin, passwordMeetsPolicy])
 
   const resetTransientState = () => {
     setError(null)
@@ -97,6 +106,14 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
     if (!isLogin && !confirmPassword) {
       setError({ title: 'Missing field', message: 'Please confirm your password.' })
+      return
+    }
+
+    if (!isLogin && passwordPolicyIssues.length > 0) {
+      setError({
+        title: 'Choose a stronger password',
+        message: 'Password should contain at least one character and one number.',
+      })
       return
     }
 
@@ -144,7 +161,12 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
   }
 
   const handleForgotPassword = () => {
-    router.push('/(public)/forgot-password')
+    const normalizedEmail = normalizeEmail(email)
+
+    router.push({
+      pathname: '/(public)/forgot-password',
+      params: normalizedEmail ? { email: normalizedEmail } : undefined,
+    })
   }
 
   const goBackToGetStarted = () => {
@@ -274,10 +296,34 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
                 onPress={() => setShowPassword((v) => !v)}
                 style={styles.eyeButton}
                 disabled={loading}
+                accessibilityRole="button"
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
               >
                 <Feather name={showPassword ? 'eye-off' : 'eye'} size={18} style={styles.eyeIcon} />
               </TouchableOpacity>
             </View>
+
+            {!isLogin ? (
+              <View style={styles.requirementsCard}>
+                <Text style={styles.requirementsTitle}>Password must include:</Text>
+                {PASSWORD_REQUIREMENTS.map((requirement) => {
+                  const isMet = requirement.validate(password)
+
+                  return (
+                    <View key={requirement.id} style={styles.requirementRow}>
+                      <Feather
+                        name={isMet ? 'check-circle' : 'circle'}
+                        size={16}
+                        style={[styles.requirementIcon, isMet && styles.requirementIconMet]}
+                      />
+                      <Text style={[styles.requirementText, isMet && styles.requirementTextMet]}>
+                        {requirement.label}
+                      </Text>
+                    </View>
+                  )
+                })}
+              </View>
+            ) : null}
           </View>
 
           {/* Confirm Password (register only) */}
@@ -474,6 +520,50 @@ const styles = createThemedStyles((theme) => ({
 
   eyeIcon: {
     color: theme.colors.mutedForeground,
+  },
+
+  requirementsCard: {
+    marginTop: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radii.lg,
+    backgroundColor: theme.colors.card,
+    padding: theme.spacing.md,
+    gap: theme.spacing.xs,
+  },
+
+  requirementsTitle: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.foreground,
+    marginBottom: theme.spacing.xs,
+  },
+
+  requirementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+  },
+
+  requirementIcon: {
+    color: theme.colors.mutedForeground,
+  },
+
+  requirementIconMet: {
+    color: theme.colors.primary,
+  },
+
+  requirementText: {
+    flex: 1,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.mutedForeground,
+  },
+
+  requirementTextMet: {
+    color: theme.colors.foreground,
   },
 
   fieldError: {

@@ -10,24 +10,54 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
 import { useAuth } from '@/features/auth/context/AuthContext'
+import {
+  PASSWORD_REQUIREMENTS,
+  getPasswordPolicyIssues,
+  isPasswordStrong,
+} from '@/features/auth/utils/passwordPolicy'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 
+const KEYBOARD_SCROLL_PADDING = 96
+
 export default function UpdatePasswordScreen() {
+  const insets = useSafeAreaInsets()
   const { isLoading, session, updatePassword } = useAuth()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  const passwordPolicyIssues = useMemo(() => getPasswordPolicyIssues(password), [password])
+  const passwordMeetsPolicy = useMemo(() => isPasswordStrong(password), [password])
 
   const canSubmit = useMemo(() => {
-    return Boolean(password && confirmPassword && !submitting && session)
-  }, [confirmPassword, password, session, submitting])
+    return Boolean(passwordMeetsPolicy && confirmPassword && !submitting && session)
+  }, [confirmPassword, passwordMeetsPolicy, session, submitting])
+
+  const keyboardVerticalOffset = Platform.select({
+    ios: insets.top,
+    android: 0,
+  })
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value)
+    setError(null)
+    setSaved(false)
+  }
+
+  const handleConfirmPasswordChange = (value: string) => {
+    setConfirmPassword(value)
+    setError(null)
+    setSaved(false)
+  }
 
   const handleSubmit = async () => {
     if (!session) {
@@ -37,6 +67,11 @@ export default function UpdatePasswordScreen() {
 
     if (!password || !confirmPassword) {
       setError('Enter and confirm your new password.')
+      return
+    }
+
+    if (passwordPolicyIssues.length > 0) {
+      setError('Choose a stronger password before continuing.')
       return
     }
 
@@ -64,9 +99,20 @@ export default function UpdatePasswordScreen() {
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={keyboardVerticalOffset}
       >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: insets.bottom + KEYBOARD_SCROLL_PADDING },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          showsVerticalScrollIndicator={false}
+          automaticallyAdjustKeyboardInsets
+        >
           <TouchableOpacity onPress={() => router.back()} style={styles.backRow}>
             <Feather name="arrow-left" size={18} style={styles.backIcon} />
             <Text style={styles.backText}>Back</Text>
@@ -105,13 +151,52 @@ export default function UpdatePasswordScreen() {
                   <TextInput
                     placeholder="Enter a new password"
                     placeholderTextColor="#8c857b"
-                    secureTextEntry
+                    secureTextEntry={!showPassword}
                     autoCapitalize="none"
                     autoCorrect={false}
                     style={styles.input}
                     value={password}
-                    onChangeText={setPassword}
+                    onChangeText={handlePasswordChange}
                   />
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                    onPress={() => setShowPassword((value) => !value)}
+                    style={styles.visibilityButton}
+                  >
+                    <Feather
+                      name={showPassword ? 'eye-off' : 'eye'}
+                      size={18}
+                      style={styles.visibilityIcon}
+                    />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.requirementsCard}>
+                  <Text style={styles.requirementsTitle}>Password must include:</Text>
+                  {PASSWORD_REQUIREMENTS.map((requirement) => {
+                    const isMet = requirement.validate(password)
+
+                    return (
+                      <View key={requirement.id} style={styles.requirementRow}>
+                        <Feather
+                          name={isMet ? 'check-circle' : 'circle'}
+                          size={16}
+                          style={[
+                            styles.requirementIcon,
+                            isMet && styles.requirementIconMet,
+                          ]}
+                        />
+                        <Text
+                          style={[
+                            styles.requirementText,
+                            isMet && styles.requirementTextMet,
+                          ]}
+                        >
+                          {requirement.label}
+                        </Text>
+                      </View>
+                    )
+                  })}
                 </View>
               </View>
 
@@ -122,20 +207,34 @@ export default function UpdatePasswordScreen() {
                   <TextInput
                     placeholder="Re-enter your new password"
                     placeholderTextColor="#8c857b"
-                    secureTextEntry
+                    secureTextEntry={!showConfirmPassword}
                     autoCapitalize="none"
                     autoCorrect={false}
                     style={styles.input}
                     value={confirmPassword}
-                    onChangeText={setConfirmPassword}
+                    onChangeText={handleConfirmPasswordChange}
                   />
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'
+                    }
+                    onPress={() => setShowConfirmPassword((value) => !value)}
+                    style={styles.visibilityButton}
+                  >
+                    <Feather
+                      name={showConfirmPassword ? 'eye-off' : 'eye'}
+                      size={18}
+                      style={styles.visibilityIcon}
+                    />
+                  </TouchableOpacity>
                 </View>
               </View>
 
               {error ? <Text style={styles.errorText}>{error}</Text> : null}
               {saved ? (
                 <Text style={styles.successText}>
-                  Password updated. You can continue using your account with the new password.
+                  Password updated. Sign in again with your new password to continue.
                 </Text>
               ) : null}
 
@@ -153,10 +252,10 @@ export default function UpdatePasswordScreen() {
               {saved ? (
                 <Button
                   variant="secondary"
-                  onPress={() => router.replace('/(auth)/(tabs)/profile')}
+                  onPress={() => router.replace('/(public)/login')}
                   style={styles.secondaryButton}
                 >
-                  Return to profile
+                  Go to sign in
                 </Button>
               ) : null}
             </>
@@ -270,6 +369,53 @@ const styles = createThemedStyles((theme) => ({
     flex: 1,
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.base,
+    color: theme.colors.foreground,
+  },
+  visibilityButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: theme.spacing.xs,
+  },
+  visibilityIcon: {
+    color: theme.colors.mutedForeground,
+  },
+  requirementsCard: {
+    marginTop: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radii.lg,
+    backgroundColor: theme.colors.card,
+    padding: theme.spacing.md,
+    gap: theme.spacing.xs,
+  },
+  requirementsTitle: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.foreground,
+    marginBottom: theme.spacing.xs,
+  },
+  requirementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+  },
+  requirementIcon: {
+    color: theme.colors.mutedForeground,
+  },
+  requirementIconMet: {
+    color: theme.colors.primary,
+  },
+  requirementText: {
+    flex: 1,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.mutedForeground,
+  },
+  requirementTextMet: {
     color: theme.colors.foreground,
   },
   errorText: {

@@ -12,6 +12,7 @@ type ProfileSubpageLayoutProps = {
   children: ReactNode
   bottomPadding?: number
   headerRight?: ReactNode
+  keyboardAware?: boolean
 }
 
 export default function ProfileSubpageLayout({
@@ -21,9 +22,15 @@ export default function ProfileSubpageLayout({
   children,
   bottomPadding,
   headerRight,
+  keyboardAware,
 }: ProfileSubpageLayoutProps) {
   return (
-    <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
+    <Screen
+      scroll
+      bottomPadding={bottomPadding}
+      contentStyle={styles.content}
+      keyboardAware={keyboardAware}
+    >
       <TouchableOpacity style={styles.backRow} onPress={onBack} activeOpacity={0.75}>
         <Feather name="chevron-left" size={18} style={styles.backIcon} />
         <Text style={styles.backText}>Back</Text>

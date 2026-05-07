@@ -1,8 +1,9 @@
 // features/auth/context/AuthContext.tsx
 
 import { supabase } from '@/lib/supabase'
-import type { AuthResponse, Session, User } from '@supabase/supabase-js'
+import type { AuthResponse, Session, User, UserAttributes } from '@supabase/supabase-js'
 import * as Linking from 'expo-linking'
+import { router } from 'expo-router'
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { usePostHog } from 'posthog-react-native'
 import { tagLocalDataAsMigratable } from '@/features/storage/localAccountLinking'
@@ -24,6 +25,7 @@ type AuthContextValue = {
   updateEmailAddress: (email: string) => Promise<{ pendingEmail: string | null }>
   sendPasswordResetEmail: (email: string) => Promise<void>
   updatePassword: (password: string) => Promise<void>
+  updatePasswordWithCurrentPassword: (currentPassword: string, nextPassword: string) => Promise<void>
   deleteAccount: () => Promise<void>
   logout: () => Promise<void>
 }
@@ -89,6 +91,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) {
       throw error
     }
+
+    router.replace('/(public)/update-password')
   }, [])
 
   useEffect(() => {
@@ -228,16 +232,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const trimmed = password.trim()
     if (!trimmed) throw new Error('Password is required')
 
-    const { data, error } = await supabase.auth.updateUser({
+    const { error } = await supabase.auth.updateUser({
       password: trimmed,
     })
 
     if (error) throw error
 
-    if (data.user) {
-      setSession((prev) => (prev ? { ...prev, user: data.user } : prev))
-    }
+    setSession(null)
+    await supabase.auth.signOut({ scope: 'local' })
   }, [])
+
+  const updatePasswordWithCurrentPassword = useCallback(
+    async (currentPassword: string, nextPassword: string) => {
+      const email = normalizeEmail(session?.user?.email ?? '')
+      const current = currentPassword.trim()
+      const next = nextPassword.trim()
+
+      if (!email) throw new Error('No email address found for this account.')
+      if (!current) throw new Error('Current password is required.')
+      if (!next) throw new Error('New password is required.')
+
+      const { data, error: updateError } = await supabase.auth.updateUser({
+        password: next,
+        current_password: current,
+      } as UserAttributes & { current_password: string })
+      if (updateError) throw updateError
+
+      if (data.user) {
+        setSession((prev) => (prev ? { ...prev, user: data.user } : prev))
+      }
+    },
+    [session?.user?.email]
+  )
 
   const logout = async () => {
     const { error } = await supabase.auth.signOut()
@@ -304,6 +330,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       updateEmailAddress,
       sendPasswordResetEmail,
       updatePassword,
+      updatePasswordWithCurrentPassword,
       deleteAccount,
       logout,
     }),
@@ -314,6 +341,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       updateEmailAddress,
       sendPasswordResetEmail,
       updatePassword,
+      updatePasswordWithCurrentPassword,
       deleteAccount,
     ]
   )
