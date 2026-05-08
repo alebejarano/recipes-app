@@ -6,6 +6,16 @@ type PasswordRecoverySession = {
   type?: string
 }
 
+type AuthLinkSession = PasswordRecoverySession
+
+type AuthLinkParams = {
+  accessToken?: string
+  refreshToken?: string
+  code?: string
+  type?: string
+  path?: string | null
+}
+
 function getParamValue(value: string | string[] | undefined) {
   if (Array.isArray(value)) {
     return value[0]
@@ -28,11 +38,24 @@ export function getPasswordRecoveryRedirectUrl() {
   return Linking.createURL('/update-password')
 }
 
-export function getPasswordRecoverySessionFromUrl(url: string): PasswordRecoverySession | null {
+export function getEmailConfirmationRedirectUrl() {
+  return Linking.createURL('/login')
+}
+
+export function getAuthLinkParamsFromUrl(url: string): AuthLinkParams {
   const parsed = Linking.parse(normalizeDeepLink(url))
-  const accessToken = getParamValue(parsed.queryParams?.access_token)
-  const refreshToken = getParamValue(parsed.queryParams?.refresh_token)
-  const type = getParamValue(parsed.queryParams?.type)
+
+  return {
+    accessToken: getParamValue(parsed.queryParams?.access_token),
+    refreshToken: getParamValue(parsed.queryParams?.refresh_token),
+    code: getParamValue(parsed.queryParams?.code),
+    type: getParamValue(parsed.queryParams?.type),
+    path: parsed.path,
+  }
+}
+
+export function getAuthLinkSessionFromUrl(url: string): AuthLinkSession | null {
+  const { accessToken, refreshToken, type } = getAuthLinkParamsFromUrl(url)
 
   if (!accessToken || !refreshToken) {
     return null
@@ -43,4 +66,14 @@ export function getPasswordRecoverySessionFromUrl(url: string): PasswordRecovery
     refreshToken,
     type,
   }
+}
+
+export function getPasswordRecoverySessionFromUrl(url: string): PasswordRecoverySession | null {
+  const session = getAuthLinkSessionFromUrl(url)
+
+  if (session?.type && session.type !== 'recovery') {
+    return null
+  }
+
+  return session
 }

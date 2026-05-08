@@ -26,7 +26,7 @@ const styles = createThemedStyles((theme) => ({
     marginTop: theme.spacing['2xl'],
   },
   greeting: {
-    fontSize: theme.fontSize.base,
+    fontSize: theme.fontSize.lg,
     lineHeight: theme.lineHeight.base,
     fontFamily: theme.fontFamily.regular,
     color: theme.colors.mutedForeground,

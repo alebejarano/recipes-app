@@ -93,8 +93,8 @@ const styles = createThemedStyles((theme) => ({
   },
   recipeTitle: {
     flex: 1,
-    fontSize: theme.fontSize['2xl'],
-    lineHeight: theme.lineHeight['2xl'],
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
     fontFamily: theme.fontFamily.regular,
     color: theme.colors.foreground,
   },

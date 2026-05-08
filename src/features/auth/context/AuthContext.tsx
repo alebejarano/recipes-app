@@ -9,8 +9,10 @@ import { usePostHog } from 'posthog-react-native'
 import { tagLocalDataAsMigratable } from '@/features/storage/localAccountLinking'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import {
+  getAuthLinkSessionFromUrl,
+  getAuthLinkParamsFromUrl,
+  getEmailConfirmationRedirectUrl,
   getPasswordRecoveryRedirectUrl,
-  getPasswordRecoverySessionFromUrl,
 } from '@/features/auth/utils/passwordRecovery'
 
 type AuthContextValue = {
@@ -80,19 +82,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleIncomingAuthUrl = useCallback(async (url: string | null) => {
     if (!url) return
 
-    const recoverySession = getPasswordRecoverySessionFromUrl(url)
-    if (!recoverySession) return
+    const authLinkParams = getAuthLinkParamsFromUrl(url)
+    const isPasswordRecovery =
+      authLinkParams.type === 'recovery' || authLinkParams.path === 'update-password'
+
+    if (authLinkParams.code) {
+      const { error } = await supabase.auth.exchangeCodeForSession(authLinkParams.code)
+      if (error) throw error
+
+      router.replace(isPasswordRecovery ? '/(public)/update-password' : '/(auth)/(tabs)')
+      return
+    }
+
+    const authSession = getAuthLinkSessionFromUrl(url)
+    if (!authSession) return
 
     const { error } = await supabase.auth.setSession({
-      access_token: recoverySession.accessToken,
-      refresh_token: recoverySession.refreshToken,
+      access_token: authSession.accessToken,
+      refresh_token: authSession.refreshToken,
     })
 
     if (error) {
       throw error
     }
 
-    router.replace('/(public)/update-password')
+    router.replace(isPasswordRecovery ? '/(public)/update-password' : '/(auth)/(tabs)')
   }, [])
 
   useEffect(() => {
@@ -162,7 +176,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!normalized) throw new Error('Email is required')
     if (!isValidEmail(normalized)) throw new Error('Please enter a valid email address.')
 
-    const { data, error } = await supabase.auth.signUp({ email: normalized, password })
+    const { data, error } = await supabase.auth.signUp({
+      email: normalized,
+      password,
+      options: {
+        emailRedirectTo: getEmailConfirmationRedirectUrl(),
+      },
+    })
     if (error) throw error
     return data
   }

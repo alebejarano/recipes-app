@@ -191,7 +191,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
             <Text style={styles.subtitle}>
               We sent a confirmation link to <Text style={styles.inlineStrong}>{email.trim()}</Text>.
-              Open it to finish creating your account, then come back and sign in.
+              Open it to finish creating your account. If the app does not open automatically, come back and sign in.
             </Text>
           </View>
 
