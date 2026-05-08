@@ -13,6 +13,7 @@ type StorageStrategyContextValue = {
   isAnonymous: boolean
   isAuthenticated: boolean
   isPremium: boolean
+  isLoaded: boolean
   localFirst: boolean
   cloudSyncEnabled: boolean
 }
@@ -22,13 +23,14 @@ const StorageStrategyContext = createContext<StorageStrategyContextValue>({
   isAnonymous: true,
   isAuthenticated: false,
   isPremium: false,
+  isLoaded: false,
   localFirst: true,
   cloudSyncEnabled: false,
 })
 
 export function StorageStrategyProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
-  const { plan } = useContext(SubscriptionContext)
+  const { isLoaded, plan } = useContext(SubscriptionContext)
 
   const value = useMemo<StorageStrategyContextValue>(() => {
     const isAuthenticated = Boolean(user)
@@ -44,10 +46,11 @@ export function StorageStrategyProvider({ children }: { children: React.ReactNod
       isAnonymous: !isAuthenticated,
       isAuthenticated,
       isPremium,
+      isLoaded,
       localFirst: strategy !== 'cloud-sync-offline-cache',
       cloudSyncEnabled: strategy === 'cloud-sync-offline-cache',
     }
-  }, [plan, user])
+  }, [isLoaded, plan, user])
 
   return <StorageStrategyContext.Provider value={value}>{children}</StorageStrategyContext.Provider>
 }

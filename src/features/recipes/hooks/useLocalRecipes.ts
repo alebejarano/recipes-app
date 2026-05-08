@@ -7,6 +7,7 @@ import {
   createLocalRecipe,
   deleteLocalRecipe,
   getLocalRecipe,
+  getLocalRecipeByIdOrCloudId,
   listLocalRecipes,
   updateLocalRecipe,
 } from '@/features/recipes/storage/localRecipesStorage'
@@ -16,20 +17,22 @@ const LIST_KEY = ['recipes', 'local', 'list']
 type LocalRecipesListParams = {
   limit?: number
   search?: string
+  enabled?: boolean
 }
 
 export function useLocalRecipesList(params?: LocalRecipesListParams) {
   return useQuery<LocalRecipe[]>({
     queryKey: [...LIST_KEY, params?.limit ?? 200, params?.search ?? ''],
     queryFn: () => listLocalRecipes(params),
+    enabled: params?.enabled ?? true,
   })
 }
 
-export function useLocalRecipe(id: string) {
+export function useLocalRecipe(id: string, options?: { enabled?: boolean; matchCloudId?: boolean }) {
   return useQuery<LocalRecipe | null>({
-    queryKey: ['recipes', 'local', 'detail', id],
-    queryFn: () => getLocalRecipe(id),
-    enabled: Boolean(id),
+    queryKey: ['recipes', 'local', 'detail', options?.matchCloudId ? 'any' : 'id', id],
+    queryFn: () => options?.matchCloudId ? getLocalRecipeByIdOrCloudId(id) : getLocalRecipe(id),
+    enabled: Boolean(id) && (options?.enabled ?? true),
   })
 }
 

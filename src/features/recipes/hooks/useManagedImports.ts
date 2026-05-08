@@ -20,7 +20,7 @@ const DOCS_KEY = ['recipes', 'documents']
 const DOCS_USAGE_KEY = ['recipes', 'documents', 'usage']
 
 export function useManagedImports(mode: StorageScreenMode = 'auth') {
-  const { shouldUseLocalData } = useStorageDataMode(mode)
+  const { isStorageModeReady, shouldUseLocalData } = useStorageDataMode(mode)
   const query = useInfiniteQuery<
     CloudRecipeDocumentsPage<ManagedImport>,
     Error,
@@ -30,6 +30,7 @@ export function useManagedImports(mode: StorageScreenMode = 'auth') {
   >({
     queryKey: [...IMPORTS_KEY, shouldUseLocalData ? 'local' : 'cloud'],
     initialPageParam: null,
+    enabled: isStorageModeReady,
     queryFn: async ({ pageParam }) => {
       if (shouldUseLocalData) {
         return {

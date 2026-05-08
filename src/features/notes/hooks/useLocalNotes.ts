@@ -5,6 +5,7 @@ import {
   createLocalNote,
   deleteLocalNote,
   getLocalNote,
+  getLocalNoteByIdOrCloudId,
   listLocalNotes,
   updateLocalNote,
 } from '@/features/notes/storage/localNotesStorage'
@@ -14,20 +15,22 @@ const LIST_KEY = ['notes', 'local', 'list']
 type LocalNotesListParams = {
   limit?: number
   search?: string
+  enabled?: boolean
 }
 
 export function useLocalNotesList(params?: LocalNotesListParams) {
   return useQuery<LocalNote[]>({
     queryKey: [...LIST_KEY, params?.limit ?? 200, params?.search ?? ''],
     queryFn: () => listLocalNotes(params),
+    enabled: params?.enabled ?? true,
   })
 }
 
-export function useLocalNote(id: string) {
+export function useLocalNote(id: string, options?: { enabled?: boolean; matchCloudId?: boolean }) {
   return useQuery<LocalNote | null>({
-    queryKey: ['notes', 'local', 'detail', id],
-    queryFn: () => getLocalNote(id),
-    enabled: Boolean(id),
+    queryKey: ['notes', 'local', 'detail', options?.matchCloudId ? 'any' : 'id', id],
+    queryFn: () => options?.matchCloudId ? getLocalNoteByIdOrCloudId(id) : getLocalNote(id),
+    enabled: Boolean(id) && (options?.enabled ?? true),
   })
 }
 

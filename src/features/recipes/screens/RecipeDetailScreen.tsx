@@ -18,6 +18,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { createThemedStyles } from '@/styles/createStyles'
+import { theme } from '@/styles/theme'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
@@ -34,6 +35,7 @@ import {
 import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { buildRecipeShareText, shareRecipeAsTextFile } from '@/features/recipes/utils/shareRecipe'
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
+import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding'
 import { FREE_PLAN_MAX_RECIPES } from '@/features/subscription/constants/limits'
 import { KITCHEN_ALMOST_FULL_RECIPE_DISMISS_UNTIL_PREFIX } from '@/features/subscription/constants/reminderKeys'
 import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
@@ -100,6 +102,7 @@ function buildIngredientLines(ingredients: { name: string }[] | undefined): stri
 
 
 export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
+  const bottomPadding = useTabBarBottomPadding(theme.spacing['3xl'])
   const [isIngredientImportOpen, setIsIngredientImportOpen] = useState(false)
   const [isImportingIngredients, setIsImportingIngredients] = useState(false)
   const [shouldShowCapacityReminder, setShouldShowCapacityReminder] = useState(false)
@@ -450,7 +453,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.topBar}>

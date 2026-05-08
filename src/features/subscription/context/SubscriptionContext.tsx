@@ -29,6 +29,24 @@ type UserEntitlementsRow = {
   billing_cycle: BillingCycle
 }
 
+function isConnectivityError(error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message.toLowerCase()
+      : typeof error === 'object' && error && 'message' in error && typeof error.message === 'string'
+        ? error.message.toLowerCase()
+        : ''
+
+  return (
+    message.includes('network') ||
+    message.includes('failed to fetch') ||
+    message.includes('timed out') ||
+    message.includes('timeout') ||
+    message.includes('socket') ||
+    message.includes('abort')
+  )
+}
+
 async function inferPremiumFromCloudData(userId: string): Promise<boolean> {
   const [recipesResult, notesResult, foldersResult] = await Promise.all([
     supabase.from('recipes').select('id', { count: 'exact', head: true }).eq('user_id', userId),
@@ -103,7 +121,22 @@ export function SubscriptionProvider({
           .maybeSingle<UserEntitlementsRow>()
 
         if (!isMounted) return
-        if (remoteError || !remoteEntitlements) {
+        if (remoteError) {
+          if (isConnectivityError(remoteError)) return
+          const hasCloudData = await inferPremiumFromCloudData(user.id)
+          if (!isMounted || !hasCloudData) return
+
+          setPlanState('premium')
+          setBillingCycleState(cachedBillingCycle)
+
+          await Promise.all([
+            AsyncStorage.setItem(`${PLAN_KEY_PREFIX}${user.id}`, 'premium'),
+            AsyncStorage.setItem(`${BILLING_CYCLE_KEY_PREFIX}${user.id}`, cachedBillingCycle),
+          ])
+          return
+        }
+
+        if (!remoteEntitlements) {
           const hasCloudData = await inferPremiumFromCloudData(user.id)
           if (!isMounted || !hasCloudData) return
 
@@ -128,8 +161,9 @@ export function SubscriptionProvider({
           AsyncStorage.setItem(`${PLAN_KEY_PREFIX}${user.id}`, remotePlan),
           AsyncStorage.setItem(`${BILLING_CYCLE_KEY_PREFIX}${user.id}`, remoteBillingCycle),
         ])
-      } catch {
+      } catch (error) {
         if (!isMounted) return
+        if (isConnectivityError(error)) return
         setPlanState('free')
         setBillingCycleState('month')
         setUpgradeStatusState('idle')

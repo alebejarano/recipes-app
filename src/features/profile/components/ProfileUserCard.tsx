@@ -22,14 +22,16 @@ export default function ProfileUserCard({ name, email, onPressEdit }: Props) {
         <Text style={styles.email}>{email}</Text>
       </View>
 
-      <Pressable
-        onPress={onPressEdit}
-        style={({ pressed }) => [styles.editAction, pressed && styles.pressed]}
-        accessibilityRole="button"
-        accessibilityLabel="Edit profile"
-      >
-        <Text style={styles.editText}>Edit</Text>
-      </Pressable>
+      {onPressEdit ? (
+        <Pressable
+          onPress={onPressEdit}
+          style={({ pressed }) => [styles.editAction, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Edit profile"
+        >
+          <Text style={styles.editText}>Edit</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }

@@ -332,6 +332,17 @@ async function getRecipeRow(id: string, includeDeleted = false): Promise<LocalRe
   )
 }
 
+async function getRecipeRowByIdOrCloudId(id: string, includeDeleted = false): Promise<LocalRecipeRow | null> {
+  const row = await getRecipeRow(id, includeDeleted)
+  if (row) return row
+
+  const deletedFilter = includeDeleted ? '' : ' AND deleted_at IS NULL'
+  return getFirstAsync<LocalRecipeRow>(
+    `SELECT * FROM local_recipes WHERE cloud_id = ?${deletedFilter} LIMIT 1;`,
+    [id]
+  )
+}
+
 export async function listLocalRecipes(params?: LocalRecipeListParams): Promise<LocalRecipe[]> {
   const rows = await listRecipeRows(params)
   const inferredIds = await backfillLocalRecipeMealTimesIfNeeded(rows)
@@ -343,6 +354,20 @@ export async function listLocalRecipes(params?: LocalRecipeListParams): Promise<
 
 export async function getLocalRecipe(id: string): Promise<LocalRecipe | null> {
   const row = await getRecipeRow(id)
+  let inferredIds = new Set<string>()
+  if (row) {
+    inferredIds = await backfillLocalRecipeMealTimesIfNeeded([row])
+  }
+  return row
+    ? {
+        ...toRecipeView(row),
+        mealTimesInferred: inferredIds.has(row.id),
+      }
+    : null
+}
+
+export async function getLocalRecipeByIdOrCloudId(id: string): Promise<LocalRecipe | null> {
+  const row = await getRecipeRowByIdOrCloudId(id)
   let inferredIds = new Set<string>()
   if (row) {
     inferredIds = await backfillLocalRecipeMealTimesIfNeeded([row])
@@ -454,8 +479,9 @@ export async function updateLocalRecipe(
   await ensureLocalSqliteMigrationReady()
   const plan = options?.plan ?? 'free'
 
-  const existing = await getRecipeRow(id)
+  const existing = await getRecipeRowByIdOrCloudId(id)
   if (!existing) throw new Error('Recipe not found')
+  const localId = existing.id
 
   const updatedAt = new Date().toISOString()
   const nextVersion = (existing.version ?? 1) + 1
@@ -518,11 +544,11 @@ export async function updateLocalRecipe(
       updatedAt,
       1,
       nextVersion,
-      id,
+      localId,
     ]
   )
 
-  const next = await getRecipeRow(id)
+  const next = await getRecipeRow(localId)
   if (!next) throw new Error('Recipe not found')
 
   return toRecipeView(next)
@@ -530,8 +556,9 @@ export async function updateLocalRecipe(
 
 export async function deleteLocalRecipe(id: string): Promise<void> {
   await ensureLocalSqliteMigrationReady()
-  const existing = await getRecipeRow(id, true)
+  const existing = await getRecipeRowByIdOrCloudId(id, true)
   if (!existing) return
+  const localId = existing.id
 
   if (existing?.image_url && isManagedLocalImportImageUri(existing.image_url)) {
     await removeImportByUri(existing.image_url)
@@ -544,13 +571,13 @@ export async function deleteLocalRecipe(id: string): Promise<void> {
       `UPDATE local_recipes
         SET deleted_at = ?, updated_at = ?, dirty = ?, version = ?
         WHERE id = ?;`,
-      [now, now, 1, (existing.version ?? 1) + 1, id]
+      [now, now, 1, (existing.version ?? 1) + 1, localId]
     )
   } else {
-    await runSqlAsync('DELETE FROM local_recipes WHERE id = ?;', [id])
+    await runSqlAsync('DELETE FROM local_recipes WHERE id = ?;', [localId])
   }
 
-  await deleteRecipePdfAttachmentsForRecipe(id)
+  await deleteRecipePdfAttachmentsForRecipe(localId)
 }
 
 function toSyncRow(row: LocalRecipeRow): LocalRecipeSyncRow {

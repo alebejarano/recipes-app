@@ -5,6 +5,7 @@ import type { RecipeDocument, RecipeDocumentUsageSummary } from '@/features/reci
 
 const SIGNED_URL_TTL_SECONDS = 60 * 60
 export const CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE = 50
+const VISIBLE_IMPORT_STATUSES = ['uploading', 'uploaded', 'processing', 'ready']
 
 type RecipeDocumentImportRow = {
   id: string
@@ -66,6 +67,14 @@ function isMissingStatusColumnError(error: { message?: string; code?: string } |
   return error?.code === '42703' || /status.*does not exist/i.test(error?.message ?? '')
 }
 
+async function requireUserId() {
+  const { data, error } = await supabase.auth.getSession()
+  if (error) throw error
+  const userId = data.session?.user?.id
+  if (!userId) throw new Error('Not authenticated')
+  return userId
+}
+
 export async function listCloudRecipeDocuments(): Promise<RecipeDocument[]> {
   const firstPage = await listCloudRecipeDocumentsPage()
   return firstPage.items
@@ -80,16 +89,7 @@ async function fetchCloudRecipeDocumentImportsPage(params?: {
   cursor?: CloudRecipeDocumentsCursor | null
   limit?: number
 }): Promise<RecipeDocumentImportRow[]> {
-  const { data, error } = await supabase.rpc('list_recipe_document_imports_page', {
-    p_limit: params?.limit ?? CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
-    p_before_created_at: params?.cursor?.createdAt ?? null,
-    p_before_id: params?.cursor?.id ?? null,
-  })
-
-  if (error) {
-    return fetchCloudRecipeDocumentImportsPageDirect(params)
-  }
-  return (data ?? []) as RecipeDocumentImportRow[]
+  return fetchCloudRecipeDocumentImportsPageDirect(params)
 }
 
 async function fetchCloudRecipeDocumentImportsPageDirect(params?: {
@@ -97,12 +97,14 @@ async function fetchCloudRecipeDocumentImportsPageDirect(params?: {
   limit?: number
 }): Promise<RecipeDocumentImportRow[]> {
   const limit = Math.max(1, Math.min(params?.limit ?? CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE, 100))
+  const userId = await requireUserId()
 
   let query = supabase
     .from('recipe_document_imports')
     .select('id,title,original_file_name,storage_bucket,storage_path,mime_type,bytes,status,created_at')
+    .eq('user_id', userId)
     .is('deleted_at', null)
-    .in('status', ['uploaded', 'processing', 'ready'])
+    .in('status', VISIBLE_IMPORT_STATUSES)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
     .limit(limit)
@@ -120,6 +122,7 @@ async function fetchCloudRecipeDocumentImportsPageDirect(params?: {
   let legacyQuery = supabase
     .from('recipe_document_imports')
     .select('id,title,original_file_name,storage_bucket,storage_path,mime_type,bytes,created_at')
+    .eq('user_id', userId)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
@@ -137,11 +140,13 @@ async function fetchCloudRecipeDocumentImportsPageDirect(params?: {
 }
 
 async function fetchCloudRecipeDocumentDirect(id: string): Promise<RecipeDocumentImportRow | null> {
+  const userId = await requireUserId()
   const { data, error } = await supabase
     .from('recipe_document_imports')
     .select('id,title,original_file_name,storage_bucket,storage_path,mime_type,bytes,status,created_at')
+    .eq('user_id', userId)
     .is('deleted_at', null)
-    .in('status', ['uploaded', 'processing', 'ready'])
+    .in('status', VISIBLE_IMPORT_STATUSES)
     .eq('id', id)
     .maybeSingle()
 
@@ -151,6 +156,7 @@ async function fetchCloudRecipeDocumentDirect(id: string): Promise<RecipeDocumen
   const { data: legacyData, error: legacyError } = await supabase
     .from('recipe_document_imports')
     .select('id,title,original_file_name,storage_bucket,storage_path,mime_type,bytes,created_at')
+    .eq('user_id', userId)
     .is('deleted_at', null)
     .eq('id', id)
     .maybeSingle()

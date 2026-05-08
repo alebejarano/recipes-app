@@ -151,7 +151,7 @@ export default function ProfileScreen() {
       <ProfileUserCard
         name={displayName}
         email={user?.new_email ?? user?.email ?? ''}
-        onPressEdit={() => router.push('/(auth)/account/edit-profile')}
+        onPressEdit={user ? () => router.push('/(auth)/account/edit-profile') : undefined}
       />
 
       <View style={styles.bigSpace} />

@@ -26,7 +26,7 @@ const DOCS_KEY = ['recipes', 'documents']
 const USAGE_KEY = ['recipes', 'documents', 'usage']
 
 export function useRecipeDocuments(mode: StorageScreenMode = 'auth') {
-  const { shouldUseLocalData } = useStorageDataMode(mode)
+  const { isStorageModeReady, shouldUseLocalData } = useStorageDataMode(mode)
   const query = useInfiniteQuery<
     CloudRecipeDocumentsPage<RecipeDocument>,
     Error,
@@ -36,6 +36,7 @@ export function useRecipeDocuments(mode: StorageScreenMode = 'auth') {
   >({
     queryKey: [...DOCS_KEY, shouldUseLocalData ? 'local' : 'cloud'],
     initialPageParam: null,
+    enabled: isStorageModeReady,
     queryFn: async ({ pageParam }) => {
       if (shouldUseLocalData) {
         return {
@@ -59,11 +60,11 @@ export function useRecipeDocuments(mode: StorageScreenMode = 'auth') {
 }
 
 export function useRecipeDocument(id: string, mode: StorageScreenMode = 'auth') {
-  const { shouldUseLocalData } = useStorageDataMode(mode)
+  const { isStorageModeReady, shouldUseLocalData } = useStorageDataMode(mode)
   return useQuery<RecipeDocument | null>({
     queryKey: [...DOCS_KEY, shouldUseLocalData ? 'local' : 'cloud', id],
     queryFn: () => (shouldUseLocalData ? getRecipeDocument(id) : getCloudRecipeDocument(id)),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && isStorageModeReady,
   })
 }
 

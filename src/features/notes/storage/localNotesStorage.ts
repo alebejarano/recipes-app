@@ -79,6 +79,17 @@ async function getNoteRow(id: string, includeDeleted = false): Promise<LocalNote
   )
 }
 
+async function getNoteRowByIdOrCloudId(id: string, includeDeleted = false): Promise<LocalNoteRow | null> {
+  const row = await getNoteRow(id, includeDeleted)
+  if (row) return row
+
+  const deletedFilter = includeDeleted ? '' : ' AND deleted_at IS NULL'
+  return getFirstAsync<LocalNoteRow>(
+    `SELECT * FROM local_notes WHERE cloud_id = ?${deletedFilter} LIMIT 1;`,
+    [id]
+  )
+}
+
 function normalizeText(value: string): string | null {
   const trimmed = value.trim()
   return trimmed.length > 0 ? trimmed : null
@@ -107,6 +118,11 @@ export async function listLocalNotes(params?: LocalNotesListParams): Promise<Loc
 
 export async function getLocalNote(id: string): Promise<LocalNote | null> {
   const row = await getNoteRow(id)
+  return row ? toNoteView(row) : null
+}
+
+export async function getLocalNoteByIdOrCloudId(id: string): Promise<LocalNote | null> {
+  const row = await getNoteRowByIdOrCloudId(id)
   return row ? toNoteView(row) : null
 }
 
@@ -162,8 +178,9 @@ export async function updateLocalNote(
 ): Promise<LocalNote> {
   await ensureLocalSqliteMigrationReady()
 
-  const existing = await getNoteRow(id)
+  const existing = await getNoteRowByIdOrCloudId(id)
   if (!existing) throw new Error('Note not found')
+  const localId = existing.id
 
   const updatedAt = new Date().toISOString()
   const nextVersion = (existing.version ?? 1) + 1
@@ -177,10 +194,10 @@ export async function updateLocalNote(
     `UPDATE local_notes
       SET title = ?, content = ?, pinned_at = ?, updated_at = ?, dirty = ?, version = ?
       WHERE id = ?;`,
-    [title, content, pinnedAt, updatedAt, 1, nextVersion, id]
+    [title, content, pinnedAt, updatedAt, 1, nextVersion, localId]
   )
 
-  const next = await getNoteRow(id)
+  const next = await getNoteRow(localId)
   if (!next) throw new Error('Note not found')
 
   return toNoteView(next)
@@ -188,8 +205,9 @@ export async function updateLocalNote(
 
 export async function deleteLocalNote(id: string): Promise<void> {
   await ensureLocalSqliteMigrationReady()
-  const existing = await getNoteRow(id, true)
+  const existing = await getNoteRowByIdOrCloudId(id, true)
   if (!existing) return
+  const localId = existing.id
 
   const shouldSoftDeleteForSync = Boolean(existing.cloud_id || existing.owner_user_id)
   if (shouldSoftDeleteForSync) {
@@ -198,12 +216,12 @@ export async function deleteLocalNote(id: string): Promise<void> {
       `UPDATE local_notes
         SET deleted_at = ?, updated_at = ?, dirty = ?, version = ?
         WHERE id = ?;`,
-      [now, now, 1, (existing.version ?? 1) + 1, id]
+      [now, now, 1, (existing.version ?? 1) + 1, localId]
     )
     return
   }
 
-  await runSqlAsync('DELETE FROM local_notes WHERE id = ?;', [id])
+  await runSqlAsync('DELETE FROM local_notes WHERE id = ?;', [localId])
 }
 
 function toSyncRow(row: LocalNoteRow): LocalNoteSyncRow {
