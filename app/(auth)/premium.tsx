@@ -10,6 +10,7 @@ import PremiumSuccessModal from '@/features/subscription/components/PremiumSucce
 import { upgradeToPremium } from '@/features/subscription/services/upgradeToPremium'
 import { createThemedStyles } from '@/styles/createStyles'
 import { getSafeReturnTo } from '@/lib/navigation'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 export default function PremiumRoute() {
   const router = useRouter()
@@ -42,7 +43,7 @@ export default function PremiumRoute() {
       setShowSuccessModal(true)
     } catch (error: any) {
       shouldHoldRedirectRef.current = false
-      Alert.alert('Upgrade failed', error?.message ?? 'Could not complete premium upgrade.')
+      Alert.alert('Upgrade failed', getUserFacingErrorMessage(error, 'Could not complete premium upgrade.'))
     }
   }
 

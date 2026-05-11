@@ -47,6 +47,7 @@ import {
 import { buildFreePlanUsageSnapshot } from '@/features/subscription/utils/planUsage'
 import { recordRecipeOpen } from '@/features/home/utils/recipeOpenHistory'
 import { getSafeReturnTo } from '@/lib/navigation'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 const FALLBACK_FOLDERS: string[] = []
 const FAVORITES_FOLDER_NAME = 'Favorites'
@@ -284,7 +285,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
                     router.back()
                   }
                 } catch (error: any) {
-                  Alert.alert('Delete failed', error?.message ?? 'Please try again.')
+                  Alert.alert('Delete failed', getUserFacingErrorMessage(error))
                 }
               },
             },
@@ -310,7 +311,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
         folders: recipe.folders,
       })
     } catch (shareError: any) {
-      Alert.alert('Share failed', shareError?.message ?? 'Unable to share this recipe right now.')
+      Alert.alert('Share failed', getUserFacingErrorMessage(shareError, 'Unable to share this recipe right now.'))
     }
   }
 
@@ -332,7 +333,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
         }),
       })
     } catch (shareError: any) {
-      Alert.alert('Share failed', shareError?.message ?? 'Unable to share this recipe right now.')
+      Alert.alert('Share failed', getUserFacingErrorMessage(shareError, 'Unable to share this recipe right now.'))
     }
   }
 
@@ -403,7 +404,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
     } catch (importError: any) {
       Alert.alert(
         'Unable to add ingredients',
-        importError?.message ?? 'Please try again.'
+        getUserFacingErrorMessage(importError)
       )
     } finally {
       setIsImportingIngredients(false)
@@ -429,7 +430,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
           <Text style={styles.loadingText}>Unable to load this recipe.</Text>
           {error ? (
             <Text style={styles.errorText}>
-              {error instanceof Error ? error.message : String(error)}
+              {getUserFacingErrorMessage(error)}
             </Text>
           ) : null}
           <TouchableOpacity

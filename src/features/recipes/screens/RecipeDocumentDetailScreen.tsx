@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import Button from '@/components/Button'
 import { useDeleteRecipeDocument, useRecipeDocument } from '@/features/recipes/hooks/useRecipeDocuments'
 import { getSafeReturnTo } from '@/lib/navigation'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 
@@ -93,17 +94,11 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
   // Open file handler
   const handleOpenFile = useCallback(async () => {
     if (!document?.fileUri) {
-      Alert.alert('Error', 'No file path available.')
+      Alert.alert('Unable to open file', 'No file path is available for this import.')
       return
     }
 
     try {
-      console.log('[RecipeDocumentDetailScreen] open file request', {
-        platform: Platform.OS,
-        documentId,
-        fileUri: document.fileUri,
-      })
-
       if (Platform.OS === 'android') {
         const rawUri = document.fileUri.trim()
         const normalizedUri = rawUri.startsWith('/') ? `file://${rawUri}` : rawUri
@@ -129,23 +124,16 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
           }
 
           if (!contentUri) {
-            Alert.alert('Error', 'Unable to generate content URI for this file.')
+            Alert.alert('Unable to open file', 'This file cannot be prepared for opening right now.')
             return
           }
           openUri = contentUri
         } else if (!normalizedUri.startsWith('content://') && !normalizedUri.startsWith('http')) {
-          Alert.alert('Unable to Open File', 'Unsupported file URI format.')
+          Alert.alert('Unable to open file', 'This file type is not supported.')
           return
         } else {
           openUri = normalizedUri
         }
-
-        console.log('[RecipeDocumentDetailScreen] android open uri', {
-          rawUri,
-          normalizedUri,
-          openUri,
-          mimeType: fileInfo.mimeType,
-        })
 
         await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
           data: openUri,
@@ -187,8 +175,6 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
         await Linking.openURL(file.uri)
       }
     } catch (error) {
-      console.error('Error opening file:', error)
-
       // Check if it's because no viewer is installed
       if (error instanceof Error && error.message.includes('No Activity found')) {
         Alert.alert(
@@ -204,14 +190,13 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
           ]
         )
       } else {
-        const errorMessage = error instanceof Error 
-          ? error.message 
-          : 'An unexpected error occurred.'
-
-        Alert.alert('Unable to Open File', errorMessage)
+        Alert.alert(
+          'Unable to open file',
+          getUserFacingErrorMessage(error, 'This file could not be opened. Please try again.')
+        )
       }
     }
-  }, [document?.fileUri, documentId, fileInfo])
+  }, [document?.fileUri, fileInfo])
 
   // Delete handler
   const handleDeleteFile = useCallback(() => {
@@ -239,13 +224,10 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
                 }
               ])
             } catch (error) {
-              console.error('Error deleting file:', error)
-
-              const errorMessage = error instanceof Error
-                ? error.message
-                : 'Failed to delete the file. Please try again.'
-
-              Alert.alert('Delete Failed', errorMessage)
+              Alert.alert(
+                'Delete failed',
+                getUserFacingErrorMessage(error, 'Failed to delete the file. Please try again.')
+              )
             }
           }
         }
@@ -270,7 +252,7 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.centeredContainer}>
           <Feather name="alert-circle" size={48} style={styles.errorIcon} />
-          <Text style={styles.errorTitle}>Unable to Load File</Text>
+          <Text style={styles.errorTitle}>Unable to load file</Text>
           <Text style={styles.errorMessage}>
             This document could not be loaded. It may have been deleted or is no longer available.
           </Text>

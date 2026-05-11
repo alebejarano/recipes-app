@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import Button from '@/components/Button'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 
@@ -34,7 +35,7 @@ function getResetErrorMessage(error: any) {
     return 'Check your connection and try sending the reset link again.'
   }
 
-  return message || 'Unable to send the reset link. Please try again.'
+  return getUserFacingErrorMessage(error, 'Unable to send the reset link. Please try again.')
 }
 
 export default function ForgotPasswordScreen() {

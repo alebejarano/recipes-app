@@ -26,6 +26,7 @@ import {
 
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { appEnv, isProductionAppEnv } from '@/lib/appEnv';
+import { getUserFacingErrorMessage } from '@/lib/userFacingError';
 import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext';
 
 export default function ProfileScreen() {
@@ -57,7 +58,7 @@ export default function ProfileScreen() {
       // No manual navigation needed:
       // (auth)/_layout.tsx will redirect when session/user becomes null.
     } catch (e: any) {
-      Alert.alert('Unable to log out', e?.message ?? 'Please try again.')
+      Alert.alert('Unable to log out', getUserFacingErrorMessage(e))
     } finally {
       setIsLoggingOut(false)
     }

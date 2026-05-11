@@ -7,6 +7,7 @@ import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLa
 import SettingsSection from '@/features/profile/components/SettingsSection'
 import { exportUserData } from '@/features/profile/services/exportUserData'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { createThemedStyles } from '@/styles/createStyles'
 
 type PrivacySettingsScreenProps = {
@@ -27,7 +28,7 @@ export default function PrivacySettingsScreen({ onBack }: PrivacySettingsScreenP
     try {
       await deleteAccount()
     } catch (error: any) {
-      Alert.alert('Unable to delete account', error?.message ?? 'Please try again.')
+      Alert.alert('Unable to delete account', getUserFacingErrorMessage(error))
     } finally {
       setIsDeletingAccount(false)
     }
@@ -67,7 +68,7 @@ export default function PrivacySettingsScreen({ onBack }: PrivacySettingsScreenP
       })
       Alert.alert('Export ready', 'Your data export has been prepared and opened in the share sheet.')
     } catch (error: any) {
-      Alert.alert('Unable to export data', error?.message ?? 'Please try again.')
+      Alert.alert('Unable to export data', getUserFacingErrorMessage(error))
     } finally {
       setIsExportingData(false)
     }

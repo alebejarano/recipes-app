@@ -5,6 +5,7 @@ import { Alert, Pressable, Text, TextInput, View } from 'react-native'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { createThemedStyles } from '@/styles/createStyles'
 
 export default function EditProfileScreen() {
@@ -61,7 +62,7 @@ export default function EditProfileScreen() {
       }
       router.replace(profileRoute)
     } catch (error: any) {
-      Alert.alert('Unable to save profile', error?.message ?? 'Please try again.')
+      Alert.alert('Unable to save profile', getUserFacingErrorMessage(error))
     } finally {
       setSaving(false)
     }

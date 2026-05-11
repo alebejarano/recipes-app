@@ -21,6 +21,7 @@ import {
   useStrategyUpdateNote,
 } from '@/features/notes/hooks/useStrategyNotes'
 import { getSafeReturnTo } from '@/lib/navigation'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 const FALLBACK_TITLE = 'Untitled note'
 
@@ -80,7 +81,7 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
                     router.back()
                   }
                 } catch (error: any) {
-                  Alert.alert('Delete failed', error?.message ?? 'Please try again.')
+                  Alert.alert('Delete failed', getUserFacingErrorMessage(error))
                 }
               },
             },
@@ -98,7 +99,7 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
         pinnedAt: isPinned ? null : new Date().toISOString(),
       })
     } catch (error: any) {
-      Alert.alert('Unable to update pin', error?.message ?? 'Please try again.')
+      Alert.alert('Unable to update pin', getUserFacingErrorMessage(error))
     }
   }
 

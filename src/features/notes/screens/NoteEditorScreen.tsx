@@ -26,6 +26,7 @@ import {
   useStrategyUpdateNote,
 } from '@/features/notes/hooks/useStrategyNotes'
 import { getSafeReturnTo } from '@/lib/navigation'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 const FOOTER_HEIGHT = 72
 
@@ -125,7 +126,7 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
         return
       }
     } catch (error: any) {
-      Alert.alert('Save failed', error?.message ?? 'Please try again.')
+      Alert.alert('Save failed', getUserFacingErrorMessage(error))
     }
   }
 
@@ -143,7 +144,7 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
             showSnackbar('Note deleted')
             router.back()
           } catch (error: any) {
-            Alert.alert('Delete failed', error?.message ?? 'Please try again.')
+            Alert.alert('Delete failed', getUserFacingErrorMessage(error))
           }
         },
       },

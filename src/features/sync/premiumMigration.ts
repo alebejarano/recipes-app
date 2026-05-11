@@ -3,6 +3,7 @@ import { getAllAsync, runSqlAsync } from '@/lib/sqlite'
 import { createNote } from '@/features/notes/api/notesRepo'
 import { createRecipe, ensureCloudRecipeImageUrl } from '@/features/recipes/api/recipesRepo'
 import { normalizeMealTimes } from '@/features/recipes/types/mealTimes'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 type LocalRecipeRow = {
   id: string
@@ -136,8 +137,10 @@ export async function migrateLocalDataToCloudOnPremium(userId: string): Promise<
         [ownerUserId, created.id, 0, now, now, row.id]
       )
       recipesUploaded += 1
-    } catch (error: any) {
-      failures.push(`Recipe "${row.title ?? row.id}": ${error?.message ?? 'unknown error'}`)
+    } catch (error) {
+      failures.push(
+        `A recipe could not be uploaded: ${getUserFacingErrorMessage(error, 'Please try again.')}`
+      )
     }
   }
 
@@ -161,8 +164,10 @@ export async function migrateLocalDataToCloudOnPremium(userId: string): Promise<
         [ownerUserId, created.id, 0, now, now, row.id]
       )
       notesUploaded += 1
-    } catch (error: any) {
-      failures.push(`Note "${row.title ?? row.id}": ${error?.message ?? 'unknown error'}`)
+    } catch (error) {
+      failures.push(
+        `A note could not be uploaded: ${getUserFacingErrorMessage(error, 'Please try again.')}`
+      )
     }
   }
 

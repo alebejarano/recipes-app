@@ -29,6 +29,7 @@ import { useStrategyRecipe, useStrategyUpdateRecipe } from '@/features/recipes/h
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
 import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 const FOOTER_HEIGHT = 72
 
@@ -118,7 +119,7 @@ export default function EditRecipeScreen() {
         await updateMutation.mutateAsync(values)
         router.back()
       } catch (e: any) {
-        Alert.alert('Save failed', e?.message ?? 'Please try again.')
+        Alert.alert('Save failed', getUserFacingErrorMessage(e))
       }
     },
     [updateMutation]

@@ -49,6 +49,7 @@ import {
 } from '@/features/subscription/constants/limits'
 import { useLimitQaOverrides } from '@/features/subscription/dev/limitQaOverrides'
 import { getPlanLimitTypeFromError } from '@/features/subscription/utils/limitErrors'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 export type CreateRecipeVariant = 'onboarding' | 'app'
 export type CreateRecipeEntry = 'scratch' | 'pdf'
@@ -273,10 +274,8 @@ export default function CreateRecipeScreen({
         posthog?.capture('import_duplicate_blocked', {
           source: 'document',
           route_mode: routeMode,
-          file_name: normalizedFile.name,
-          file_size: normalizedFile.size,
-          existing_title: duplicate.title ?? null,
-          existing_created_at: duplicate.createdAt,
+          file_kind: inferImportMimeType(normalizedFile.name),
+          has_existing_import: true,
         })
         Alert.alert(
           'File already imported',
@@ -358,7 +357,7 @@ export default function CreateRecipeScreen({
           setLimitModalType('recipes')
           return
         }
-        Alert.alert('Save failed', e?.message ?? 'Please try again.')
+        Alert.alert('Save failed', getUserFacingErrorMessage(e))
       }
     },
     [isDevMode, overrides.forceRecipeLimitErrorOnSave, overrides.recipeUsageBandOverride, pendingRetryKey, saveRecipe]
@@ -385,10 +384,8 @@ export default function CreateRecipeScreen({
           posthog?.capture('import_duplicate_blocked', {
             source: 'document',
             route_mode: routeMode,
-            file_name: file.name,
-            file_size: file.size,
-            existing_title: duplicate?.title ?? null,
-            existing_created_at: duplicate?.createdAt ?? null,
+            file_kind: inferImportMimeType(file.name),
+            has_existing_import: Boolean(duplicate),
           })
           Alert.alert(
             'File already imported',
@@ -419,7 +416,7 @@ export default function CreateRecipeScreen({
           setLimitModalType('storage')
           return
         }
-        Alert.alert('Save failed', error?.message ?? 'Please try again.')
+        Alert.alert('Save failed', getUserFacingErrorMessage(error))
       } finally {
         setIsUploadingPremiumImport(false)
       }

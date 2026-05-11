@@ -4,6 +4,7 @@ import { Alert } from 'react-native'
 import { type EmailPreferences, useAuth } from '@/features/auth/context/AuthContext'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
 import SettingsSection from '@/features/profile/components/SettingsSection'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 type EmailSettingsScreenProps = {
   onBack: () => void
@@ -60,7 +61,7 @@ export default function EmailSettingsScreen({ onBack }: EmailSettingsScreenProps
       void updateEmailPreferences(nextPreferences)
         .catch((e: any) => {
           setPreferences(previousPreferences)
-          Alert.alert('Unable to save email settings', e?.message ?? 'Please try again.')
+          Alert.alert('Unable to save email settings', getUserFacingErrorMessage(e))
         })
         .finally(() => {
           setIsSaving(false)

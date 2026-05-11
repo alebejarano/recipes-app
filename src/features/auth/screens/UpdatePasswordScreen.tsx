@@ -19,6 +19,7 @@ import {
   getPasswordPolicyIssues,
   isPasswordStrong,
 } from '@/features/auth/utils/passwordPolicy'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 
@@ -88,8 +89,8 @@ export default function UpdatePasswordScreen() {
       setSaved(true)
       setPassword('')
       setConfirmPassword('')
-    } catch (submitError: any) {
-      setError(submitError?.message ?? 'Unable to update your password.')
+    } catch (submitError) {
+      setError(getUserFacingErrorMessage(submitError, 'Unable to update your password.'))
     } finally {
       setSubmitting(false)
     }

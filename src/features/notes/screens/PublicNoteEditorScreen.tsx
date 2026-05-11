@@ -25,6 +25,7 @@ import {
   useUpdateLocalNote,
 } from '@/features/notes/hooks/useLocalNotes'
 import { getSafeReturnTo } from '@/lib/navigation'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 const FOOTER_HEIGHT = 72
 
@@ -116,7 +117,7 @@ export default function PublicNoteEditorScreen({ noteId }: NoteEditorScreenProps
         return
       }
     } catch (error: any) {
-      Alert.alert('Save failed', error?.message ?? 'Please try again.')
+      Alert.alert('Save failed', getUserFacingErrorMessage(error))
     }
   }
 
@@ -134,7 +135,7 @@ export default function PublicNoteEditorScreen({ noteId }: NoteEditorScreenProps
             showSnackbar('Note deleted')
             router.back()
           } catch (error: any) {
-            Alert.alert('Delete failed', error?.message ?? 'Please try again.')
+            Alert.alert('Delete failed', getUserFacingErrorMessage(error))
           }
         },
       },

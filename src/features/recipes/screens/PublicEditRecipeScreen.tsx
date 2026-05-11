@@ -23,6 +23,7 @@ import RecipeForm, {
 } from '@/features/recipes/components/RecipeForm'
 import { useLocalRecipe, useUpdateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
 import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 const FOOTER_HEIGHT = 72
 
@@ -87,7 +88,7 @@ export default function PublicEditRecipeScreen() {
         await updateMutation.mutateAsync(values)
         router.back()
       } catch (e: any) {
-        Alert.alert('Save failed', e?.message ?? 'Please try again.')
+        Alert.alert('Save failed', getUserFacingErrorMessage(e))
       }
     },
     [updateMutation]

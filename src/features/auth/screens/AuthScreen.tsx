@@ -21,6 +21,7 @@ import {
   getPasswordPolicyIssues,
   isPasswordStrong,
 } from '@/features/auth/utils/passwordPolicy'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 
@@ -144,16 +145,10 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
       // If we have a session, the user is authenticated.
       router.replace('/(auth)/(tabs)')
-    } catch (e: any) {
-      // Supabase errors usually have a message; keep it user-friendly
-      const message =
-        typeof e?.message === 'string'
-          ? e.message
-          : 'Something went wrong. Please try again.'
-
+    } catch (e) {
       setError({
         title: isLogin ? 'Sign in failed' : 'Registration failed',
-        message,
+        message: getUserFacingErrorMessage(e, 'Something went wrong. Please try again.'),
       })
     } finally {
       setLoading(false)

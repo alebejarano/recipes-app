@@ -6,6 +6,7 @@ import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native
 import { formatRelativeDay } from '@/features/home/utils/homeFormatters'
 import { useRecipeDocuments } from '@/features/recipes/hooks/useRecipeDocuments'
 import { getSafeReturnTo } from '@/lib/navigation'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
@@ -75,7 +76,7 @@ export default function RecipeDocumentsSegment({
           </View>
           <Text style={styles.emptyTitle}>Unable to load imports</Text>
           <Text style={styles.emptyBody}>
-            {docsQuery.error?.message ?? 'Please try again.'}
+            {getUserFacingErrorMessage(docsQuery.error, 'Please try again.')}
           </Text>
         </View>
       ) : data.length === 0 ? (

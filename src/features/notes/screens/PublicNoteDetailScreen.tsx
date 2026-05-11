@@ -16,6 +16,7 @@ import { createThemedStyles } from '@/styles/createStyles'
 import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import { useDeleteLocalNote, useLocalNote, useUpdateLocalNote } from '@/features/notes/hooks/useLocalNotes'
 import { getSafeReturnTo } from '@/lib/navigation'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 const FALLBACK_TITLE = 'Untitled note'
 
@@ -65,7 +66,7 @@ export default function PublicNoteDetailScreen({ noteId }: NoteDetailScreenProps
                     router.back()
                   }
                 } catch (error: any) {
-                  Alert.alert('Delete failed', error?.message ?? 'Please try again.')
+                  Alert.alert('Delete failed', getUserFacingErrorMessage(error))
                 }
               },
             },
@@ -83,7 +84,7 @@ export default function PublicNoteDetailScreen({ noteId }: NoteDetailScreenProps
         pinnedAt: isPinned ? null : new Date().toISOString(),
       })
     } catch (error: any) {
-      Alert.alert('Unable to update pin', error?.message ?? 'Please try again.')
+      Alert.alert('Unable to update pin', getUserFacingErrorMessage(error))
     }
   }
 

@@ -12,7 +12,8 @@
     "supabase": "supabase",
     "db:push": "supabase db push",
     "db:diff": "supabase db diff",
-    "db:status": "supabase migration list"
+    "db:status": "supabase migration list",
+    "security:edge-auth": "bash scripts/security-edge-functions-auth.sh"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

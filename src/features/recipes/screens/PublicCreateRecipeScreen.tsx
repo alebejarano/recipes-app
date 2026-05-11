@@ -43,6 +43,7 @@ import {
   IMPORT_IMAGE_TOO_LARGE_MESSAGE,
 } from '@/features/subscription/constants/limits'
 import { getPlanLimitTypeFromError } from '@/features/subscription/utils/limitErrors'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 const PENDING_LIMIT_RETRY_PREFIX = 'recipes:create:pending-retry:'
 const IMPORT_IMAGE_QUALITY_STEPS = [
@@ -208,10 +209,8 @@ export default function PublicCreateRecipeScreen({
         posthog?.capture('import_duplicate_blocked', {
           source: 'document',
           route_mode: 'public',
-          file_name: normalizedFile.name,
-          file_size: normalizedFile.size,
-          existing_title: duplicate.title ?? null,
-          existing_created_at: duplicate.createdAt,
+          file_kind: inferImportMimeType(normalizedFile.name),
+          has_existing_import: true,
         })
         Alert.alert(
           'File already imported',
@@ -257,7 +256,7 @@ export default function PublicCreateRecipeScreen({
           setLimitModalType('recipes')
           return
         }
-        Alert.alert('Save failed', e?.message ?? 'Please try again.')
+        Alert.alert('Save failed', getUserFacingErrorMessage(e))
       }
     },
     [pendingRetryKey, saveRecipe]
@@ -273,10 +272,8 @@ export default function PublicCreateRecipeScreen({
           posthog?.capture('import_duplicate_blocked', {
             source: 'document',
             route_mode: 'public',
-            file_name: file.name,
-            file_size: file.size,
-            existing_title: duplicate?.title ?? null,
-            existing_created_at: duplicate?.createdAt ?? null,
+            file_kind: inferImportMimeType(file.name),
+            has_existing_import: Boolean(duplicate),
           })
           Alert.alert(
             'File already imported',
@@ -305,7 +302,7 @@ export default function PublicCreateRecipeScreen({
           setLimitModalType('storage')
           return
         }
-        Alert.alert('Save failed', error?.message ?? 'Please try again.')
+        Alert.alert('Save failed', getUserFacingErrorMessage(error))
       }
     },
     [manageImportsPath, pendingRetryKey, posthog, saveDocument]

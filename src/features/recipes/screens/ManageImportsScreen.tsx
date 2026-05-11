@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Screen from '@/components/Screen'
 import { useDeleteManagedImport, useManagedImports } from '@/features/recipes/hooks/useManagedImports'
 import { getSafeReturnTo } from '@/lib/navigation'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
@@ -233,7 +234,7 @@ export default function ManageImportsScreen({ mode }: ManageImportsScreenProps) 
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>Unable to load imports</Text>
             <Text style={styles.emptyBody}>
-              {importsQuery.error?.message ?? 'Please try again.'}
+              {getUserFacingErrorMessage(importsQuery.error)}
             </Text>
           </View>
         ) : sortedImports.length === 0 ? (

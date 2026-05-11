@@ -1,0 +1,46 @@
+export function getUserFacingErrorMessage(error: unknown, fallback = 'Please try again.') {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === 'object' && error && 'message' in error && typeof error.message === 'string'
+        ? error.message
+        : ''
+  const normalized = message.toLowerCase()
+
+  if (!message) return fallback
+  if (
+    normalized.includes('network') ||
+    normalized.includes('failed to fetch') ||
+    normalized.includes('timed out') ||
+    normalized.includes('timeout') ||
+    normalized.includes('socket') ||
+    normalized.includes('abort')
+  ) {
+    return 'We could not connect. Check your internet connection and try again.'
+  }
+  if (
+    normalized.includes('jwt') ||
+    normalized.includes('session') ||
+    normalized.includes('not authenticated') ||
+    normalized.includes('unauthorized')
+  ) {
+    return 'Your session expired. Please sign in again.'
+  }
+  if (normalized.includes('duplicate') || normalized.includes('already exists')) {
+    return 'This already exists.'
+  }
+  if (normalized.includes('permission') || normalized.includes('row-level security')) {
+    return 'You do not have permission to do that.'
+  }
+  if (normalized.includes('storage limit') || normalized.includes('import limit')) {
+    return message
+  }
+  if (normalized.includes('file too large') || normalized.includes('larger than')) {
+    return message
+  }
+  if (normalized.includes('encrypted') || normalized.includes('password-protected')) {
+    return message
+  }
+
+  return message.length <= 140 ? message : fallback
+}

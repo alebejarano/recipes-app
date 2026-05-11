@@ -12,6 +12,7 @@ import {
   isPasswordStrong,
 } from '@/features/auth/utils/passwordPolicy'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { createThemedStyles } from '@/styles/createStyles'
 
 type PasswordSettingsScreenProps = {
@@ -30,7 +31,7 @@ function getPasswordUpdateErrorMessage(error: any) {
     return 'Choose a new password that is different from your current password.'
   }
 
-  return message || 'Unable to update your password.'
+  return getUserFacingErrorMessage(error, 'Unable to update your password.')
 }
 
 export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScreenProps) {

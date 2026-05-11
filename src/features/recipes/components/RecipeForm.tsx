@@ -24,6 +24,7 @@ import {
 
 import Button from '@/components/Button'
 import TagChip from '@/components/TagChip'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { uploadRecipeImage } from '@/features/recipes/api/recipesRepo'
 import MealTimeChip from '@/features/recipes/components/MealTimeChip'
 import {
@@ -498,7 +499,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         update('imageUrl', url)
         update('emoji', '')
       } catch (error: any) {
-        Alert.alert('Upload failed', error?.message ?? 'Please try again.')
+        Alert.alert('Upload failed', getUserFacingErrorMessage(error))
       } finally {
         setIsUploadingImage(false)
       }

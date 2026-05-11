@@ -26,6 +26,7 @@ import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { buildRecipeShareText, shareRecipeAsTextFile } from '@/features/recipes/utils/shareRecipe'
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
 import { getSafeReturnTo } from '@/lib/navigation'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 const FALLBACK_FOLDERS: string[] = []
 const FAVORITES_FOLDER_NAME = 'Favorites'
@@ -151,7 +152,7 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
                     router.back()
                   }
                 } catch (error: any) {
-                  Alert.alert('Delete failed', error?.message ?? 'Please try again.')
+                  Alert.alert('Delete failed', getUserFacingErrorMessage(error))
                 }
               },
             },
@@ -177,7 +178,7 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
         folders: recipe.folders,
       })
     } catch (shareError: any) {
-      Alert.alert('Share failed', shareError?.message ?? 'Unable to share this recipe right now.')
+      Alert.alert('Share failed', getUserFacingErrorMessage(shareError, 'Unable to share this recipe right now.'))
     }
   }
 
@@ -199,7 +200,7 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
         }),
       })
     } catch (shareError: any) {
-      Alert.alert('Share failed', shareError?.message ?? 'Unable to share this recipe right now.')
+      Alert.alert('Share failed', getUserFacingErrorMessage(shareError, 'Unable to share this recipe right now.'))
     }
   }
 
@@ -270,7 +271,7 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
     } catch (importError: any) {
       Alert.alert(
         'Unable to add ingredients',
-        importError?.message ?? 'Please try again.'
+        getUserFacingErrorMessage(importError)
       )
     } finally {
       setIsImportingIngredients(false)
@@ -296,7 +297,7 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
           <Text style={styles.loadingText}>Unable to load this recipe.</Text>
           {error ? (
             <Text style={styles.errorText}>
-              {error instanceof Error ? error.message : String(error)}
+              {getUserFacingErrorMessage(error)}
             </Text>
           ) : null}
           <TouchableOpacity
