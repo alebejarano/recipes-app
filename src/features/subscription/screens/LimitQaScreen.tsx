@@ -19,6 +19,28 @@ import { createThemedStyles } from '@/styles/createStyles'
 export default function LimitQaScreen() {
   const { overrides } = useLimitQaOverrides()
 
+  const resetReminderSuppression = async (options?: { showAlert?: boolean }) => {
+    try {
+      const keys = await AsyncStorage.getAllKeys()
+      const targetKeys = keys.filter(
+        (key) =>
+          key.startsWith(KITCHEN_ALMOST_FULL_RECIPE_DISMISS_UNTIL_PREFIX) ||
+          key.startsWith(KITCHEN_ALMOST_FULL_STORAGE_DISMISS_UNTIL_PREFIX)
+      )
+      if (targetKeys.length > 0) {
+        await AsyncStorage.multiRemove(targetKeys)
+      }
+      resetReminderSessionState()
+      if (options?.showAlert) {
+        Alert.alert('Reset complete', 'Reminder suppression has been reset for QA testing.')
+      }
+    } catch {
+      if (options?.showAlert) {
+        Alert.alert('Reset failed', 'Could not reset reminder suppression keys.')
+      }
+    }
+  }
+
   const cycleRecipeBand = async () => {
     const next =
       overrides.recipeUsageBandOverride === null
@@ -27,6 +49,9 @@ export default function LimitQaScreen() {
           ? 'atLimit'
           : null
     await setLimitQaOverrides({ recipeUsageBandOverride: next })
+    if (next === 'between95and99') {
+      await resetReminderSuppression()
+    }
   }
 
   const cycleStorageBand = async () => {
@@ -37,6 +62,9 @@ export default function LimitQaScreen() {
           ? 'atLimit'
           : null
     await setLimitQaOverrides({ storageUsageBandOverride: next })
+    if (next === 'between95and99') {
+      await resetReminderSuppression()
+    }
   }
 
   const toggleRecipeSaveForce = async () => {
@@ -49,24 +77,6 @@ export default function LimitQaScreen() {
     await setLimitQaOverrides({
       forceStorageLimitErrorOnImport: !overrides.forceStorageLimitErrorOnImport,
     })
-  }
-
-  const resetReminderSuppression = async () => {
-    try {
-      const keys = await AsyncStorage.getAllKeys()
-      const targetKeys = keys.filter(
-        (key) =>
-          key.startsWith(KITCHEN_ALMOST_FULL_RECIPE_DISMISS_UNTIL_PREFIX) ||
-          key.startsWith(KITCHEN_ALMOST_FULL_STORAGE_DISMISS_UNTIL_PREFIX)
-      )
-      if (targetKeys.length > 0) {
-        await AsyncStorage.multiRemove(targetKeys)
-      }
-      resetReminderSessionState()
-      Alert.alert('Reset complete', 'Reminder suppression has been reset for QA testing.')
-    } catch {
-      Alert.alert('Reset failed', 'Could not reset reminder suppression keys.')
-    }
   }
 
   return (
@@ -96,7 +106,7 @@ export default function LimitQaScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Reset</Text>
-        <Button variant="soft" size="md" onPress={() => { void resetReminderSuppression() }}>
+        <Button variant="soft" size="md" onPress={() => { void resetReminderSuppression({ showAlert: true }) }}>
           Reset 24h + session reminder suppression
         </Button>
         <Button variant="ghost" size="md" onPress={() => { void clearLimitQaOverrides() }}>

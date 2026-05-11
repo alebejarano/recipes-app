@@ -23,7 +23,7 @@ export default function DevCurrentPlanRoute() {
         Alert.alert('Manage subscription', 'Billing management will be available here soon.')
       }}
       onDeactivatePremiumForTest={() => {
-        void setPlan('free')
+        void setPlan('free', { localOverride: true })
       }}
       premiumPlanLabel={premiumPlanLabel}
       premiumNextRenewalLabel={premiumNextRenewalLabel}

@@ -16,13 +16,14 @@ type SubscriptionContextValue = {
   isLoaded: boolean
   recipesCount: number
   maxFreeRecipes: number
-  setPlan: (nextPlan: Plan, options?: { billingCycle?: BillingCycle }) => Promise<void>
+  setPlan: (nextPlan: Plan, options?: { billingCycle?: BillingCycle; localOverride?: boolean }) => Promise<void>
   setUpgradeStatus: (nextStatus: UpgradeStatus) => Promise<void>
 }
 
 const PLAN_KEY_PREFIX = 'subscription:plan:user:'
 const BILLING_CYCLE_KEY_PREFIX = 'subscription:billing-cycle:user:'
 const UPGRADE_STATUS_KEY_PREFIX = 'subscription:upgrade-status:user:'
+const PLAN_OVERRIDE_KEY_PREFIX = 'subscription:plan-override:user:'
 
 type UserEntitlementsRow = {
   plan: Plan
@@ -99,20 +100,25 @@ export function SubscriptionProvider({
 
       setIsLoaded(false)
       try {
-        const [rawPlan, rawBillingCycle, rawUpgradeStatus] = await Promise.all([
+        const [rawPlan, rawBillingCycle, rawUpgradeStatus, rawPlanOverride] = await Promise.all([
           AsyncStorage.getItem(`${PLAN_KEY_PREFIX}${user.id}`),
           AsyncStorage.getItem(`${BILLING_CYCLE_KEY_PREFIX}${user.id}`),
           AsyncStorage.getItem(`${UPGRADE_STATUS_KEY_PREFIX}${user.id}`),
+          AsyncStorage.getItem(`${PLAN_OVERRIDE_KEY_PREFIX}${user.id}`),
         ])
         const cachedPlan: Plan = rawPlan === 'premium' ? 'premium' : 'free'
         const cachedBillingCycle: BillingCycle = rawBillingCycle === 'year' ? 'year' : 'month'
         const cachedUpgradeStatus: UpgradeStatus =
           rawUpgradeStatus === 'running' || rawUpgradeStatus === 'failed' ? rawUpgradeStatus : 'idle'
+        const overridePlan: Plan | null =
+          rawPlanOverride === 'premium' || rawPlanOverride === 'free' ? rawPlanOverride : null
 
         if (!isMounted) return
-        setPlanState(cachedPlan)
+        setPlanState(overridePlan ?? cachedPlan)
         setBillingCycleState(cachedBillingCycle)
         setUpgradeStatusState(cachedUpgradeStatus)
+
+        if (overridePlan) return
 
         const { data: remoteEntitlements, error: remoteError } = await supabase
           .from('user_entitlements')
@@ -179,7 +185,7 @@ export function SubscriptionProvider({
   }, [user?.id])
 
   const setPlan = useCallback(
-    async (nextPlan: Plan, options?: { billingCycle?: BillingCycle }) => {
+    async (nextPlan: Plan, options?: { billingCycle?: BillingCycle; localOverride?: boolean }) => {
       if (!user?.id) {
         setPlanState('free')
         setBillingCycleState('month')
@@ -192,6 +198,9 @@ export function SubscriptionProvider({
         AsyncStorage.setItem(`${PLAN_KEY_PREFIX}${user.id}`, normalized),
         AsyncStorage.setItem(`${BILLING_CYCLE_KEY_PREFIX}${user.id}`, nextBillingCycle),
         AsyncStorage.setItem(`${UPGRADE_STATUS_KEY_PREFIX}${user.id}`, 'idle'),
+        options?.localOverride
+          ? AsyncStorage.setItem(`${PLAN_OVERRIDE_KEY_PREFIX}${user.id}`, normalized)
+          : AsyncStorage.removeItem(`${PLAN_OVERRIDE_KEY_PREFIX}${user.id}`),
       ])
       setPlanState(normalized)
       setBillingCycleState(nextBillingCycle)
