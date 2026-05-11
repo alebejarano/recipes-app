@@ -51,10 +51,7 @@ async function getAccessToken() {
 
 function requireFunctionEnv() {
   const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim()
-  const supabaseKey =
-    process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
-    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
-    ''
+  const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ?? ''
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error('Missing Supabase configuration for upload.')

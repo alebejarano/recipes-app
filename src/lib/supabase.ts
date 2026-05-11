@@ -16,10 +16,9 @@ const supabaseUrl = requireEnvVar(
   'Missing Supabase URL. Set EXPO_PUBLIC_SUPABASE_URL.'
 )
 const supabasePublishableKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-const supabaseLegacyAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
 const supabaseClientKey = requireEnvVar(
-  supabasePublishableKey ?? supabaseLegacyAnonKey,
-  'Missing Supabase client key. Set EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY (preferred).'
+  supabasePublishableKey,
+  'Missing Supabase client key. Set EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY.'
 )
 
 const ExpoSecureStoreAdapter = {

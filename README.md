@@ -89,8 +89,7 @@ eas build --profile production
 Practical rules for this app:
 
 - `EXPO_PUBLIC_SUPABASE_URL` should point to your dev Supabase project in development and your prod Supabase project in production.
-- `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is the preferred client key used by [src/lib/supabase.ts](/Users/alejandra/projects/recipes-app/src/lib/supabase.ts:18).
-- `EXPO_PUBLIC_SUPABASE_ANON_KEY` is kept only as a fallback for compatibility.
+- `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is the only Supabase client key used by [src/lib/supabase.ts](/Users/alejandra/projects/recipes-app/src/lib/supabase.ts:18).
 - `EXPO_PUBLIC_ENABLE_POSTHOG=0` is a sensible default for local dev.
 
 Do not commit:
