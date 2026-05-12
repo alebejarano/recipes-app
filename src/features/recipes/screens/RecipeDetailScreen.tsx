@@ -368,6 +368,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
       await updateMutation.mutateAsync(
         buildFavoriteTogglePayload(recipe, nextFolderNames)
       )
+      showSnackbar(isFavorited ? 'Removed from favorites' : 'Added to favorites')
     } catch (favoriteError: any) {
       Alert.alert(
         'Unable to update favorites',
@@ -711,7 +712,7 @@ const styles = createThemedStyles((theme) => ({
   iconButton: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: theme.radii.full,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.colors.card,

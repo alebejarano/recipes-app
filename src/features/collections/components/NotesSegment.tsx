@@ -8,6 +8,7 @@ import { formatRelativeDay } from '@/features/home/utils/homeFormatters';
 import { useStrategyNotesList } from '@/features/notes/hooks/useStrategyNotes';
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode';
 import { getSafeReturnTo } from '@/lib/navigation';
+import { getUserFacingErrorMessage } from '@/lib/userFacingError';
 import { createThemedStyles } from '@/styles/createStyles';
 import { theme } from '@/styles/theme';
 
@@ -60,6 +61,16 @@ export default function NotesSegment({
         <View style={styles.loadingState}>
           <ActivityIndicator size="small" color={styles.loadingText.color} />
           <Text style={styles.loadingText}>Loading notes…</Text>
+        </View>
+      ) : notesQuery.isError ? (
+        <View style={styles.emptyState}>
+          <View style={styles.emptyIcon}>
+            <Feather name="alert-circle" size={22} color={theme.colors.mutedForeground} />
+          </View>
+          <Text style={styles.emptyTitle}>Unable to load notes</Text>
+          <Text style={styles.emptyBody}>
+            {getUserFacingErrorMessage(notesQuery.error)}
+          </Text>
         </View>
       ) : data.length === 0 ? (
         <View style={styles.emptyState}>

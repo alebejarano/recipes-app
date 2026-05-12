@@ -12,6 +12,7 @@ import MealTimeChip from '@/features/recipes/components/MealTimeChip'
 import { useStrategyDeleteRecipe, useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
 import { RECIPE_MEAL_TIMES, type RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { getSafeReturnTo } from '@/lib/navigation'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 type ManageRecipesScreenProps = {
   mode?: 'auth' | 'public' | 'dev'
@@ -313,6 +314,13 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
             <ActivityIndicator size="small" color={styles.loadingText.color} />
             <Text style={styles.loadingText}>Loading recipes…</Text>
           </View>
+        ) : recipesQuery.isError ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>Unable to load recipes</Text>
+            <Text style={styles.emptyBody}>
+              {getUserFacingErrorMessage(recipesQuery.error)}
+            </Text>
+          </View>
         ) : sortedRecipes.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>No recipes to manage</Text>
@@ -454,7 +462,7 @@ const styles = createThemedStyles((theme) => ({
   backButton: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: theme.radii.full,
     alignItems: 'center',
     justifyContent: 'center',
   },

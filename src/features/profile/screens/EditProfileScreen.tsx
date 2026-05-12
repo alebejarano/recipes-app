@@ -4,12 +4,14 @@ import { Alert, Pressable, Text, TextInput, View } from 'react-native'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
+import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { createThemedStyles } from '@/styles/createStyles'
 
 export default function EditProfileScreen() {
   const { user, updateEmailAddress, updateProfileName } = useAuth()
+  const showSnackbar = useTransientSnackbarStore((state) => state.show)
   const initialName = useMemo(() => {
     const metadataName = user?.user_metadata?.display_name
     if (typeof metadataName === 'string' && metadataName.trim()) return metadataName.trim()
@@ -59,6 +61,8 @@ export default function EditProfileScreen() {
         } else {
           Alert.alert('Profile updated', 'Your email has been updated.')
         }
+      } else {
+        showSnackbar('Profile updated')
       }
       router.replace(profileRoute)
     } catch (error: any) {

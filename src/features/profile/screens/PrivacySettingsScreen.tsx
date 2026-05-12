@@ -5,20 +5,17 @@ import { Alert, Text } from 'react-native'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
 import SettingsSection from '@/features/profile/components/SettingsSection'
-import { exportUserData } from '@/features/profile/services/exportUserData'
-import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { createThemedStyles } from '@/styles/createStyles'
 
 type PrivacySettingsScreenProps = {
   onBack: () => void
+  exportRoute: string
 }
 
-export default function PrivacySettingsScreen({ onBack }: PrivacySettingsScreenProps) {
+export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySettingsScreenProps) {
   const { user, deleteAccount } = useAuth()
-  const { strategy } = useStorageStrategy()
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
-  const [isExportingData, setIsExportingData] = useState(false)
   const hasAccount = Boolean(user?.id)
 
   const performDeleteAccount = useCallback(async () => {
@@ -53,27 +50,6 @@ export default function PrivacySettingsScreen({ onBack }: PrivacySettingsScreenP
     )
   }, [hasAccount, isDeletingAccount, performDeleteAccount])
 
-  const onExportDataPress = useCallback(async () => {
-    if (isExportingData) return
-
-    setIsExportingData(true)
-    try {
-      await exportUserData({
-        userId: user?.id ?? null,
-        email: user?.email ?? null,
-        displayName: typeof user?.user_metadata?.display_name === 'string'
-          ? user.user_metadata.display_name
-          : null,
-        storageStrategy: strategy,
-      })
-      Alert.alert('Export ready', 'Your data export has been prepared and opened in the share sheet.')
-    } catch (error: any) {
-      Alert.alert('Unable to export data', getUserFacingErrorMessage(error))
-    } finally {
-      setIsExportingData(false)
-    }
-  }, [isExportingData, strategy, user?.email, user?.id, user?.user_metadata?.display_name])
-
   const unavailableSubtitle = 'Create an account to manage this setting'
   const settingsItems = useMemo(
     () => [
@@ -92,12 +68,11 @@ export default function PrivacySettingsScreen({ onBack }: PrivacySettingsScreenP
         id: 'export',
         type: 'link' as const,
         icon: 'download' as const,
-        title: isExportingData ? 'Preparing export…' : 'Export recipes & data',
+        title: 'Export recipes & data',
         subtitle: hasAccount
           ? 'Download a copy of your recipes and account data.'
           : 'Download a copy of your recipes and data stored on this device.',
-        onPress: onExportDataPress,
-        disabled: isExportingData,
+        onPress: () => router.push(exportRoute as any),
       },
       {
         id: 'policy',
@@ -116,7 +91,7 @@ export default function PrivacySettingsScreen({ onBack }: PrivacySettingsScreenP
         onPress: () => router.push('/(public)/terms'),
       },
     ],
-    [hasAccount, isExportingData, onExportDataPress]
+    [exportRoute, hasAccount]
   )
   const dangerItems = useMemo(
     () => [

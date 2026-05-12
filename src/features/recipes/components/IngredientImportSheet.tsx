@@ -145,8 +145,8 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: 'rgba(17, 24, 39, 0.35)',
   },
   sheet: {
-    borderTopLeftRadius: theme.radii.xl,
-    borderTopRightRadius: theme.radii.xl,
+    borderTopLeftRadius: theme.radii.xxl,
+    borderTopRightRadius: theme.radii.xxl,
     backgroundColor: theme.colors.background,
     borderWidth: 1,
     borderColor: theme.colors.border,

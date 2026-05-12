@@ -112,6 +112,7 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
     try {
       if (isEditing) {
         await updateMutation.mutateAsync({ title, content })
+        showSnackbar('Note saved')
         router.replace({
           pathname: detailPath,
           params: { id: resolvedNoteId, returnTo: returnToParam },
@@ -119,6 +120,7 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
         return
       } else {
         const note = await createMutation.mutateAsync({ title, content })
+        showSnackbar('Note created')
         router.replace({
           pathname: detailPath,
           params: { id: note.id, returnTo: returnToParam },

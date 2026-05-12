@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons'
 import { router, useSegments } from 'expo-router'
 import React, { useMemo, useState } from 'react'
-import { Alert, Pressable, Text, TextInput, View } from 'react-native'
+import { Pressable, Text, TextInput, View } from 'react-native'
 
 import { FAQ_SECTIONS } from '@/features/help/content/faq'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
@@ -100,16 +100,11 @@ export default function FaqScreen() {
 
       <View style={styles.supportCard}>
         <Text style={styles.supportTitle}>Still need help?</Text>
-        <Text style={styles.supportBody}>Our support team usually replies within a few hours.</Text>
-
-        <Pressable
-          onPress={() => Alert.alert('Contact Support', 'Support contact will be available soon.')}
-          style={({ pressed }) => [styles.supportButton, pressed && styles.questionPressed]}
-          accessibilityRole="button"
-          accessibilityLabel="Contact support"
-        >
-          <Text style={styles.supportButtonText}>Contact Support</Text>
-        </Pressable>
+        <Text style={styles.supportBody}>
+          Send us a note and we will help with account questions, exports, subscriptions, or
+          anything that does not look right.
+        </Text>
+        <Text style={styles.supportEmail}>hello@dropsauce.app</Text>
       </View>
     </ProfileSubpageLayout>
   )
@@ -227,20 +222,12 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
     textAlign: 'center',
   },
-  supportButton: {
+  supportEmail: {
     marginTop: theme.spacing.xs,
-    minHeight: 54,
-    minWidth: 220,
-    borderRadius: theme.radii.full,
-    backgroundColor: theme.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: theme.spacing.xl,
-  },
-  supportButtonText: {
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.xl,
     lineHeight: theme.lineHeight.xl,
-    color: theme.colors.primaryForeground,
+    color: theme.colors.primary,
+    textAlign: 'center',
   },
 }))

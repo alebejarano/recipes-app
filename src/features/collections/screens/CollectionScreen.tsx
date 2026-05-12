@@ -24,6 +24,7 @@ import CollectionTile from '@/features/collections/components/CollectionTile'
 import NewCollectionTile from '@/features/collections/components/NewCollectionTile'
 import RecipeSegmentedTabs from '@/features/collections/components/RecipeSegmentedTabs'
 import SegmentedTabs from '@/features/collections/components/SegmentedTabs'
+import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import KitchenAlmostFullCard from '@/features/recipes/components/KitchenAlmostFullCard'
 
 // NEW: segment pages
@@ -70,6 +71,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   const isPublic = resolvedMode === 'public'
   const isDevMode = resolvedMode === 'dev'
   const { user } = useAuth()
+  const showSnackbar = useTransientSnackbarStore((state) => state.show)
   const { plan } = useContext(SubscriptionContext)
   const { overrides } = useLimitQaOverrides()
   const { shouldUseLocalData } = useStorageDataMode(resolvedMode)
@@ -258,34 +260,31 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     recipeSegment === 'documents'
       ? ''
       : 'Recipes are grouped automatically based on tags'
+  const isCreatingFolder = createFolderMutation.isPending
+  const showFab = segment === 'recipes'
 
   const fabLabel =
-    segment === 'recipes'
-      ? recipeSegment === 'documents'
-        ? 'Import file'
-        : 'Create folder'
-      : 'Create collection'
+    recipeSegment === 'documents'
+      ? 'Import file'
+      : 'Create folder'
 
   const onPressFab = () => {
-    if (segment === 'recipes') {
-      if (recipeSegment === 'documents') {
-        router.push({
-          pathname: isPublic
-            ? '/(public)/recipes/create'
-            : resolvedMode === 'dev'
-              ? '/(dev)/recipes/create'
-              : '/(auth)/recipes/create',
-          params: { entry: 'pdf' },
-        })
-        return
-      }
-      setIsCreateFolderOpen(true)
+    if (recipeSegment === 'documents') {
+      router.push({
+        pathname: isPublic
+          ? '/(public)/recipes/create'
+          : resolvedMode === 'dev'
+            ? '/(dev)/recipes/create'
+            : '/(auth)/recipes/create',
+        params: { entry: 'pdf' },
+      })
       return
     }
-    // TODO: open create collection / add recipe flow
+    setIsCreateFolderOpen(true)
   }
 
   const handleCreateFolder = async () => {
+    if (isCreatingFolder) return
     const name = newFolderName.trim()
     if (!name) return
     const emoji = newFolderEmoji.trim() || '📁'
@@ -320,6 +319,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     setNewFolderName('')
     setNewFolderEmoji('')
     setIsCreateFolderOpen(false)
+    showSnackbar('Folder created')
   }
 
   return (
@@ -331,14 +331,17 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
           <Text style={styles.subtitle}>Everything organized in one place</Text>
         </View>
 
-        <Pressable
-          onPress={onPressFab}
-          style={styles.fab}
-          accessibilityRole="button"
-          accessibilityLabel={fabLabel}
-        >
-          <Feather name="plus" size={22} color={theme.colors.primaryForeground} />
-        </Pressable>
+        {showFab ? (
+          <Pressable
+            onPress={onPressFab}
+            style={styles.fab}
+            accessibilityRole="button"
+            accessibilityLabel={fabLabel}
+            disabled={isCreatingFolder}
+          >
+            <Feather name="plus" size={22} color={theme.colors.primaryForeground} />
+          </Pressable>
+        ) : null}
       </View>
 
       {/* Segmented control */}
@@ -523,6 +526,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
                 placeholderTextColor={styles.modalPlaceholder.color}
                 style={styles.modalInput}
                 autoCapitalize="none"
+                editable={!isCreatingFolder}
               />
             </View>
 
@@ -537,6 +541,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
                 autoCapitalize="words"
                 returnKeyType="done"
                 onSubmitEditing={handleCreateFolder}
+                editable={!isCreatingFolder}
               />
             </View>
 
@@ -544,14 +549,16 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
               <Pressable
                 onPress={() => setIsCreateFolderOpen(false)}
                 style={[styles.modalButton, styles.modalButtonGhost]}
+                disabled={isCreatingFolder}
               >
                 <Text style={[styles.modalButtonText, styles.modalButtonTextGhost]}>Cancel</Text>
               </Pressable>
               <Pressable
                 onPress={handleCreateFolder}
                 style={[styles.modalButton, styles.modalButtonPrimary]}
+                disabled={isCreatingFolder}
               >
-                <Text style={styles.modalButtonText}>Create</Text>
+                <Text style={styles.modalButtonText}>{isCreatingFolder ? 'Creating…' : 'Create'}</Text>
               </Pressable>
             </View>
           </View>
@@ -643,7 +650,7 @@ const styles = createThemedStyles((theme) => ({
   successClose: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: theme.radii.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -733,7 +740,7 @@ const styles = createThemedStyles((theme) => ({
   },
   modalCard: {
     width: '100%',
-    borderRadius: theme.radii.lg,
+    borderRadius: theme.radii.xxl,
     backgroundColor: theme.colors.background,
     padding: theme.spacing.lg,
     gap: theme.spacing.md,

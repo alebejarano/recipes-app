@@ -79,7 +79,7 @@ const styles = createThemedStyles((theme) => ({
   card: {
     width: '100%',
     maxWidth: 420,
-    borderRadius: theme.radii.xl,
+    borderRadius: theme.radii.xxl,
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,

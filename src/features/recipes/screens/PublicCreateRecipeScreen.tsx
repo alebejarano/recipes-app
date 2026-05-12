@@ -1,7 +1,6 @@
 import { Feather } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { router, useLocalSearchParams } from 'expo-router'
-import { usePostHog } from 'posthog-react-native'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
@@ -103,7 +102,6 @@ export default function PublicCreateRecipeScreen({
   entry,
 }: PublicCreateRecipeScreenProps) {
   const insets = useSafeAreaInsets()
-  const posthog = usePostHog()
   const { retryAfterUpgrade, folder } = useLocalSearchParams<{
     retryAfterUpgrade?: string
     folder?: string | string[]
@@ -206,12 +204,6 @@ export default function PublicCreateRecipeScreen({
         : file
       const duplicate = await findDuplicateRecipeDocumentByFile({ uri: normalizedFile.uri })
       if (duplicate) {
-        posthog?.capture('import_duplicate_blocked', {
-          source: 'document',
-          route_mode: 'public',
-          file_kind: inferImportMimeType(normalizedFile.name),
-          has_existing_import: true,
-        })
         Alert.alert(
           'File already imported',
           formatDuplicateImportMessage(duplicate),
@@ -240,7 +232,7 @@ export default function PublicCreateRecipeScreen({
         },
       })
     },
-    [clearPendingRetry, documentMutation, manageImportsPath, posthog]
+    [clearPendingRetry, documentMutation, manageImportsPath]
   )
 
   const handleSubmit = useCallback(
@@ -269,12 +261,6 @@ export default function PublicCreateRecipeScreen({
       } catch (error: any) {
         if (error?.code === DUPLICATE_RECIPE_DOCUMENT_CODE) {
           const duplicate = await findDuplicateRecipeDocumentByFile({ uri: file.uri })
-          posthog?.capture('import_duplicate_blocked', {
-            source: 'document',
-            route_mode: 'public',
-            file_kind: inferImportMimeType(file.name),
-            has_existing_import: Boolean(duplicate),
-          })
           Alert.alert(
             'File already imported',
             duplicate
@@ -305,7 +291,7 @@ export default function PublicCreateRecipeScreen({
         Alert.alert('Save failed', getUserFacingErrorMessage(error))
       }
     },
-    [manageImportsPath, pendingRetryKey, posthog, saveDocument]
+    [manageImportsPath, pendingRetryKey, saveDocument]
   )
 
   const triggerSave = useCallback(() => {

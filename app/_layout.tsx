@@ -86,6 +86,7 @@ function PostHogGate({
     <PostHogProvider
       key={'posthog-on'}
       apiKey={apiKey}
+      autocapture={false}
       options={{
         host,
       }}

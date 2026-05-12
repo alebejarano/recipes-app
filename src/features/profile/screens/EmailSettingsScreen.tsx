@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Alert } from 'react-native'
 
 import { type EmailPreferences, useAuth } from '@/features/auth/context/AuthContext'
+import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
 import SettingsSection from '@/features/profile/components/SettingsSection'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
@@ -33,6 +34,7 @@ function getSavedEmailPreferences(value: unknown): EmailPreferences {
 
 export default function EmailSettingsScreen({ onBack }: EmailSettingsScreenProps) {
   const { updateEmailPreferences, user } = useAuth()
+  const showSnackbar = useTransientSnackbarStore((state) => state.show)
   const hasAccountEmail = Boolean(user?.email)
   const savedPreferences = useMemo(
     () => getSavedEmailPreferences(user?.user_metadata?.email_updates),
@@ -59,6 +61,9 @@ export default function EmailSettingsScreen({ onBack }: EmailSettingsScreenProps
       setIsSaving(true)
 
       void updateEmailPreferences(nextPreferences)
+        .then(() => {
+          showSnackbar('Email settings updated')
+        })
         .catch((e: any) => {
           setPreferences(previousPreferences)
           Alert.alert('Unable to save email settings', getUserFacingErrorMessage(e))
@@ -67,7 +72,7 @@ export default function EmailSettingsScreen({ onBack }: EmailSettingsScreenProps
           setIsSaving(false)
         })
     },
-    [hasAccountEmail, isSaving, preferences, updateEmailPreferences]
+    [hasAccountEmail, isSaving, preferences, showSnackbar, updateEmailPreferences]
   )
 
   return (

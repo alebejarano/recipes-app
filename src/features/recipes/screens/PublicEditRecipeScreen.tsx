@@ -13,6 +13,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
+import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import { createThemedStyles } from '@/styles/createStyles'
 
 import { useCreateLocalFolder, useLocalFoldersList } from '@/features/folders/hooks/useLocalFolders'
@@ -70,6 +71,7 @@ export default function PublicEditRecipeScreen() {
   const { id } = useLocalSearchParams<{ id?: string; returnTo?: string }>()
   const recipeId = id ?? ''
   const insets = useSafeAreaInsets()
+  const showSnackbar = useTransientSnackbarStore((state) => state.show)
 
   const { data: recipe, isLoading, isError } = useLocalRecipe(recipeId)
   const updateMutation = useUpdateLocalRecipe(recipeId)
@@ -86,12 +88,13 @@ export default function PublicEditRecipeScreen() {
     async (values: RecipeFormSubmitValues) => {
       try {
         await updateMutation.mutateAsync(values)
+        showSnackbar('Recipe saved')
         router.back()
       } catch (e: any) {
         Alert.alert('Save failed', getUserFacingErrorMessage(e))
       }
     },
-    [updateMutation]
+    [showSnackbar, updateMutation]
   )
 
   const triggerSave = useCallback(() => {

@@ -83,6 +83,7 @@ export default function PublicNoteDetailScreen({ noteId }: NoteDetailScreenProps
       await updateMutation.mutateAsync({
         pinnedAt: isPinned ? null : new Date().toISOString(),
       })
+      showSnackbar(isPinned ? 'Note unpinned' : 'Note pinned')
     } catch (error: any) {
       Alert.alert('Unable to update pin', getUserFacingErrorMessage(error))
     }
@@ -208,7 +209,7 @@ const styles = createThemedStyles((theme) => ({
   iconButton: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: theme.radii.full,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.colors.card,

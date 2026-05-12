@@ -21,7 +21,7 @@ export default function PremiumRoute() {
 
   const handleUpgrade = async (billingCycle: 'month' | 'year') => {
     if (!user?.id) {
-      Alert.alert('Create account first', 'Sign in or create an account to test Premium activation.')
+      Alert.alert('Create account first', 'Sign in or create an account to upgrade to Premium.')
       return
     }
     if (isUpgrading) return

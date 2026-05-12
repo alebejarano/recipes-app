@@ -14,13 +14,16 @@ import React, {
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
 import TagChip from '@/components/TagChip'
@@ -178,10 +181,12 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   },
   ref
 ) {
+  const insets = useSafeAreaInsets()
   const [values, setValues] = useState<RecipeFormValues>(
     initialValues ?? createEmptyRecipeFormValues()
   )
   const [folderInput, setFolderInput] = useState('')
+  const [isFolderInputFocused, setIsFolderInputFocused] = useState(false)
   const [isEmojiModalOpen, setIsEmojiModalOpen] = useState(false)
   const [emojiDraft, setEmojiDraft] = useState('')
   const [isUploadingImage, setIsUploadingImage] = useState(false)
@@ -920,6 +925,23 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
               </Text>
             )}
 
+            {isFolderInputFocused && normalizedSuggestedFolders.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.suggestedFoldersScroll}
+                keyboardShouldPersistTaps="handled"
+              >
+                {normalizedSuggestedFolders.map((folder) => (
+                  <TagChip
+                    key={`focused-${folder.label}`}
+                    label={`${folder.emoji ?? '📁'} ${folder.label}`}
+                    onPress={() => addFolder(folder.label, { silentIfExisting: true })}
+                  />
+                ))}
+              </ScrollView>
+            ) : null}
+
             <View style={styles.folderInputRow}>
               <TextInput
                 value={folderInput}
@@ -930,6 +952,10 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
                 editable={!isSubmitting}
                 autoCapitalize="words"
                 returnKeyType="done"
+                onFocus={() => {
+                  setIsFolderInputFocused(true)
+                }}
+                onBlur={() => setIsFolderInputFocused(false)}
                 onSubmitEditing={() => addFolder()}
               />
               <Button
@@ -957,7 +983,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
               </View>
             ) : null}
 
-            {normalizedSuggestedFolders.length > 0 ? (
+            {!isFolderInputFocused && normalizedSuggestedFolders.length > 0 ? (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -999,8 +1025,11 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         transparent
         onRequestClose={() => setIsEmojiModalOpen(false)}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
+        <KeyboardAvoidingView
+          style={styles.modalBackdrop}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={[styles.modalCard, { paddingBottom: Math.max(insets.bottom, 24) + 16 }]}>
             <Text style={styles.modalTitle}>Pick an emoji</Text>
             <Text style={styles.modalSubtitle}>
               Choose a single emoji to represent this recipe.
@@ -1034,7 +1063,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
               </Button>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   )
@@ -1139,8 +1168,8 @@ const styles = createThemedStyles((theme) => ({
   },
   modalCard: {
     backgroundColor: theme.colors.card,
-    borderTopLeftRadius: theme.radii.lg,
-    borderTopRightRadius: theme.radii.lg,
+    borderTopLeftRadius: theme.radii.xxl,
+    borderTopRightRadius: theme.radii.xxl,
     padding: theme.spacing.lg,
     gap: theme.spacing.sm,
   },
@@ -1179,7 +1208,7 @@ const styles = createThemedStyles((theme) => ({
   stepBadge: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: theme.radii.full,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.colors.creamDark,

@@ -29,9 +29,9 @@ const POLICY_SECTIONS: readonly PolicySection[] = [
             'The data controller responsible for processing personal data is:',
         ],
         details: [
-            'Name: Alejandra Bejarano Alarcon',
+            'Name: Anthony Lajusticia',
             'Location: Spain',
-            'Contact: [your email]',
+            'Contact: hello@dropsauce.app',
         ],
         footer:
             'This policy complies with the General Data Protection Regulation (GDPR) and the Organic Law on Data Protection and Digital Rights Guarantee (LOPDGDD).',
@@ -42,14 +42,15 @@ const POLICY_SECTIONS: readonly PolicySection[] = [
             {
                 heading: 'Account Information',
                 paragraphs: [
-                    'If you choose to create an account, we collect your email address to create and manage your account.',
-                    'This information is used only to operate the service and communicate with you about your account.',
+                    'If you choose to create an account, we collect your email address and name to create and manage your account.',
+                    'This information is used only to operate the service, manage your account, and communicate with you about account or app-functioning matters such as password reset emails, confirmation links, and important service updates.',
                 ],
             },
             {
                 heading: 'Anonymous Onboarding Feedback',
                 paragraphs: [
                     'During onboarding, users may be asked what brings them to the app or what they hope to use it for.',
+                    'Anonymous onboarding responses may be processed through our analytics provider to understand general user needs and improve the application.',
                 ],
                 bullets: [
                     'is collected anonymously',
@@ -73,13 +74,16 @@ const POLICY_SECTIONS: readonly PolicySection[] = [
             'Provide access to the application',
             'Improve the app and develop new features',
             'Understand general user interests through anonymous onboarding responses',
-            'Communicate important service updates',
-            'Send optional product or marketing emails if you have given consent',
+            'Communicate account, security, and service updates needed for the app to function',
+            'Send optional product or marketing emails only if you have actively opted in',
         ],
     },
     {
         title: '4. Email Communications',
-        paragraphs: ['If you create an account, you may choose to receive emails about:'],
+        paragraphs: [
+            'If you create an account, we may send necessary service emails for app-functioning purposes, such as account confirmation, password reset, email change confirmation, security, and important service messages.',
+            'Marketing and product update emails are off by default. You may choose to opt in from your profile settings to receive emails about:',
+        ],
         bullets: [
             'product updates',
             'new features',
@@ -94,7 +98,7 @@ const POLICY_SECTIONS: readonly PolicySection[] = [
         groups: [
             {
                 heading: 'Contract',
-                paragraphs: ['To provide and manage user accounts.'],
+                paragraphs: ['To provide and manage user accounts and send necessary account or service emails.'],
             },
             {
                 heading: 'Consent',
@@ -134,7 +138,7 @@ const POLICY_SECTIONS: readonly PolicySection[] = [
             'Withdraw consent at any time',
         ],
         footer:
-            'Requests may be made by contacting: [your email]. Users also have the right to lodge a complaint with their local data protection authority.',
+            'Requests may be made by contacting: hello@dropsauce.app. Users also have the right to lodge a complaint with their local data protection authority.',
     },
     {
         title: '9. Changes to This Policy',

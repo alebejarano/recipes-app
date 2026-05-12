@@ -3,7 +3,6 @@
 import { Feather } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { router, useLocalSearchParams, useSegments } from 'expo-router'
-import { usePostHog } from 'posthog-react-native'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -114,7 +113,6 @@ export default function CreateRecipeScreen({
 }: CreateRecipeScreenProps) {
   const insets = useSafeAreaInsets()
   const queryClient = useQueryClient()
-  const posthog = usePostHog()
   const { user } = useAuth()
   const { retryAfterUpgrade, folder } = useLocalSearchParams<{
     retryAfterUpgrade?: string
@@ -271,12 +269,6 @@ export default function CreateRecipeScreen({
         ? await findDuplicateRecipeDocumentByFile({ uri: normalizedFile.uri })
         : null
       if (duplicate) {
-        posthog?.capture('import_duplicate_blocked', {
-          source: 'document',
-          route_mode: routeMode,
-          file_kind: inferImportMimeType(normalizedFile.name),
-          has_existing_import: true,
-        })
         Alert.alert(
           'File already imported',
           formatDuplicateImportMessage(duplicate),
@@ -334,7 +326,7 @@ export default function CreateRecipeScreen({
         },
       })
     },
-    [clearPendingRetry, collectionsPath, documentMutation, importPlan, manageImportsPath, posthog, queryClient, routeMode, shouldUseLocalData]
+    [clearPendingRetry, collectionsPath, documentMutation, importPlan, manageImportsPath, queryClient, shouldUseLocalData]
   )
 
   const handleSubmit = useCallback(
@@ -381,12 +373,6 @@ export default function CreateRecipeScreen({
             (shouldUseLocalData
               ? await findDuplicateRecipeDocumentByFile({ uri: file.uri })
               : null)
-          posthog?.capture('import_duplicate_blocked', {
-            source: 'document',
-            route_mode: routeMode,
-            file_kind: inferImportMimeType(file.name),
-            has_existing_import: Boolean(duplicate),
-          })
           Alert.alert(
             'File already imported',
             duplicate
@@ -421,7 +407,7 @@ export default function CreateRecipeScreen({
         setIsUploadingPremiumImport(false)
       }
     },
-    [collectionsPath, isDevMode, manageImportsPath, overrides.forceStorageLimitErrorOnImport, overrides.storageUsageBandOverride, pendingRetryKey, posthog, routeMode, saveDocument, shouldUseLocalData]
+    [collectionsPath, isDevMode, manageImportsPath, overrides.forceStorageLimitErrorOnImport, overrides.storageUsageBandOverride, pendingRetryKey, saveDocument, shouldUseLocalData]
   )
 
   const handleCreateFolder = useCallback(

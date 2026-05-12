@@ -1,7 +1,13 @@
 import React from 'react'
-import { Stack } from 'expo-router'
+import { Redirect, Stack } from 'expo-router'
+
+import { isDevelopmentAppEnv } from '@/lib/appEnv'
 
 export default function DevLayout() {
+  if (!__DEV__ && !isDevelopmentAppEnv) {
+    return <Redirect href="/" />
+  }
+
   return (
     <Stack
       screenOptions={{

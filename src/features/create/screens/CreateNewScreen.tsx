@@ -185,7 +185,7 @@ const styles = createThemedStyles((theme) => ({
     paddingHorizontal: 0,
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: theme.radii.full,
     alignItems: 'center',
     justifyContent: 'center',
   },

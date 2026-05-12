@@ -86,7 +86,7 @@ export default function ProfileScreen() {
         onPlanDetailsPress: () => router.push('/current-plan'),
         onManageOrUpgradePress: () =>
           accountPlan === 'premium'
-            ? router.push('/current-plan?focus=billing')
+            ? router.push('/(auth)/settings/subscription')
             : router.push('/premium'),
       }),
     [accountPlan]

@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons'
 import React from 'react'
-import { Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native'
 
 import Button from '@/components/Button'
 import Screen from '@/components/Screen'
@@ -12,6 +12,7 @@ import {
   PREMIUM_PLAN_MAX_STORAGE_BYTES,
 } from '@/features/subscription/constants/limits'
 import { buildFreePlanUsageSnapshot } from '@/features/subscription/utils/planUsage'
+import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
@@ -22,10 +23,6 @@ type CurrentPlanScreenProps = {
   onUpgrade: () => void
   onManageExistingRecipes?: () => void
   onManageSubscription?: () => void
-  onDeactivatePremiumForTest?: () => void
-  premiumPlanLabel?: string
-  premiumNextRenewalLabel?: string
-  highlightSubscriptionCard?: boolean
 }
 
 type FeatureItem = {
@@ -152,6 +149,32 @@ function PlanPill({ label, premium = false }: { label: string; premium?: boolean
   )
 }
 
+function UsageStatusCard({
+  title,
+  isError,
+  error,
+}: {
+  title: string
+  isError?: boolean
+  error?: unknown
+}) {
+  return (
+    <View style={styles.sectionCard}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {isError ? (
+        <Text style={styles.usageMessage}>
+          {getUserFacingErrorMessage(error, 'Unable to load usage right now.')}
+        </Text>
+      ) : (
+        <View style={styles.loadingRow}>
+          <ActivityIndicator size="small" color={styles.loadingText.color} />
+          <Text style={styles.loadingText}>Loading usage…</Text>
+        </View>
+      )}
+    </View>
+  )
+}
+
 export default function CurrentPlanScreen({
   accountType,
   mode = 'auth',
@@ -159,13 +182,12 @@ export default function CurrentPlanScreen({
   onUpgrade,
   onManageExistingRecipes,
   onManageSubscription,
-  onDeactivatePremiumForTest,
-  premiumPlanLabel = '€5/month',
-  premiumNextRenewalLabel = 'Renews Mar 27, 2026',
-  highlightSubscriptionCard = false,
 }: CurrentPlanScreenProps) {
   const recipesQuery = useStrategyRecipesList({ limit: 2000 }, mode)
   const storageUsageQuery = useRecipeDocumentUsageSummary()
+  const usageIsLoading = recipesQuery.isLoading || storageUsageQuery.isLoading
+  const usageIsError = recipesQuery.isError || storageUsageQuery.isError
+  const usageError = recipesQuery.error ?? storageUsageQuery.error
 
   const recipesSaved = recipesQuery.data?.length ?? 0
   const storageBytesUsed = storageUsageQuery.data?.totalBytes ?? 0
@@ -188,20 +210,24 @@ export default function CurrentPlanScreen({
           </View>
         </View>
 
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Your kitchen</Text>
+        {usageIsLoading || usageIsError ? (
+          <UsageStatusCard title="Your kitchen" isError={usageIsError} error={usageError} />
+        ) : (
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Your kitchen</Text>
 
-          <View style={styles.usageRowHeader}>
-            <Text style={styles.usageRowLabel}>Recipes synced</Text>
-            <Text style={styles.usageRowValue}>{recipesSaved}</Text>
+            <View style={styles.usageRowHeader}>
+              <Text style={styles.usageRowLabel}>Recipes synced</Text>
+              <Text style={styles.usageRowValue}>{recipesSaved}</Text>
+            </View>
+
+            <UsageProgressRow
+              label="Cloud storage"
+              value={`${formatStorageGigabytes(storageBytesUsed)} / 5GB`}
+              percent={storagePercent}
+            />
           </View>
-
-          <UsageProgressRow
-            label="Cloud storage"
-            value={`${formatStorageGigabytes(storageBytesUsed)} / 5GB`}
-            percent={storagePercent}
-          />
-        </View>
+        )}
 
         <View style={styles.sectionBlock}>
           <Text style={styles.sectionHeading}>Your benefits</Text>
@@ -218,27 +244,9 @@ export default function CurrentPlanScreen({
 
         <Text style={styles.supportText}>Thanks for supporting independent development.</Text>
 
-        <View
-          style={[
-            styles.sectionCard,
-            highlightSubscriptionCard && styles.subscriptionCardHighlighted,
-          ]}
-        >
-          <Text style={styles.sectionTitle}>Subscription</Text>
-
-          <Text style={styles.subscriptionAmount}>{premiumPlanLabel}</Text>
-          <Text style={styles.subscriptionRenewal}>{premiumNextRenewalLabel}</Text>
-
-          <Button onPress={manageSubscription} variant="secondary" size="md" style={styles.manageButton}>
-            Manage Subscription
-          </Button>
-        </View>
-
-        {onDeactivatePremiumForTest ? (
-          <Button onPress={onDeactivatePremiumForTest} variant="secondary" size="md">
-            Deactivate Premium (Test)
-          </Button>
-        ) : null}
+        <Button onPress={manageSubscription} variant="secondary" size="md" style={styles.manageButton}>
+          Manage Subscription
+        </Button>
       </Screen>
     )
   }
@@ -261,25 +269,29 @@ export default function CurrentPlanScreen({
         </View>
       </View>
 
-      <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Your usage</Text>
+      {usageIsLoading || usageIsError ? (
+        <UsageStatusCard title="Your usage" isError={usageIsError} error={usageError} />
+      ) : (
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Your usage</Text>
 
-        <UsageProgressRow
-          label="Recipes saved"
-          value={`${recipesSaved} / ${FREE_PLAN_MAX_RECIPES}`}
-          percent={usage.recipesUsagePercent}
-          fillColor={getFreeUsageProgressColor(usage.recipesUsagePercent)}
-        />
+          <UsageProgressRow
+            label="Recipes saved"
+            value={`${recipesSaved} / ${FREE_PLAN_MAX_RECIPES}`}
+            percent={usage.recipesUsagePercent}
+            fillColor={getFreeUsageProgressColor(usage.recipesUsagePercent)}
+          />
 
-        <UsageProgressRow
-          label="Storage used"
-          value={`${usage.storageMbUsed}MB / ${usage.storageMbLimit}MB`}
-          percent={usage.storageUsagePercent}
-          fillColor={getFreeUsageProgressColor(usage.storageUsagePercent)}
-        />
+          <UsageProgressRow
+            label="Storage used"
+            value={`${usage.storageMbUsed}MB / ${usage.storageMbLimit}MB`}
+            percent={usage.storageUsagePercent}
+            fillColor={getFreeUsageProgressColor(usage.storageUsagePercent)}
+          />
 
-        <Text style={styles.usageMessage}>{usageMessage}</Text>
-      </View>
+          <Text style={styles.usageMessage}>{usageMessage}</Text>
+        </View>
+      )}
 
       <View style={styles.sectionBlock}>
         <Text style={styles.sectionHeading}>Compare plans</Text>
@@ -430,6 +442,17 @@ const styles = createThemedStyles((theme) => ({
     lineHeight: theme.lineHeight.sm,
     color: theme.colors.mutedForeground,
   },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  loadingText: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
+  },
   sectionBlock: {
     gap: theme.spacing.md,
   },
@@ -516,22 +539,6 @@ const styles = createThemedStyles((theme) => ({
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.base,
-    color: theme.colors.mutedForeground,
-  },
-  subscriptionCardHighlighted: {
-    borderColor: theme.colors.accent,
-  },
-  subscriptionAmount: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.foreground,
-  },
-  subscriptionRenewal: {
-    marginTop: theme.spacing.xxs,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
     color: theme.colors.mutedForeground,
   },
   manageButton: {

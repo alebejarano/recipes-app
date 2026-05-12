@@ -4,8 +4,7 @@ import { supabase } from '@/lib/supabase'
 import type { AuthResponse, Session, User, UserAttributes } from '@supabase/supabase-js'
 import * as Linking from 'expo-linking'
 import { router } from 'expo-router'
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { usePostHog } from 'posthog-react-native'
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { tagLocalDataAsMigratable } from '@/features/storage/localAccountLinking'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import {
@@ -24,6 +23,7 @@ type AuthContextValue = {
   register: (email: string, password: string) => Promise<AuthResponse['data']>
   updateProfileName: (name: string) => Promise<void>
   updateEmailPreferences: (preferences: EmailPreferences) => Promise<void>
+  updatePushPreferences: (preferences: PushPreferences) => Promise<void>
   updateEmailAddress: (email: string) => Promise<{ pendingEmail: string | null }>
   sendPasswordResetEmail: (email: string) => Promise<void>
   updatePassword: (password: string) => Promise<void>
@@ -37,13 +37,16 @@ export type EmailPreferences = {
   cookingTips: boolean
 }
 
+export type PushPreferences = {
+  recipeReminders: boolean
+  activityAlerts: boolean
+}
+
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const posthog = usePostHog()
-  const lastIdentifiedUserId = useRef<string | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -128,31 +131,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [handleIncomingAuthUrl])
 
   useEffect(() => {
-    if (!posthog) return
-
-    const userId = session?.user?.id ?? null
-
-    if (!userId) {
-      if (lastIdentifiedUserId.current) {
-        posthog.reset()
-        lastIdentifiedUserId.current = null
-      }
-      return
-    }
-
-    if (lastIdentifiedUserId.current !== userId) {
-      const identifyProps: { email?: string } = {}
-      if (session?.user?.email) {
-        identifyProps.email = session.user.email
-      }
-      posthog.identify(userId, {
-        ...identifyProps,
-      })
-      lastIdentifiedUserId.current = userId
-    }
-  }, [posthog, session?.user?.id, session?.user?.email])
-
-  useEffect(() => {
     const userId = session?.user?.id
     if (!userId) return
 
@@ -205,6 +183,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data, error } = await supabase.auth.updateUser({
       data: {
         email_updates: preferences,
+      },
+    })
+    if (error) throw error
+
+    if (data.user) {
+      setSession((prev) => (prev ? { ...prev, user: data.user } : prev))
+    }
+  }, [])
+
+  const updatePushPreferences = useCallback(async (preferences: PushPreferences) => {
+    const { data, error } = await supabase.auth.updateUser({
+      data: {
+        push_notifications: preferences,
       },
     })
     if (error) throw error
@@ -347,6 +338,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       register,
       updateProfileName,
       updateEmailPreferences,
+      updatePushPreferences,
       updateEmailAddress,
       sendPasswordResetEmail,
       updatePassword,
@@ -358,6 +350,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session,
       isLoading,
       updateEmailPreferences,
+      updatePushPreferences,
       updateEmailAddress,
       sendPasswordResetEmail,
       updatePassword,

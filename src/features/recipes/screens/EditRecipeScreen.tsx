@@ -15,6 +15,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
+import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import { createThemedStyles } from '@/styles/createStyles'
 
 import { useCloudFoldersList } from '@/features/folders/hooks/useCloudFoldersList'
@@ -83,6 +84,7 @@ export default function EditRecipeScreen() {
   const { shouldUseLocalData } = useStorageDataMode(routeMode)
   const { isPremium } = useStorageStrategy()
   const importPlan = isPremium ? 'premium' : 'free'
+  const showSnackbar = useTransientSnackbarStore((state) => state.show)
 
   const recipeQuery = useStrategyRecipe(recipeId, routeMode)
   const recipe = recipeQuery.data
@@ -117,12 +119,13 @@ export default function EditRecipeScreen() {
     async (values: RecipeFormSubmitValues) => {
       try {
         await updateMutation.mutateAsync(values)
+        showSnackbar('Recipe saved')
         router.back()
       } catch (e: any) {
         Alert.alert('Save failed', getUserFacingErrorMessage(e))
       }
     },
-    [updateMutation]
+    [showSnackbar, updateMutation]
   )
 
   const triggerSave = useCallback(() => {

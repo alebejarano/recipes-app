@@ -3,5 +3,10 @@ import { router } from 'expo-router'
 import PrivacySettingsScreen from '@/features/profile/screens/PrivacySettingsScreen'
 
 export default function PrivacySettingsRoute() {
-  return <PrivacySettingsScreen onBack={() => router.replace('/(public)/(tabs)/profile')} />
+  return (
+    <PrivacySettingsScreen
+      onBack={() => router.replace('/(public)/(tabs)/profile')}
+      exportRoute="/(public)/settings/export-data"
+    />
+  )
 }

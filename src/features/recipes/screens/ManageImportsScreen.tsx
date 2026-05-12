@@ -390,7 +390,7 @@ const styles = createThemedStyles((theme) => ({
   backButton: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: theme.radii.full,
     alignItems: 'center',
     justifyContent: 'center',
   },

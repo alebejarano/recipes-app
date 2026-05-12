@@ -25,6 +25,8 @@ const TERMS_SECTIONS: readonly TermsSection[] = [
         title: '2. Description of the Service',
         paragraphs: [
             'The application provides tools for saving, organizing, and managing recipes and cooking-related content.',
+            'You may use the app with local device storage, and some features may require an account.',
+            'Premium features may include cloud backup, sync across devices, unlimited recipes, and cloud storage for recipe imports.',
             'Features may change or evolve over time as the product develops.',
         ],
     },
@@ -51,13 +53,32 @@ const TERMS_SECTIONS: readonly TermsSection[] = [
     {
         title: '5. User Content',
         paragraphs: [
-            'Users may create or store content within the application.',
-            'You retain ownership of the content you create.',
-            'However, you are responsible for ensuring that your content does not violate applicable laws or third-party rights.',
+            'Users may create, save, upload, import, or store recipes, notes, folders, images, documents, and cooking-related content within the application.',
+            'You retain ownership of the content you create or upload.',
+            'You give the service permission to store, process, display, back up, and sync your content only as needed to provide the app features you use.',
+            'You are responsible for ensuring that your content does not violate applicable laws or third-party rights.',
         ],
     },
     {
-        title: '6. Availability of the Service',
+        title: '6. Plans, Limits, and Premium Features',
+        paragraphs: [
+            'Free and Premium plans may have different feature limits, including recipe limits, import limits, and cloud storage limits.',
+            'Premium pricing and billing periods are shown in the app before upgrade.',
+            'If paid subscriptions or purchases are processed through an app store or payment provider, billing, cancellation, and refund handling may also be subject to that provider\'s terms.',
+            'Premium features depend on account access and cloud services, and may not be available during outages, maintenance, or connectivity issues.',
+        ],
+    },
+    {
+        title: '7. Data, Privacy, and Communications',
+        paragraphs: [
+            'Use of the app is also governed by the Privacy Policy.',
+            'Account emails may be sent for app-functioning purposes such as account confirmation, password reset, email changes, security, and important service messages.',
+            'Marketing or product update emails are optional and are sent only if you actively opt in.',
+            'Anonymous onboarding feedback may be processed through an analytics provider to understand general user needs and improve the app.',
+        ],
+    },
+    {
+        title: '8. Availability of the Service',
         paragraphs: [
             'The service is provided "as is".',
             'While we aim to provide a reliable experience, uninterrupted availability cannot be guaranteed.',
@@ -65,26 +86,27 @@ const TERMS_SECTIONS: readonly TermsSection[] = [
         ],
     },
     {
-        title: '7. Limitation of Liability',
+        title: '9. Limitation of Liability',
         paragraphs: [
             'To the maximum extent permitted by law, the application and its owner shall not be liable for any indirect, incidental, or consequential damages resulting from the use of the service.',
         ],
     },
     {
-        title: '8. Termination',
+        title: '10. Termination',
         paragraphs: [
             'Users may stop using the service at any time.',
             'Accounts may be terminated if these Terms are violated.',
+            'You may request account deletion from the app where available. Deleting an account may permanently remove account data and cloud-synced content.',
         ],
     },
     {
-        title: '9. Governing Law',
+        title: '11. Governing Law',
         paragraphs: ['These Terms are governed by the laws of Spain.'],
     },
     {
-        title: '10. Contact',
+        title: '12. Contact',
         paragraphs: ['For questions regarding these Terms, you may contact:'],
-        footer: '[your email]',
+        footer: 'hello@dropsauce.app',
     },
 ]
 
@@ -92,7 +114,7 @@ export default function TermsOfServiceScreen() {
     return (
         <ProfileSubpageLayout
             title="Terms of Service"
-            subtitle="Last updated: March 9, 2026"
+            subtitle="Last updated: May 12, 2026"
             onBack={() => router.back()}
         >
             <Text style={styles.intro}>

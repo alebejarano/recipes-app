@@ -97,6 +97,7 @@ export default function CollectionDetailScreen() {
       })
       await Promise.all([recipesQuery.refetch(), foldersQuery.refetch()])
       setIsEditOpen(false)
+      showSnackbar('Folder updated')
       if (updated.name !== title) {
         router.replace({
           pathname: '/(auth)/collections/[key]',
@@ -376,7 +377,7 @@ const styles = createThemedStyles(theme => ({
   moreButton: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: theme.radii.full,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.colors.card,
@@ -452,7 +453,7 @@ const styles = createThemedStyles(theme => ({
   },
   modalCard: {
     width: '100%',
-    borderRadius: theme.radii.lg,
+    borderRadius: theme.radii.xxl,
     backgroundColor: theme.colors.background,
     padding: theme.spacing.lg,
     gap: theme.spacing.md,
