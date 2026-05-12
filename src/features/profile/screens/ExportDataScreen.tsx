@@ -63,6 +63,7 @@ export default function ExportDataScreen({ onBack }: ExportDataScreenProps) {
         variant="primary"
         size="lg"
         onPress={onExportDataPress}
+        style={styles.exportButton}
         loading={isExportingData}
         loadingLabel="Preparing export..."
         icon={<Feather name="download" size={18} color={styles.buttonIcon.color} />}
@@ -113,5 +114,8 @@ const styles = createThemedStyles((theme) => ({
   },
   buttonIcon: {
     color: theme.colors.primaryForeground,
+  },
+  exportButton: {
+    marginTop: theme.spacing.md,
   },
 }))

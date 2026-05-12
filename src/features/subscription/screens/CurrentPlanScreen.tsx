@@ -23,6 +23,8 @@ type CurrentPlanScreenProps = {
   onUpgrade: () => void
   onManageExistingRecipes?: () => void
   onManageSubscription?: () => void
+  premiumPlanLabel?: string
+  premiumNextRenewalLabel?: string
 }
 
 type FeatureItem = {
@@ -182,6 +184,8 @@ export default function CurrentPlanScreen({
   onUpgrade,
   onManageExistingRecipes,
   onManageSubscription,
+  premiumPlanLabel = '€5/month',
+  premiumNextRenewalLabel = 'Renews Mar 27, 2026',
 }: CurrentPlanScreenProps) {
   const recipesQuery = useStrategyRecipesList({ limit: 2000 }, mode)
   const storageUsageQuery = useRecipeDocumentUsageSummary()
@@ -236,6 +240,11 @@ export default function CurrentPlanScreen({
             <View style={styles.planCardHeader}>
               <Text style={styles.planName}>PREMIUM</Text>
               <PlanPill label="Current" premium />
+            </View>
+
+            <View style={styles.planMetaBlock}>
+              <Text style={styles.planMetaText}>{premiumPlanLabel}</Text>
+              <Text style={styles.planMetaSubtext}>{premiumNextRenewalLabel}</Text>
             </View>
 
             <FeatureList items={premiumFeatures} premium />
@@ -486,6 +495,21 @@ const styles = createThemedStyles((theme) => ({
     lineHeight: theme.lineHeight.xl,
     color: theme.colors.foreground,
     letterSpacing: 0.8,
+  },
+  planMetaBlock: {
+    gap: theme.spacing.xxs,
+  },
+  planMetaText: {
+    fontFamily: theme.fontFamily.semibold,
+    fontSize: theme.fontSize.lg,
+    lineHeight: theme.lineHeight.lg,
+    color: theme.colors.foreground,
+  },
+  planMetaSubtext: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.mutedForeground,
   },
   featuresList: {
     gap: theme.spacing.md,

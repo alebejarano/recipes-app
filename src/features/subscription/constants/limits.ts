@@ -2,11 +2,14 @@ export const FREE_PLAN_MAX_RECIPES = 100
 export const FREE_PLAN_MAX_IMPORT_FILE_BYTES = 10 * 1024 * 1024
 export const FREE_PLAN_MAX_IMPORT_TOTAL_BYTES = 50 * 1024 * 1024
 export const PREMIUM_PLAN_MAX_STORAGE_BYTES = 5 * 1024 * 1024 * 1024
+export const RECIPE_IMAGE_UPLOAD_MAX_FILE_BYTES = 10 * 1024 * 1024
 export const RECIPE_IMAGE_MASTER_MAX_DIMENSION_PX = 960
 export const RECIPE_IMAGE_MASTER_COMPRESS_QUALITY = 0.78
-export const RECIPE_IMAGE_MASTER_MAX_FILE_BYTES = 1 * 1024 * 1024
+export const RECIPE_IMAGE_MASTER_MAX_FILE_BYTES = 500 * 1024
+export const RECIPE_IMAGE_UPLOAD_TOO_LARGE_MESSAGE =
+  'This photo is larger than 10MB. Please choose a smaller image.'
 export const RECIPE_IMAGE_MASTER_TOO_LARGE_MESSAGE =
-  'This image is still larger than 1MB after optimization. Please choose another photo.'
+  'This photo is still too large after optimization. Please choose another image.'
 export const IMPORT_IMAGE_MAX_DIMENSION_PX = 1600
 export const IMPORT_IMAGE_MAX_FILE_BYTES = Math.floor(2.5 * 1024 * 1024)
 export const IMPORT_IMAGE_COMPRESS_QUALITY = 0.82

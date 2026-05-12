@@ -22,6 +22,7 @@ import {
   isPasswordStrong,
 } from '@/features/auth/utils/passwordPolicy'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { useLargeScreenLayout } from '@/hooks/useLargeScreenLayout'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 
@@ -41,6 +42,7 @@ const KEYBOARD_SCROLL_PADDING = 96
 export default function AuthScreen({ initialMode }: AuthScreenProps) {
   const router = useRouter()
   const insets = useSafeAreaInsets()
+  const largeScreen = useLargeScreenLayout({ maxContentWidth: layout.authContentMaxWidth })
   const { login, register } = useAuth()
 
   const [mode, setMode] = useState<AuthMode>(initialMode)
@@ -176,7 +178,8 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
   if (needsEmailConfirmation) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={[styles.content, styles.confirmWrap]}>
+        <View style={[styles.content, largeScreen.pagePaddingStyle, styles.confirmWrap]}>
+          <View style={largeScreen.contentWidthStyle}>
           <View style={styles.header}>
             <View style={styles.iconWrapper}>
               <Text style={styles.emoji}>✉️</Text>
@@ -204,6 +207,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
           <TouchableOpacity onPress={goBackToGetStarted} style={styles.notNowLink}>
             <Text style={styles.notNowText}>Back</Text>
           </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     )
@@ -220,6 +224,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
           style={styles.flex}
           contentContainerStyle={[
             styles.content,
+            largeScreen.pagePaddingStyle,
             { paddingBottom: insets.bottom + KEYBOARD_SCROLL_PADDING },
           ]}
           keyboardShouldPersistTaps="handled"
@@ -227,6 +232,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
           showsVerticalScrollIndicator={false}
           automaticallyAdjustKeyboardInsets
         >
+          <View style={largeScreen.contentWidthStyle}>
           {/* Header */}
           <View style={styles.header}>
             <Image
@@ -369,6 +375,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
             <TouchableOpacity onPress={toggleMode} disabled={loading}>
               <Text style={styles.toggleAction}>{isLogin ? 'Sign up' : 'Sign in'}</Text>
             </TouchableOpacity>
+          </View>
           </View>
 
         </ScrollView>

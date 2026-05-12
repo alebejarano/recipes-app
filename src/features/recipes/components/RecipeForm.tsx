@@ -50,6 +50,8 @@ import {
   RECIPE_IMAGE_MASTER_MAX_DIMENSION_PX,
   RECIPE_IMAGE_MASTER_MAX_FILE_BYTES,
   RECIPE_IMAGE_MASTER_TOO_LARGE_MESSAGE,
+  RECIPE_IMAGE_UPLOAD_MAX_FILE_BYTES,
+  RECIPE_IMAGE_UPLOAD_TOO_LARGE_MESSAGE,
 } from '@/features/subscription/constants/limits'
 import { createThemedStyles } from '@/styles/createStyles'
 
@@ -150,7 +152,21 @@ const IMAGE_QUALITY_STEPS = [
   RECIPE_IMAGE_MASTER_COMPRESS_QUALITY,
   0.72,
   0.66,
+  0.58,
+  0.5,
 ]
+
+async function getPickedImageSizeBytes(asset: ImagePicker.ImagePickerAsset): Promise<number> {
+  const fileSize = (asset as { fileSize?: number | null }).fileSize
+  if (Number.isFinite(fileSize) && Number(fileSize) > 0) return Number(fileSize)
+
+  try {
+    const info = await new File(asset.uri).info()
+    return info.exists && 'size' in info && typeof info.size === 'number' ? info.size : 0
+  } catch {
+    return 0
+  }
+}
 
 async function optimizeRecipeImageAsset(
   asset: ImagePicker.ImagePickerAsset
@@ -457,6 +473,12 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     async (asset: ImagePicker.ImagePickerAsset) => {
       try {
         setIsUploadingImage(true)
+        const originalSize = await getPickedImageSizeBytes(asset)
+        if (originalSize > RECIPE_IMAGE_UPLOAD_MAX_FILE_BYTES) {
+          Alert.alert('Photo too large', RECIPE_IMAGE_UPLOAD_TOO_LARGE_MESSAGE)
+          return
+        }
+
         const optimized = await optimizeRecipeImageAsset(asset)
         let url = optimized.uri
         if (imageUploadMode === 'local') {

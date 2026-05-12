@@ -3,7 +3,9 @@ import React, { type ReactNode } from 'react'
 import { Text, TouchableOpacity, View } from 'react-native'
 
 import Screen from '@/components/Screen'
+import { useLargeScreenLayout } from '@/hooks/useLargeScreenLayout'
 import { createThemedStyles } from '@/styles/createStyles'
+import { layout } from '@/styles/layout'
 
 type ProfileSubpageLayoutProps = {
   title: string
@@ -24,6 +26,8 @@ export default function ProfileSubpageLayout({
   headerRight,
   keyboardAware,
 }: ProfileSubpageLayoutProps) {
+  const largeScreen = useLargeScreenLayout({ maxContentWidth: layout.formContentMaxWidth })
+
   return (
     <Screen
       scroll
@@ -31,6 +35,7 @@ export default function ProfileSubpageLayout({
       contentStyle={styles.content}
       keyboardAware={keyboardAware}
     >
+      <View style={largeScreen.contentWidthStyle}>
       <TouchableOpacity style={styles.backRow} onPress={onBack} activeOpacity={0.75}>
         <Feather name="chevron-left" size={18} style={styles.backIcon} />
         <Text style={styles.backText}>Back</Text>
@@ -45,6 +50,7 @@ export default function ProfileSubpageLayout({
       </View>
 
       {children}
+      </View>
     </Screen>
   )
 }

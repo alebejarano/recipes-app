@@ -5,6 +5,7 @@ import { ActivityIndicator, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
+import { useLargeScreenLayout } from '@/hooks/useLargeScreenLayout'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 
@@ -19,6 +20,7 @@ type CreateNewScreenProps = {
 }
 
 export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps) {
+  const largeScreen = useLargeScreenLayout({ maxContentWidth: layout.formContentMaxWidth })
   const [isLoading, setIsLoading] = useState(true)
   const [hasShoppingList, setHasShoppingList] = useState(false)
   const [isCreatingList, setIsCreatingList] = useState(false)
@@ -109,7 +111,8 @@ export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <View style={[styles.container, largeScreen.pagePaddingStyle]}>
+        <View style={largeScreen.contentWidthStyle}>
         {/* Header */}
         <View style={styles.headerRow}>
           <Text style={styles.title}>Create New</Text>
@@ -150,6 +153,7 @@ export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps
             onPress={handleShoppingList}
             icon={shoppingIcon}
           />
+        </View>
         </View>
       </View>
     </SafeAreaView>

@@ -37,6 +37,7 @@ import {
   findDuplicateRecipeDocumentByFile,
 } from '@/features/recipes/storage/recipeDocumentStorage'
 import { optimizeImageUri } from '@/features/recipes/utils/optimizeImageAsset'
+import { useLargeScreenLayout } from '@/hooks/useLargeScreenLayout'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
 import PlanLimitReachedModal, { type PlanLimitReachedType } from '@/features/subscription/components/PlanLimitReachedModal'
@@ -49,6 +50,7 @@ import {
 import { useLimitQaOverrides } from '@/features/subscription/dev/limitQaOverrides'
 import { getPlanLimitTypeFromError } from '@/features/subscription/utils/limitErrors'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { layout } from '@/styles/layout'
 
 export type CreateRecipeVariant = 'onboarding' | 'app'
 export type CreateRecipeEntry = 'scratch' | 'pdf'
@@ -112,6 +114,7 @@ export default function CreateRecipeScreen({
   onBack,
 }: CreateRecipeScreenProps) {
   const insets = useSafeAreaInsets()
+  const largeScreen = useLargeScreenLayout({ maxContentWidth: layout.formContentMaxWidth })
   const queryClient = useQueryClient()
   const { user } = useAuth()
   const { retryAfterUpgrade, folder } = useLocalSearchParams<{
@@ -485,7 +488,8 @@ export default function CreateRecipeScreen({
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
         {/* Header / Back */}
-        <View style={styles.topBar}>
+        <View style={[styles.topBar, largeScreen.pagePaddingStyle]}>
+          <View style={largeScreen.contentWidthStyle}>
           <Button
             variant="ghost"
             size="md"
@@ -496,6 +500,7 @@ export default function CreateRecipeScreen({
           >
             Back
           </Button>
+          </View>
         </View>
 
         <KeyboardAvoidingView
@@ -507,6 +512,7 @@ export default function CreateRecipeScreen({
             style={styles.flex1}
             contentContainerStyle={[
               styles.scrollContent,
+              largeScreen.pagePaddingStyle,
               { paddingBottom: insets.bottom + FOOTER_HEIGHT + 24 },
             ]}
             keyboardShouldPersistTaps="handled"
@@ -514,6 +520,7 @@ export default function CreateRecipeScreen({
             showsVerticalScrollIndicator={false}
             automaticallyAdjustKeyboardInsets
           >
+            <View style={largeScreen.contentWidthStyle}>
             {entryMode ? (
               <>
                 <View style={styles.header}>
@@ -588,10 +595,18 @@ export default function CreateRecipeScreen({
                 </Text>
               </View>
             ) : null}
+            </View>
           </ScrollView>
 
           {/* Sticky footer */}
-          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+          <View
+            style={[
+              styles.footer,
+              largeScreen.pagePaddingStyle,
+              { paddingBottom: Math.max(insets.bottom, 8) },
+            ]}
+          >
+            <View style={[styles.footerInner, largeScreen.contentWidthStyle]}>
             <Button
               variant="secondary"
               size="md"
@@ -612,6 +627,7 @@ export default function CreateRecipeScreen({
             >
               {submitLabel}
             </Button>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </View>
@@ -719,14 +735,16 @@ const styles = createThemedStyles((theme) => ({
   choiceIconSecondary: { color: theme.colors.foreground },
 
   footer: {
-    flexDirection: 'row',
-    gap: theme.spacing.sm,
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.lg,
     paddingBottom: theme.spacing.sm,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
     backgroundColor: theme.colors.background,
+  },
+  footerInner: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
   },
   footerButton: { flex: 1 },
 

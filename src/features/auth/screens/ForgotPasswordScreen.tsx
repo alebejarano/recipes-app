@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import Button from '@/components/Button'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
+import { useLargeScreenLayout } from '@/hooks/useLargeScreenLayout'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
@@ -40,6 +41,7 @@ function getResetErrorMessage(error: any) {
 
 export default function ForgotPasswordScreen() {
   const router = useRouter()
+  const largeScreen = useLargeScreenLayout({ maxContentWidth: layout.authContentMaxWidth })
   const params = useLocalSearchParams<{ email?: string | string[] }>()
   const initialEmail = normalizeEmail(getParamValue(params.email) ?? '')
   const { sendPasswordResetEmail } = useAuth()
@@ -97,7 +99,11 @@ export default function ForgotPasswordScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={[styles.content, largeScreen.pagePaddingStyle]}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={largeScreen.contentWidthStyle}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backRow}>
             <Feather name="arrow-left" size={18} style={styles.backIcon} />
             <Text style={styles.backText}>Back</Text>
@@ -171,6 +177,7 @@ export default function ForgotPasswordScreen() {
           >
             Back to sign in
           </Button>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

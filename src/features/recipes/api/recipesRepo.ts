@@ -255,7 +255,13 @@ export async function uploadRecipeImage(input: UploadRecipeImageInput): Promise<
       upsert: false,
     })
 
-  if (uploadError) throw uploadError
+  if (uploadError) {
+    const message = uploadError.message.toLowerCase()
+    if (message.includes('permission') || message.includes('row-level security')) {
+      throw new Error('Image uploads are not enabled for this account yet. Please try again after storage setup is updated.')
+    }
+    throw uploadError
+  }
 
   const { data } = supabase.storage.from(RECIPE_IMAGES_BUCKET).getPublicUrl(path)
   if (!data?.publicUrl) throw new Error('Unable to get image URL')

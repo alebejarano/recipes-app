@@ -19,6 +19,7 @@ import {
   getPasswordPolicyIssues,
   isPasswordStrong,
 } from '@/features/auth/utils/passwordPolicy'
+import { useLargeScreenLayout } from '@/hooks/useLargeScreenLayout'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
@@ -27,6 +28,7 @@ const KEYBOARD_SCROLL_PADDING = 96
 
 export default function UpdatePasswordScreen() {
   const insets = useSafeAreaInsets()
+  const largeScreen = useLargeScreenLayout({ maxContentWidth: layout.authContentMaxWidth })
   const { isLoading, session, updatePassword } = useAuth()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -107,6 +109,7 @@ export default function UpdatePasswordScreen() {
           style={styles.flex}
           contentContainerStyle={[
             styles.content,
+            largeScreen.pagePaddingStyle,
             { paddingBottom: insets.bottom + KEYBOARD_SCROLL_PADDING },
           ]}
           keyboardShouldPersistTaps="handled"
@@ -114,6 +117,7 @@ export default function UpdatePasswordScreen() {
           showsVerticalScrollIndicator={false}
           automaticallyAdjustKeyboardInsets
         >
+          <View style={largeScreen.contentWidthStyle}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backRow}>
             <Feather name="arrow-left" size={18} style={styles.backIcon} />
             <Text style={styles.backText}>Back</Text>
@@ -261,6 +265,7 @@ export default function UpdatePasswordScreen() {
               ) : null}
             </>
           )}
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
