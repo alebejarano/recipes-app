@@ -9,6 +9,7 @@ import {
   type LocalNoteSyncRow,
 } from '@/features/notes/storage/localNotesStorage'
 import { supabase } from '@/lib/supabase'
+import { getErrorCategory, logOperationalEvent } from '@/lib/productionLogger'
 
 let syncInFlight: Promise<void> | null = null
 const PLAN_KEY_PREFIX = 'subscription:plan:user:'
@@ -37,7 +38,11 @@ function isConnectivityError(error: unknown) {
     message.includes('failed to fetch') ||
     message.includes('timed out') ||
     message.includes('timeout') ||
-    message.includes('socket')
+    message.includes('socket') ||
+    message.includes('abort') ||
+    message.includes('unknownhost') ||
+    message.includes('unable to resolve host') ||
+    message.includes('no address associated with hostname')
   )
 }
 
@@ -56,6 +61,15 @@ async function runNoteSync() {
   if (plan !== 'premium') return
 
   const dirtyRows = await listDirtyLocalNoteRowsForSync()
+  let noteSyncSuccessCount = 0
+  let noteSyncFailureCount = 0
+  if (dirtyRows.length > 0) {
+    logOperationalEvent('sync_retry_started', {
+      operation: 'sync_notes',
+      entity: 'note',
+      pending_count: dirtyRows.length,
+    })
+  }
 
   for (const row of dirtyRows) {
     if (row.ownerUserId && row.ownerUserId !== userId) continue
@@ -70,6 +84,7 @@ async function runNoteSync() {
           }
         }
         await purgeLocalNoteRow(row.id)
+        noteSyncSuccessCount += 1
         continue
       }
 
@@ -81,6 +96,7 @@ async function runNoteSync() {
           ownerUserId: userId,
           cloudId: row.cloudId,
         })
+        noteSyncSuccessCount += 1
       } else {
         const created = await createNote(input)
         await markLocalNoteSynced({
@@ -88,11 +104,32 @@ async function runNoteSync() {
           ownerUserId: userId,
           cloudId: created.id,
         })
+        noteSyncSuccessCount += 1
       }
     } catch (rowError) {
-      if (isConnectivityError(rowError)) return
+      noteSyncFailureCount += 1
+      if (isConnectivityError(rowError)) {
+        logOperationalEvent('sync_retry_failed', {
+          operation: 'sync_notes',
+          entity: 'note',
+          category: getErrorCategory(rowError),
+          pending_count: dirtyRows.length,
+          success_count: noteSyncSuccessCount,
+          failure_count: noteSyncFailureCount,
+        })
+        return
+      }
       continue
     }
+  }
+  if (dirtyRows.length > 0) {
+    logOperationalEvent('sync_retry_succeeded', {
+      operation: 'sync_notes',
+      entity: 'note',
+      pending_count: dirtyRows.length,
+      success_count: noteSyncSuccessCount,
+      failure_count: noteSyncFailureCount,
+    })
   }
 
   try {
@@ -110,9 +147,17 @@ async function runNoteSync() {
 export function triggerNoteSync() {
   if (syncInFlight) return syncInFlight
 
-  syncInFlight = runNoteSync().finally(() => {
-    syncInFlight = null
-  })
+  syncInFlight = runNoteSync()
+    .catch((error) => {
+      logOperationalEvent('sync_retry_failed', {
+        operation: 'sync_notes',
+        entity: 'note',
+        category: getErrorCategory(error),
+      })
+    })
+    .finally(() => {
+      syncInFlight = null
+    })
 
   return syncInFlight
 }

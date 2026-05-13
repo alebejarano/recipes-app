@@ -8,6 +8,7 @@ import { useNotesList } from '@/features/notes/hooks/useNotesList'
 import { useUpdateNote } from '@/features/notes/hooks/useUpdateNote'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { useStorageDataMode, type StorageScreenMode } from '@/features/storage/hooks/useStorageDataMode'
+import { getErrorCategory, logOperationalEvent } from '@/lib/productionLogger'
 
 type NotesListParams = {
   limit?: number
@@ -31,7 +32,10 @@ function isConnectivityError(error: unknown) {
     message.includes('timed out') ||
     message.includes('timeout') ||
     message.includes('socket') ||
-    message.includes('abort')
+    message.includes('abort') ||
+    message.includes('unknownhost') ||
+    message.includes('unable to resolve host') ||
+    message.includes('no address associated with hostname')
   )
 }
 
@@ -84,6 +88,13 @@ export function useStrategyCreateNote(mode: StorageScreenMode = 'auth') {
             return await cloudMutation.mutateAsync(input)
           } catch (error) {
             if (!cloudSyncEnabled || !isConnectivityError(error)) throw error
+            logOperationalEvent('offline_fallback_saved', {
+              operation: 'create_note',
+              entity: 'note',
+              category: getErrorCategory(error),
+              count: 1,
+              queued: true,
+            })
             return localMutation.mutateAsync(input)
           }
         },
@@ -104,6 +115,13 @@ export function useStrategyUpdateNote(id: string, mode: StorageScreenMode = 'aut
             return await cloudMutation.mutateAsync(input)
           } catch (error) {
             if (!cloudSyncEnabled || !isConnectivityError(error)) throw error
+            logOperationalEvent('offline_fallback_saved', {
+              operation: 'update_note',
+              entity: 'note',
+              category: getErrorCategory(error),
+              count: 1,
+              queued: true,
+            })
             return localMutation.mutateAsync(input)
           }
         },

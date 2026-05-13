@@ -7,6 +7,7 @@ import {
   listRecipes,
   updateRecipe,
 } from '@/features/recipes/api/recipesRepo'
+import { uploadPremiumImport } from '@/features/recipes/api/importsRepo'
 import {
   listDirtyLocalRecipeRowsForSync,
   listLocalRecipeRowsForImageRepair,
@@ -15,8 +16,13 @@ import {
   purgeLocalRecipeRow,
   type LocalRecipeSyncRow,
 } from '@/features/recipes/storage/localRecipesStorage'
+import {
+  listDirtyLocalRecipeDocumentRowsForSync,
+  markLocalRecipeDocumentSynced,
+} from '@/features/recipes/storage/recipeDocumentStorage'
 import { normalizeMealTimes } from '@/features/recipes/types/mealTimes'
 import { supabase } from '@/lib/supabase'
+import { getErrorCategory, logOperationalEvent } from '@/lib/productionLogger'
 
 let syncInFlight: Promise<void> | null = null
 const PLAN_KEY_PREFIX = 'subscription:plan:user:'
@@ -38,6 +44,14 @@ function parseStringList(raw: string): string[] {
   } catch {
     return []
   }
+}
+
+function inferImportMimeType(fileName: string) {
+  const lower = fileName.trim().toLowerCase()
+  if (lower.endsWith('.pdf')) return 'application/pdf'
+  if (lower.endsWith('.png')) return 'image/png'
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg'
+  return 'application/octet-stream'
 }
 
 async function toCreateOrUpdateInput(row: LocalRecipeSyncRow): Promise<CreateRecipeInput> {
@@ -78,7 +92,11 @@ function isConnectivityError(error: unknown) {
     message.includes('failed to fetch') ||
     message.includes('timed out') ||
     message.includes('timeout') ||
-    message.includes('socket')
+    message.includes('socket') ||
+    message.includes('abort') ||
+    message.includes('unknownhost') ||
+    message.includes('unable to resolve host') ||
+    message.includes('no address associated with hostname')
   )
 }
 
@@ -96,7 +114,83 @@ async function runRecipeSync() {
   const plan = await AsyncStorage.getItem(`${PLAN_KEY_PREFIX}${userId}`)
   if (plan !== 'premium') return
 
+  const dirtyDocuments = await listDirtyLocalRecipeDocumentRowsForSync()
+  let documentSyncSuccessCount = 0
+  let documentSyncFailureCount = 0
+  if (dirtyDocuments.length > 0) {
+    logOperationalEvent('sync_retry_started', {
+      operation: 'sync_imports',
+      entity: 'import',
+      pending_count: dirtyDocuments.length,
+    })
+  }
+  for (const document of dirtyDocuments) {
+    if (document.ownerUserId && document.ownerUserId !== userId) continue
+
+    try {
+      const result = await uploadPremiumImport({
+        uri: document.fileUri,
+        fileName: document.fileName,
+        mimeType: inferImportMimeType(document.fileName),
+        title: document.title,
+      })
+      if (result.document?.id) {
+        await markLocalRecipeDocumentSynced({
+          localId: document.id,
+          ownerUserId: userId,
+          cloudId: result.document.id,
+        })
+        documentSyncSuccessCount += 1
+      }
+    } catch (documentError) {
+      const duplicate = documentError as Error & {
+        code?: string
+        duplicate?: { id: string | null } | null
+      }
+      if (duplicate.code === 'duplicate_import' && duplicate.duplicate?.id) {
+        await markLocalRecipeDocumentSynced({
+          localId: document.id,
+          ownerUserId: userId,
+          cloudId: duplicate.duplicate.id,
+        })
+        documentSyncSuccessCount += 1
+        continue
+      }
+      documentSyncFailureCount += 1
+      if (isConnectivityError(documentError)) {
+        logOperationalEvent('sync_retry_failed', {
+          operation: 'sync_imports',
+          entity: 'import',
+          category: getErrorCategory(documentError),
+          pending_count: dirtyDocuments.length,
+          success_count: documentSyncSuccessCount,
+          failure_count: documentSyncFailureCount,
+        })
+        return
+      }
+      continue
+    }
+  }
+  if (dirtyDocuments.length > 0) {
+    logOperationalEvent('sync_retry_succeeded', {
+      operation: 'sync_imports',
+      entity: 'import',
+      pending_count: dirtyDocuments.length,
+      success_count: documentSyncSuccessCount,
+      failure_count: documentSyncFailureCount,
+    })
+  }
+
   const dirtyRows = await listDirtyLocalRecipeRowsForSync()
+  let recipeSyncSuccessCount = 0
+  let recipeSyncFailureCount = 0
+  if (dirtyRows.length > 0) {
+    logOperationalEvent('sync_retry_started', {
+      operation: 'sync_recipes',
+      entity: 'recipe',
+      pending_count: dirtyRows.length,
+    })
+  }
 
   for (const row of dirtyRows) {
     if (row.ownerUserId && row.ownerUserId !== userId) continue
@@ -111,6 +205,7 @@ async function runRecipeSync() {
           }
         }
         await purgeLocalRecipeRow(row.id)
+        recipeSyncSuccessCount += 1
         continue
       }
 
@@ -122,6 +217,7 @@ async function runRecipeSync() {
           ownerUserId: userId,
           cloudId: row.cloudId,
         })
+        recipeSyncSuccessCount += 1
       } else {
         const created = await createRecipe(input)
         await markLocalRecipeSynced({
@@ -129,12 +225,33 @@ async function runRecipeSync() {
           ownerUserId: userId,
           cloudId: created.id,
         })
+        recipeSyncSuccessCount += 1
       }
     } catch (rowError) {
-      if (isConnectivityError(rowError)) return
+      recipeSyncFailureCount += 1
+      if (isConnectivityError(rowError)) {
+        logOperationalEvent('sync_retry_failed', {
+          operation: 'sync_recipes',
+          entity: 'recipe',
+          category: getErrorCategory(rowError),
+          pending_count: dirtyRows.length,
+          success_count: recipeSyncSuccessCount,
+          failure_count: recipeSyncFailureCount,
+        })
+        return
+      }
       // Keep dirty row for retry later; continue syncing other rows.
       continue
     }
+  }
+  if (dirtyRows.length > 0) {
+    logOperationalEvent('sync_retry_succeeded', {
+      operation: 'sync_recipes',
+      entity: 'recipe',
+      pending_count: dirtyRows.length,
+      success_count: recipeSyncSuccessCount,
+      failure_count: recipeSyncFailureCount,
+    })
   }
 
   try {
@@ -194,9 +311,25 @@ async function runRecipeSync() {
 export function triggerRecipeSync() {
   if (syncInFlight) return syncInFlight
 
-  syncInFlight = runRecipeSync().finally(() => {
-    syncInFlight = null
-  })
+  syncInFlight = runRecipeSync()
+    .catch((error) => {
+      if (isConnectivityError(error)) {
+        logOperationalEvent('sync_retry_failed', {
+          operation: 'sync_recipes',
+          entity: 'recipe',
+          category: getErrorCategory(error),
+        })
+        return
+      }
+      logOperationalEvent('sync_retry_failed', {
+        operation: 'sync_recipes',
+        entity: 'recipe',
+        category: getErrorCategory(error),
+      })
+    })
+    .finally(() => {
+      syncInFlight = null
+    })
 
   return syncInFlight
 }

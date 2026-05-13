@@ -47,15 +47,16 @@ const POLICY_SECTIONS: readonly PolicySection[] = [
                 ],
             },
             {
-                heading: 'Anonymous Onboarding Feedback',
+                heading: 'Analytics and Diagnostics',
                 paragraphs: [
-                    'During onboarding, users may be asked what brings them to the app or what they hope to use it for.',
-                    'Anonymous onboarding responses may be processed through our analytics provider to understand general user needs and improve the application.',
+                    'If you enable analytics and diagnostics in Privacy & Security settings, sanitized app events may be processed through our analytics provider, PostHog, to understand reliability issues and improve the application.',
+                    'These events may include general categories and counts such as request failures, request timeouts, offline fallback saves, sync retry results, and upload or import retry status.',
+                    'Analytics and diagnostics are off by default and can be enabled or disabled at any time from Privacy & Security settings.',
                 ],
                 bullets: [
-                    'is collected anonymously',
-                    'is not linked to any personal identifier',
-                    'is used only to understand user needs and improve the application.',
+                    'does not include recipe titles, note content, file names, full URLs, authentication tokens, or raw error messages',
+                    'is limited to sanitized categories and counts',
+                    'is used only to improve reliability, troubleshoot issues, and understand general app usage.',
                 ],
             },
             {
@@ -73,7 +74,7 @@ const POLICY_SECTIONS: readonly PolicySection[] = [
             'Create and manage user accounts',
             'Provide access to the application',
             'Improve the app and develop new features',
-            'Understand general user interests through anonymous onboarding responses',
+            'Understand general user interests and app reliability through optional analytics and diagnostics',
             'Communicate account, security, and service updates needed for the app to function',
             'Send optional product or marketing emails only if you have actively opted in',
         ],
@@ -102,7 +103,7 @@ const POLICY_SECTIONS: readonly PolicySection[] = [
             },
             {
                 heading: 'Consent',
-                paragraphs: ['For sending optional email communications.'],
+                paragraphs: ['For sending optional email communications and processing optional analytics and diagnostics.'],
             },
             {
                 heading: 'Legitimate interest',
@@ -123,7 +124,7 @@ const POLICY_SECTIONS: readonly PolicySection[] = [
         title: '7. Data Retention',
         paragraphs: [
             'Email addresses associated with accounts are retained for as long as the account remains active.',
-            'Anonymous onboarding responses may be retained for analytical purposes but cannot be linked to any individual user.',
+            'Optional analytics and diagnostics events may be retained for analytical and reliability purposes, subject to the analytics provider retention settings.',
             'Users may request deletion of their account and associated data at any time.',
         ],
     },

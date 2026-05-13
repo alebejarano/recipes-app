@@ -1,8 +1,9 @@
 // app/_layout.tsx
 import { Slot } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
-import { PostHogProvider } from 'posthog-react-native'
+import { PostHogProvider, usePostHog } from 'posthog-react-native'
 import React, { useEffect } from 'react'
+import { LogBox } from 'react-native'
 
 import { AnalyticsConsentProvider, useAnalyticsConsent } from '@/features/analytics/context/AnalyticsConsentContext'
 import { AuthProvider } from '@/features/auth/context/AuthContext'
@@ -14,6 +15,7 @@ import { StorageStrategyProvider } from '@/features/storage/context/StorageStrat
 import { SubscriptionProvider } from '@/features/subscription/context/SubscriptionContext'
 import { runLocalMigrations } from '@/lib/localMigrations'
 import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
+import { setProductionLogCapture } from '@/lib/productionLogger'
 import QueryProvider from '@/providers/QueryProvider'
 import { useLoadFonts } from '@/styles/useLoadFonts'
 
@@ -25,6 +27,14 @@ export default function RootLayout() {
 
   useEffect(() => {
     SplashScreen.preventAutoHideAsync()
+  }, [])
+
+  useEffect(() => {
+    LogBox.ignoreLogs([
+      'fetch failed: java.net.UnknownHostException',
+      'Unable to resolve host',
+      'No address associated with hostname',
+    ])
   }, [])
 
   useEffect(() => {
@@ -75,10 +85,17 @@ function PostHogGate({
   host: string
   children: React.ReactNode
 }) {
-    const { analyticsEnabled, isLoaded } = useAnalyticsConsent()
+  const { analyticsEnabled, isLoaded } = useAnalyticsConsent()
+  const isActive = enabled && Boolean(apiKey) && isLoaded && analyticsEnabled
+
+  useEffect(() => {
+    if (!isActive) {
+      setProductionLogCapture(null)
+    }
+  }, [isActive])
 
   // For MVP, keep analytics infra but allow a hard off-switch via env.
-  if (!enabled || !apiKey || !isLoaded || !analyticsEnabled) {
+  if (!isActive || !apiKey) {
     return <>{children}</>
   }
 
@@ -91,7 +108,21 @@ function PostHogGate({
         host,
       }}
     >
-      {children}
+      <ProductionLoggingBridge>{children}</ProductionLoggingBridge>
     </PostHogProvider>
   )
+}
+
+function ProductionLoggingBridge({ children }: { children: React.ReactNode }) {
+  const posthog = usePostHog()
+
+  useEffect(() => {
+    setProductionLogCapture((event, properties) => {
+      posthog.capture(event, properties)
+    })
+
+    return () => setProductionLogCapture(null)
+  }, [posthog])
+
+  return <>{children}</>
 }

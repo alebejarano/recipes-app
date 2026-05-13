@@ -1063,6 +1063,9 @@ export default function HomeScreen({
                   params: { key: collectionKey },
                 });
               }}
+              onPressRecipe={(id) => {
+                router.push({ pathname: recipeDetailPath, params: { id, returnTo: homePath } });
+              }}
             />
           ) : null}
         </View>
@@ -1120,6 +1123,9 @@ export default function HomeScreen({
                   pathname: collectionDetailPath,
                   params: { key: collectionKey },
                 });
+              }}
+              onPressRecipe={(id) => {
+                router.push({ pathname: recipeDetailPath, params: { id, returnTo: homePath } });
               }}
             />
           ) : null}

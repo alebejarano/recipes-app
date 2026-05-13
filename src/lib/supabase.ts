@@ -3,6 +3,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import * as SecureStore from 'expo-secure-store'
 import { AppState, Platform } from 'react-native'
 import 'react-native-url-polyfill/auto'
+import { DEFAULT_REQUEST_TIMEOUT_MS, fetchWithTimeout, UPLOAD_REQUEST_TIMEOUT_MS } from '@/lib/network'
+import { getErrorCategory, logOperationalEvent } from '@/lib/productionLogger'
 
 function requireEnvVar(value: string | undefined, errorMessage: string): string {
   if (!value) {
@@ -43,6 +45,29 @@ declare global {
 
 function createSupabaseClient() {
   return createClient(supabaseUrl, supabaseClientKey, {
+    global: {
+      fetch: (input, init) => {
+        const method = init?.method?.toUpperCase()
+        const timeoutMs = method && method !== 'GET' && method !== 'HEAD'
+          ? UPLOAD_REQUEST_TIMEOUT_MS
+          : DEFAULT_REQUEST_TIMEOUT_MS
+
+        return fetchWithTimeout(input, {
+          ...init,
+          timeoutMs,
+          timeoutMessage: 'Supabase request timed out',
+          logFailures: false,
+        }).catch((error) => {
+          logOperationalEvent(getErrorCategory(error) === 'timeout' ? 'request_timeout' : 'request_failed', {
+            operation: 'supabase_request',
+            entity: 'supabase',
+            category: getErrorCategory(error),
+            timeout_ms: timeoutMs,
+          })
+          throw error
+        })
+      },
+    },
     auth: {
       ...(Platform.OS !== 'web' ? { storage: ExpoSecureStoreAdapter } : {}),
       autoRefreshToken: true,

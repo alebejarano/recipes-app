@@ -15,34 +15,47 @@ type Props = {
   title: string;
   recipes: FolderSpotlightRecipe[];
   onPress?: () => void;
+  onPressRecipe?: (id: string) => void;
 };
 
-export default function FolderSpotlightCard({ title, recipes, onPress }: Props) {
+export default function FolderSpotlightCard({ title, recipes, onPress, onPressRecipe }: Props) {
   if (recipes.length === 0) return null;
 
   return (
-    <Pressable onPress={onPress} style={styles.card} accessibilityRole="button">
-      <View style={styles.headerRow}>
+    <View style={styles.card}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.headerRow, pressed && styles.pressed]}
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${title} folder`}
+      >
         <Text style={styles.title} numberOfLines={1}>
           {title}
         </Text>
         <Feather name="chevron-right" size={22} color={styles.chevron.color} />
-      </View>
+      </Pressable>
 
       <View style={styles.list}>
         {recipes.map((recipe, index) => (
-          <View
+          <Pressable
             key={recipe.id}
-            style={[styles.recipeRow, index < recipes.length - 1 ? styles.recipeRowBorder : null]}
+            onPress={() => onPressRecipe?.(recipe.id)}
+            style={({ pressed }) => [
+              styles.recipeRow,
+              index < recipes.length - 1 ? styles.recipeRowBorder : null,
+              pressed && styles.pressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${recipe.title}`}
           >
             <Text style={styles.recipeEmoji}>{recipe.emoji ?? '🍽️'}</Text>
             <Text style={styles.recipeTitle} numberOfLines={1}>
               {recipe.title}
             </Text>
-          </View>
+          </Pressable>
         ))}
       </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -71,6 +84,9 @@ const styles = createThemedStyles((theme) => ({
   },
   chevron: {
     color: theme.colors.mutedForeground,
+  },
+  pressed: {
+    opacity: 0.7,
   },
   list: {
     marginTop: theme.spacing.xs,

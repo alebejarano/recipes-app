@@ -58,10 +58,11 @@ type CollectionsScreenProps = {
 }
 
 export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
-  const { segment: segmentParam, recipesSegment, docSuccess, sort } = useLocalSearchParams<{
+  const { segment: segmentParam, recipesSegment, docSuccess, docQueued, sort } = useLocalSearchParams<{
     segment?: SegmentKey
     recipesSegment?: RecipeSegmentKey
     docSuccess?: string
+    docQueued?: string
     sort?: 'recent' | 'largest' | 'oldest'
   }>()
   const segments = useSegments()
@@ -78,6 +79,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   const [segment, setSegment] = useState<SegmentKey>('recipes')
   const [recipeSegment, setRecipeSegment] = useState<RecipeSegmentKey>('folders')
   const [showDocSuccess, setShowDocSuccess] = useState(false)
+  const [showDocQueued, setShowDocQueued] = useState(false)
   const [queueStorageReminderAfterSuccess, setQueueStorageReminderAfterSuccess] = useState(false)
   const [showStorageReminder, setShowStorageReminder] = useState(false)
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false)
@@ -129,21 +131,38 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
       setSegment('recipes')
       setRecipeSegment('documents')
       setShowDocSuccess(true)
+      setShowDocQueued(false)
       setShowStorageReminder(false)
     }
   }, [docSuccess])
 
   useEffect(() => {
-    if (!showDocSuccess) return
-    const timeout = setTimeout(() => setShowDocSuccess(false), 2400)
+    if (docQueued === '1') {
+      setSegment('recipes')
+      setRecipeSegment('documents')
+      setShowDocQueued(true)
+      setShowDocSuccess(false)
+      setShowStorageReminder(false)
+    }
+  }, [docQueued])
+
+  useEffect(() => {
+    if (!showDocSuccess && !showDocQueued) return
+    const timeout = setTimeout(() => {
+      setShowDocSuccess(false)
+      setShowDocQueued(false)
+    }, showDocQueued ? 4200 : 2400)
     return () => clearTimeout(timeout)
-  }, [showDocSuccess])
+  }, [showDocQueued, showDocSuccess])
 
   useEffect(() => {
     if (recipeSegment !== 'documents' && showDocSuccess) {
       setShowDocSuccess(false)
     }
-  }, [recipeSegment, showDocSuccess])
+    if (recipeSegment !== 'documents' && showDocQueued) {
+      setShowDocQueued(false)
+    }
+  }, [recipeSegment, showDocQueued, showDocSuccess])
 
   useEffect(() => {
     if (docSuccess !== '1') return
@@ -350,16 +369,25 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
         <RecipeSegmentedTabs value={recipeSegment} onChange={setRecipeSegment} />
       ) : null}
 
-      {segment === 'recipes' && recipeSegment === 'documents' && showDocSuccess ? (
+      {segment === 'recipes' && recipeSegment === 'documents' && (showDocSuccess || showDocQueued) ? (
         <View style={styles.successBanner} accessibilityRole="alert">
           <View style={styles.successContent}>
-            <Feather name="check-circle" size={18} color={styles.successIcon.color} />
+            <Feather
+              name={showDocQueued ? 'cloud-off' : 'check-circle'}
+              size={18}
+              color={styles.successIcon.color}
+            />
             <Text style={styles.successText}>
-              Your recipe file has been successfully uploaded.
+              {showDocQueued
+                ? 'Saved offline. This file will upload when your connection is back.'
+                : 'Your recipe file has been successfully uploaded.'}
             </Text>
           </View>
           <Pressable
-            onPress={() => setShowDocSuccess(false)}
+            onPress={() => {
+              setShowDocSuccess(false)
+              setShowDocQueued(false)
+            }}
             style={styles.successClose}
             accessibilityRole="button"
             accessibilityLabel="Dismiss success message"
@@ -368,7 +396,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
           </Pressable>
         </View>
       ) : null}
-      {segment === 'recipes' && recipeSegment === 'documents' && !showDocSuccess && showStorageReminder ? (
+      {segment === 'recipes' && recipeSegment === 'documents' && !showDocSuccess && !showDocQueued && showStorageReminder ? (
         <KitchenAlmostFullCard
           title="Your kitchen storage is almost full"
           line1={`About ${storageLeftMb} MB left on Free.`}

@@ -13,7 +13,7 @@ type AnalyticsConsentContextValue = AnalyticsConsentState & {
 const STORAGE_KEY = 'analytics_consent_v1'
 
 const DEFAULT_CONSENT: AnalyticsConsentState = {
-  analyticsEnabled: true,
+  analyticsEnabled: false,
 }
 
 const AnalyticsConsentContext = createContext<AnalyticsConsentContextValue | null>(null)

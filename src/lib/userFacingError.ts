@@ -14,7 +14,10 @@ export function getUserFacingErrorMessage(error: unknown, fallback = 'Please try
     normalized.includes('timed out') ||
     normalized.includes('timeout') ||
     normalized.includes('socket') ||
-    normalized.includes('abort')
+    normalized.includes('abort') ||
+    normalized.includes('unknownhost') ||
+    normalized.includes('unable to resolve host') ||
+    normalized.includes('no address associated with hostname')
   ) {
     return 'We could not connect. Check your internet connection and try again.'
   }

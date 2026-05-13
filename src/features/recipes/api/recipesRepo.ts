@@ -1,6 +1,5 @@
-// src/features/recipes/api/recipesRepo.ts
-import { fetch } from 'expo/fetch'
 import { supabase } from '@/lib/supabase'
+import { fetchWithTimeout, FILE_READ_TIMEOUT_MS } from '@/lib/network'
 import {
   IMPORT_ALLOWED_IMAGE_MIME_TYPES,
   RECIPE_IMAGE_MASTER_MAX_FILE_BYTES,
@@ -12,17 +11,6 @@ import {
   type RecipeMealTime,
 } from '@/features/recipes/types/mealTimes'
 import type { RecipeFormSubmitValues } from '../components/RecipeForm'
-
-const REQUEST_TIMEOUT_MS = 10000
-
-function withTimeout<T>(promiseLike: PromiseLike<T>, ms: number, message: string): Promise<T> {
-  return Promise.race([
-    Promise.resolve(promiseLike),
-    new Promise<T>((_, reject) => {
-      setTimeout(() => reject(new Error(message)), ms)
-    }),
-  ])
-}
 
 async function requireAuth() {
   const { data, error } = await supabase.auth.getSession()
@@ -237,7 +225,15 @@ export async function uploadRecipeImage(input: UploadRecipeImageInput): Promise<
   const ext = fileName.includes('.') ? fileName.split('.').pop() : 'jpg'
   const path = `${user.id}/${Date.now()}.${ext}`
 
-  const response = await fetch(input.uri)
+  const response = await fetchWithTimeout(input.uri, {
+    timeoutMs: FILE_READ_TIMEOUT_MS,
+    timeoutMessage: 'Image read timed out',
+    logOperation: 'read_recipe_image',
+    logEntity: 'file',
+  })
+  if (!response.ok) {
+    throw new Error(`Unable to read selected image (${response.status}).`)
+  }
   const arrayBuffer = await response.arrayBuffer()
   const bytes = new Uint8Array(arrayBuffer)
   const normalizedMimeType = (input.mimeType ?? 'image/jpeg').toLowerCase()
@@ -355,11 +351,10 @@ export async function getRecipeById(id: string): Promise<Recipe> {
   const trimmedId = id.trim()
   if (!trimmedId) throw new Error('Missing recipe id')
 
-  const { data, error } = await withTimeout(
-    supabase
-      .from('recipes')
-      .select(
-        `
+  const { data, error } = await supabase
+    .from('recipes')
+    .select(
+      `
         id,
         user_id,
         title,
@@ -389,13 +384,10 @@ export async function getRecipeById(id: string): Promise<Recipe> {
             emoji
           )
         )
-      `
-      )
-      .eq('id', trimmedId)
-      .single(),
-    REQUEST_TIMEOUT_MS,
-    'Recipe request timed out'
-  )
+    `
+    )
+    .eq('id', trimmedId)
+    .single()
 
   if (error) throw error
   if (!data) throw new Error('Recipe not found')

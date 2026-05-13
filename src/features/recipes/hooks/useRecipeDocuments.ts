@@ -21,9 +21,34 @@ import {
 } from '@/features/recipes/storage/recipeDocumentStorage'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { useStorageDataMode, type StorageScreenMode } from '@/features/storage/hooks/useStorageDataMode'
+import { triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
 
 const DOCS_KEY = ['recipes', 'documents']
 const USAGE_KEY = ['recipes', 'documents', 'usage']
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const value = (error as { message?: unknown }).message
+    if (typeof value === 'string') return value
+  }
+  return ''
+}
+
+function isConnectivityError(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase()
+  return (
+    message.includes('network') ||
+    message.includes('failed to fetch') ||
+    message.includes('timed out') ||
+    message.includes('timeout') ||
+    message.includes('socket') ||
+    message.includes('abort') ||
+    message.includes('unknownhost') ||
+    message.includes('unable to resolve host') ||
+    message.includes('no address associated with hostname')
+  )
+}
 
 export function useRecipeDocuments(mode: StorageScreenMode = 'auth') {
   const { isStorageModeReady, shouldUseLocalData } = useStorageDataMode(mode)
@@ -45,10 +70,18 @@ export function useRecipeDocuments(mode: StorageScreenMode = 'auth') {
         }
       }
 
-      return listCloudRecipeDocumentsPage({
-        cursor: pageParam,
-        limit: CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
-      })
+      try {
+        return await listCloudRecipeDocumentsPage({
+          cursor: pageParam,
+          limit: CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
+        })
+      } catch (error) {
+        if (!isConnectivityError(error)) throw error
+        return {
+          items: await listRecipeDocuments(),
+          nextCursor: null,
+        }
+      }
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
   })
@@ -63,7 +96,15 @@ export function useRecipeDocument(id: string, mode: StorageScreenMode = 'auth') 
   const { isStorageModeReady, shouldUseLocalData } = useStorageDataMode(mode)
   return useQuery<RecipeDocument | null>({
     queryKey: [...DOCS_KEY, shouldUseLocalData ? 'local' : 'cloud', id],
-    queryFn: () => (shouldUseLocalData ? getRecipeDocument(id) : getCloudRecipeDocument(id)),
+    queryFn: async () => {
+      if (shouldUseLocalData) return getRecipeDocument(id)
+      try {
+        return await getCloudRecipeDocument(id)
+      } catch (error) {
+        if (!isConnectivityError(error)) throw error
+        return getRecipeDocument(id)
+      }
+    },
     enabled: Boolean(id) && isStorageModeReady,
   })
 }
@@ -79,7 +120,15 @@ export function useRecipeDocumentUsageSummary(options?: {
 
   return useQuery({
     queryKey: [...USAGE_KEY, useCloudUsage ? 'cloud' : 'local'],
-    queryFn: useCloudUsage ? getCloudRecipeDocumentUsageSummary : getRecipeDocumentUsageSummary,
+    queryFn: async () => {
+      if (!useCloudUsage) return getRecipeDocumentUsageSummary()
+      try {
+        return await getCloudRecipeDocumentUsageSummary()
+      } catch (error) {
+        if (!isConnectivityError(error)) throw error
+        return getRecipeDocumentUsageSummary()
+      }
+    },
     enabled: options?.enabled,
   })
 }
@@ -87,17 +136,24 @@ export function useRecipeDocumentUsageSummary(options?: {
 export function useAddRecipeDocument() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (input: { title?: string | null; file: PendingRecipeDocument; plan?: ImportPlan }) =>
+    mutationFn: (input: {
+      title?: string | null
+      file: PendingRecipeDocument
+      plan?: ImportPlan
+      ownerUserId?: string | null
+    }) =>
       addRecipeDocument({
         title: input.title,
         uri: input.file.uri,
         name: input.file.name,
         size: input.file.size,
         plan: input.plan,
+        ownerUserId: input.ownerUserId ?? null,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: DOCS_KEY })
       qc.invalidateQueries({ queryKey: USAGE_KEY })
+      void triggerRecipeSync()
     },
   })
 }

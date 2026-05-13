@@ -1,3 +1,5 @@
+import { fetchWithTimeout, FILE_READ_TIMEOUT_MS } from '@/lib/network'
+
 type PathPart = string | { uri: string }
 
 function toPathSegment(part: PathPart) {
@@ -15,7 +17,10 @@ function joinParts(parts: PathPart[]) {
 }
 
 async function readRemoteText(uri: string) {
-  const response = await fetch(uri)
+  const response = await fetchWithTimeout(uri, {
+    timeoutMs: FILE_READ_TIMEOUT_MS,
+    timeoutMessage: 'File read timed out',
+  })
   if (!response.ok) {
     throw new Error(`Unable to read file: ${response.status}`)
   }
@@ -23,7 +28,10 @@ async function readRemoteText(uri: string) {
 }
 
 async function readRemoteInfo(uri: string, options?: { md5?: boolean }) {
-  const response = await fetch(uri)
+  const response = await fetchWithTimeout(uri, {
+    timeoutMs: FILE_READ_TIMEOUT_MS,
+    timeoutMessage: 'File info request timed out',
+  })
   if (!response.ok) {
     return {
       exists: false,

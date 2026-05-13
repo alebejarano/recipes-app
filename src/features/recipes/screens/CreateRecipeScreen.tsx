@@ -32,6 +32,7 @@ import RecipeForm, {
 } from '@/features/recipes/components/RecipeForm'
 import { useAddRecipeDocument } from '@/features/recipes/hooks/useRecipeDocuments'
 import { useStrategyCreateRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
+import { triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
 import {
   DUPLICATE_RECIPE_DOCUMENT_CODE,
   findDuplicateRecipeDocumentByFile,
@@ -51,6 +52,7 @@ import { useLimitQaOverrides } from '@/features/subscription/dev/limitQaOverride
 import { getPlanLimitTypeFromError } from '@/features/subscription/utils/limitErrors'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { layout } from '@/styles/layout'
+import { getErrorCategory, logOperationalEvent } from '@/lib/productionLogger'
 
 export type CreateRecipeVariant = 'onboarding' | 'app'
 export type CreateRecipeEntry = 'scratch' | 'pdf'
@@ -63,6 +65,8 @@ interface CreateRecipeScreenProps {
 }
 
 const FOOTER_HEIGHT = 72
+const FOOTER_EXTRA_BOTTOM_PADDING = 16
+const FOREGROUND_IMPORT_UPLOAD_TIMEOUT_MS = 12_000
 const PENDING_LIMIT_RETRY_PREFIX = 'recipes:create:pending-retry:'
 const IMPORT_IMAGE_QUALITY_STEPS = [
   IMPORT_IMAGE_COMPRESS_QUALITY,
@@ -92,6 +96,27 @@ function inferImportMimeType(fileName: string) {
 function isOptimizableImportImage(fileName: string) {
   const mimeType = inferImportMimeType(fileName)
   return mimeType === 'image/jpeg' || mimeType === 'image/png'
+}
+
+function isConnectivityError(error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message.toLowerCase()
+      : typeof error === 'object' && error && 'message' in error && typeof error.message === 'string'
+        ? error.message.toLowerCase()
+        : ''
+
+  return (
+    message.includes('network') ||
+    message.includes('failed to fetch') ||
+    message.includes('timed out') ||
+    message.includes('timeout') ||
+    message.includes('socket') ||
+    message.includes('abort') ||
+    message.includes('unknownhost') ||
+    message.includes('unable to resolve host') ||
+    message.includes('no address associated with hostname')
+  )
 }
 
 function formatDuplicateImportMessage(input: { title: string | null; createdAt: string }) {
@@ -246,6 +271,7 @@ export default function CreateRecipeScreen({
 
   const saveDocument = useCallback(
     async (values: RecipeDocumentFormValues, file: { uri: string; name: string; size: number }) => {
+      let queuedForUpload = false
       const optimizedFile = isOptimizableImportImage(file.name)
         ? await optimizeImageUri(
             {
@@ -294,12 +320,32 @@ export default function CreateRecipeScreen({
 
       if (!shouldUseLocalData) {
         setIsUploadingPremiumImport(true)
-        await uploadPremiumImport({
-          uri: normalizedFile.uri,
-          fileName: normalizedFile.name,
-          mimeType: inferImportMimeType(normalizedFile.name),
-          title: values.title,
-        })
+        try {
+          await uploadPremiumImport({
+            uri: normalizedFile.uri,
+            fileName: normalizedFile.name,
+            mimeType: inferImportMimeType(normalizedFile.name),
+            title: values.title,
+            timeoutMs: FOREGROUND_IMPORT_UPLOAD_TIMEOUT_MS,
+          })
+        } catch (uploadError) {
+          if (!isConnectivityError(uploadError)) throw uploadError
+          await documentMutation.mutateAsync({
+            title: values.title,
+            file: normalizedFile,
+            plan: importPlan,
+            ownerUserId: user?.id ?? null,
+          })
+          logOperationalEvent('offline_fallback_saved', {
+            operation: 'import_upload',
+            entity: 'import',
+            category: getErrorCategory(uploadError),
+            count: 1,
+            queued: true,
+          })
+          queuedForUpload = true
+          void triggerRecipeSync()
+        }
         await queryClient.invalidateQueries({ queryKey: ['recipes', 'documents'] })
         await queryClient.invalidateQueries({ queryKey: ['recipes', 'documents', 'usage'] })
         await queryClient.invalidateQueries({ queryKey: ['recipes', 'imports', 'managed'] })
@@ -309,7 +355,7 @@ export default function CreateRecipeScreen({
           params: {
             segment: 'recipes',
             recipesSegment: 'documents',
-            docSuccess: '1',
+            ...(queuedForUpload ? { docQueued: '1' } : { docSuccess: '1' }),
           },
         })
         return
@@ -318,6 +364,7 @@ export default function CreateRecipeScreen({
         title: values.title,
         file: normalizedFile,
         plan: importPlan,
+        ownerUserId: user?.id ?? null,
       })
       await clearPendingRetry()
       router.replace({
@@ -329,7 +376,7 @@ export default function CreateRecipeScreen({
         },
       })
     },
-    [clearPendingRetry, collectionsPath, documentMutation, importPlan, manageImportsPath, queryClient, shouldUseLocalData]
+    [clearPendingRetry, collectionsPath, documentMutation, importPlan, manageImportsPath, queryClient, shouldUseLocalData, user?.id]
   )
 
   const handleSubmit = useCallback(
@@ -489,7 +536,7 @@ export default function CreateRecipeScreen({
       <View style={styles.container}>
         {/* Header / Back */}
         <View style={[styles.topBar, largeScreen.pagePaddingStyle]}>
-          <View style={largeScreen.contentWidthStyle}>
+          <View style={[largeScreen.contentWidthStyle, styles.topBarInner]}>
           <Button
             variant="ghost"
             size="md"
@@ -513,7 +560,7 @@ export default function CreateRecipeScreen({
             contentContainerStyle={[
               styles.scrollContent,
               largeScreen.pagePaddingStyle,
-              { paddingBottom: insets.bottom + FOOTER_HEIGHT + 24 },
+              { paddingBottom: insets.bottom + FOOTER_HEIGHT + FOOTER_EXTRA_BOTTOM_PADDING + 24 },
             ]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
@@ -603,7 +650,7 @@ export default function CreateRecipeScreen({
             style={[
               styles.footer,
               largeScreen.pagePaddingStyle,
-              { paddingBottom: Math.max(insets.bottom, 8) },
+              { paddingBottom: Math.max(insets.bottom, 8) + FOOTER_EXTRA_BOTTOM_PADDING },
             ]}
           >
             <View style={[styles.footerInner, largeScreen.contentWidthStyle]}>
@@ -679,8 +726,11 @@ const styles = createThemedStyles((theme) => ({
     paddingTop: theme.spacing.lg,
     paddingBottom: theme.spacing.md,
   },
+  topBarInner: {
+    alignItems: 'flex-start',
+  },
 
-  backButton: { paddingHorizontal: 0, alignSelf: 'flex-start' },
+  backButton: { width: 'auto', paddingHorizontal: 0, alignSelf: 'flex-start' },
   backIcon: { color: theme.colors.mutedForeground, fontSize: theme.fontSize.lg, },
 
   scrollContent: { paddingHorizontal: theme.spacing.lg },

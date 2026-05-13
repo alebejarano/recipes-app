@@ -19,6 +19,30 @@ const IMPORTS_KEY = ['recipes', 'imports', 'managed']
 const DOCS_KEY = ['recipes', 'documents']
 const DOCS_USAGE_KEY = ['recipes', 'documents', 'usage']
 
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const value = (error as { message?: unknown }).message
+    if (typeof value === 'string') return value
+  }
+  return ''
+}
+
+function isConnectivityError(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase()
+  return (
+    message.includes('network') ||
+    message.includes('failed to fetch') ||
+    message.includes('timed out') ||
+    message.includes('timeout') ||
+    message.includes('socket') ||
+    message.includes('abort') ||
+    message.includes('unknownhost') ||
+    message.includes('unable to resolve host') ||
+    message.includes('no address associated with hostname')
+  )
+}
+
 export function useManagedImports(mode: StorageScreenMode = 'auth') {
   const { isStorageModeReady, shouldUseLocalData } = useStorageDataMode(mode)
   const query = useInfiniteQuery<
@@ -39,10 +63,18 @@ export function useManagedImports(mode: StorageScreenMode = 'auth') {
         }
       }
 
-      return listCloudManagedImportsPage({
-        cursor: pageParam,
-        limit: CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
-      })
+      try {
+        return await listCloudManagedImportsPage({
+          cursor: pageParam,
+          limit: CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
+        })
+      } catch (error) {
+        if (!isConnectivityError(error)) throw error
+        return {
+          items: await listManagedImports(),
+          nextCursor: null,
+        }
+      }
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
   })

@@ -74,7 +74,7 @@ const TERMS_SECTIONS: readonly TermsSection[] = [
             'Use of the app is also governed by the Privacy Policy.',
             'Account emails may be sent for app-functioning purposes such as account confirmation, password reset, email changes, security, and important service messages.',
             'Marketing or product update emails are optional and are sent only if you actively opt in.',
-            'Anonymous onboarding feedback may be processed through an analytics provider to understand general user needs and improve the app.',
+            'If you opt in, sanitized analytics and diagnostics may be processed through an analytics provider to improve reliability and understand general app usage.',
         ],
     },
     {

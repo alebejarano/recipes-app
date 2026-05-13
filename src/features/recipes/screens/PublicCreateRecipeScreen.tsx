@@ -45,6 +45,9 @@ import { getPlanLimitTypeFromError } from '@/features/subscription/utils/limitEr
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 const PENDING_LIMIT_RETRY_PREFIX = 'recipes:create:pending-retry:'
+const FOOTER_HEIGHT = 72
+const FOOTER_EXTRA_BOTTOM_PADDING = 16
+const EMBEDDED_FOOTER_EXTRA_BOTTOM_PADDING = 8
 const IMPORT_IMAGE_QUALITY_STEPS = [
   IMPORT_IMAGE_COMPRESS_QUALITY,
   0.74,
@@ -137,8 +140,8 @@ export default function PublicCreateRecipeScreen({
   const isSaving = entryMode === 'pdf' ? documentMutation.isPending : createMutation.isPending
   const showInlineBackButton = !onBack
   const footerBottomPadding = showInlineBackButton
-    ? Math.max(insets.bottom, 8)
-    : Math.max(insets.bottom - 24, 2)
+    ? Math.max(insets.bottom, 8) + FOOTER_EXTRA_BOTTOM_PADDING
+    : Math.max(insets.bottom, 2) + EMBEDDED_FOOTER_EXTRA_BOTTOM_PADDING
 
   const handleBack = useCallback(() => {
     if (isSaving) return
@@ -415,7 +418,7 @@ export default function PublicCreateRecipeScreen({
             style={styles.flex1}
             contentContainerStyle={[
               styles.scrollContent,
-              { paddingBottom: insets.bottom },
+              { paddingBottom: insets.bottom + FOOTER_HEIGHT + FOOTER_EXTRA_BOTTOM_PADDING + 24 },
             ]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
@@ -570,9 +573,10 @@ const styles = createThemedStyles((theme) => ({
   topBar: {
     paddingHorizontal: theme.spacing.lg,
     paddingBottom: theme.spacing.md,
+    alignItems: 'flex-start',
   },
 
-  backButton: { paddingHorizontal: 0, alignSelf: 'flex-start' },
+  backButton: { width: 'auto', paddingHorizontal: 0, alignSelf: 'flex-start' },
   backIcon: { color: theme.colors.mutedForeground, fontSize: theme.fontSize.lg, },
 
   scrollContent: { paddingHorizontal: theme.spacing.lg },

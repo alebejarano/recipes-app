@@ -1,12 +1,14 @@
 import { Platform } from 'react-native'
 
 import { supabase } from '@/lib/supabase'
+import { fetchWithTimeout, FILE_READ_TIMEOUT_MS, UPLOAD_REQUEST_TIMEOUT_MS } from '@/lib/network'
 
 export type UploadPremiumImportInput = {
   uri: string
   fileName: string
   mimeType: string
   title?: string | null
+  timeoutMs?: number
 }
 
 export type UploadPremiumImportResult = {
@@ -32,16 +34,44 @@ type DuplicateImportPayload = {
   created_at?: string | null
 }
 
+function isConnectivityError(error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message.toLowerCase()
+      : typeof error === 'object' && error && 'message' in error && typeof error.message === 'string'
+        ? error.message.toLowerCase()
+        : ''
+
+  return (
+    message.includes('network') ||
+    message.includes('failed to fetch') ||
+    message.includes('timed out') ||
+    message.includes('timeout') ||
+    message.includes('socket') ||
+    message.includes('abort') ||
+    message.includes('unknownhost') ||
+    message.includes('unable to resolve host') ||
+    message.includes('no address associated with hostname')
+  )
+}
+
 async function getAccessToken() {
-  const { data: refreshedData, error: refreshError } = await supabase.auth.refreshSession()
-  if (refreshError) {
+  const sessionResult = await supabase.auth.getSession()
+  if (sessionResult.error) {
+    if (isConnectivityError(sessionResult.error)) throw sessionResult.error
     throw new Error('Your session expired. Please sign in again.')
   }
 
-  const accessToken =
-    refreshedData.session?.access_token ??
-    (await supabase.auth.getSession()).data.session?.access_token ??
-    null
+  const currentAccessToken = sessionResult.data.session?.access_token ?? null
+  if (currentAccessToken) return currentAccessToken
+
+  const { data: refreshedData, error: refreshError } = await supabase.auth.refreshSession()
+  if (refreshError) {
+    if (isConnectivityError(refreshError)) throw refreshError
+    throw new Error('Your session expired. Please sign in again.')
+  }
+
+  const accessToken = refreshedData.session?.access_token ?? null
   if (!accessToken) {
     throw new Error('Your session expired. Please sign in again.')
   }
@@ -79,7 +109,12 @@ async function buildUploadFormData(input: UploadPremiumImportInput) {
   const formData = new FormData()
 
   if (Platform.OS === 'web') {
-    const response = await fetch(input.uri)
+    const response = await fetchWithTimeout(input.uri, {
+      timeoutMs: FILE_READ_TIMEOUT_MS,
+      timeoutMessage: 'File read timed out',
+      logOperation: 'read_import_file',
+      logEntity: 'import',
+    })
     if (!response.ok) {
       throw new Error(`Unable to read selected file (${response.status}).`)
     }
@@ -106,13 +141,17 @@ export async function uploadPremiumImport(
   const accessToken = await getAccessToken()
   const { functionUrl, supabaseKey } = requireFunctionEnv()
   const formData = await buildUploadFormData(input)
-  const response = await fetch(functionUrl, {
+  const response = await fetchWithTimeout(functionUrl, {
     method: 'POST',
     headers: {
       apikey: supabaseKey,
       Authorization: `Bearer ${accessToken}`,
     },
     body: formData as any,
+    timeoutMs: input.timeoutMs ?? UPLOAD_REQUEST_TIMEOUT_MS,
+    timeoutMessage: 'Import upload timed out',
+    logOperation: 'upload_import',
+    logEntity: 'import',
   })
 
   const payload = await extractResponsePayload(response)

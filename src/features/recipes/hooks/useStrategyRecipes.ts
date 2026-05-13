@@ -9,6 +9,7 @@ import { useRecipe } from '@/features/recipes/hooks/useRecipe'
 import { useRecipesList } from '@/features/recipes/hooks/useRecipesList'
 import { useCreateLocalRecipe, useDeleteLocalRecipe, useLocalRecipe, useLocalRecipesList, useUpdateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
 import { useUpdateRecipe } from '@/features/recipes/hooks/useUpdateRecipe'
+import { getErrorCategory, logOperationalEvent } from '@/lib/productionLogger'
 
 type RecipesListParams = {
   limit?: number
@@ -32,7 +33,10 @@ function isConnectivityError(error: unknown) {
     message.includes('timed out') ||
     message.includes('timeout') ||
     message.includes('socket') ||
-    message.includes('abort')
+    message.includes('abort') ||
+    message.includes('unknownhost') ||
+    message.includes('unable to resolve host') ||
+    message.includes('no address associated with hostname')
   )
 }
 
@@ -85,6 +89,13 @@ export function useStrategyCreateRecipe(mode: StorageScreenMode = 'auth') {
             return await cloudMutation.mutateAsync(values)
           } catch (error) {
             if (!cloudSyncEnabled || !isConnectivityError(error)) throw error
+            logOperationalEvent('offline_fallback_saved', {
+              operation: 'create_recipe',
+              entity: 'recipe',
+              category: getErrorCategory(error),
+              count: 1,
+              queued: true,
+            })
             return localMutation.mutateAsync(values)
           }
         },
@@ -105,6 +116,13 @@ export function useStrategyUpdateRecipe(id: string, mode: StorageScreenMode = 'a
             return await cloudMutation.mutateAsync(values)
           } catch (error) {
             if (!cloudSyncEnabled || !isConnectivityError(error)) throw error
+            logOperationalEvent('offline_fallback_saved', {
+              operation: 'update_recipe',
+              entity: 'recipe',
+              category: getErrorCategory(error),
+              count: 1,
+              queued: true,
+            })
             return localMutation.mutateAsync(values)
           }
         },

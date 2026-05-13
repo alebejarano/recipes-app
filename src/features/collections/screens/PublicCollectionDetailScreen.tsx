@@ -338,6 +338,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   backButton: {
+    width: 'auto',
     paddingHorizontal: 0,
     alignSelf: 'flex-start',
     marginBottom: theme.spacing.md,

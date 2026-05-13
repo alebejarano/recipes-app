@@ -1,7 +1,8 @@
 import { router } from 'expo-router'
 import React, { useCallback, useMemo, useState } from 'react'
-import { Alert, Text } from 'react-native'
+import { Alert, Text, View } from 'react-native'
 
+import { useAnalyticsConsent } from '@/features/analytics/context/AnalyticsConsentContext'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
 import SettingsSection from '@/features/profile/components/SettingsSection'
@@ -15,6 +16,7 @@ type PrivacySettingsScreenProps = {
 
 export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySettingsScreenProps) {
   const { user, deleteAccount } = useAuth()
+  const { analyticsEnabled, isLoaded: analyticsConsentLoaded, setAnalyticsEnabled } = useAnalyticsConsent()
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const hasAccount = Boolean(user?.id)
 
@@ -54,6 +56,16 @@ export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySe
   const settingsItems = useMemo(
     () => [
       {
+        id: 'analytics-diagnostics',
+        type: 'toggle' as const,
+        icon: 'activity' as const,
+        title: 'Analytics & diagnostics',
+        subtitle: 'Help improve reliability with anonymous, sanitized app events.',
+        value: analyticsEnabled,
+        onValueChange: setAnalyticsEnabled,
+        disabled: !analyticsConsentLoaded,
+      },
+      {
         id: 'password',
         type: 'link' as const,
         icon: 'lock' as const,
@@ -91,7 +103,7 @@ export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySe
         onPress: () => router.push('/(public)/terms'),
       },
     ],
-    [exportRoute, hasAccount]
+    [analyticsConsentLoaded, analyticsEnabled, exportRoute, hasAccount, setAnalyticsEnabled]
   )
   const dangerItems = useMemo(
     () => [
@@ -123,10 +135,12 @@ export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySe
         items={settingsItems}
       />
 
-      <SettingsSection
-        title="Danger Zone"
-        items={dangerItems}
-      />
+      <View style={styles.dangerSection}>
+        <SettingsSection
+          title="Danger Zone"
+          items={dangerItems}
+        />
+      </View>
     </ProfileSubpageLayout>
   )
 }
@@ -134,10 +148,13 @@ export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySe
 const styles = createThemedStyles((theme) => ({
   intro: {
     marginTop: -theme.spacing.sm,
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing['3xl'],
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.base,
     lineHeight: theme.lineHeight.base,
     color: theme.colors.mutedForeground,
+  },
+  dangerSection: {
+    marginTop: theme.spacing['3xl'],
   },
 }))

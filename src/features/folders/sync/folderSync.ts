@@ -14,6 +14,7 @@ import {
   type LocalFolderSyncRow,
 } from '@/features/folders/storage/localFoldersStorage'
 import { supabase } from '@/lib/supabase'
+import { getErrorCategory, logOperationalEvent } from '@/lib/productionLogger'
 
 let syncInFlight: Promise<void> | null = null
 const PLAN_KEY_PREFIX = 'subscription:plan:user:'
@@ -41,7 +42,11 @@ function isConnectivityError(error: unknown) {
     message.includes('failed to fetch') ||
     message.includes('timed out') ||
     message.includes('timeout') ||
-    message.includes('socket')
+    message.includes('socket') ||
+    message.includes('abort') ||
+    message.includes('unknownhost') ||
+    message.includes('unable to resolve host') ||
+    message.includes('no address associated with hostname')
   )
 }
 
@@ -121,9 +126,17 @@ async function runFolderSync() {
 export function triggerFolderSync() {
   if (syncInFlight) return syncInFlight
 
-  syncInFlight = runFolderSync().finally(() => {
-    syncInFlight = null
-  })
+  syncInFlight = runFolderSync()
+    .catch((error) => {
+      logOperationalEvent('sync_retry_failed', {
+        operation: 'sync_folders',
+        entity: 'folder',
+        category: getErrorCategory(error),
+      })
+    })
+    .finally(() => {
+      syncInFlight = null
+    })
 
   return syncInFlight
 }

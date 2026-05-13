@@ -15,6 +15,7 @@ import Button from '@/components/Button'
 import { getCloudRecipeDocumentUsageSummary } from '@/features/recipes/api/recipeDocumentsCloudRepo'
 import { createThemedStyles } from '@/styles/createStyles'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
+import { stagePickedImportFile } from '@/features/recipes/utils/stagePickedImportFile'
 
 import {
   type PendingRecipeDocument,
@@ -42,8 +43,6 @@ type Props = {
   plan?: ImportPlan
   onSubmit: (values: RecipeDocumentFormValues, file: PendingRecipeDocument) => Promise<void> | void
 }
-
-const METADATA_READ_LIMIT = 2 * 1024 * 1024
 
 function titleFromFilename(name: string) {
   const trimmed = name.trim()
@@ -74,42 +73,6 @@ function isSaneTitle(value: string) {
   return true
 }
 
-async function tryExtractPdfTitle(uri: string, size: number) {
-  if (size <= 0 || size > METADATA_READ_LIMIT) return null
-  try {
-    const content = await new File(uri).text()
-    if (!content) return null
-
-    const infoMatch = content.match(/\/Title\s*\(([^)]+)\)/i)
-    if (infoMatch?.[1] && isSaneTitle(infoMatch[1])) {
-      return normalizeTitleCandidate(infoMatch[1])
-    }
-
-    const xmpMatch = content.match(/<dc:title>[\s\S]*?<rdf:li[^>]*>([^<]+)<\/rdf:li>/i)
-    if (xmpMatch?.[1] && isSaneTitle(xmpMatch[1])) {
-      return normalizeTitleCandidate(xmpMatch[1])
-    }
-  } catch {
-    return null
-  }
-  return null
-}
-
-async function assertPdfNotEncrypted(uri: string, size: number) {
-  if (size <= 0) return
-  try {
-    const content = await new File(uri).text()
-    if (/\/Encrypt\b/i.test(content)) {
-      throw new Error('Encrypted PDF')
-    }
-  } catch (error: any) {
-    if (error?.message === 'Encrypted PDF') {
-      throw error
-    }
-    // If we fail to read the file, keep import flow behavior unchanged.
-  }
-}
-
 function isPdfFile(name: string, mimeType?: string | null) {
   if (mimeType === 'application/pdf') return true
   return name.trim().toLowerCase().endsWith('.pdf')
@@ -122,15 +85,29 @@ function inferFallbackName(mimeType?: string | null) {
 }
 
 async function buildBestTitle(input: { uri: string; name: string; size: number; isPdf: boolean }) {
-  if (input.isPdf) {
-    const metadataTitle = await tryExtractPdfTitle(input.uri, input.size)
-    if (metadataTitle) return metadataTitle
-  }
-
   const filenameTitle = titleFromFilename(input.name)
   if (isSaneTitle(filenameTitle)) return filenameTitle
 
   return 'Untitled recipe'
+}
+
+function getPickFailureMessage(error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message.toLowerCase()
+      : typeof error === 'object' && error && 'message' in error && typeof error.message === 'string'
+        ? error.message.toLowerCase()
+        : ''
+
+  if (
+    message.includes('file not found') ||
+    message.includes('filenotfound') ||
+    message.includes('no such file')
+  ) {
+    return 'We could not open this file. If it is stored in Drive, iCloud, or another cloud provider, make it available offline first or choose a local copy.'
+  }
+
+  return 'We could not open this file. Please choose it again from Files or another location.'
 }
 
 function formatBytes(bytes: number) {
@@ -170,17 +147,33 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: [...IMPORT_ALLOWED_MIME_TYPES],
-        copyToCacheDirectory: true,
+        copyToCacheDirectory: false,
         multiple: false,
       })
       if (result.canceled) return
       const asset = result.assets?.[0]
       if (!asset) return
 
+      const name = asset.name ?? inferFallbackName(asset.mimeType)
+      let stagedUri = asset.uri
+
+      try {
+        stagedUri = await stagePickedImportFile({
+          uri: asset.uri,
+          name,
+        })
+      } catch (error) {
+        Alert.alert(
+          'File not available',
+          getPickFailureMessage(error)
+        )
+        return
+      }
+
       let size = asset.size ?? 0
       if (!size) {
         try {
-          const info = await new File(asset.uri).info()
+          const info = await new File(stagedUri).info()
           size =
             info.exists && 'size' in info && typeof info.size === 'number' ? info.size : 0
         } catch {
@@ -193,22 +186,12 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
         return
       }
 
-      const name = asset.name ?? inferFallbackName(asset.mimeType)
       const isPdf = isPdfFile(name, asset.mimeType)
-      if (isPdf) {
-        try {
-          await assertPdfNotEncrypted(asset.uri, size)
-        } catch {
-          Alert.alert(
-            'Unsupported PDF',
-            'Password-protected or encrypted PDFs are not supported.'
-          )
-          return
-        }
-      }
-      setFile({ uri: asset.uri, name, size })
-      const suggestedTitle = await buildBestTitle({ uri: asset.uri, name, size, isPdf })
+      setFile({ uri: stagedUri, name, size })
+      const suggestedTitle = await buildBestTitle({ uri: stagedUri, name, size, isPdf })
       setTitle((prev) => (prev.trim() ? prev : suggestedTitle))
+    } catch (error) {
+      Alert.alert('File not available', getPickFailureMessage(error))
     } finally {
       setIsPicking(false)
     }

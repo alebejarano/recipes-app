@@ -27,6 +27,17 @@ export type PendingRecipeDocument = {
   size: number
 }
 
+export type LocalRecipeDocumentSyncRow = {
+  id: string
+  title: string | null
+  fileName: string
+  fileUri: string
+  fileSize: number
+  createdAt: string
+  ownerUserId: string | null
+  cloudId: string | null
+}
+
 export type RecipeDocumentUsageSummary = {
   totalCount: number
   totalBytes: number
@@ -53,7 +64,11 @@ const MIGRATION_STATEMENTS = [
       file_name TEXT NOT NULL,
       file_uri TEXT NOT NULL,
       file_size INTEGER NOT NULL,
-      created_at TEXT NOT NULL
+      created_at TEXT NOT NULL,
+      owner_user_id TEXT,
+      cloud_id TEXT,
+      dirty INTEGER,
+      last_synced_at TEXT
     );`,
   },
   {
@@ -67,7 +82,22 @@ let orphanCleanupPromise: Promise<void> | null = null
 
 export function ensureRecipeDocumentStorageReady() {
   if (!migrationsPromise) {
-    migrationsPromise = runSqlBatchAsync(MIGRATION_STATEMENTS)
+    migrationsPromise = runSqlBatchAsync(MIGRATION_STATEMENTS).then(async () => {
+      const columns = await getAllAsync<{ name: string }>('PRAGMA table_info(recipe_documents);')
+      const names = new Set(columns.map((column) => column.name))
+      if (!names.has('owner_user_id')) {
+        await runSqlAsync('ALTER TABLE recipe_documents ADD COLUMN owner_user_id TEXT;')
+      }
+      if (!names.has('cloud_id')) {
+        await runSqlAsync('ALTER TABLE recipe_documents ADD COLUMN cloud_id TEXT;')
+      }
+      if (!names.has('dirty')) {
+        await runSqlAsync('ALTER TABLE recipe_documents ADD COLUMN dirty INTEGER;')
+      }
+      if (!names.has('last_synced_at')) {
+        await runSqlAsync('ALTER TABLE recipe_documents ADD COLUMN last_synced_at TEXT;')
+      }
+    })
   }
   return migrationsPromise
 }
@@ -256,6 +286,9 @@ export async function addRecipeDocument(input: {
   name: string
   size: number
   plan?: ImportPlan
+  ownerUserId?: string | null
+  cloudId?: string | null
+  synced?: boolean
 }): Promise<RecipeDocument> {
   await ensureRecipeDocumentStorageReady()
   await ensureLocalRecipeDocumentCleanup()
@@ -293,9 +326,20 @@ export async function addRecipeDocument(input: {
 
   await runSqlAsync(
     `INSERT INTO recipe_documents
-      (id, title, file_name, file_uri, file_size, created_at)
-      VALUES (?, ?, ?, ?, ?, ?);`,
-    [id, input.title ?? null, input.name, fileUri, fileSize, createdAt]
+      (id, title, file_name, file_uri, file_size, created_at, owner_user_id, cloud_id, dirty, last_synced_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+    [
+      id,
+      input.title ?? null,
+      input.name,
+      fileUri,
+      fileSize,
+      createdAt,
+      input.ownerUserId ?? null,
+      input.cloudId ?? null,
+      input.synced ? 0 : 1,
+      input.synced ? createdAt : null,
+    ]
   )
   await registerImport({
     kind: 'document',
@@ -312,6 +356,50 @@ export async function addRecipeDocument(input: {
     fileSize,
     createdAt,
   }
+}
+
+export async function listDirtyLocalRecipeDocumentRowsForSync(): Promise<LocalRecipeDocumentSyncRow[]> {
+  await ensureRecipeDocumentStorageReady()
+  await ensureLocalRecipeDocumentCleanup()
+  const rows = await getAllAsync<{
+    id: string
+    title: string | null
+    file_name: string
+    file_uri: string
+    file_size: number
+    created_at: string
+    owner_user_id: string | null
+    cloud_id: string | null
+  }>(
+    `SELECT id, title, file_name, file_uri, file_size, created_at, owner_user_id, cloud_id
+     FROM recipe_documents
+     WHERE COALESCE(dirty, 1) = 1
+     ORDER BY created_at ASC;`
+  )
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title ?? null,
+    fileName: row.file_name,
+    fileUri: row.file_uri,
+    fileSize: Number(row.file_size),
+    createdAt: row.created_at,
+    ownerUserId: row.owner_user_id ?? null,
+    cloudId: row.cloud_id ?? null,
+  }))
+}
+
+export async function markLocalRecipeDocumentSynced(input: {
+  localId: string
+  ownerUserId: string
+  cloudId: string
+}) {
+  await ensureRecipeDocumentStorageReady()
+  await runSqlAsync(
+    `UPDATE recipe_documents
+     SET owner_user_id = ?, cloud_id = ?, dirty = 0, last_synced_at = ?
+     WHERE id = ?;`,
+    [input.ownerUserId, input.cloudId, new Date().toISOString(), input.localId]
+  )
 }
 
 export async function deleteRecipeDocument(id: string): Promise<void> {
