@@ -63,7 +63,10 @@ const TERMS_SECTIONS: readonly TermsSection[] = [
         title: '6. Plans, Limits, and Premium Features',
         paragraphs: [
             'Free and Premium plans may have different feature limits, including recipe limits, import limits, and cloud storage limits.',
-            'Premium pricing and billing periods are shown in the app before upgrade.',
+            'Premium subscriptions may be offered with monthly or annual billing periods, and pricing is shown in the app before upgrade.',
+            'Monthly subscriptions may be canceled before the next monthly billing period starts. If you cancel, Premium remains active until the end of the current monthly billing period.',
+            'Annual subscriptions may be canceled at any time. If you cancel, Premium remains active until the end of the current annual subscription period.',
+            'Canceling an annual subscription partway through the year does not entitle you to a refund for the remaining months of that annual subscription period, except where required by applicable law or the app store or payment provider handling the purchase.',
             'If paid subscriptions or purchases are processed through an app store or payment provider, billing, cancellation, and refund handling may also be subject to that provider\'s terms.',
             'Premium features depend on account access and cloud services, and may not be available during outages, maintenance, or connectivity issues.',
         ],
@@ -114,7 +117,7 @@ export default function TermsOfServiceScreen() {
     return (
         <ProfileSubpageLayout
             title="Terms of Service"
-            subtitle="Last updated: May 12, 2026"
+            subtitle="Last updated: May 13, 2026"
             onBack={() => router.back()}
         >
             <Text style={styles.intro}>
