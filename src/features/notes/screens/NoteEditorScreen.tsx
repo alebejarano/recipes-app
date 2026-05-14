@@ -293,7 +293,12 @@ const styles = createThemedStyles((theme) => ({
     justifyContent: 'space-between',
     marginBottom: theme.spacing.md,
   },
-  backButton: { paddingHorizontal: 0, alignSelf: 'flex-start' },
+  backButton: {
+    minHeight: 44,
+    paddingHorizontal: theme.spacing.sm,
+    alignSelf: 'flex-start',
+    marginLeft: -theme.spacing.sm,
+  },
   backText: {
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.lg,

@@ -280,12 +280,12 @@ const styles = createThemedStyles((theme) => ({
   },
 
   headerIconButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: -8,
+    marginLeft: -10,
   },
 
   headerIconPressed: { backgroundColor: theme.colors.muted },
@@ -299,7 +299,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.foreground,
   },
 
-  headerRightSpacer: { width: 40 },
+  headerRightSpacer: { width: 44 },
 
   scrollContent: {
     paddingHorizontal: layout.screenPadding,

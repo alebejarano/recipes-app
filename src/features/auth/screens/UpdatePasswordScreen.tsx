@@ -286,6 +286,8 @@ const styles = createThemedStyles((theme) => ({
   backRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 44,
+    paddingVertical: theme.spacing.sm,
     marginBottom: theme.spacing.xl,
   },
   backIcon: {

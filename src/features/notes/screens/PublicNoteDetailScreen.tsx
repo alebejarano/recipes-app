@@ -207,8 +207,8 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
   },
   iconButton: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     borderRadius: theme.radii.full,
     alignItems: 'center',
     justifyContent: 'center',

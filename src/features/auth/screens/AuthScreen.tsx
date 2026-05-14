@@ -52,6 +52,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [acceptedLegalTerms, setAcceptedLegalTerms] = useState(false)
 
   const [error, setError] = useState<SubmitError>(null)
   const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false)
@@ -86,9 +87,10 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
       if (!passwordMeetsPolicy) return false
       if (!confirmPassword) return false
       if (password !== confirmPassword) return false
+      if (!acceptedLegalTerms) return false
     }
     return true
-  }, [email, password, confirmPassword, isLogin, passwordMeetsPolicy])
+  }, [email, password, confirmPassword, isLogin, passwordMeetsPolicy, acceptedLegalTerms])
 
   const resetTransientState = () => {
     setError(null)
@@ -122,6 +124,14 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
     if (!isLogin && password !== confirmPassword) {
       setError({ title: 'Passwords do not match', message: 'Please re-enter matching passwords.' })
+      return
+    }
+
+    if (!isLogin && !acceptedLegalTerms) {
+      setError({
+        title: 'Agreement required',
+        message: 'Please agree to the Terms of Service and acknowledge the Privacy Policy before creating an account.',
+      })
       return
     }
 
@@ -356,6 +366,41 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
             </TouchableOpacity>
           )}
 
+          {!isLogin ? (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              disabled={loading}
+              onPress={() => setAcceptedLegalTerms((value) => !value)}
+              style={styles.legalConsentRow}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: acceptedLegalTerms, disabled: loading }}
+            >
+              <View style={[styles.legalCheckbox, acceptedLegalTerms && styles.legalCheckboxSelected]}>
+                {acceptedLegalTerms ? (
+                  <Feather name="check" size={14} style={styles.legalCheckboxIcon} />
+                ) : null}
+              </View>
+
+              <Text style={styles.legalConsentText}>
+                I agree to the{' '}
+                <Text
+                  style={styles.legalConsentLink}
+                  onPress={() => router.push('/(public)/terms')}
+                >
+                  Terms of Service
+                </Text>{' '}
+                and acknowledge the{' '}
+                <Text
+                  style={styles.legalConsentLink}
+                  onPress={() => router.push('/(public)/privacy-policy')}
+                >
+                  Privacy Policy
+                </Text>
+                .
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+
           {/* Submit button */}
           <Button
             onPress={handleSubmit}
@@ -588,6 +633,47 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.primary,
   },
 
+  legalConsentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.xs,
+  },
+
+  legalCheckbox: {
+    width: 22,
+    height: 22,
+    borderRadius: theme.radii.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.inputBackground,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+
+  legalCheckboxSelected: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary,
+  },
+
+  legalCheckboxIcon: {
+    color: theme.colors.primaryForeground,
+  },
+
+  legalConsentText: {
+    flex: 1,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.base,
+    color: theme.colors.mutedForeground,
+  },
+
+  legalConsentLink: {
+    fontFamily: theme.fontFamily.medium,
+    color: theme.colors.primary,
+  },
+
   /* Button */
   submitButton: {
     width: '100%',
@@ -620,7 +706,11 @@ const styles = createThemedStyles((theme) => ({
   /* Not now */
   notNowLink: {
     marginTop: 24,
+    minHeight: 44,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
     alignSelf: 'center',
+    justifyContent: 'center',
   },
 
   notNowText: {

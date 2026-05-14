@@ -730,7 +730,13 @@ const styles = createThemedStyles((theme) => ({
     alignItems: 'flex-start',
   },
 
-  backButton: { width: 'auto', paddingHorizontal: 0, alignSelf: 'flex-start' },
+  backButton: {
+    width: 'auto',
+    minHeight: 44,
+    paddingHorizontal: theme.spacing.sm,
+    alignSelf: 'flex-start',
+    marginLeft: -theme.spacing.sm,
+  },
   backIcon: { color: theme.colors.mutedForeground, fontSize: theme.fontSize.lg, },
 
   scrollContent: { paddingHorizontal: theme.spacing.lg },

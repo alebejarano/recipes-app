@@ -291,7 +291,11 @@ const styles = createThemedStyles((theme) => ({
     paddingTop: layout.screenPadding,
     paddingBottom: theme.spacing.md,
   },
-  backButton: { paddingHorizontal: 0 },
+  backButton: {
+    minHeight: 44,
+    paddingHorizontal: theme.spacing.sm,
+    marginLeft: -theme.spacing.sm,
+  },
   backText: {
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.lg,

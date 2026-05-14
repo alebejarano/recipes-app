@@ -7,12 +7,13 @@ create or replace function public.premium_should_apply_incoming(
 returns boolean
 language sql
 immutable
+set search_path = ''
 as $$
   select
     case
       when coalesce(p_incoming_version, 1) > coalesce(p_existing_version, 1) then true
       when coalesce(p_incoming_version, 1) < coalesce(p_existing_version, 1) then false
-      else coalesce(p_incoming_updated_at, to_timestamp(0)) > coalesce(p_existing_updated_at, to_timestamp(0))
+      else coalesce(p_incoming_updated_at, pg_catalog.to_timestamp(0)) > coalesce(p_existing_updated_at, pg_catalog.to_timestamp(0))
     end;
 $$;
 
@@ -20,16 +21,17 @@ create or replace function public.premium_parse_json_array(raw text)
 returns jsonb
 language plpgsql
 immutable
+set search_path = ''
 as $$
 declare
   parsed jsonb;
 begin
-  if raw is null or btrim(raw) = '' then
+  if raw is null or pg_catalog.btrim(raw) = '' then
     return '[]'::jsonb;
   end if;
 
   parsed := raw::jsonb;
-  if jsonb_typeof(parsed) <> 'array' then
+  if pg_catalog.jsonb_typeof(parsed) <> 'array' then
     return '[]'::jsonb;
   end if;
 

@@ -114,6 +114,8 @@ const styles = createThemedStyles(theme => ({
     backRow: {
         flexDirection: 'row',
         alignItems: 'center',
+        minHeight: 44,
+        paddingVertical: theme.spacing.sm,
         marginBottom: theme.spacing.sm,
     },
     backIcon: {
@@ -126,7 +128,7 @@ const styles = createThemedStyles(theme => ({
         color: theme.colors.warmGray,
     },
     backPlaceholder: {
-        height: 24, // approximate height of backRow to keep spacing consistent
+        height: 44,
         marginBottom: theme.spacing.sm,
     },
 

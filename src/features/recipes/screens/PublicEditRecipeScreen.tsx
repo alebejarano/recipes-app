@@ -256,7 +256,12 @@ const styles = createThemedStyles((theme) => ({
     paddingBottom: theme.spacing.md,
   },
 
-  backButton: { paddingHorizontal: 0, alignSelf: 'flex-start' },
+  backButton: {
+    minHeight: 44,
+    paddingHorizontal: theme.spacing.sm,
+    alignSelf: 'flex-start',
+    marginLeft: -theme.spacing.sm,
+  },
   backIcon: { color: theme.colors.mutedForeground, fontSize: theme.fontSize.lg, },
 
   scrollContent: { paddingHorizontal: theme.spacing.lg },
