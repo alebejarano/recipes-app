@@ -22,6 +22,7 @@ const config: ExpoConfig = {
   userInterfaceStyle: 'automatic',
   newArchEnabled: true,
   ios: {
+    buildNumber: '1',
     supportsTablet: true,
     infoPlist: {
       NSPhotoLibraryUsageDescription: 'Allow access to your photo library to add recipe images.',
@@ -30,6 +31,7 @@ const config: ExpoConfig = {
     },
   },
   android: {
+    versionCode: 1,
     softwareKeyboardLayoutMode: 'resize',
     permissions: [
       'CAMERA',
