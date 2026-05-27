@@ -3,6 +3,7 @@ import React from 'react'
 import { Image, Text, TouchableOpacity, View } from 'react-native'
 
 import Button from '@/components/Button'
+import { useAnalyticsCapture } from '@/features/analytics/events'
 import Screen from '@/components/Screen'
 import { createThemedStyles } from '@/styles/createStyles'
 
@@ -35,6 +36,7 @@ export default function PremiumScreen({
   isUpgrading = false,
   onManageSubscription,
 }: PremiumScreenProps) {
+  const captureAnalyticsEvent = useAnalyticsCapture()
   const [billingCycle, setBillingCycle] = React.useState<'month' | 'year'>('month')
   const monthlyPrice = 5
   const yearlyPrice = 36
@@ -130,7 +132,13 @@ export default function PremiumScreen({
         </Button>
       ) : (
         <Button
-          onPress={() => onUpgrade?.(billingCycle)}
+          onPress={() => {
+            captureAnalyticsEvent('upgrade_clicked', {
+              surface: 'premium_screen',
+              billing_cycle: billingCycle,
+            })
+            onUpgrade?.(billingCycle)
+          }}
           variant="premium"
           size="xl"
           style={styles.ctaButton}

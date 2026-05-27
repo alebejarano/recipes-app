@@ -77,7 +77,8 @@ const TERMS_SECTIONS: readonly TermsSection[] = [
             'Use of the app is also governed by the Privacy Policy.',
             'Account emails may be sent for app-functioning purposes such as account confirmation, password reset, email changes, security, and important service messages.',
             'Marketing or product update emails are optional and are sent only if you actively opt in.',
-            'If you opt in, sanitized analytics and diagnostics may be processed through an analytics provider to improve reliability and understand general app usage.',
+            'Analytics and diagnostics are optional, off by default, and used only if you actively enable them. If enabled, minimal sanitized events may be processed through an analytics provider to improve reliability, troubleshoot issues, understand which core features are useful, and improve the app.',
+            'Analytics and diagnostics do not include recipe titles, recipe text, note content, ingredients, file names, email addresses, payment details, authentication tokens, or raw error messages.',
         ],
     },
     {

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import { useAnalyticsCapture } from '@/features/analytics/events'
 import type { LocalNote } from '@/features/notes/storage/localNotesStorage'
 import {
   createLocalNote,
@@ -36,10 +37,14 @@ export function useLocalNote(id: string, options?: { enabled?: boolean; matchClo
 
 export function useCreateLocalNote() {
   const qc = useQueryClient()
+  const captureAnalyticsEvent = useAnalyticsCapture()
   return useMutation({
     mutationFn: (input: { title: string; content: string; pinnedAt?: string | null }) =>
       createLocalNote(input),
     onSuccess: () => {
+      captureAnalyticsEvent('note_created', {
+        storage_mode: 'local',
+      })
       qc.invalidateQueries({ queryKey: LIST_KEY })
       void triggerNoteSync()
     },

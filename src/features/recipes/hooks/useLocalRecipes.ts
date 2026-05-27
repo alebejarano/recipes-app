@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import { useAnalyticsCapture } from '@/features/analytics/events'
 import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import type { LocalRecipe } from '@/features/recipes/storage/localRecipesStorage'
@@ -40,9 +41,14 @@ export function useCreateLocalRecipe() {
   const { isPremium } = useStorageStrategy()
   const plan = isPremium ? 'premium' : 'free'
   const qc = useQueryClient()
+  const captureAnalyticsEvent = useAnalyticsCapture()
   return useMutation({
     mutationFn: (values: RecipeFormSubmitValues) => createLocalRecipe(values, { plan }),
     onSuccess: () => {
+      captureAnalyticsEvent('recipe_created', {
+        source: 'manual',
+        storage_mode: 'local',
+      })
       qc.invalidateQueries({ queryKey: LIST_KEY })
       void triggerRecipeSync()
     },

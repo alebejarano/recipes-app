@@ -14,6 +14,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
+import { useAnalyticsCapture } from '@/features/analytics/events'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import {
@@ -44,6 +45,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
   const insets = useSafeAreaInsets()
   const largeScreen = useLargeScreenLayout({ maxContentWidth: layout.authContentMaxWidth })
   const { login, register } = useAuth()
+  const captureAnalyticsEvent = useAnalyticsCapture()
 
   const [mode, setMode] = useState<AuthMode>(initialMode)
   const [showPassword, setShowPassword] = useState(false)
@@ -148,6 +150,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
       // Register
       const data = await register(normalizedEmail, password)
+      captureAnalyticsEvent('sign_up_completed', { method: 'email' })
 
       // If email confirmations are enabled, session may be null.
       if (!data.session) {

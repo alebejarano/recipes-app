@@ -60,7 +60,7 @@ export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySe
         type: 'toggle' as const,
         icon: 'activity' as const,
         title: 'Analytics & diagnostics',
-        subtitle: 'Help improve reliability with anonymous, sanitized app events.',
+        subtitle: 'Optional. Shares only minimal, sanitized app events to improve reliability and features.',
         value: analyticsEnabled,
         onValueChange: setAnalyticsEnabled,
         disabled: !analyticsConsentLoaded,

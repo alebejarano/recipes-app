@@ -49,14 +49,14 @@ const POLICY_SECTIONS: readonly PolicySection[] = [
             {
                 heading: 'Analytics and Diagnostics',
                 paragraphs: [
-                    'If you enable analytics and diagnostics in Privacy & Security settings, sanitized app events may be processed through our analytics provider, PostHog, to understand reliability issues and improve the application.',
-                    'These events may include general categories and counts such as request failures, request timeouts, offline fallback saves, sync retry results, and upload or import retry status.',
+                    'Analytics and diagnostics are optional and are not enabled by default. If you enable them in Privacy & Security settings, minimal sanitized app events may be processed through our analytics provider, PostHog, to understand reliability issues and improve the application.',
+                    'These events are limited to essential product and reliability signals such as app opens, optional onboarding answer categories, account creation, recipe or note creation, premium upgrade clicks, purchase success, request failures, request timeouts, offline fallback saves, sync retry results, and upload or import retry status.',
                     'Analytics and diagnostics are off by default and can be enabled or disabled at any time from Privacy & Security settings.',
                 ],
                 bullets: [
-                    'does not include recipe titles, note content, file names, full URLs, authentication tokens, or raw error messages',
-                    'is limited to sanitized categories and counts',
-                    'is used only to improve reliability, troubleshoot issues, and understand general app usage.',
+                    'does not include recipe titles, recipe text, note content, ingredients, file names, email addresses, payment details, full URLs, authentication tokens, or raw error messages',
+                    'is limited to sanitized categories, counts, storage mode, billing cycle, and non-content event names',
+                    'is used only to improve reliability, troubleshoot issues, understand which core features are useful, and improve the product.',
                 ],
             },
             {
@@ -103,12 +103,8 @@ const POLICY_SECTIONS: readonly PolicySection[] = [
             },
             {
                 heading: 'Consent',
-                paragraphs: ['For sending optional email communications and processing optional analytics and diagnostics.'],
-            },
-            {
-                heading: 'Legitimate interest',
                 paragraphs: [
-                    'To improve the application through anonymous feedback and product improvement.',
+                    'For sending optional email communications and processing optional analytics and diagnostics. Consent can be withdrawn at any time from the relevant app settings.',
                 ],
             },
         ],
@@ -124,7 +120,7 @@ const POLICY_SECTIONS: readonly PolicySection[] = [
         title: '7. Data Retention',
         paragraphs: [
             'Email addresses associated with accounts are retained for as long as the account remains active.',
-            'Optional analytics and diagnostics events may be retained for analytical and reliability purposes, subject to the analytics provider retention settings.',
+            'Optional analytics and diagnostics events may be retained only for analytical and reliability purposes, subject to the analytics provider retention settings and only for as long as reasonably needed for those purposes.',
             'Users may request deletion of their account and associated data at any time.',
         ],
     },

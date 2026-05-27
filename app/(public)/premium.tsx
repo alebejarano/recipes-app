@@ -3,6 +3,7 @@ import { Alert } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
+import { useAnalyticsCapture } from '@/features/analytics/events'
 import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
 import PremiumSuccessModal from '@/features/subscription/components/PremiumSuccessModal'
 import PremiumScreen from '@/features/subscription/screens/PremiumScreen'
@@ -12,6 +13,7 @@ import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 export default function PremiumRoute() {
   const router = useRouter()
+  const captureAnalyticsEvent = useAnalyticsCapture()
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
   const { user } = useAuth()
@@ -31,6 +33,10 @@ export default function PremiumRoute() {
         billingCycle,
         setPlan,
         setUpgradeStatus,
+      })
+      captureAnalyticsEvent('purchase_succeeded', {
+        plan: 'premium',
+        billing_cycle: billingCycle,
       })
       setShowSuccessModal(true)
     } catch (error: any) {

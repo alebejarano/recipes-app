@@ -1,5 +1,6 @@
 // src/features/onboarding/screens/IdentityScreen.tsx
 import Button from '@/components/Button';
+import { useAnalyticsConsent } from '@/features/analytics/context/AnalyticsConsentContext';
 import { createThemedStyles } from '@/styles/createStyles';
 import {
     Feather,
@@ -7,7 +8,6 @@ import {
     MaterialCommunityIcons,
     MaterialIcons,
 } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { usePostHog } from 'posthog-react-native';
 import React, { useState } from 'react';
 import {
@@ -66,20 +66,14 @@ const options = [
 
 export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
     const [selected, setSelected] = useState<string[]>([]);
+    const { analyticsEnabled } = useAnalyticsConsent();
     const posthog = usePostHog();
-    const router = useRouter();
 
     const toggleOption = (id: string) => {
         setSelected(prev => {
             const nextSelected = prev.includes(id)
                 ? prev.filter(i => i !== id)
                 : [...prev, id];
-
-            posthog?.capture('onboarding_identity_option_toggled', {
-                option: id,
-                selected: nextSelected.includes(id),
-                selected_count: nextSelected.length,
-            });
 
             return nextSelected;
         });
@@ -157,27 +151,6 @@ export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
                             );
                         })}
 
-                        <View style={styles.privacyTextWrapper}>
-                            <Text style={styles.privacyText}>
-                                Anonymous feedback to help improve the app.
-                            </Text>
-                            <Text style={styles.privacyText}>
-                                Learn more in our{' '}
-                                <Text
-                                    style={styles.privacyLink}
-                                    onPress={() => router.push('/(public)/privacy-policy')}
-                                >
-                                    Privacy Policy
-                                </Text>{' '}
-                                and{' '}
-                                <Text
-                                    style={styles.privacyLink}
-                                    onPress={() => router.push('/terms')}
-                                >
-                                    Terms of Service
-                                </Text>
-                            </Text>
-                        </View>
                     </ScrollView>
                 </View>
 
@@ -188,10 +161,12 @@ export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
                         size="xl"
                         disabled={isContinueDisabled}
                         onPress={() => {
-                            posthog?.capture('onboarding_identity_continue', {
-                                selected,
-                                selected_count: selected.length,
-                            });
+                            if (analyticsEnabled) {
+                                posthog?.capture('onboarding_identity_continue', {
+                                    selected,
+                                    selected_count: selected.length,
+                                });
+                            }
                             onContinue(selected);
                         }}
                     >
@@ -245,21 +220,6 @@ const styles = createThemedStyles(theme => ({
     optionsList: {
         paddingBottom: theme.spacing.xl,
     },
-    privacyTextWrapper: {
-        marginTop: theme.spacing.sm,
-        gap: theme.spacing.xs,
-    },
-    privacyText: {
-        fontFamily: theme.fontFamily.regular,
-        fontSize: theme.fontSize.sm,
-        lineHeight: theme.lineHeight.base,
-        color: theme.colors.mutedForeground,
-    },
-    privacyLink: {
-        fontFamily: theme.fontFamily.medium,
-        color: theme.colors.primary,
-    },
-
     optionCard: {
         flexDirection: 'row',
         alignItems: 'center',

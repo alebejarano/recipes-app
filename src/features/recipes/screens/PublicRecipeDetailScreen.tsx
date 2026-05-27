@@ -27,6 +27,8 @@ import { buildRecipeShareText, shareRecipeAsTextFile } from '@/features/recipes/
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding'
+import { theme } from '@/styles/theme'
 
 const FALLBACK_FOLDERS: string[] = []
 const FAVORITES_FOLDER_NAME = 'Favorites'
@@ -81,6 +83,7 @@ function buildIngredientLines(ingredients: { name: string }[] | undefined): stri
 }
 
 export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
+  const bottomPadding = useTabBarBottomPadding(theme.spacing['3xl'])
   const [isIngredientImportOpen, setIsIngredientImportOpen] = useState(false)
   const [isImportingIngredients, setIsImportingIngredients] = useState(false)
 
@@ -322,7 +325,7 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.topBar}>

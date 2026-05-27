@@ -2,8 +2,8 @@
 import { Slot } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { PostHogProvider, usePostHog } from 'posthog-react-native'
-import React, { useEffect } from 'react'
-import { LogBox } from 'react-native'
+import React, { useEffect, useRef } from 'react'
+import { AppState, LogBox } from 'react-native'
 
 import { AnalyticsConsentProvider, useAnalyticsConsent } from '@/features/analytics/context/AnalyticsConsentContext'
 import { AuthProvider } from '@/features/auth/context/AuthContext'
@@ -115,6 +115,7 @@ function PostHogGate({
 
 function ProductionLoggingBridge({ children }: { children: React.ReactNode }) {
   const posthog = usePostHog()
+  const appStateRef = useRef(AppState.currentState)
 
   useEffect(() => {
     setProductionLogCapture((event, properties) => {
@@ -122,6 +123,21 @@ function ProductionLoggingBridge({ children }: { children: React.ReactNode }) {
     })
 
     return () => setProductionLogCapture(null)
+  }, [posthog])
+
+  useEffect(() => {
+    posthog.capture('app_opened', { source: 'cold_start' })
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      const previousState = appStateRef.current
+      appStateRef.current = nextState
+
+      if (previousState.match(/inactive|background/) && nextState === 'active') {
+        posthog.capture('app_opened', { source: 'foreground' })
+      }
+    })
+
+    return () => subscription.remove()
   }, [posthog])
 
   return <>{children}</>
