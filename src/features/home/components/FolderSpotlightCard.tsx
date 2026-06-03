@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons';
-import React from 'react';
+import { Image } from 'expo-image';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { createThemedStyles } from '@/styles/createStyles';
@@ -9,6 +10,7 @@ type FolderSpotlightRecipe = {
   id: string;
   title: string;
   emoji?: string | null;
+  imageUrl?: string | null;
 };
 
 type Props = {
@@ -48,7 +50,7 @@ export default function FolderSpotlightCard({ title, recipes, onPress, onPressRe
             accessibilityRole="button"
             accessibilityLabel={`Open ${recipe.title}`}
           >
-            <Text style={styles.recipeEmoji}>{recipe.emoji ?? '🍽️'}</Text>
+            <RecipeMedia emoji={recipe.emoji} imageUrl={recipe.imageUrl} />
             <Text style={styles.recipeTitle} numberOfLines={1}>
               {recipe.title}
             </Text>
@@ -57,6 +59,29 @@ export default function FolderSpotlightCard({ title, recipes, onPress, onPressRe
       </View>
     </View>
   );
+}
+
+function RecipeMedia({ emoji, imageUrl }: Pick<FolderSpotlightRecipe, 'emoji' | 'imageUrl'>) {
+  const normalizedImageUrl = useMemo(() => imageUrl?.trim() ?? '', [imageUrl]);
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [normalizedImageUrl]);
+
+  if (normalizedImageUrl && !imageFailed) {
+    return (
+      <Image
+        source={{ uri: normalizedImageUrl }}
+        style={styles.recipeImage}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        onError={() => setImageFailed(true)}
+      />
+    );
+  }
+
+  return <Text style={styles.recipeEmoji}>{emoji ?? '🍽️'}</Text>;
 }
 
 const styles = createThemedStyles((theme) => ({
@@ -106,6 +131,13 @@ const styles = createThemedStyles((theme) => ({
     textAlign: 'center',
     fontSize: theme.fontSize.xl,
     lineHeight: theme.lineHeight.xl,
+  },
+  recipeImage: {
+    width: 24,
+    height: 24,
+    borderRadius: theme.radii.sm,
+    borderCurve: 'continuous',
+    backgroundColor: theme.colors.muted,
   },
   recipeTitle: {
     flex: 1,
