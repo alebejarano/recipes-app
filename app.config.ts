@@ -37,9 +37,6 @@ const config: ExpoConfig = {
       'CAMERA',
       'READ_MEDIA_IMAGES',
       'READ_EXTERNAL_STORAGE',
-      'CAMERA',
-      'READ_MEDIA_IMAGES',
-      'READ_EXTERNAL_STORAGE',
     ],
     adaptiveIcon: {
       backgroundColor: '#F7F1E8',
@@ -48,7 +45,7 @@ const config: ExpoConfig = {
     },
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
-    package: 'com.anonymous.recipesapp',
+    package: 'com.dropsauce.app',
   },
   web: {
     output: 'static',

@@ -19,7 +19,7 @@
       }
     },
     "production": {
-      "autoIncrement": false,
+      "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_APP_ENV": "production",
         "EXPO_PUBLIC_ENABLE_POSTHOG": "1"

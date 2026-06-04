@@ -15,7 +15,7 @@ const EXPORT_LIMIT = 5000
 function safeFileName(input: string) {
   const normalized = input.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, '-')
   const collapsed = normalized.replace(/-+/g, '-').replace(/^-|-$/g, '')
-  return collapsed || 'recipes-app-data'
+  return collapsed || 'Dropsauce-data'
 }
 
 export type ExportUserDataInput = {
@@ -83,7 +83,7 @@ export async function exportUserData(account: ExportUserDataInput) {
   }
 
   const payload = await buildExportPayload(account)
-  const baseName = safeFileName(account.email ?? account.displayName ?? 'recipes-app-data')
+  const baseName = safeFileName(account.email ?? account.displayName ?? 'Dropsauce-data')
   const file = new File(EXPORTED_DATA_DIR, `${baseName}-${Date.now()}.json`)
   file.create({ intermediates: true, overwrite: true })
   file.write(JSON.stringify(payload, null, 2))
