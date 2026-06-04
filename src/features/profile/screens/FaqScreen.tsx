@@ -9,7 +9,7 @@ import { createThemedStyles } from '@/styles/createStyles'
 
 export default function FaqScreen() {
   const segments = useSegments()
-  const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
+  const routeMode = segments[0] === '(public)' ? 'public' : 'auth'
 
   const [query, setQuery] = useState('')
   const [openId, setOpenId] = useState<string | null>(null)
@@ -29,11 +29,6 @@ export default function FaqScreen() {
   }, [query])
 
   const onPressBack = () => {
-    if (routeMode === 'dev') {
-      router.replace('/(dev)/(tabs)/profile')
-      return
-    }
-
     if (routeMode === 'public') {
       router.replace('/(public)/(tabs)/profile')
       return

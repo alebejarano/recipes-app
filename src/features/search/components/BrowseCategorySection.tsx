@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 
-import type { BrowseCategory } from '@/features/search/data/searchMockData';
+import type { BrowseCategory } from '@/features/search/data/searchData';
 import { createThemedStyles } from '@/styles/createStyles';
 import BrowseCategoryCard from './BrowseCategoryCard';
 

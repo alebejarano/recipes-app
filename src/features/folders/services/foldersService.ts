@@ -36,7 +36,6 @@ export function resolveFolderStorageTarget({
   canUseCloudSync,
 }: FolderServiceContext): FolderStorageTarget {
   if (mode === 'public') return 'local'
-  if (mode === 'dev') return 'cloud'
   if (mode === 'auth' && canUseCloudSync) return 'cloud'
   return 'local'
 }

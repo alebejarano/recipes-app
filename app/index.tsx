@@ -1,62 +1,23 @@
-import { Link } from 'expo-router'
-import { Text, View } from 'react-native'
+import { Redirect } from 'expo-router'
 
-import { createThemedStyles } from '@/styles/createStyles'
+import { useAuth } from '@/features/auth/context/AuthContext'
+import { useOnboarding } from '@/features/onboarding/context/OnboardingContext'
 
-export default function DevLandingScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Dev Entry</Text>
+export default function IndexRoute() {
+  const { session, isLoading: isAuthLoading } = useAuth()
+  const { isLoaded: isOnboardingLoaded, hasCompletedOnboarding } = useOnboarding()
 
-      <View style={styles.links}>
-        <Link href="/(public)/onboarding?dev=1" style={styles.link}>
-          Onboarding
-        </Link>
+  if (isAuthLoading || !isOnboardingLoaded) {
+    return null
+  }
 
-        <Link href="/(public)/onboarding?dev=1&reset=1" style={styles.link}>
-          Onboarding reset
-        </Link>
+  if (session) {
+    return <Redirect href="/(auth)/(tabs)" />
+  }
 
-        <Link href="/(dev)/(tabs)/profile" style={styles.link}>
-          Dev profile
-        </Link>
+  if (!hasCompletedOnboarding) {
+    return <Redirect href="/(public)/onboarding" />
+  }
 
-        <Link href="/(auth)/(tabs)/profile" style={styles.link}>
-          Normal profile
-        </Link>
-      </View>
-    </View>
-  )
+  return <Redirect href="/(public)/(tabs)" />
 }
-
-const styles = createThemedStyles((theme) => ({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: theme.spacing.xl,
-    backgroundColor: theme.colors.background,
-  },
-  title: {
-    marginBottom: theme.spacing.xl,
-    textAlign: 'center',
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.display,
-    lineHeight: theme.lineHeight.display,
-    color: theme.colors.foreground,
-  },
-  links: {
-    gap: theme.spacing.md,
-  },
-  link: {
-    borderRadius: theme.radii.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
-    padding: theme.spacing.lg,
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.foreground,
-    textAlign: 'center',
-  },
-}))

@@ -40,7 +40,7 @@ type RecipeDocumentDetailScreenProps = {
 export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumentDetailScreenProps) {
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const segments = useSegments()
-  const routeMode = segments[0] === '(public)' ? 'public' : segments[0] === '(dev)' ? 'dev' : 'auth'
+  const routeMode = segments[0] === '(public)' ? 'public' : 'auth'
   const safeReturnTo = getSafeReturnTo(returnTo)
   
   const { data: document, isLoading, isError } = useRecipeDocument(documentId, routeMode)

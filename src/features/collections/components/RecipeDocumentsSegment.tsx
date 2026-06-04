@@ -18,18 +18,15 @@ export default function RecipeDocumentsSegment({
   sortBy = 'recent',
 }: {
   bottomPadding: number
-  mode?: 'auth' | 'public' | 'dev'
+  mode?: 'auth' | 'public'
   sortBy?: 'recent' | 'largest' | 'oldest'
 }) {
   const isPublic = mode === 'public'
-  const isDev = mode === 'dev'
-  const createPath = isPublic ? '/(public)/recipes/create' : isDev ? '/(dev)/recipes/create' : '/(auth)/recipes/create'
+  const createPath = isPublic ? '/(public)/recipes/create' : '/(auth)/recipes/create'
   const documentDetailPath = isPublic ? '/(public)/recipes/documents/[id]' : '/(auth)/recipes/documents/[id]'
   const docsQuery = useRecipeDocuments(mode)
   const returnTo = getSafeReturnTo(
-    mode === 'dev'
-      ? '/(dev)/(tabs)/collections?segment=recipes&recipesSegment=documents'
-      : mode === 'public'
+    mode === 'public'
         ? '/(public)/(tabs)/collections?segment=recipes&recipesSegment=documents'
         : '/(auth)/(tabs)/collections?segment=recipes&recipesSegment=documents'
   )

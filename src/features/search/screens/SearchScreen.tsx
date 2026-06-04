@@ -22,10 +22,10 @@ import {
   SEARCH_FILTERS,
   type BrowseCategory,
   type SearchFilterId,
-} from '@/features/search/data/searchMockData';
+} from '@/features/search/data/searchData';
 
 type SearchScreenProps = {
-  mode?: 'auth' | 'public' | 'dev';
+  mode?: 'auth' | 'public';
 };
 
 export default function SearchScreen({ mode }: SearchScreenProps) {
@@ -34,7 +34,7 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
   const segments = useSegments();
   const resolvedMode =
     mode ??
-    (segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth');
+    (segments[0] === '(public)' ? 'public' : 'auth');
   const trimmedQuery = query.trim();
   const isBrowsing = trimmedQuery.length === 0;
   const searchParams = useMemo(
@@ -69,15 +69,13 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
   }, [activeFilter]);
 
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl);
-  const root = resolvedMode === 'dev' ? '(dev)' : resolvedMode === 'public' ? '(public)' : '(auth)';
+  const root = resolvedMode === 'public' ? '(public)' : '(auth)';
   const collectionDetailPath =
-    root === '(dev)'
-      ? '/(dev)/collections/[key]'
-      : root === '(public)'
+    root === '(public)'
         ? '/(public)/collections/[key]'
         : '/(auth)/collections/[key]';
   const searchReturnTo =
-    root === '(dev)' ? '/(dev)/(tabs)/search' : root === '(public)' ? '/(public)/(tabs)/search' : '/(auth)/(tabs)/search';
+    root === '(public)' ? '/(public)/(tabs)/search' : '/(auth)/(tabs)/search';
 
   const collectionCards = useMemo<BrowseCategory[]>(() => {
     const source = foldersQuery.data ?? [];
@@ -191,9 +189,7 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
                     onPress={() =>
                       router.push({
                         pathname:
-                          root === '(dev)'
-                            ? '/(dev)/recipes/[id]'
-                            : root === '(public)'
+                          root === '(public)'
                               ? '/(public)/recipes/[id]'
                               : '/(auth)/recipes/[id]',
                         params: {
@@ -252,9 +248,7 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
                     onPress={() =>
                       router.push({
                         pathname:
-                          root === '(dev)'
-                            ? '/(dev)/notes/[id]'
-                            : root === '(public)'
+                          root === '(public)'
                               ? '/(public)/notes/[id]'
                               : '/(auth)/notes/[id]',
                         params: {

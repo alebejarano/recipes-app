@@ -48,7 +48,6 @@ import {
   IMPORT_IMAGE_MAX_FILE_BYTES,
   IMPORT_IMAGE_TOO_LARGE_MESSAGE,
 } from '@/features/subscription/constants/limits'
-import { useLimitQaOverrides } from '@/features/subscription/dev/limitQaOverrides'
 import { getPlanLimitTypeFromError } from '@/features/subscription/utils/limitErrors'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { layout } from '@/styles/layout'
@@ -147,11 +146,9 @@ export default function CreateRecipeScreen({
     folder?: string | string[]
   }>()
   const segments = useSegments()
-  const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
-  const isDevMode = routeMode === 'dev'
+  const routeMode = segments[0] === '(public)' ? 'public' : 'auth'
   const { shouldUseLocalData } = useStorageDataMode(routeMode)
   const { isPremium } = useStorageStrategy()
-  const { overrides } = useLimitQaOverrides()
   const importPlan = isPremium ? 'premium' : 'free'
 
   const isOnboarding = variant === 'onboarding'
@@ -198,24 +195,16 @@ export default function CreateRecipeScreen({
     ? documentMutation.isPending || isUploadingPremiumImport
     : createMutation.isPending
 
-  const premiumPath =
-    routeMode === 'dev' ? '/(dev)/premium' : routeMode === 'public' ? '/(public)/premium' : '/(auth)/premium'
-  const recipeDetailPath =
-    routeMode === 'dev' ? '/(dev)/recipes/[id]' : routeMode === 'public' ? '/(public)/recipes/[id]' : '/(auth)/recipes/[id]'
-  const homePath =
-    routeMode === 'dev' ? '/(dev)/(tabs)' : routeMode === 'public' ? '/(public)/(tabs)' : '/(auth)/(tabs)'
+  const premiumPath = routeMode === 'public' ? '/(public)/premium' : '/(auth)/premium'
+  const recipeDetailPath = routeMode === 'public' ? '/(public)/recipes/[id]' : '/(auth)/recipes/[id]'
+  const homePath = routeMode === 'public' ? '/(public)/(tabs)' : '/(auth)/(tabs)'
   const collectionsPath =
-    routeMode === 'dev'
-      ? '/(dev)/(tabs)/collections'
-      : routeMode === 'public'
+    routeMode === 'public'
         ? '/(public)/(tabs)/collections'
         : '/(auth)/(tabs)/collections'
-  const manageRecipesPath =
-    routeMode === 'dev' ? '/(dev)/recipes/manage' : routeMode === 'public' ? '/(public)/recipes/manage' : '/(auth)/recipes/manage'
-  const manageImportsPath =
-    routeMode === 'dev' ? '/(dev)/imports/manage' : routeMode === 'public' ? '/(public)/imports/manage' : '/(auth)/imports/manage'
-  const createPath =
-    routeMode === 'dev' ? '/(dev)/recipes/create' : routeMode === 'public' ? '/(public)/recipes/create' : '/(auth)/recipes/create'
+  const manageRecipesPath = routeMode === 'public' ? '/(public)/recipes/manage' : '/(auth)/recipes/manage'
+  const manageImportsPath = routeMode === 'public' ? '/(public)/imports/manage' : '/(auth)/imports/manage'
+  const createPath = routeMode === 'public' ? '/(public)/recipes/create' : '/(auth)/recipes/create'
   const pendingRetryKey = `${PENDING_LIMIT_RETRY_PREFIX}${routeMode}:${user?.id ?? 'guest'}`
   const requestedFolder = useMemo(() => normalizeRequestedFolder(folder), [folder])
   const folderContextMessage = useMemo(
@@ -382,13 +371,6 @@ export default function CreateRecipeScreen({
   const handleSubmit = useCallback(
     async (values: RecipeFormSubmitValues) => {
       try {
-        if (isDevMode && (overrides.forceRecipeLimitErrorOnSave || overrides.recipeUsageBandOverride === 'atLimit')) {
-          const nextPending: PendingLimitRetry = { kind: 'recipe', values }
-          setPendingRetry(nextPending)
-          void AsyncStorage.setItem(pendingRetryKey, JSON.stringify(nextPending))
-          setLimitModalType('recipes')
-          return
-        }
         await saveRecipe(values)
       } catch (e: any) {
         const limitType = getPlanLimitTypeFromError(e)
@@ -402,19 +384,12 @@ export default function CreateRecipeScreen({
         Alert.alert('Save failed', getUserFacingErrorMessage(e))
       }
     },
-    [isDevMode, overrides.forceRecipeLimitErrorOnSave, overrides.recipeUsageBandOverride, pendingRetryKey, saveRecipe]
+    [pendingRetryKey, saveRecipe]
   )
 
   const handleDocumentSubmit = useCallback(
     async (values: RecipeDocumentFormValues, file: { uri: string; name: string; size: number }) => {
       try {
-        if (isDevMode && (overrides.forceStorageLimitErrorOnImport || overrides.storageUsageBandOverride === 'atLimit')) {
-          const nextPending: PendingLimitRetry = { kind: 'document', values, file }
-          setPendingRetry(nextPending)
-          void AsyncStorage.setItem(pendingRetryKey, JSON.stringify(nextPending))
-          setLimitModalType('storage')
-          return
-        }
         await saveDocument(values, file)
       } catch (error: any) {
         if (error?.code === DUPLICATE_RECIPE_DOCUMENT_CODE) {
@@ -457,7 +432,7 @@ export default function CreateRecipeScreen({
         setIsUploadingPremiumImport(false)
       }
     },
-    [collectionsPath, isDevMode, manageImportsPath, overrides.forceStorageLimitErrorOnImport, overrides.storageUsageBandOverride, pendingRetryKey, saveDocument, shouldUseLocalData]
+    [collectionsPath, manageImportsPath, pendingRetryKey, saveDocument, shouldUseLocalData]
   )
 
   const handleCreateFolder = useCallback(

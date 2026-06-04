@@ -15,7 +15,7 @@ export default function ShoppingSegment({
   mode = 'auth',
 }: {
   bottomPadding: number
-  mode?: 'auth' | 'public' | 'dev'
+  mode?: 'auth' | 'public'
 }) {
   const hydrate = useShoppingListStore((s) => s.hydrate)
   const isHydrated = useShoppingListStore((s) => s.isHydrated)
@@ -47,11 +47,9 @@ export default function ShoppingSegment({
 
   const onOpenList = () => {
     const route =
-      mode === 'dev'
-        ? '/(dev)/shopping-list'
-        : mode === 'public'
-          ? '/(public)/shopping-list'
-          : '/(auth)/shopping-list'
+      mode === 'public'
+        ? '/(public)/shopping-list'
+        : '/(auth)/shopping-list'
     router.push(route)
   }
 

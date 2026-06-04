@@ -16,7 +16,7 @@ import {
 import CreateActionCard from '../components/CreateActionCard'
 
 type CreateNewScreenProps = {
-  group?: 'auth' | 'public' | 'dev'
+  group?: 'auth' | 'public'
 }
 
 export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps) {
@@ -49,7 +49,7 @@ export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps
     }
 
     router.push({
-      pathname: group === 'dev' ? '/(dev)/recipes/create' : '/(auth)/recipes/create',
+      pathname: '/(auth)/recipes/create',
       params: { variant: 'app' },
     })
   }, [group])
@@ -58,9 +58,7 @@ export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps
     router.push(
       group === 'public'
         ? '/(public)/notes/create'
-        : group === 'dev'
-          ? '/(dev)/notes/create'
-          : '/(auth)/notes/create'
+        : '/(auth)/notes/create'
     )
   }, [group])
 
@@ -69,9 +67,7 @@ export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps
       router.push(
         group === 'public'
           ? '/(public)/shopping-list'
-          : group === 'dev'
-            ? '/(dev)/shopping-list'
-            : '/(auth)/shopping-list'
+          : '/(auth)/shopping-list'
       )
       return
     }
@@ -83,9 +79,7 @@ export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps
       router.push(
         group === 'public'
           ? '/(public)/shopping-list'
-          : group === 'dev'
-            ? '/(dev)/shopping-list'
-            : '/(auth)/shopping-list'
+          : '/(auth)/shopping-list'
       )
     } finally {
       setIsCreatingList(false)

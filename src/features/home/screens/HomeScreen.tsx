@@ -42,12 +42,6 @@ import {
 } from '@/features/home/utils/recipeOpenHistory';
 
 import {
-  getEmptyHomeMocks,
-  getMediumHomeMocks,
-  getMatureHomeMocks,
-  getTransitionalHomeMocks,
-} from '@/__mocks__/home';
-import {
   formatRelativeDay,
   getMealTime,
   getRecommendedPick,
@@ -57,8 +51,7 @@ import {
 type HomeProps = {
   showAccountSuccessBanner?: boolean;
   showRecipeSuccessBanner?: boolean;
-  mode?: 'auth' | 'public' | 'dev';
-  devScenario?: 'empty' | 'few' | 'medium' | 'many';
+  mode?: 'auth' | 'public';
 };
 
 type HomeRecipe = {
@@ -285,14 +278,13 @@ export default function HomeScreen({
   showAccountSuccessBanner,
   showRecipeSuccessBanner,
   mode,
-  devScenario,
 }: HomeProps) {
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl);
   const segments = useSegments();
   const { user } = useAuth();
   const resolvedMode =
     mode ??
-    (segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth');
+    (segments[0] === '(public)' ? 'public' : 'auth');
   const isPublic = resolvedMode === 'public';
   const isAuthenticated = Boolean(user);
   const { shouldUseLocalData } = useStorageDataMode(resolvedMode);
@@ -347,33 +339,7 @@ export default function HomeScreen({
     [recipesQuery.data]
   );
 
-  const mockedHomeData = useMemo(() => {
-    if (resolvedMode !== 'dev' || !devScenario) return null;
-    if (devScenario === 'empty') return getEmptyHomeMocks();
-    if (devScenario === 'few') return getTransitionalHomeMocks();
-    if (devScenario === 'medium') return getMediumHomeMocks();
-    return getMatureHomeMocks();
-  }, [devScenario, resolvedMode]);
-
-  const visibleRecipes = useMemo<HomeRecipe[]>(
-    () => {
-      if (!mockedHomeData) return recipes;
-      return mockedHomeData.recipes.map((recipe) => ({
-        id: recipe.id,
-        title: recipe.title,
-        subtitle: recipe.subtitle ?? null,
-        emoji: recipe.emoji ?? null,
-        imageUrl: null,
-        folders: recipe.folders ?? [],
-        mealTimes: recipe.mealTimes ?? [],
-        prepTimeMinutes: null,
-        cookTimeMinutes: null,
-        createdAt: recipe.createdAt,
-        updatedAt: recipe.updatedAt ?? recipe.createdAt,
-      }));
-    },
-    [mockedHomeData, recipes]
-  );
+  const visibleRecipes = recipes;
 
   useEffect(() => {
     const imageUrls = recipes
@@ -459,17 +425,7 @@ export default function HomeScreen({
     [notesQuery.data]
   );
 
-  const visibleNotes = useMemo<HomeNote[]>(
-    () => {
-      if (!mockedHomeData) return notes;
-      return mockedHomeData.notes.map((note) => ({
-        id: note.id,
-        title: note.title?.trim() || 'Untitled note',
-        updatedAt: note.updatedAt,
-      }));
-    },
-    [mockedHomeData, notes]
-  );
+  const visibleNotes = notes;
 
   const shoppingList = useMemo(() => {
     if (!isShoppingHydrated || isShoppingHydrating) return null;
@@ -479,7 +435,7 @@ export default function HomeScreen({
     return { totalCount, checkedCount };
   }, [isShoppingHydrated, isShoppingHydrating, shoppingItems]);
 
-  const visibleShoppingList = mockedHomeData?.shoppingList ?? shoppingList;
+  const visibleShoppingList = shoppingList;
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [storageBannerDismissed, setStorageBannerDismissed] = useState<boolean | null>(null);
@@ -560,7 +516,6 @@ export default function HomeScreen({
   );
 
   const isInitialLoading =
-    !mockedHomeData &&
     !shouldUseLocalData &&
     (recipesQuery.isLoading || notesQuery.isLoading) &&
     !recipesQuery.data &&
@@ -573,9 +528,7 @@ export default function HomeScreen({
     router.push(
       resolvedMode === 'public'
         ? '/(public)/create'
-        : resolvedMode === 'dev'
-          ? '/(dev)/create'
-          : '/(auth)/create'
+        : '/(auth)/create'
     );
   };
 
@@ -583,9 +536,7 @@ export default function HomeScreen({
     router.push(
       resolvedMode === 'public'
         ? '/(public)/notes/create'
-        : resolvedMode === 'dev'
-          ? '/(dev)/notes/create'
-          : '/(auth)/notes/create'
+        : '/(auth)/notes/create'
     );
   };
 
@@ -725,32 +676,16 @@ export default function HomeScreen({
   );
   const lowContentHeroRecipe = useMemo(() => sortMostRecent(visibleRecipes)[0] ?? null, [visibleRecipes]);
 
-  const root =
-    resolvedMode === 'dev' ? '(dev)' : resolvedMode === 'public' ? '(public)' : '(auth)';
-  const recipeDetailPath =
-    root === '(dev)'
-      ? '/(dev)/recipes/[id]'
-      : root === '(public)'
-        ? '/(public)/recipes/[id]'
-        : '/(auth)/recipes/[id]';
-  const homePath =
-    root === '(dev)'
-      ? '/(dev)/(tabs)'
-      : root === '(public)'
-        ? '/(public)/(tabs)'
-        : '/(auth)/(tabs)';
-  const collectionDetailPath =
-    root === '(dev)' ? '/(dev)/collections/[key]' : '/(auth)/collections/[key]';
+  const root = resolvedMode === 'public' ? '(public)' : '(auth)';
+  const recipeDetailPath = root === '(public)' ? '/(public)/recipes/[id]' : '/(auth)/recipes/[id]';
+  const homePath = root === '(public)' ? '/(public)/(tabs)' : '/(auth)/(tabs)';
+  const collectionDetailPath = root === '(public)' ? '/(public)/collections/[key]' : '/(auth)/collections/[key]';
   const collectionsPath =
-    root === '(dev)'
-      ? '/(dev)/(tabs)/collections'
-      : root === '(public)'
+    root === '(public)'
         ? '/(public)/(tabs)/collections'
         : '/(auth)/(tabs)/collections';
   const shoppingListPath =
-    root === '(dev)'
-      ? '/(dev)/shopping-list'
-      : root === '(public)'
+    root === '(public)'
         ? '/(public)/shopping-list'
         : '/(auth)/shopping-list';
   const shoppingListCard = activeShoppingList ? (

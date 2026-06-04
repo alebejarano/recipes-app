@@ -1,10 +1,9 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { router, useSegments } from 'expo-router';
+import { router } from 'expo-router';
 import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 
 import Screen from '@/components/Screen';
-import Button from '@/components/Button';
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
 import { createThemedStyles } from '@/styles/createStyles';
 import { theme } from '@/styles/theme';
@@ -31,8 +30,6 @@ import { SubscriptionContext } from '@/features/subscription/context/Subscriptio
 
 export default function ProfileScreen() {
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
-  const segments = useSegments()
-  const isDevMode = segments[0] === '(dev)'
 
   const { user, logout } = useAuth()
   const { plan } = useContext(SubscriptionContext)
@@ -203,19 +200,6 @@ export default function ProfileScreen() {
       <View style={styles.mediumSpace} />
 
       <SettingsSection title="Session" items={sessionItems} />
-
-      {isDevMode ? (
-        <>
-          <View style={styles.mediumSpace} />
-          <Button
-            variant="secondary"
-            size="md"
-            onPress={() => router.push('/(dev)/limit-qa')}
-          >
-            Open Limit QA Mode
-          </Button>
-        </>
-      ) : null}
 
       <View style={styles.bigSpace} />
     </Screen>

@@ -31,7 +31,7 @@ type NoteDetailScreenProps = {
 
 export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
   const segments = useSegments()
-  const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
+  const routeMode = segments[0] === '(public)' ? 'public' : 'auth'
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
   const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
@@ -50,9 +50,7 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
   const handleEdit = () => {
     router.push({
       pathname:
-        routeMode === 'dev'
-          ? '/(dev)/notes/[id]/edit'
-          : routeMode === 'public'
+        routeMode === 'public'
             ? '/(public)/notes/[id]/edit'
             : '/(auth)/notes/[id]/edit',
       params: { id: noteId, returnTo: returnToParam },

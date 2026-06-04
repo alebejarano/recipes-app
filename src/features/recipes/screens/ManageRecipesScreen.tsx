@@ -15,7 +15,7 @@ import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 type ManageRecipesScreenProps = {
-  mode?: 'auth' | 'public' | 'dev'
+  mode?: 'auth' | 'public'
 }
 
 type SortMode = 'oldest' | 'largest'
@@ -25,18 +25,14 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
   const segments = useSegments()
   const resolvedMode =
     mode ??
-    (segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth')
+    (segments[0] === '(public)' ? 'public' : 'auth')
   const safeReturnTo = getSafeReturnTo(returnTo)
   const fallbackReturnTo =
-    resolvedMode === 'dev'
-      ? '/(dev)/(tabs)/collections?segment=recipes'
-      : resolvedMode === 'public'
+    resolvedMode === 'public'
         ? '/(public)/(tabs)/collections?segment=recipes'
         : '/(auth)/(tabs)/collections?segment=recipes'
   const managePath =
-    resolvedMode === 'dev'
-      ? '/(dev)/recipes/manage'
-      : resolvedMode === 'public'
+    resolvedMode === 'public'
         ? '/(public)/recipes/manage'
         : '/(auth)/recipes/manage'
 
@@ -126,9 +122,7 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
     if (isBulkDeleting) return
     router.push({
       pathname:
-        resolvedMode === 'dev'
-          ? '/(dev)/recipes/[id]'
-          : resolvedMode === 'public'
+        resolvedMode === 'public'
             ? '/(public)/recipes/[id]'
             : '/(auth)/recipes/[id]',
       params: { id, returnTo: managePath },

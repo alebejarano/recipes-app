@@ -80,7 +80,7 @@ export default function EditRecipeScreen() {
   const recipeId = id ?? ''
   const insets = useSafeAreaInsets()
   const segments = useSegments()
-  const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
+  const routeMode = segments[0] === '(public)' ? 'public' : 'auth'
   const { shouldUseLocalData } = useStorageDataMode(routeMode)
   const { isPremium } = useStorageStrategy()
   const importPlan = isPremium ? 'premium' : 'free'

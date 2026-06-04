@@ -39,7 +39,7 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
   const isEditing = Boolean(noteId)
   const resolvedNoteId = noteId ?? ''
   const segments = useSegments()
-  const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
+  const routeMode = segments[0] === '(public)' ? 'public' : 'auth'
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
   const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
@@ -91,9 +91,7 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
     : 'Capture ideas, tips, and quick thoughts.'
   const saveLabel = isEditing ? 'Save changes' : 'Save note'
   const detailPath =
-    routeMode === 'dev'
-      ? '/(dev)/notes/[id]'
-      : routeMode === 'public'
+    routeMode === 'public'
         ? '/(public)/notes/[id]'
         : '/(auth)/notes/[id]'
 

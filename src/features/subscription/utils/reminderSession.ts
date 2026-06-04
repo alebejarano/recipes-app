@@ -23,8 +23,3 @@ export function hasShownStorageReminderInSession() {
 export function markStorageReminderShownInSession() {
   state.storageReminderShown = true
 }
-
-export function resetReminderSessionState() {
-  state.kitchenCapacityShown = false
-  state.storageReminderShown = false
-}

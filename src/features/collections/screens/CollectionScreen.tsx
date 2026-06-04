@@ -1,5 +1,3 @@
-// app/(dev)/(tabs)/collections.tsx (or wherever CollectionsScreen lives)
-
 import { Feather } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { router, useLocalSearchParams, useSegments } from 'expo-router'
@@ -45,16 +43,15 @@ import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
 import { FREE_PLAN_MAX_IMPORT_TOTAL_BYTES } from '@/features/subscription/constants/limits'
 import { KITCHEN_ALMOST_FULL_STORAGE_DISMISS_UNTIL_PREFIX } from '@/features/subscription/constants/reminderKeys'
 import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
-import { useLimitQaOverrides } from '@/features/subscription/dev/limitQaOverrides'
 import {
   hasShownStorageReminderInSession,
   markStorageReminderShownInSession,
-} from '@/features/subscription/dev/reminderSession'
+} from '@/features/subscription/utils/reminderSession'
 import { buildFreePlanUsageSnapshot, formatMegabytes } from '@/features/subscription/utils/planUsage'
 import { getSafeReturnTo } from '@/lib/navigation'
 
 type CollectionsScreenProps = {
-  mode?: 'auth' | 'public' | 'dev'
+  mode?: 'auth' | 'public'
 }
 
 export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
@@ -68,13 +65,11 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   const segments = useSegments()
   const resolvedMode =
     mode ??
-    (segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth')
+    (segments[0] === '(public)' ? 'public' : 'auth')
   const isPublic = resolvedMode === 'public'
-  const isDevMode = resolvedMode === 'dev'
   const { user } = useAuth()
   const showSnackbar = useTransientSnackbarStore((state) => state.show)
   const { plan } = useContext(SubscriptionContext)
-  const { overrides } = useLimitQaOverrides()
   const { shouldUseLocalData } = useStorageDataMode(resolvedMode)
   const [segment, setSegment] = useState<SegmentKey>('recipes')
   const [recipeSegment, setRecipeSegment] = useState<RecipeSegmentKey>('folders')
@@ -91,17 +86,13 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   const foldersQuery = useStrategyFoldersList(resolvedMode)
   const createFolderMutation = useStrategyCreateFolder(resolvedMode)
   const returnTo = getSafeReturnTo(
-    resolvedMode === 'dev'
-      ? '/(dev)/(tabs)/collections?segment=recipes'
-      : resolvedMode === 'public'
+    resolvedMode === 'public'
         ? '/(public)/(tabs)/collections?segment=recipes'
         : '/(auth)/(tabs)/collections?segment=recipes'
   )
   const returnToParam = typeof returnTo === 'string' ? returnTo : undefined
   const manageImportsPath =
-    resolvedMode === 'dev'
-      ? '/(dev)/imports/manage'
-      : resolvedMode === 'public'
+    resolvedMode === 'public'
         ? '/(public)/imports/manage'
         : '/(auth)/imports/manage'
   const recipeCount = recipesQuery.data?.length ?? 0
@@ -110,8 +101,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     () => buildFreePlanUsageSnapshot(recipeCount, storageBytesUsed),
     [recipeCount, storageBytesUsed]
   )
-  const effectiveStorageUsageBand =
-    isDevMode && overrides.storageUsageBandOverride ? overrides.storageUsageBandOverride : usageSnapshot.storageUsageBand
+  const effectiveStorageUsageBand = usageSnapshot.storageUsageBand
   const storageLeftMb = Math.max(0, formatMegabytes(FREE_PLAN_MAX_IMPORT_TOTAL_BYTES - storageBytesUsed))
 
   useEffect(() => {
@@ -292,9 +282,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
       router.push({
         pathname: isPublic
           ? '/(public)/recipes/create'
-          : resolvedMode === 'dev'
-            ? '/(dev)/recipes/create'
-            : '/(auth)/recipes/create',
+          : '/(auth)/recipes/create',
         params: { entry: 'pdf' },
       })
       return
@@ -403,9 +391,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
           line2="Premium keeps everything backed up & synced."
           onSeePremium={() =>
             router.push(
-              resolvedMode === 'dev'
-                ? '/(dev)/premium'
-                : resolvedMode === 'public'
+              resolvedMode === 'public'
                   ? '/(public)/premium'
                   : '/(auth)/premium'
             )
@@ -458,9 +444,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
                   router.push(
                     isPublic
                       ? '/(public)/recipes/create'
-                      : resolvedMode === 'dev'
-                        ? '/(dev)/recipes/create'
-                        : '/(auth)/recipes/create'
+                      : '/(auth)/recipes/create'
                   )
                 }
                 style={styles.emptyCta}

@@ -39,11 +39,10 @@ import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding'
 import { FREE_PLAN_MAX_RECIPES } from '@/features/subscription/constants/limits'
 import { KITCHEN_ALMOST_FULL_RECIPE_DISMISS_UNTIL_PREFIX } from '@/features/subscription/constants/reminderKeys'
 import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
-import { useLimitQaOverrides } from '@/features/subscription/dev/limitQaOverrides'
 import {
   hasShownKitchenCapacityReminderInSession,
   markKitchenCapacityReminderShownInSession,
-} from '@/features/subscription/dev/reminderSession'
+} from '@/features/subscription/utils/reminderSession'
 import { buildFreePlanUsageSnapshot } from '@/features/subscription/utils/planUsage'
 import { recordRecipeOpen } from '@/features/home/utils/recipeOpenHistory'
 import { getSafeReturnTo } from '@/lib/navigation'
@@ -115,9 +114,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
   const returnToParam = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
   const segments = useSegments()
   const { plan } = useContext(SubscriptionContext)
-  const routeMode = segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth'
-  const isDevMode = routeMode === 'dev'
-  const { overrides } = useLimitQaOverrides()
+  const routeMode = segments[0] === '(public)' ? 'public' : 'auth'
   const deleteMutation = useStrategyDeleteRecipe(routeMode)
   const updateMutation = useStrategyUpdateRecipe(recipeId, routeMode)
   const recipesListQuery = useStrategyRecipesList({ limit: 2000 }, routeMode)
@@ -138,8 +135,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
     () => buildFreePlanUsageSnapshot(recipesCount, 0),
     [recipesCount]
   )
-  const effectiveRecipeUsageBand =
-    isDevMode && overrides.recipeUsageBandOverride ? overrides.recipeUsageBandOverride : usageSnapshot.recipesUsageBand
+  const effectiveRecipeUsageBand = usageSnapshot.recipesUsageBand
   const shouldOfferRecipeReminder =
     plan !== 'premium' && effectiveRecipeUsageBand === 'between95and99'
   const recipesLeft = Math.max(FREE_PLAN_MAX_RECIPES - recipesCount, 0)
@@ -160,7 +156,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
 
   const { editPath, detailPath } = useMemo(() => {
     const root = segments[0]
-    if (root === '(dev)' || root === '(auth)') {
+    if (root === '(auth)') {
       return {
         editPath: `/${root}/recipes/[id]/edit`,
         detailPath: `/${root}/recipes/${recipeId}`,
@@ -174,7 +170,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
 
   const collectionsPath = useMemo(() => {
     const root = segments[0]
-    if (root === '(dev)' || root === '(public)' || root === '(auth)') {
+    if (root === '(public)' || root === '(auth)') {
       return `/${root}/(tabs)/collections?segment=recipes`
     }
     return '/(auth)/(tabs)/collections?segment=recipes'
@@ -182,7 +178,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
 
   const manageRecipesPath = useMemo(() => {
     const root = segments[0]
-    if (root === '(dev)' || root === '(public)' || root === '(auth)') {
+    if (root === '(public)' || root === '(auth)') {
       return `/${root}/recipes/manage`
     }
     return '/(auth)/recipes/manage'
@@ -190,7 +186,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
 
   const premiumPath = useMemo(() => {
     const root = segments[0]
-    if (root === '(dev)' || root === '(public)' || root === '(auth)') {
+    if (root === '(public)' || root === '(auth)') {
       return `/${root}/premium`
     }
     return '/(auth)/premium'

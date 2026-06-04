@@ -1,5 +1,5 @@
 // src/features/onboarding/screens/OnboardingFlowScreen.tsx
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
@@ -18,8 +18,6 @@ import {
 
 export default function OnboardingFlowScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ reset?: string; dev?: string }>();
-  const didResetRef = useRef(false);
   const didHydrateRef = useRef(false);
 
   const {
@@ -28,7 +26,6 @@ export default function OnboardingFlowScreen() {
     setPath: persistPath,
     setStep: persistStep,
     markCompleted,
-    resetOnboarding,
   } = useOnboarding();
 
   const [step, setStepLocal] = useState(0);
@@ -39,28 +36,6 @@ export default function OnboardingFlowScreen() {
 
     didHydrateRef.current = true;
 
-    // Dev helper: run reset only once, even if state changes
-    const allowDevPreview = __DEV__ && params.dev === '1';
-
-    if (__DEV__ && params.reset === '1' && !didResetRef.current) {
-      didResetRef.current = true;
-
-      (async () => {
-        await resetOnboarding();
-
-        // Local state reset (safe)
-        setStepLocal(0);
-        setPathLocal(null);
-
-        // Optional but recommended: remove the query param to prevent accidental re-reset
-        router.replace(
-          allowDevPreview ? '/(public)/onboarding?dev=1' : '/onboarding'
-        );
-      })();
-
-      return;
-    }
-
     // if (state.completed) {
     //   router.replace('/login');
     //   return;
@@ -70,13 +45,9 @@ export default function OnboardingFlowScreen() {
     setPathLocal(state.path ?? null);
   }, [
     isLoaded,
-    params.dev,
-    params.reset,
     state.completed,
     state.step,
     state.path,
-    resetOnboarding,
-    router,
   ]);
 
   const setStep = async (nextStep: number) => {

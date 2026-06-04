@@ -28,15 +28,13 @@ export default function NotesSegment({
   mode = 'auth',
 }: {
   bottomPadding: number
-  mode?: 'auth' | 'public' | 'dev'
+  mode?: 'auth' | 'public'
 }) {
   const isPublic = mode === 'public'
   const { shouldUseLocalData } = useStorageDataMode(mode)
   const notesQuery = useStrategyNotesList({ limit: 50 }, mode)
   const returnTo = getSafeReturnTo(
-    mode === 'dev'
-      ? '/(dev)/(tabs)/collections?segment=notes'
-      : mode === 'public'
+    mode === 'public'
         ? '/(public)/(tabs)/collections?segment=notes'
         : '/(auth)/(tabs)/collections?segment=notes'
   )

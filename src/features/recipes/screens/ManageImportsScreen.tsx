@@ -12,7 +12,7 @@ import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
 type ManageImportsScreenProps = {
-  mode?: 'auth' | 'public' | 'dev'
+  mode?: 'auth' | 'public'
 }
 
 type SortMode = 'oldest' | 'largest'
@@ -30,12 +30,10 @@ export default function ManageImportsScreen({ mode }: ManageImportsScreenProps) 
   const segments = useSegments()
   const resolvedMode =
     mode ??
-    (segments[0] === '(dev)' ? 'dev' : segments[0] === '(public)' ? 'public' : 'auth')
+    (segments[0] === '(public)' ? 'public' : 'auth')
   const safeReturnTo = getSafeReturnTo(returnTo)
   const fallbackReturnTo =
-    resolvedMode === 'dev'
-      ? '/(dev)/(tabs)/collections?segment=recipes&recipesSegment=documents'
-      : resolvedMode === 'public'
+    resolvedMode === 'public'
         ? '/(public)/(tabs)/collections?segment=recipes&recipesSegment=documents'
         : '/(auth)/(tabs)/collections?segment=recipes&recipesSegment=documents'
 
