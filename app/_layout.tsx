@@ -106,6 +106,9 @@ function PostHogGate({
       autocapture={false}
       options={{
         host,
+        captureAppLifecycleEvents: false,
+        disableGeoip: true,
+        enableSessionReplay: false,
       }}
     >
       <ProductionLoggingBridge>{children}</ProductionLoggingBridge>

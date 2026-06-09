@@ -45,7 +45,7 @@ const config: ExpoConfig = {
     },
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
-    package: 'com.dropsauce.app',
+    package: 'studio.alpinova.dropsauce',
   },
   web: {
     output: 'static',

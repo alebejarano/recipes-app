@@ -14,103 +14,118 @@ type TermsSection = {
 
 const TERMS_SECTIONS: readonly TermsSection[] = [
     {
-        title: '1. Introduction',
+        title: '1. Provider and Acceptance',
         paragraphs: [
-            'These Terms of Service govern your use of this application.',
-            'By accessing or using the app, you agree to these Terms.',
-            'If you do not agree with the Terms, you should not use the service.',
+            'These Terms of Service govern the use of Dropsauce, provided under the trade name DropSauce by Anthony Lajusticia, NIF Z0570202Z, a self-employed professional established in Spain and registered under the Régimen Especial de Trabajadores Autónomos.',
+            'Contact: hello@dropsauce.app.',
+            'By creating an account or using Dropsauce, you agree to these Terms. If you cannot validly agree under applicable law, a parent or legal guardian must authorize your use.',
         ],
     },
     {
-        title: '2. Description of the Service',
+        title: '2. Service',
         paragraphs: [
-            'The application provides tools for saving, organizing, and managing recipes and cooking-related content.',
-            'You may use the app with local device storage, and some features may require an account.',
-            'Premium features may include cloud backup, sync across devices, unlimited recipes, and cloud storage for recipe imports.',
-            'Features may change or evolve over time as the product develops.',
+            'Dropsauce provides tools for creating, importing, saving, organizing, viewing, and sharing recipes, notes, folders, shopping information, images, and cooking-related documents.',
+            'Guest mode can be used without an account and stores data locally on the device. A free account provides account access and may be required before purchasing Premium.',
+            'Premium may provide unlimited recipes and notes, cloud backup, synchronization across devices, and cloud storage for recipe imports, subject to the storage and fair-use limits shown in the app.',
+            'Features may be improved, replaced, or discontinued. Changes that materially affect a paid subscription will be handled in accordance with applicable consumer law.',
         ],
     },
     {
         title: '3. Accounts',
-        paragraphs: ['Some features may require creating an account.', 'Users are responsible for:'],
+        paragraphs: [
+            'Users must provide accurate account information, keep credentials confidential, and promptly notify hello@dropsauce.app of suspected unauthorized access.',
+            'One person may not use the service to interfere with another user\'s account or data. Dropsauce may restrict or suspend access when reasonably necessary to address security, fraud, unlawful activity, or a material breach of these Terms.',
+        ],
+    },
+    {
+        title: '4. User Content',
+        paragraphs: [
+            'You retain ownership of recipes, notes, images, files, and other content you create or upload.',
+            'You grant Dropsauce a limited, non-exclusive permission to host, copy, process, display, back up, and synchronize that content only as needed to provide and secure the features you choose.',
+            'You are responsible for having the rights needed to upload and use the content. You must not upload unlawful content, malware, content that infringes intellectual-property or privacy rights, or highly sensitive information that is not appropriate for a recipe-management service.',
+        ],
+    },
+    {
+        title: '5. Acceptable Use',
+        paragraphs: ['You must not:'],
         bullets: [
-            'providing accurate information',
-            'maintaining the confidentiality of their account',
-            'all activity occurring under their account.',
-        ],
-        footer: 'We reserve the right to suspend or terminate accounts that violate these Terms.',
-    },
-    {
-        title: '4. Acceptable Use',
-        paragraphs: ['You agree not to:'],
-        bullets: [
-            'misuse the application',
-            'attempt to disrupt the service',
-            'attempt unauthorized access to systems or data',
-            'use the service for unlawful purposes.',
+            'use the service for unlawful, fraudulent, abusive, or harmful activity',
+            'attempt unauthorized access to accounts, systems, storage, or data',
+            'circumvent plan limits, security controls, or upload safeguards',
+            'interfere with the service or introduce malicious code',
+            'resell or commercially exploit the service without written permission.',
         ],
     },
     {
-        title: '5. User Content',
+        title: '6. Free and Premium Plans',
         paragraphs: [
-            'Users may create, save, upload, import, or store recipes, notes, folders, images, documents, and cooking-related content within the application.',
-            'You retain ownership of the content you create or upload.',
-            'You give the service permission to store, process, display, back up, and sync your content only as needed to provide the app features you use.',
-            'You are responsible for ensuring that your content does not violate applicable laws or third-party rights.',
+            'Plan features, prices, billing periods, storage allowances, and any fair-use limits are displayed before purchase. Prices shown in the store checkout include applicable taxes when the store indicates this.',
+            'Premium subscriptions are purchased and processed through Apple App Store or Google Play. Apple or Google is responsible for collecting payment details and administering store billing. Dropsauce does not receive full card or bank details.',
+            'Subscriptions renew automatically for the selected billing period unless canceled through the store account before renewal. Premium normally remains available until the end of the paid period after cancellation.',
+            'Price changes, purchase confirmation, billing, cancellation, and refunds are also governed by the terms of the store used for purchase. Nothing in these Terms limits mandatory consumer rights or any refund right provided by applicable law.',
+            'Deleting the Dropsauce account does not necessarily cancel an active store subscription. The subscription must also be canceled in Apple App Store or Google Play.',
         ],
     },
     {
-        title: '6. Plans, Limits, and Premium Features',
+        title: '7. Cloud Storage and Service Availability',
         paragraphs: [
-            'Free and Premium plans may have different feature limits, including recipe limits, import limits, and cloud storage limits.',
-            'Premium subscriptions may be offered with monthly or annual billing periods, and pricing is shown in the app before upgrade.',
-            'Monthly subscriptions may be canceled before the next monthly billing period starts. If you cancel, Premium remains active until the end of the current monthly billing period.',
-            'Annual subscriptions may be canceled at any time. If you cancel, Premium remains active until the end of the current annual subscription period.',
-            'Canceling an annual subscription partway through the year does not entitle you to a refund for the remaining months of that annual subscription period, except where required by applicable law or the app store or payment provider handling the purchase.',
-            'If paid subscriptions or purchases are processed through an app store or payment provider, billing, cancellation, and refund handling may also be subject to that provider\'s terms.',
-            'Premium features depend on account access and cloud services, and may not be available during outages, maintenance, or connectivity issues.',
+            'Cloud features require a compatible device, internet access, an active account, and any required Premium entitlement.',
+            'Dropsauce applies reasonable security and continuity measures but cannot guarantee uninterrupted operation or that every local or cloud copy will always be recoverable. Users should keep independent copies of content that is important to them.',
+            'If Premium ends, cloud synchronization or new cloud uploads may stop. Reasonable access, export, downgrade, or deletion arrangements will be provided as required by applicable law and the functionality described in the app.',
         ],
     },
     {
-        title: '7. Data, Privacy, and Communications',
+        title: '8. Privacy and Communications',
         paragraphs: [
-            'Use of the app is also governed by the Privacy Policy.',
-            'Account emails may be sent for app-functioning purposes such as account confirmation, password reset, email changes, security, and important service messages.',
-            'Marketing or product update emails are optional and are sent only if you actively opt in.',
-            'Analytics and diagnostics are optional, off by default, and used only if you actively enable them. If enabled, minimal sanitized events may be processed through an analytics provider to improve reliability, troubleshoot issues, understand which core features are useful, and improve the app.',
-            'Analytics and diagnostics do not include recipe titles, recipe text, note content, ingredients, file names, email addresses, payment details, authentication tokens, or raw error messages.',
+            'Personal-data processing is governed by the Privacy Policy.',
+            'Necessary account, authentication, security, billing-status, and service communications may be sent to operate the account or perform the contract.',
+            'Marketing emails and PostHog analytics are optional, off by default, and require a separate opt-in. They can be disabled through the relevant app setting.',
+            'Session replay, analytics autocapture, advertising tracking, and the transmission of recipe or note content to PostHog are not enabled.',
         ],
     },
     {
-        title: '8. Availability of the Service',
+        title: '9. Intellectual Property',
         paragraphs: [
-            'The service is provided "as is".',
-            'While we aim to provide a reliable experience, uninterrupted availability cannot be guaranteed.',
-            'Features may be modified, suspended, or discontinued.',
+            'Dropsauce, its design, software, branding, and original materials are owned by the provider or its licensors and are protected by applicable intellectual-property laws.',
+            'These Terms grant only a personal, limited, revocable, non-exclusive, and non-transferable right to use the app in accordance with these Terms. They do not transfer ownership of the app or brand.',
         ],
     },
     {
-        title: '9. Limitation of Liability',
+        title: '10. Account Deletion and Termination',
         paragraphs: [
-            'To the maximum extent permitted by law, the application and its owner shall not be liable for any indirect, incidental, or consequential damages resulting from the use of the service.',
+            'You may stop using Dropsauce at any time. Account deletion is available from Privacy & Security settings or by contacting hello@dropsauce.app.',
+            'Account deletion is permanent and removes the account and associated cloud content from active systems, subject to limited retention required by law and provider backup cycles. Local device content may remain until it is deleted from the device or app data is cleared.',
+            'Dropsauce may terminate or suspend an account for a serious or repeated breach, unlawful use, fraud, or a security risk. Where reasonably possible and legally permitted, notice and an opportunity to remedy the issue will be provided.',
         ],
     },
     {
-        title: '10. Termination',
+        title: '11. Warranties and Liability',
         paragraphs: [
-            'Users may stop using the service at any time.',
-            'Accounts may be terminated if these Terms are violated.',
-            'You may request account deletion from the app where available. Deleting an account may permanently remove account data and cloud-synced content.',
+            'Dropsauce is provided with reasonable care and skill. Except for rights and guarantees that cannot legally be excluded, the service is provided without additional warranties.',
+            'Nothing in these Terms excludes or limits liability where exclusion is prohibited, including liability for fraud, willful misconduct, gross negligence, personal injury caused by negligence, or mandatory consumer rights.',
+            'To the extent permitted by law, Dropsauce is not responsible for indirect losses that were not reasonably foreseeable, loss caused by the user\'s device or third-party service, or content uploaded without the necessary rights.',
         ],
     },
     {
-        title: '11. Governing Law',
-        paragraphs: ['These Terms are governed by the laws of Spain.'],
+        title: '12. Changes to These Terms',
+        paragraphs: [
+            'These Terms may be updated for legal, security, technical, or service reasons. Material changes will be communicated through the app or another appropriate channel before taking effect where required.',
+            'A change will not retroactively remove accrued consumer rights. If a material change requires renewed consent, Dropsauce will request it.',
+        ],
     },
     {
-        title: '12. Contact',
-        paragraphs: ['For questions regarding these Terms, you may contact:'],
-        footer: 'hello@dropsauce.app',
+        title: '13. Law and Disputes',
+        paragraphs: [
+            'These Terms are governed by Spanish law, without depriving consumers of mandatory protections available under the law of their country of habitual residence.',
+            'Before starting formal proceedings, users are encouraged to contact hello@dropsauce.app so the issue can be reviewed.',
+            'For consumers, disputes may be brought before the courts determined by mandatory consumer and procedural law. No clause in these Terms requires a consumer to waive a legally protected forum.',
+        ],
+    },
+    {
+        title: '14. Legal Documents',
+        paragraphs: [
+            'The Privacy Policy and Legal Notice form part of the legal information for Dropsauce and are available from Privacy & Security settings.',
+        ],
     },
 ]
 
@@ -118,12 +133,12 @@ export default function TermsOfServiceScreen() {
     return (
         <ProfileSubpageLayout
             title="Terms of Service"
-            subtitle="Last updated: May 13, 2026"
+            subtitle="Last updated: June 9, 2026"
             onBack={() => router.back()}
         >
             <Text style={styles.intro}>
-                These terms explain the rules for using the app and the basic responsibilities for
-                both the user and the service owner.
+                These terms describe the service, subscriptions, user responsibilities, and
+                mandatory consumer protections.
             </Text>
 
             {TERMS_SECTIONS.map((section) => (

@@ -10,6 +10,37 @@ function json(body: Record<string, unknown>, status = 200) {
   })
 }
 
+const USER_STORAGE_BUCKETS = ['recipe-images', 'recipe-imports'] as const
+
+async function deleteUserStorage(
+  adminClient: ReturnType<typeof createClient>,
+  userId: string
+) {
+  for (const bucket of USER_STORAGE_BUCKETS) {
+    while (true) {
+      const { data: objects, error: listError } = await adminClient.storage
+        .from(bucket)
+        .list(userId, {
+          limit: 100,
+          offset: 0,
+        })
+      if (listError) {
+        throw new Error(`Failed to list ${bucket}: ${listError.message}`)
+      }
+
+      const paths = (objects ?? [])
+        .filter((object) => object.id)
+        .map((object) => `${userId}/${object.name}`)
+      if (paths.length === 0) break
+
+      const { error: removeError } = await adminClient.storage.from(bucket).remove(paths)
+      if (removeError) {
+        throw new Error(`Failed to delete ${bucket}: ${removeError.message}`)
+      }
+    }
+  }
+}
+
 serve(async (req) => {
   try {
     if (req.method !== 'POST') {
@@ -49,6 +80,25 @@ serve(async (req) => {
         persistSession: false,
       },
     })
+
+    await deleteUserStorage(adminClient, user.id)
+
+    const { error: uploadEventsError } = await adminClient
+      .from('import_upload_events')
+      .delete()
+      .eq('user_id', user.id)
+    if (uploadEventsError) {
+      return json({ error: `Failed to delete import history: ${uploadEventsError.message}` }, 400)
+    }
+
+    const { error: uploadStateError } = await adminClient
+      .from('import_upload_user_state')
+      .delete()
+      .eq('user_id', user.id)
+    if (uploadStateError) {
+      return json({ error: `Failed to delete import state: ${uploadStateError.message}` }, 400)
+    }
+
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(user.id)
     if (deleteError) {
       return json({ error: `Failed to delete user: ${deleteError.message}` }, 400)

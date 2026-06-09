@@ -22,126 +22,181 @@ type PolicySection = {
 
 const POLICY_SECTIONS: readonly PolicySection[] = [
     {
-        title: '1. Introduction',
+        title: '1. Data Controller',
         paragraphs: [
-            'This Privacy Policy explains how information is collected, used, and protected when you use this application.',
-            'The application is designed to respect user privacy and collect only the minimum information necessary to operate and improve the service.',
-            'The data controller responsible for processing personal data is:',
+            'This Privacy Policy explains how Dropsauce accesses, collects, uses, stores, shares, and deletes personal data.',
+            'The data controller is:',
         ],
         details: [
-            'Name: Anthony Lajusticia',
-            'Location: Spain',
-            'Contact: hello@dropsauce.app',
+            'Legal name: Anthony Lajusticia',
+            'Trade name: DropSauce',
+            'Status: Self-employed professional registered in Spain under the Régimen Especial de Trabajadores Autónomos',
+            'NIF: Z0570202Z',
+            'Business address: [pending]',
+            'Country of establishment: Spain',
+            'Privacy contact: hello@dropsauce.app',
         ],
         footer:
-            'This policy complies with the General Data Protection Regulation (GDPR) and the Organic Law on Data Protection and Digital Rights Guarantee (LOPDGDD).',
+            'This policy applies under Regulation (EU) 2016/679 (GDPR), Spanish Organic Law 3/2018 (LOPDGDD), and other applicable Spanish data-protection rules.',
     },
     {
-        title: '2. Information We Collect',
-        groups: [
-            {
-                heading: 'Account Information',
-                paragraphs: [
-                    'If you choose to create an account, we collect your email address and name to create and manage your account.',
-                    'This information is used only to operate the service, manage your account, and communicate with you about account or app-functioning matters such as password reset emails, confirmation links, and important service updates.',
-                ],
-            },
-            {
-                heading: 'Analytics and Diagnostics',
-                paragraphs: [
-                    'Analytics and diagnostics are optional and are not enabled by default. If you enable them in Privacy & Security settings, minimal sanitized app events may be processed through our analytics provider, PostHog, to understand reliability issues and improve the application.',
-                    'These events are limited to essential product and reliability signals such as app opens, optional onboarding answer categories, account creation, recipe or note creation, premium upgrade clicks, purchase success, request failures, request timeouts, offline fallback saves, sync retry results, and upload or import retry status.',
-                    'Analytics and diagnostics are off by default and can be enabled or disabled at any time from Privacy & Security settings.',
-                ],
-                bullets: [
-                    'does not include recipe titles, recipe text, note content, ingredients, file names, email addresses, payment details, full URLs, authentication tokens, or raw error messages',
-                    'is limited to sanitized categories, counts, storage mode, billing cycle, and non-content event names',
-                    'is used only to improve reliability, troubleshoot issues, understand which core features are useful, and improve the product.',
-                ],
-            },
-            {
-                heading: 'Local Data Storage',
-                paragraphs: [
-                    'If you use the app without creating an account, your recipes and related information are stored locally on your device.',
-                    'This information is not transmitted to our servers.',
-                ],
-            },
-        ],
-    },
-    {
-        title: '3. How We Use Information',
-        bullets: [
-            'Create and manage user accounts',
-            'Provide access to the application',
-            'Improve the app and develop new features',
-            'Understand general user interests and app reliability through optional analytics and diagnostics',
-            'Communicate account, security, and service updates needed for the app to function',
-            'Send optional product or marketing emails only if you have actively opted in',
-        ],
-    },
-    {
-        title: '4. Email Communications',
+        title: '2. How the App Works',
         paragraphs: [
-            'If you create an account, we may send necessary service emails for app-functioning purposes, such as account confirmation, password reset, email change confirmation, security, and important service messages.',
-            'Marketing and product update emails are off by default. You may choose to opt in from your profile settings to receive emails about:',
+            'Dropsauce can be used without an account. Guest-mode recipes, notes, folders, shopping lists, images, imported files, onboarding choices, and app preferences are stored on the user\'s device.',
+            'Guest content is not sent to Dropsauce cloud storage. If the user separately enables optional analytics, only the limited analytics data described below is transmitted, not recipe or note content.',
+            'Users may create a free account. An account is required for Premium cloud backup, synchronization across devices, and cloud storage for imports.',
         ],
-        bullets: [
-            'product updates',
-            'new features',
-            'occasional marketing communications',
-        ],
-        footer:
-            'These emails are sent only if you have provided consent. You can unsubscribe at any time using the link included in each email or by contacting us.',
     },
     {
-        title: '5. Legal Basis for Processing',
-        paragraphs: ['Under the GDPR, personal data is processed on the following legal bases:'],
+        title: '3. Personal Data We Process',
         groups: [
             {
-                heading: 'Contract',
-                paragraphs: ['To provide and manage user accounts and send necessary account or service emails.'],
+                heading: 'Account and profile data',
+                paragraphs: [
+                    'When an account is created, we process the email address, authentication credentials through our authentication provider, internal user identifier, account timestamps, and any display name the user adds.',
+                    'Passwords are handled by the authentication provider in protected form. Dropsauce does not receive or store a readable copy of the password.',
+                ],
+            },
+            {
+                heading: 'Preferences and communications',
+                paragraphs: [
+                    'We process choices relating to optional email updates, product communications, push-notification preferences, analytics consent, language or app preferences, and security or account requests.',
+                    'The current app stores notification preferences but does not upload a push token or send push notifications unless that functionality is activated in a future version.',
+                ],
+            },
+            {
+                heading: 'Cloud content for Premium users',
+                paragraphs: [
+                    'When Premium cloud features are used, we process and store recipes, ingredients, instructions, notes, folders, meal information, images, imported PDF/JPG/PNG files, file names, file types, file sizes, checksums, storage paths, synchronization identifiers, and creation or update timestamps.',
+                    'This content is processed only to provide cloud storage, backup, import management, synchronization, and related support or security functions.',
+                ],
+            },
+            {
+                heading: 'Subscription data',
+                paragraphs: [
+                    'Apple App Store or Google Play processes payment credentials and the purchase transaction. Dropsauce does not receive full card or bank details.',
+                    'Dropsauce may receive and store limited subscription information needed to provide Premium, such as the store, product or plan, billing period, purchase status, entitlement status, renewal or expiry information, and transaction or receipt identifiers.',
+                ],
+            },
+            {
+                heading: 'Technical and security data',
+                paragraphs: [
+                    'Our service providers may process IP address, request timestamps, authentication and security logs, app version, operating system, device type, network status, and error categories as needed to operate, secure, and troubleshoot the service.',
+                    'Camera, photo-library, and document access occurs only after the user chooses the relevant feature and grants the operating-system permission. Selected files are stored locally or uploaded to cloud storage according to the user\'s plan and action.',
+                ],
+            },
+        ],
+    },
+    {
+        title: '4. Optional PostHog Analytics',
+        paragraphs: [
+            'Analytics and diagnostics are optional, off by default, and activated only when the user enables the Analytics & diagnostics setting. Consent can be withdrawn at any time from Privacy & Security settings.',
+            'When enabled, Dropsauce uses PostHog\'s European service endpoint. The app sends an automatically generated anonymous analytics identifier, event time, app and device technical properties, and limited event properties.',
+            'Events may include app opens, account creation, onboarding answer categories, recipe or note creation, Premium upgrade interactions, successful purchase status, request failures or timeouts, offline fallback saves, synchronization retries, and upload or import retry status.',
+        ],
+        bullets: [
+            'PostHog autocapture is disabled',
+            'session replay is disabled',
+            'automatic GeoIP enrichment is disabled',
+            'Dropsauce does not call PostHog identify and does not send the account email or name',
+            'recipe titles, recipe text, ingredients, instructions, notes, file names, payment details, authentication tokens, full URLs, and raw error messages are excluded.',
+        ],
+        footer:
+            'The legal basis is consent. Disabling analytics stops new analytics events. Previously collected events remain until their retention period expires or deletion is requested where the identifier can be matched.',
+    },
+    {
+        title: '5. Purposes and Legal Bases',
+        groups: [
+            {
+                heading: 'Performance of a contract',
+                paragraphs: [
+                    'To create and manage accounts, authenticate users, provide local and cloud app features, synchronize content, administer Premium entitlements, provide support, and send necessary account or service communications.',
+                ],
             },
             {
                 heading: 'Consent',
                 paragraphs: [
-                    'For sending optional email communications and processing optional analytics and diagnostics. Consent can be withdrawn at any time from the relevant app settings.',
+                    'To process optional PostHog analytics and diagnostics, send optional marketing or product emails, and use optional device permissions. Consent may be withdrawn at any time without affecting earlier lawful processing.',
+                ],
+            },
+            {
+                heading: 'Legal obligations',
+                paragraphs: [
+                    'To comply with tax, accounting, consumer-protection, law-enforcement, and other binding legal requirements.',
+                ],
+            },
+            {
+                heading: 'Legitimate interests',
+                paragraphs: [
+                    'To protect accounts and infrastructure, prevent abuse or fraud, maintain service security, establish or defend legal claims, and improve reliability using data that is necessary and proportionate for those purposes.',
                 ],
             },
         ],
     },
     {
-        title: '6. Data Storage and Security',
+        title: '6. Service Providers and Recipients',
         paragraphs: [
-            'Reasonable technical and organizational measures are implemented to protect personal data against unauthorized access, loss, or misuse.',
-            'Only the minimum necessary data is collected and processed.',
+            'Personal data is not sold. It may be made available only as necessary to service providers acting for Dropsauce or to independent providers involved in a user\'s transaction.',
         ],
-    },
-    {
-        title: '7. Data Retention',
-        paragraphs: [
-            'Email addresses associated with accounts are retained for as long as the account remains active.',
-            'Optional analytics and diagnostics events may be retained only for analytical and reliability purposes, subject to the analytics provider retention settings and only for as long as reasonably needed for those purposes.',
-            'Users may request deletion of their account and associated data at any time.',
-        ],
-    },
-    {
-        title: '8. User Rights',
-        paragraphs: ['Under the GDPR, users have the right to:'],
         bullets: [
-            'Access their personal data',
-            'Request correction of inaccurate data',
-            'Request deletion of their data',
-            'Restrict or object to certain processing',
-            'Withdraw consent at any time',
+            'Supabase: authentication, database, cloud storage, synchronization, and backend functions',
+            'PostHog: optional analytics and diagnostics when the user opts in',
+            'Apple App Store and Google Play: subscription purchase, payment, billing, cancellation, and refund administration',
+            'Professional advisers, courts, regulators, public authorities, or law-enforcement bodies when legally required or necessary to protect legal rights.',
         ],
-        footer:
-            'Requests may be made by contacting: hello@dropsauce.app. Users also have the right to lodge a complaint with their local data protection authority.',
     },
     {
-        title: '9. Changes to This Policy',
+        title: '7. European Storage and International Transfers',
         paragraphs: [
-            'This Privacy Policy may be updated from time to time.',
-            'When changes occur, the updated version will be published within the application or on the website.',
+            'Dropsauce configures its primary cloud database, file storage, backend, and PostHog analytics data residency in the European Union.',
+            'Some providers or their subprocessors may access limited data from outside the European Economic Area for support, security, or service operation. Where this occurs, Dropsauce relies on an applicable adequacy decision, Standard Contractual Clauses, or another lawful GDPR transfer safeguard.',
+            'Apple and Google process store and payment data under their own privacy terms and international-transfer arrangements.',
+        ],
+    },
+    {
+        title: '8. Retention and Deletion',
+        paragraphs: [
+            'Guest data remains on the device until the user deletes it, clears the app data, or uninstalls the app. Dropsauce cannot recover guest data that was never synchronized.',
+            'Account, profile, preference, entitlement, and cloud content data is retained while the account is active or as needed to provide the requested service.',
+            'A user can delete the account from Privacy & Security settings, follow the instructions at https://dropsauce.app/delete-account, or request deletion at hello@dropsauce.app. Account deletion removes the account, cloud database content, stored recipe images, imported documents, and import-usage state from active systems.',
+            'Limited records may be retained when required by tax, accounting, fraud-prevention, dispute-resolution, or other legal obligations. Residual encrypted backups are deleted or overwritten according to the service provider\'s backup cycle and are not used for ordinary business purposes.',
+            'Optional analytics events are retained only for the configured analytics retention period and should not be kept longer than necessary for product and reliability analysis.',
+        ],
+    },
+    {
+        title: '9. Security',
+        paragraphs: [
+            'Dropsauce uses measures appropriate to the risk, including encrypted network transport, protected authentication sessions, access controls, database row-level security, private storage for imported documents, signed access links, file-type and size validation, and restricted backend credentials.',
+            'Recipe images stored for cloud use may be served through a public object URL. The URL is not intended as an access-control mechanism, so users should not upload confidential or highly sensitive material as a recipe image.',
+            'No internet service can guarantee absolute security. Users should use a strong, unique password and protect access to their device and store account.',
+        ],
+    },
+    {
+        title: '10. Rights',
+        paragraphs: [
+            'Depending on the circumstances, users may exercise the rights of access, rectification, erasure, restriction, objection, and data portability, and may withdraw consent at any time.',
+            'Requests can be sent to hello@dropsauce.app. Identity verification may be required before a request is completed. Requests are handled within the periods required by the GDPR.',
+            'Users may lodge a complaint with the Spanish Data Protection Agency (Agencia Española de Protección de Datos) at www.aepd.es or with the supervisory authority where they live or work.',
+        ],
+    },
+    {
+        title: '11. Required Data and Automated Decisions',
+        paragraphs: [
+            'An email address and authentication credential are required to create an account. If they are not provided, an account and cloud features cannot be offered, but guest mode remains available.',
+            'Data needed for store billing and entitlement verification is required to provide Premium.',
+            'Dropsauce does not make decisions based solely on automated processing that produce legal or similarly significant effects, and does not use personal data for advertising profiles.',
+        ],
+    },
+    {
+        title: '12. Children',
+        paragraphs: [
+            'Dropsauce is a general-audience recipe application and is not directed specifically to children. A minor who cannot validly accept these terms or provide the necessary consent under applicable law must use the service only with authorization from a parent or legal guardian.',
+        ],
+    },
+    {
+        title: '13. Changes',
+        paragraphs: [
+            'This policy may be updated to reflect legal, technical, or service changes. Material changes will be communicated in the app or through another appropriate channel before they take effect where required.',
         ],
     },
 ]
@@ -150,12 +205,12 @@ export default function PrivacyPolicyScreen() {
     return (
         <ProfileSubpageLayout
             title="Privacy Policy"
-            subtitle="Last updated: March 9, 2026"
+            subtitle="Last updated: June 9, 2026"
             onBack={() => router.back()}
         >
             <Text style={styles.intro}>
-                This page explains what data the app collects, why it is processed, and how it is
-                protected.
+                This policy explains how Dropsauce handles personal data in guest, account, and
+                Premium modes.
             </Text>
 
             {POLICY_SECTIONS.map((section) => (

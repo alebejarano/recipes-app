@@ -102,6 +102,14 @@ export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySe
         subtitle: 'Read the rules and conditions for using the app.',
         onPress: () => router.push('/(public)/terms'),
       },
+      {
+        id: 'legal-notice',
+        type: 'link' as const,
+        icon: 'info' as const,
+        title: 'Legal notice',
+        subtitle: 'Business identification and legal information.',
+        onPress: () => router.push('/(public)/legal-notice' as any),
+      },
     ],
     [analyticsConsentLoaded, analyticsEnabled, exportRoute, hasAccount, setAnalyticsEnabled]
   )

@@ -39,7 +39,7 @@ export default function PublicAccountScreen() {
         id: 'privacy',
         type: 'link' as const,
         title: 'Privacy & Security',
-        subtitle: 'Manage analytics and replay',
+        subtitle: 'Manage optional analytics',
         icon: 'shield' as const,
         onPress: () => router.push('/privacy'),
       },
