@@ -25,7 +25,12 @@ async function deleteUserStorage(
           offset: 0,
         })
       if (listError) {
-        throw new Error(`Failed to list ${bucket}: ${listError.message}`)
+        console.error('delete-account storage list failed', {
+          bucket,
+          userId,
+          message: listError.message,
+        })
+        throw new Error(`Account deletion failed (storage_list_${bucket.replace('-', '_')})`)
       }
 
       const paths = (objects ?? [])
@@ -35,7 +40,12 @@ async function deleteUserStorage(
 
       const { error: removeError } = await adminClient.storage.from(bucket).remove(paths)
       if (removeError) {
-        throw new Error(`Failed to delete ${bucket}: ${removeError.message}`)
+        console.error('delete-account storage removal failed', {
+          bucket,
+          userId,
+          message: removeError.message,
+        })
+        throw new Error(`Account deletion failed (storage_remove_${bucket.replace('-', '_')})`)
       }
     }
   }
@@ -83,25 +93,13 @@ serve(async (req) => {
 
     await deleteUserStorage(adminClient, user.id)
 
-    const { error: uploadEventsError } = await adminClient
-      .from('import_upload_events')
-      .delete()
-      .eq('user_id', user.id)
-    if (uploadEventsError) {
-      return json({ error: `Failed to delete import history: ${uploadEventsError.message}` }, 400)
-    }
-
-    const { error: uploadStateError } = await adminClient
-      .from('import_upload_user_state')
-      .delete()
-      .eq('user_id', user.id)
-    if (uploadStateError) {
-      return json({ error: `Failed to delete import state: ${uploadStateError.message}` }, 400)
-    }
-
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(user.id)
     if (deleteError) {
-      return json({ error: `Failed to delete user: ${deleteError.message}` }, 400)
+      console.error('delete-account auth user removal failed', {
+        userId: user.id,
+        message: deleteError.message,
+      })
+      return json({ error: 'Account deletion failed (auth_user_removal)' }, 500)
     }
 
     return json({ success: true })
