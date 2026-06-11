@@ -4,12 +4,26 @@ import { getContentUriAsync } from 'expo-file-system/legacy'
 import * as IntentLauncher from 'expo-intent-launcher'
 import * as Linking from 'expo-linking'
 import { router, useLocalSearchParams, useSegments } from 'expo-router'
-import React, { useCallback, useMemo } from 'react'
-import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native'
+import React, { useCallback, useMemo, useState } from 'react'
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
-import { useDeleteRecipeDocument, useRecipeDocument } from '@/features/recipes/hooks/useRecipeDocuments'
+import {
+  useDeleteRecipeDocument,
+  useRecipeDocument,
+  useUpdateRecipeDocumentTitle,
+} from '@/features/recipes/hooks/useRecipeDocuments'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { createThemedStyles } from '@/styles/createStyles'
@@ -45,6 +59,9 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
   
   const { data: document, isLoading, isError } = useRecipeDocument(documentId, routeMode)
   const deleteMutation = useDeleteRecipeDocument(routeMode)
+  const updateTitleMutation = useUpdateRecipeDocumentTitle(routeMode)
+  const [isRenameVisible, setIsRenameVisible] = useState(false)
+  const [renameValue, setRenameValue] = useState('')
 
   // Computed values
   const title = useMemo(() => {
@@ -198,6 +215,34 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
     }
   }, [document?.fileUri, fileInfo])
 
+  const handleOpenRename = useCallback(() => {
+    setRenameValue(title)
+    setIsRenameVisible(true)
+  }, [title])
+
+  const handleCloseRename = useCallback(() => {
+    if (updateTitleMutation.isPending) return
+    setIsRenameVisible(false)
+  }, [updateTitleMutation.isPending])
+
+  const handleRename = useCallback(async () => {
+    const nextTitle = renameValue.trim()
+    if (!nextTitle || nextTitle === title || updateTitleMutation.isPending) return
+
+    try {
+      await updateTitleMutation.mutateAsync({
+        id: documentId,
+        title: nextTitle,
+      })
+      setIsRenameVisible(false)
+    } catch (error) {
+      Alert.alert(
+        'Rename failed',
+        getUserFacingErrorMessage(error, 'The import name could not be updated. Please try again.')
+      )
+    }
+  }, [documentId, renameValue, title, updateTitleMutation])
+
   // Delete handler
   const handleDeleteFile = useCallback(() => {
     if (!documentId || deleteMutation.isPending) return
@@ -287,6 +332,14 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
         <View style={styles.titleContainer}>
           <Feather name="file-text" size={32} style={styles.titleIcon} />
           <Text style={styles.title}>{title}</Text>
+          <TouchableOpacity
+            onPress={handleOpenRename}
+            accessibilityRole="button"
+            accessibilityLabel="Edit import name"
+            style={styles.editTitleButton}
+          >
+            <Feather name="edit-2" size={18} style={styles.editTitleIcon} />
+          </TouchableOpacity>
         </View>
 
         {/* Open Button */}
@@ -336,6 +389,59 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
           {deleteMutation.isPending ? 'Deleting…' : 'Delete file'}
         </Button>
       </ScrollView>
+
+      <Modal
+        visible={isRenameVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCloseRename}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalBackdrop}
+        >
+          <View style={styles.renameCard}>
+            <Text style={styles.renameTitle}>Edit import name</Text>
+            <Text style={styles.renameDescription}>
+              This changes the name shown in Dropsauce. The original file is not modified.
+            </Text>
+            <TextInput
+              value={renameValue}
+              onChangeText={setRenameValue}
+              placeholder="Import name"
+              placeholderTextColor={styles.placeholder.color}
+              style={styles.renameInput}
+              autoFocus
+              autoCapitalize="sentences"
+              autoCorrect
+              maxLength={120}
+              returnKeyType="done"
+              onSubmitEditing={() => void handleRename()}
+            />
+            <View style={styles.renameActions}>
+              <Button
+                variant="secondary"
+                size="md"
+                onPress={handleCloseRename}
+                disabled={updateTitleMutation.isPending}
+                style={styles.renameAction}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="md"
+                onPress={() => void handleRename()}
+                disabled={!renameValue.trim() || renameValue.trim() === title}
+                loading={updateTitleMutation.isPending}
+                loadingLabel="Saving…"
+                style={styles.renameAction}
+              >
+                Save
+              </Button>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -394,6 +500,19 @@ const styles = createThemedStyles((theme) => ({
     fontFamily: theme.fontFamily.bold,
     fontSize: theme.fontSize.display,
     lineHeight: theme.lineHeight.display,
+    color: theme.colors.foreground,
+  },
+  editTitleButton: {
+    width: 44,
+    height: 44,
+    borderRadius: theme.radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  editTitleIcon: {
     color: theme.colors.foreground,
   },
 
@@ -476,5 +595,56 @@ const styles = createThemedStyles((theme) => ({
   spacer: {
     flex: 1,
     minHeight: theme.spacing.xl,
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: theme.spacing.lg,
+    backgroundColor: 'rgba(20, 16, 10, 0.36)',
+  },
+  renameCard: {
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
+    padding: theme.spacing.xl,
+    borderRadius: theme.radii.xxl,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    gap: theme.spacing.md,
+  },
+  renameTitle: {
+    fontFamily: theme.fontFamily.bold,
+    fontSize: theme.fontSize.xl,
+    lineHeight: theme.lineHeight.xl,
+    color: theme.colors.foreground,
+  },
+  renameDescription: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+    color: theme.colors.mutedForeground,
+  },
+  renameInput: {
+    minHeight: 48,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.radii.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.foreground,
+  },
+  placeholder: {
+    color: theme.colors.mutedForeground,
+  },
+  renameActions: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+  renameAction: {
+    flex: 1,
   },
 }))

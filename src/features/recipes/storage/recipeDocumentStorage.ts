@@ -263,6 +263,23 @@ export async function getRecipeDocument(id: string): Promise<RecipeDocument | nu
   }
 }
 
+export async function updateRecipeDocumentTitle(input: {
+  id: string
+  title: string
+}): Promise<void> {
+  await ensureRecipeDocumentStorageReady()
+  const title = input.title.trim()
+  if (!title) throw new Error('Import name is required.')
+  if (title.length > 120) throw new Error('Import name must be 120 characters or fewer.')
+
+  await runSqlAsync(
+    `UPDATE recipe_documents
+     SET title = ?
+     WHERE id = ?;`,
+    [title, input.id]
+  )
+}
+
 export async function getRecipeDocumentUsageSummary(): Promise<RecipeDocumentUsageSummary> {
   await ensureLocalRecipeDocumentCleanup()
   await ensureDocumentImportsBackfilled()

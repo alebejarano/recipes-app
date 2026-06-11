@@ -227,6 +227,21 @@ export async function getCloudRecipeDocumentUsageSummary(): Promise<RecipeDocume
   }
 }
 
+export async function updateCloudRecipeDocumentTitle(input: {
+  id: string
+  title: string
+}): Promise<void> {
+  const title = input.title.trim()
+  if (!title) throw new Error('Import name is required.')
+
+  const { error } = await supabase.rpc('update_recipe_document_import_title', {
+    p_document_id: input.id,
+    p_title: title,
+  })
+
+  if (error) throw error
+}
+
 export async function deleteCloudRecipeDocument(id: string): Promise<void> {
   const row = await fetchCloudRecipeDocumentDirect(id)
   if (!row) return

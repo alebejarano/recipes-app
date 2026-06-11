@@ -6,6 +6,7 @@ import {
   deleteCloudRecipeDocument,
   getCloudRecipeDocumentUsageSummary,
   getCloudRecipeDocument,
+  updateCloudRecipeDocumentTitle,
   type CloudRecipeDocumentsCursor,
   type CloudRecipeDocumentsPage,
 } from '@/features/recipes/api/recipeDocumentsCloudRepo'
@@ -16,6 +17,7 @@ import {
   getRecipeDocument,
   getRecipeDocumentUsageSummary,
   listRecipeDocuments,
+  updateRecipeDocumentTitle,
   type PendingRecipeDocument,
   type RecipeDocument,
 } from '@/features/recipes/storage/recipeDocumentStorage'
@@ -25,6 +27,7 @@ import { triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
 
 const DOCS_KEY = ['recipes', 'documents']
 const USAGE_KEY = ['recipes', 'documents', 'usage']
+const MANAGED_IMPORTS_KEY = ['recipes', 'imports', 'managed']
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message
@@ -167,6 +170,23 @@ export function useDeleteRecipeDocument(mode: StorageScreenMode = 'auth') {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: DOCS_KEY })
       qc.invalidateQueries({ queryKey: USAGE_KEY })
+    },
+  })
+}
+
+export function useUpdateRecipeDocumentTitle(mode: StorageScreenMode = 'auth') {
+  const qc = useQueryClient()
+  const { shouldUseLocalData } = useStorageDataMode(mode)
+
+  return useMutation({
+    mutationFn: (input: { id: string; title: string }) =>
+      shouldUseLocalData
+        ? updateRecipeDocumentTitle(input)
+        : updateCloudRecipeDocumentTitle(input),
+    onSuccess: (_, input) => {
+      qc.invalidateQueries({ queryKey: DOCS_KEY })
+      qc.invalidateQueries({ queryKey: MANAGED_IMPORTS_KEY })
+      qc.invalidateQueries({ queryKey: [...DOCS_KEY, shouldUseLocalData ? 'local' : 'cloud', input.id] })
     },
   })
 }
