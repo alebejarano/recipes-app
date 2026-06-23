@@ -28,6 +28,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
         question: 'Does the app work offline?',
         answers: [
           "Yes. You can create, edit, and view recipes without an internet connection.",
+          'Imports from Dropbox, Drive, iCloud, and similar providers must be available offline or downloaded to your phone before you can import them.',
           "If you have Premium, changes sync automatically when you reconnect.",
         ],
       },
@@ -64,6 +65,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
           '• Up to 50MB total storage for imports and images',
           '• Unlimited notes',
           '• Full offline access on this device',
+          'Imported cloud files must still be available offline or downloaded locally before import.',
           'You can upgrade anytime to remove recipe and storage limits and enable cloud sync.',
         ],
       },
@@ -153,7 +155,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
           '• Imported PDFs',
           '• Notes and folders',
           "When you upgrade, we automatically import everything you've already created on this device.",
-          'The app remains fully usable offline.',
+          'The app remains fully usable offline after a file has been saved on this device. Cloud providers like Dropbox still need to make the selected file available locally before import.',
         ],
       },
       {

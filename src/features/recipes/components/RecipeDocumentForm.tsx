@@ -116,6 +116,14 @@ function formatBytes(bytes: number) {
   return `${mb.toFixed(mb >= 10 ? 0 : 1)} MB`
 }
 
+function getAvailabilityNote(plan: ImportPlan) {
+  if (plan === 'premium') {
+    return 'Files from Dropbox, Drive, iCloud, or similar providers must be available offline or downloaded to this device before import. Once the file is saved here, Premium can keep it locally and upload it to your account when you are back online.'
+  }
+
+  return 'Files from Dropbox, Drive, iCloud, or similar providers must be available offline or downloaded to this device before import. Free imports stay on this device after they are saved.'
+}
+
 const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function RecipeDocumentForm(
   { isSubmitting, autoPickPdf = false, plan = 'free', onSubmit },
   ref
@@ -233,6 +241,7 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Import file</Text>
         <Text style={styles.helperText}>{helperText}</Text>
+        <Text style={styles.availabilityNote}>{getAvailabilityNote(plan)}</Text>
 
         <View style={styles.fileCard}>
           <View style={styles.fileIconWrap}>
@@ -316,6 +325,13 @@ const styles = createThemedStyles((theme) => ({
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.sm,
     lineHeight: theme.lineHeight.sm,
+    color: theme.colors.mutedForeground,
+  },
+  availabilityNote: {
+    marginTop: theme.spacing.sm,
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.base,
     color: theme.colors.mutedForeground,
   },
 
