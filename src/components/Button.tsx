@@ -1,5 +1,6 @@
 // src/components/Button.tsx
 import { createThemedStyles } from '@/styles/createStyles'
+import { theme } from '@/styles/theme'
 import React from 'react'
 import {
   ActivityIndicator,
@@ -69,7 +70,7 @@ export default function Button({
     >
       {loading ? (
         <View style={styles.icon}>
-          <ActivityIndicator size="small" color={spinnerColor ?? '#000'} />
+          <ActivityIndicator size="small" color={spinnerColor ?? theme.colors.foreground} />
         </View>
       ) : icon ? (
         <View style={styles.icon}>{icon}</View>
@@ -146,7 +147,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.accent,
     borderWidth: 1,
     borderColor: theme.colors.terracottaLight,
-    shadowColor: '#000',
+    shadowColor: theme.colors.shadow,
     shadowOpacity: 0.06,
     shadowRadius: 12,
     elevation: 3,

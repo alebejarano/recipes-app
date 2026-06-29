@@ -181,7 +181,7 @@ export default function PremiumSuccessModal({ visible, onClose }: PremiumSuccess
 const styles = createThemedStyles((theme) => ({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    backgroundColor: theme.colors.overlay,
     alignItems: 'center',
     justifyContent: 'center',
     padding: theme.spacing.md,

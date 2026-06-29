@@ -26,6 +26,7 @@ import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { useLargeScreenLayout } from '@/hooks/useLargeScreenLayout'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
+import { theme } from '@/styles/theme'
 
 export type AuthMode = 'login' | 'register'
 
@@ -276,7 +277,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
               <Feather name="mail" size={18} style={styles.inputIcon} />
               <TextInput
                 placeholder="you@example.com"
-                placeholderTextColor="#8c857b"
+                placeholderTextColor={theme.colors.warmGray}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"
@@ -298,7 +299,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
               <TextInput
                 placeholder="••••••••"
-                placeholderTextColor="#8c857b"
+                placeholderTextColor={theme.colors.warmGray}
                 secureTextEntry={!showPassword}
                 style={styles.input}
                 value={password}
@@ -350,7 +351,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
                 <TextInput
                   placeholder="••••••••"
-                  placeholderTextColor="#8c857b"
+                  placeholderTextColor={theme.colors.warmGray}
                   secureTextEntry={!showPassword}
                   style={styles.input}
                   value={confirmPassword}

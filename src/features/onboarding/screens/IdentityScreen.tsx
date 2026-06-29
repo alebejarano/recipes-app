@@ -236,7 +236,7 @@ const styles = createThemedStyles(theme => ({
     optionCardSelected: {
         borderColor: theme.colors.primary,
         backgroundColor: theme.colors.primarySoft,
-        shadowColor: '#000',
+        shadowColor: theme.colors.shadow,
         shadowOpacity: 0.05,
         shadowRadius: 12,
     },

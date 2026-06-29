@@ -142,7 +142,7 @@ const styles = createThemedStyles((theme) => ({
     right: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: 'rgba(17, 24, 39, 0.35)',
+    backgroundColor: theme.colors.overlay,
   },
   sheet: {
     borderTopLeftRadius: theme.radii.xxl,

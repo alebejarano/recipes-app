@@ -14,6 +14,7 @@ import {
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { createThemedStyles } from '@/styles/createStyles'
+import { theme } from '@/styles/theme'
 
 type PasswordSettingsScreenProps = {
   onBack: () => void
@@ -183,7 +184,7 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
               <Feather name="lock" size={18} style={styles.inputIcon} />
               <TextInput
                 placeholder="Enter your current password"
-                placeholderTextColor="#8c857b"
+                placeholderTextColor={theme.colors.warmGray}
                 secureTextEntry={!showCurrentPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -214,7 +215,7 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
               <Feather name="lock" size={18} style={styles.inputIcon} />
               <TextInput
                 placeholder="Enter a new password"
-                placeholderTextColor="#8c857b"
+                placeholderTextColor={theme.colors.warmGray}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -261,7 +262,7 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
               <Feather name="check-circle" size={18} style={styles.inputIcon} />
               <TextInput
                 placeholder="Re-enter your new password"
-                placeholderTextColor="#8c857b"
+                placeholderTextColor={theme.colors.warmGray}
                 secureTextEntry={!showConfirmPassword}
                 autoCapitalize="none"
                 autoCorrect={false}

@@ -114,7 +114,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   iconTilePrimary: {
-    backgroundColor: 'hsla(142, 15%, 75%, 0.7)',
+    backgroundColor: theme.colors.primarySoft,
   },
   iconTilePeach: {
     backgroundColor: theme.colors.terracottaLight,

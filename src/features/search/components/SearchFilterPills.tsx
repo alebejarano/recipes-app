@@ -57,7 +57,7 @@ const styles = createThemedStyles((theme) => ({
   },
   pillActive: {
     backgroundColor: theme.colors.primary,
-    shadowColor: '#000',
+    shadowColor: theme.colors.shadow,
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 3,

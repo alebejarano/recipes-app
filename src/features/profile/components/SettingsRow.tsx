@@ -162,7 +162,7 @@ const styles = createThemedStyles((theme) => ({
   },
   icon: { color: theme.colors.mutedForeground },
   iconAccent: { color: theme.colors.accent },
-  iconDanger: { color: '#d13b3b' },
+  iconDanger: { color: theme.colors.danger },
 
   textWrap: {
     flex: 1,
@@ -177,7 +177,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.accent,
   },
   titleDanger: {
-    color: '#d13b3b',
+    color: theme.colors.danger,
   },
   subtitle: {
     marginTop: 2,

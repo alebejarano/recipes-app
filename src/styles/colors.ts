@@ -30,6 +30,7 @@ export const lightColors = {
 
     destructive: 'hsl(0 60% 55%)',
     destructiveForeground: 'hsl(45 30% 98%)',
+    danger: 'hsl(0 62% 53%)',
 
     border: 'hsl(35 20% 88%)',
     input: 'hsl(35 20% 88%)',
@@ -43,6 +44,11 @@ export const lightColors = {
     warmGray: 'hsl(30 10% 50%)',
 
     success: 'hsl(81,95%,26%)',
+
+    shadow: 'hsl(0 0% 0%)',
+
+    overlay: 'hsla(36, 33%, 6%, 0.36)',
+    frostedSurface: 'hsla(0, 0%, 100%, 0.7)',
 
 } as const;
 
@@ -68,12 +74,13 @@ export const darkColors = {
     mutedForeground: 'hsl(45 15% 60%)',
 
     accent: 'hsl(18 45% 55%)',
-    accentLight: 'hsl(25 60% 90%)',
+    accentLight: 'hsl(25 45% 22%)',
     accentForeground: 'hsl(45 30% 98%)',
     accent10: 'hsla(18, 45%, 55%, 0.10)',
 
     destructive: 'hsl(0 55% 45%)',
     destructiveForeground: 'hsl(45 30% 98%)',
+    danger: 'hsl(0 75% 68%)',
 
     border: 'hsl(30 15% 22%)',
     input: 'hsl(30 15% 22%)',
@@ -88,6 +95,11 @@ export const darkColors = {
 
 
     success: 'hsl(101,78%,41%)',
+
+    shadow: 'hsl(0 0% 0%)',
+
+    overlay: 'hsla(0, 0%, 0%, 0.6)',
+    frostedSurface: 'hsla(0, 0%, 100%, 0.12)',
 } as const;
 
 // KEY: widen the value types from string literals → string

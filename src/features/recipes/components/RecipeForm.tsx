@@ -1185,7 +1185,7 @@ const styles = createThemedStyles((theme) => ({
   flex2: { flex: 2 },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: theme.colors.overlay,
     justifyContent: 'flex-end',
   },
   modalCard: {
@@ -1367,7 +1367,7 @@ const styles = createThemedStyles((theme) => ({
     left: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: theme.colors.frostedSurface,
   },
   coverActions: {
     flexDirection: 'row',

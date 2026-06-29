@@ -600,7 +600,7 @@ const styles = createThemedStyles((theme) => ({
     flex: 1,
     justifyContent: 'center',
     padding: theme.spacing.lg,
-    backgroundColor: 'rgba(20, 16, 10, 0.36)',
+    backgroundColor: theme.colors.overlay,
   },
   renameCard: {
     width: '100%',

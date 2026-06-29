@@ -19,6 +19,7 @@ import { useLargeScreenLayout } from '@/hooks/useLargeScreenLayout'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
+import { theme } from '@/styles/theme'
 
 function getParamValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value
@@ -140,7 +141,7 @@ export default function ForgotPasswordScreen() {
               <Feather name="mail" size={18} style={styles.inputIcon} />
               <TextInput
                 placeholder="you@example.com"
-                placeholderTextColor="#8c857b"
+                placeholderTextColor={theme.colors.warmGray}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"

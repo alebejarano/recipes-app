@@ -71,7 +71,7 @@ export default function PlanLimitReachedModal({
 const styles = createThemedStyles((theme) => ({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(20, 16, 10, 0.36)',
+    backgroundColor: theme.colors.overlay,
     alignItems: 'center',
     justifyContent: 'center',
     padding: theme.spacing.lg,

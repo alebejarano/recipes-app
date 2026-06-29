@@ -36,6 +36,16 @@ export const fontWeight = {
 } as const;
 
 export const textVariants = {
+    hero: {
+        fontFamily: fontFamily.semibold,
+        fontSize: fontSize.hero,
+        lineHeight: lineHeight.hero,
+    },
+    display: {
+        fontFamily: fontFamily.semibold,
+        fontSize: fontSize.display,
+        lineHeight: lineHeight.display,
+    },
     title: {
         fontFamily: fontFamily.semibold,
         fontSize: fontSize.xxl,
@@ -44,15 +54,15 @@ export const textVariants = {
     subtitle: {
         fontFamily: fontFamily.semibold,
         fontSize: fontSize.lg,
-         lineHeight: lineHeight.lg,
+        lineHeight: lineHeight.lg,
     },
     body: {
         fontFamily: fontFamily.regular,
         fontSize: fontSize.base,
         lineHeight: lineHeight.base,
     },
-   caption: {
-        fontFamily: fontFamily.regular, 
+    caption: {
+        fontFamily: fontFamily.regular,
         fontSize: fontSize.sm,
         lineHeight: lineHeight.sm,
     },
@@ -60,5 +70,5 @@ export const textVariants = {
         fontFamily: fontFamily.semibold,
         fontSize: fontSize.base,
         lineHeight: lineHeight.base,
-    }
+    },
 } as const;
