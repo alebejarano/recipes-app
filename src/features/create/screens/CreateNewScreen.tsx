@@ -173,9 +173,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   title: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.display,
-    lineHeight: theme.lineHeight.display,
+    ...theme.textVariants.display,
     color: theme.colors.foreground,
   },
 

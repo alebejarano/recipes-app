@@ -136,9 +136,7 @@ const styles = createThemedStyles((theme) => ({
   helper: {
     marginTop: theme.spacing.lg,
     marginBottom: theme.spacing.lg,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
     maxWidth: 320,
   },
@@ -176,9 +174,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   currentTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
   },
 
@@ -190,17 +186,13 @@ const styles = createThemedStyles((theme) => ({
   },
 
   badgeText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.primaryDark,
   },
 
   currentSub: {
     marginTop: theme.spacing.xs,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
 
@@ -237,16 +229,12 @@ const styles = createThemedStyles((theme) => ({
   },
 
   pillText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
     color: theme.colors.foreground,
   },
 
   moreText: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
     marginLeft: theme.spacing.xs,
   },
@@ -275,9 +263,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   fromRecipeTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
+    ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
   },
 
@@ -291,9 +277,7 @@ const styles = createThemedStyles((theme) => ({
 
   tipText: {
     flex: 1,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
     textAlign: 'center',
   },

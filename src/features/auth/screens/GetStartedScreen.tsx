@@ -158,18 +158,14 @@ const styles = createThemedStyles((theme) => ({
 
   title: {
     textAlign: 'center',
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.display,
-    lineHeight: theme.lineHeight.display,
+    ...theme.textVariants.display,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
   },
 
   subtitle: {
     textAlign: 'center',
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
     maxWidth: 380,
   },
@@ -187,9 +183,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   cardTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.md,
   },
@@ -220,9 +214,7 @@ const styles = createThemedStyles((theme) => ({
 
   benefitText: {
     flex: 1,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
 
@@ -242,9 +234,7 @@ const styles = createThemedStyles((theme) => ({
 
   microCopy: {
     textAlign: 'center',
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
     marginTop: theme.spacing.xs,
   },

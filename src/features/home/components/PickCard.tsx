@@ -122,23 +122,17 @@ const styles = createThemedStyles((theme) => ({
   },
   textBlock: { flex: 1 },
   label: {
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.medium,
+    ...theme.textVariants.label,
     color: theme.colors.primary,
     marginBottom: 2,
   },
   title: {
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
-    fontFamily: theme.fontFamily.bold,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
   },
   subtitle: {
     marginTop: 4,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.regular,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
 }));

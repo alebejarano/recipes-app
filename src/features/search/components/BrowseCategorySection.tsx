@@ -36,9 +36,7 @@ const styles = createThemedStyles((theme) => ({
     marginTop: theme.spacing.xl,
   },
   title: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.lg,
   },

@@ -10,24 +10,26 @@ type NoticeSection = {
     paragraphs?: readonly string[]
     details?: readonly string[]
     bullets?: readonly string[]
+    footer?: string
 }
 
 const NOTICE_SECTIONS: readonly NoticeSection[] = [
     {
         title: '1. Service Provider',
+        paragraphs: [
+            'In accordance with Spanish Law 34/2002 on Information Society Services and Electronic Commerce (LSSI-CE), the provider of Dropsauce is:',
+        ],
         details: [
             'Legal name: Anthony Lajusticia',
-            'Trade name: DropSauce',
+            'Trade name: Dropsauce',
             'Legal status: Self-employed professional registered in Spain under the Régimen Especial de Trabajadores Autónomos',
             'NIF: Z0570202Z',
-            'Business address: [pending]',
+            'Business address: Calle de Alcalá 54, 4º izquierda, 28014 Madrid',
             'Residence and place of establishment: Spain',
             'Email: hello@dropsauce.app',
         ],
-        paragraphs: [
-            'In accordance with Spanish Law 34/2002 on Information Society Services and Electronic Commerce (LSSI-CE), the provider of Dropsauce is:',
+        footer:
             'No prior administrative authorization, regulated-profession registration, or commercial-registry entry applies to the provision of this app unless stated otherwise.',
-        ],
     },
     {
         title: '2. Purpose',
@@ -100,6 +102,8 @@ export default function LegalNoticeScreen() {
                             • {bullet}
                         </Text>
                     ))}
+
+                    {section.footer ? <Text style={styles.body}>{section.footer}</Text> : null}
                 </View>
             ))}
         </ProfileSubpageLayout>
@@ -110,9 +114,7 @@ const styles = createThemedStyles((theme) => ({
     intro: {
         marginTop: -theme.spacing.sm,
         marginBottom: theme.spacing.sm,
-        fontFamily: theme.fontFamily.regular,
-        fontSize: theme.fontSize.base,
-        lineHeight: theme.lineHeight.base,
+        ...theme.textVariants.body,
         color: theme.colors.mutedForeground,
     },
     card: {
@@ -124,21 +126,16 @@ const styles = createThemedStyles((theme) => ({
         gap: theme.spacing.sm,
     },
     sectionTitle: {
-        fontFamily: theme.fontFamily.semibold,
-        fontSize: theme.fontSize.xl,
-        lineHeight: theme.lineHeight.xl,
+        ...theme.textVariants.heading,
         color: theme.colors.foreground,
     },
     body: {
-        fontFamily: theme.fontFamily.regular,
-        fontSize: theme.fontSize.base,
+        ...theme.textVariants.body,
         lineHeight: theme.lineHeight.lg,
         color: theme.colors.mutedForeground,
     },
     detail: {
-        fontFamily: theme.fontFamily.medium,
-        fontSize: theme.fontSize.base,
-        lineHeight: theme.lineHeight.base,
+        ...theme.textVariants.label,
         color: theme.colors.foreground,
     },
 }))

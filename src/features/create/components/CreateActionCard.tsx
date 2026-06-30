@@ -129,17 +129,13 @@ const styles = createThemedStyles((theme) => ({
   },
 
   title: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.emphasis,
     color: theme.colors.foreground,
     marginBottom: 2,
   },
 
   subtitle: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
 }))

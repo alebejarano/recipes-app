@@ -120,26 +120,20 @@ const styles = createThemedStyles(theme => ({
     marginRight: theme.spacing.sm,
   },
   badgeText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.primaryDark,
   },
 
   title: {
     textAlign: 'center',
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.display,
-    lineHeight: theme.lineHeight.display,
+    ...theme.textVariants.display,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.lg,
   },
 
   subtitle: {
     textAlign: 'center',
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
     maxWidth: 340,
     marginBottom: theme.spacing['3xl'],

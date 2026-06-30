@@ -465,9 +465,7 @@ const styles = createThemedStyles((theme) => ({
     paddingHorizontal: theme.spacing.sm,
   },
   title: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
+    ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
   },
   selectButton: {
@@ -476,9 +474,7 @@ const styles = createThemedStyles((theme) => ({
     borderRadius: theme.radii.full,
   },
   selectButtonText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.primary,
   },
   sortRow: {
@@ -510,9 +506,7 @@ const styles = createThemedStyles((theme) => ({
   },
   searchInput: {
     flex: 1,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
     paddingVertical: theme.spacing.sm,
   },
@@ -531,9 +525,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.xs,
   },
   filterLabel: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.mutedForeground,
   },
   filterChipsRow: {
@@ -551,9 +543,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.primary,
   },
   sortText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.secondaryForeground,
   },
   sortTextActive: {
@@ -607,16 +597,12 @@ const styles = createThemedStyles((theme) => ({
     flex: 1,
   },
   rowTitle: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
     color: theme.colors.foreground,
   },
   rowMeta: {
     marginTop: theme.spacing.xxs,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
   openButton: {
@@ -657,18 +643,14 @@ const styles = createThemedStyles((theme) => ({
     paddingHorizontal: theme.spacing.sm,
   },
   bulkButtonText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
   },
   bulkDeleteButton: {
     backgroundColor: theme.colors.destructive,
   },
   bulkDeleteButtonText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.primaryForeground,
   },
   snackbar: {
@@ -690,9 +672,7 @@ const styles = createThemedStyles((theme) => ({
   },
   snackbarText: {
     flex: 1,
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
   },
   loadingState: {
@@ -702,8 +682,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
   },
   loadingText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.label,
     color: theme.colors.mutedForeground,
   },
   emptyState: {
@@ -714,16 +693,12 @@ const styles = createThemedStyles((theme) => ({
     paddingHorizontal: theme.spacing.lg,
   },
   emptyTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
+    ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
   },
   emptyBody: {
     textAlign: 'center',
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
 }))

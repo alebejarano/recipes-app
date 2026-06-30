@@ -32,7 +32,7 @@ const POLICY_SECTIONS: readonly PolicySection[] = [
             'Trade name: DropSauce',
             'Status: Self-employed professional registered in Spain under the Régimen Especial de Trabajadores Autónomos',
             'NIF: Z0570202Z',
-            'Business address: [pending]',
+            'Business address: Calle de Alcalá 54, 4º izquierda, 28014 Madrid',
             'Country of establishment: Spain',
             'Privacy contact: hello@dropsauce.app',
         ],
@@ -262,9 +262,7 @@ const styles = createThemedStyles((theme) => ({
     intro: {
         marginTop: -theme.spacing.sm,
         marginBottom: theme.spacing.sm,
-        fontFamily: theme.fontFamily.regular,
-        fontSize: theme.fontSize.base,
-        lineHeight: theme.lineHeight.base,
+        ...theme.textVariants.body,
         color: theme.colors.mutedForeground,
     },
     card: {
@@ -276,9 +274,7 @@ const styles = createThemedStyles((theme) => ({
         gap: theme.spacing.sm,
     },
     sectionTitle: {
-        fontFamily: theme.fontFamily.semibold,
-        fontSize: theme.fontSize.xl,
-        lineHeight: theme.lineHeight.xl,
+        ...theme.textVariants.heading,
         color: theme.colors.foreground,
     },
     group: {
@@ -286,9 +282,7 @@ const styles = createThemedStyles((theme) => ({
         marginTop: theme.spacing.xs,
     },
     groupTitle: {
-        fontFamily: theme.fontFamily.medium,
-        fontSize: theme.fontSize.base,
-        lineHeight: theme.lineHeight.base,
+        ...theme.textVariants.label,
         color: theme.colors.foreground,
     },
     body: {
@@ -298,9 +292,7 @@ const styles = createThemedStyles((theme) => ({
         color: theme.colors.mutedForeground,
     },
     detail: {
-        fontFamily: theme.fontFamily.medium,
-        fontSize: theme.fontSize.base,
-        lineHeight: theme.lineHeight.base,
+        ...theme.textVariants.label,
         color: theme.colors.foreground,
     },
     bullet: {

@@ -122,27 +122,19 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.xxs,
   },
   cardTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
   },
   cardSubtitle: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
     color: theme.colors.mutedForeground,
   },
   renewal: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   copy: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
   },
   buttonIcon: {

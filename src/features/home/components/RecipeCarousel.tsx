@@ -168,21 +168,15 @@ const styles = createThemedStyles((theme) => ({
     fontSize: 18,
   },
   title: {
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    fontFamily: theme.fontFamily.semibold,
+    ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
   },
   titleCompact: {
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.medium,
+    ...theme.textVariants.label,
   },
   meta: {
     marginTop: theme.spacing.sm,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.regular,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   metaCompact: {

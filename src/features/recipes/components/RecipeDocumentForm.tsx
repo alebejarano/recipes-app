@@ -316,15 +316,11 @@ const styles = createThemedStyles((theme) => ({
 
   section: { gap: theme.spacing.md },
   sectionTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
+    ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
   },
   helperText: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
   availabilityNote: {
@@ -358,16 +354,12 @@ const styles = createThemedStyles((theme) => ({
   },
   fileText: { flex: 1 },
   fileName: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.emphasis,
     color: theme.colors.foreground,
   },
   fileMeta: {
     marginTop: theme.spacing.xs,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
 
@@ -376,9 +368,7 @@ const styles = createThemedStyles((theme) => ({
 
   field: { gap: theme.spacing.xs },
   label: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
   },
   input: {
@@ -387,8 +377,7 @@ const styles = createThemedStyles((theme) => ({
     borderRadius: theme.radii.lg,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
     backgroundColor: theme.colors.card,
   },
@@ -409,16 +398,12 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
   replaceText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.mutedForeground,
   },
 
   validationHint: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
 }))

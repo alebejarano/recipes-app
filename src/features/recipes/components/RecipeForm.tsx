@@ -6,6 +6,7 @@ import * as ImagePicker from 'expo-image-picker'
 import React, {
   forwardRef,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -14,6 +15,7 @@ import React, {
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -205,6 +207,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   const [isFolderInputFocused, setIsFolderInputFocused] = useState(false)
   const [isEmojiModalOpen, setIsEmojiModalOpen] = useState(false)
   const [emojiDraft, setEmojiDraft] = useState('')
+  const [emojiKeyboardInset, setEmojiKeyboardInset] = useState(0)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [focusedStepIndex, setFocusedStepIndex] = useState<number | null>(null)
   const [isMoreDetailsExpanded, setIsMoreDetailsExpanded] = useState(() => {
@@ -248,6 +251,26 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   }, [suggestedFolders, folderInput, values.folders])
 
   const stepInputRefs = useRef<(TextInput | null)[]>([])
+
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !isEmojiModalOpen) {
+      setEmojiKeyboardInset(0)
+      return
+    }
+
+    const showSubscription = Keyboard.addListener('keyboardDidShow', (event) => {
+      setEmojiKeyboardInset(event.endCoordinates.height)
+    })
+    const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
+      setEmojiKeyboardInset(0)
+    })
+
+    return () => {
+      showSubscription.remove()
+      hideSubscription.remove()
+      setEmojiKeyboardInset(0)
+    }
+  }, [isEmojiModalOpen])
 
   const canSubmit = useMemo(() => {
     return values.title.trim().length > 0 && !isSubmitting && !isUploadingImage
@@ -1045,13 +1068,22 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         visible={isEmojiModalOpen}
         animationType="slide"
         transparent
+        statusBarTranslucent
         onRequestClose={() => setIsEmojiModalOpen(false)}
       >
         <KeyboardAvoidingView
           style={styles.modalBackdrop}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          <View style={[styles.modalCard, { paddingBottom: Math.max(insets.bottom, 24) + 16 }]}>
+          <View
+            style={[
+              styles.modalCard,
+              {
+                paddingBottom: Math.max(insets.bottom, 24) + 16,
+                marginBottom: Platform.OS === 'android' ? emojiKeyboardInset : 0,
+              },
+            ]}
+          >
             <Text style={styles.modalTitle}>Pick an emoji</Text>
             <Text style={styles.modalSubtitle}>
               Choose a single emoji to represent this recipe.
@@ -1064,6 +1096,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
               style={styles.modalInput}
               autoCapitalize="none"
               autoCorrect={false}
+              autoFocus
             />
 
             <View style={styles.modalActions}>
@@ -1098,9 +1131,7 @@ const styles = createThemedStyles((theme) => ({
   primarySection: { gap: theme.spacing.xl },
   collapsibleSection: { gap: theme.spacing.md },
   sectionTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
+    ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
   },
@@ -1118,17 +1149,13 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.foreground,
   },
   primarySectionLabel: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.emphasis,
     color: theme.colors.foreground,
     textTransform: 'uppercase',
     letterSpacing: 1.2,
   },
   helperText: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
   label: {
@@ -1144,9 +1171,7 @@ const styles = createThemedStyles((theme) => ({
     borderRadius: theme.radii.xl,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
   },
   titleInput: {
@@ -1165,9 +1190,7 @@ const styles = createThemedStyles((theme) => ({
     borderRadius: theme.radii.xl,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.md,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
     textAlignVertical: 'top',
   },
@@ -1196,13 +1219,11 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
   },
   modalTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
+    ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
   },
   modalSubtitle: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
   modalInput: {
@@ -1236,8 +1257,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.creamDark,
   },
   stepBadgeText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
   },
   stepInputWrap: {
@@ -1252,9 +1272,7 @@ const styles = createThemedStyles((theme) => ({
     minHeight: 46,
     paddingLeft: theme.spacing.md,
     paddingRight: theme.spacing.md,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
   },
   stepInputWithClear: {
@@ -1308,9 +1326,7 @@ const styles = createThemedStyles((theme) => ({
     flex: 1,
   },
   collapsibleTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
   },
   collapsibleMeta: {
@@ -1398,9 +1414,7 @@ const styles = createThemedStyles((theme) => ({
     minHeight: 46,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
   },
   actions: {

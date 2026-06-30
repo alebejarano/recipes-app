@@ -148,23 +148,17 @@ const styles = createThemedStyles((theme) => ({
   },
   textBlock: { flex: 1 },
   kicker: {
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
-    fontFamily: theme.fontFamily.regular,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
     marginBottom: 2,
   },
   title: {
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    fontFamily: theme.fontFamily.semibold,
+    ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
   },
   meta: {
     marginTop: 2,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.regular,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   shoppingMeta: {

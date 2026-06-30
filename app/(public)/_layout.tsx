@@ -6,7 +6,10 @@ export default function PublicLayout() {
   const segments = useSegments()
   const currentLeaf = segments[1]
   const isAllowedWhileAuthenticated =
-    currentLeaf === 'privacy-policy' || currentLeaf === 'terms' || currentLeaf === 'update-password'
+    currentLeaf === 'privacy-policy' ||
+    currentLeaf === 'terms' ||
+    currentLeaf === 'legal-notice' ||
+    currentLeaf === 'update-password'
 
   if (isLoading) return null
 

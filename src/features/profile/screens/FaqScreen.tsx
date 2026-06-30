@@ -135,9 +135,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
   },
   sectionTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.emphasis,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
     color: theme.colors.warmGray,
@@ -204,9 +202,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.md,
   },
   supportTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
     textAlign: 'center',
   },

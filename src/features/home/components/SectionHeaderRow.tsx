@@ -66,9 +66,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.md,
   },
   title: {
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
-    fontFamily: theme.fontFamily.bold,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
   },
   inlineTitle: {
@@ -80,9 +78,7 @@ const styles = createThemedStyles((theme) => ({
     justifyContent: 'space-between',
   },
   subtitle: {
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.regular,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   cta: {
@@ -94,9 +90,7 @@ const styles = createThemedStyles((theme) => ({
     borderRadius: theme.radii.full,
   },
   ctaText: {
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.medium,
+    ...theme.textVariants.label,
     color: theme.colors.primary,
   },
 }));

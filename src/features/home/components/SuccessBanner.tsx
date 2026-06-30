@@ -45,9 +45,7 @@ const styles = createThemedStyles((theme) => ({
   sparkle: { fontSize: 16 },
   text: {
     flex: 1,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.medium,
+    ...theme.textVariants.label,
     color: theme.colors.foreground,
   },
   close: {

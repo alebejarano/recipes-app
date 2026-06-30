@@ -76,8 +76,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   tabText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.label,
     color: theme.colors.mutedForeground,
   },
 

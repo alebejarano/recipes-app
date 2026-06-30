@@ -318,8 +318,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.primary,
   },
   title: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.display,
+    ...theme.textVariants.display,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
     textAlign: 'center',
@@ -340,14 +339,11 @@ const styles = createThemedStyles((theme) => ({
     gap: layout.cardGap,
   },
   noticeTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
   },
   noticeText: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   field: {
@@ -355,8 +351,7 @@ const styles = createThemedStyles((theme) => ({
     marginBottom: theme.spacing.sm,
   },
   label: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
   },
@@ -376,8 +371,7 @@ const styles = createThemedStyles((theme) => ({
   },
   input: {
     flex: 1,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
   },
   visibilityButton: {
@@ -400,9 +394,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.xs,
   },
   requirementsTitle: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
   },
@@ -419,9 +411,7 @@ const styles = createThemedStyles((theme) => ({
   },
   requirementText: {
     flex: 1,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
   requirementTextMet: {

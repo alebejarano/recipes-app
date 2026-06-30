@@ -64,16 +64,12 @@ const styles = createThemedStyles((theme) => ({
     flex: 1,
   },
   name: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
   },
   email: {
     marginTop: 2,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   editAction: {
@@ -82,9 +78,7 @@ const styles = createThemedStyles((theme) => ({
     paddingHorizontal: theme.spacing.sm,
   },
   editText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
     color: theme.colors.primary,
   },
   pressed: {

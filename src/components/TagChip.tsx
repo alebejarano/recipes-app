@@ -62,8 +62,7 @@ const styles = createThemedStyles(theme => ({
     },
 
     text: {
-        fontFamily: theme.fontFamily.medium,
-        fontSize: theme.fontSize.sm,
+        ...theme.textVariants.labelSmall,
         color: theme.colors.mutedForeground,
     },
 

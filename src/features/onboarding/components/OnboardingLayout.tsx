@@ -123,8 +123,7 @@ const styles = createThemedStyles(theme => ({
         marginRight: theme.spacing.xs,
     },
     backText: {
-        fontFamily: theme.fontFamily.medium,
-        fontSize: theme.fontSize.sm,
+        ...theme.textVariants.labelSmall,
         color: theme.colors.warmGray,
     },
     backPlaceholder: {

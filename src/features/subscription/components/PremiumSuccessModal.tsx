@@ -223,8 +223,7 @@ const styles = createThemedStyles((theme) => ({
   },
   title: {
     textAlign: 'center',
-    fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize.display,
+    ...theme.textVariants.display,
     lineHeight: theme.lineHeight.xxl,
     color: theme.colors.foreground,
   },
@@ -268,9 +267,7 @@ const styles = createThemedStyles((theme) => ({
     paddingHorizontal: theme.spacing.xl,
   },
   closeButtonText: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.accentForeground,
   },
   pressed: {

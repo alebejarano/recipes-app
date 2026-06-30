@@ -293,9 +293,7 @@ const styles = createThemedStyles((theme) => ({
   headerTitle: {
     flex: 1,
     textAlign: 'center',
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.emphasis,
     color: theme.colors.foreground,
   },
 
@@ -311,16 +309,12 @@ const styles = createThemedStyles((theme) => ({
   section: { gap: layout.listGap },
 
   sectionTitle: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
     color: theme.colors.foreground,
   },
 
   sectionLabelMuted: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
     color: theme.colors.mutedForeground,
   },
 
@@ -337,9 +331,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   input: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
   },
 
@@ -379,9 +371,7 @@ const styles = createThemedStyles((theme) => ({
   quickChipAdded: { backgroundColor: theme.colors.primarySoft, borderColor: theme.colors.primarySoft },
 
   quickChipText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.mutedForeground,
   },
 
@@ -406,9 +396,7 @@ const styles = createThemedStyles((theme) => ({
   emptyIcon: { color: theme.colors.mutedForeground, opacity: 0.4 },
 
   emptyText: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
 
@@ -444,9 +432,7 @@ const styles = createThemedStyles((theme) => ({
   listRowText: {
     flex: 1,
     marginRight: theme.spacing.md,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.foreground,
   },
 
@@ -485,9 +471,7 @@ const styles = createThemedStyles((theme) => ({
   spinner: { color: theme.colors.primary },
 
   savingTitle: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
     color: theme.colors.foreground,
   },
 
@@ -503,14 +487,12 @@ const styles = createThemedStyles((theme) => ({
   completeIcon: { color: theme.colors.primary },
 
   completeTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
   },
 
   completeSubtitle: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
 }))

@@ -230,8 +230,7 @@ const styles = createThemedStyles(theme => ({
     color: theme.colors.primary,
   },
   title: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.display,
+    ...theme.textVariants.display,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
     textAlign: 'center',
@@ -252,16 +251,13 @@ const styles = createThemedStyles(theme => ({
     gap: theme.spacing.xs,
   },
   successLabel: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.primary,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
   sentEmail: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
+    ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
   },
   successText: {
@@ -275,8 +271,7 @@ const styles = createThemedStyles(theme => ({
     marginBottom: theme.spacing.md,
   },
   label: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
   },
@@ -299,14 +294,11 @@ const styles = createThemedStyles(theme => ({
   },
   input: {
     flex: 1,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
   },
   fieldError: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.destructive,
     marginTop: theme.spacing.xs,
   },

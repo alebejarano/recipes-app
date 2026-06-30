@@ -497,9 +497,7 @@ const styles = createThemedStyles((theme) => ({
   },
   title: {
     flex: 1,
-    fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize.display,
-    lineHeight: theme.lineHeight.display,
+    ...theme.textVariants.display,
     color: theme.colors.foreground,
   },
   editTitleButton: {
@@ -534,8 +532,7 @@ const styles = createThemedStyles((theme) => ({
     gap: layout.cardGap,
   },
   metadataTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.emphasis,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
   },
@@ -558,8 +555,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
   metadataLabel: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.mutedForeground,
   },
   metadataValue: {
@@ -578,17 +574,14 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.destructive,
   },
   errorTitle: {
-    fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
     textAlign: 'center',
   },
   errorMessage: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
     textAlign: 'center',
-    lineHeight: theme.lineHeight.base,
   },
 
   // Utility
@@ -614,15 +607,11 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.md,
   },
   renameTitle: {
-    fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
   },
   renameDescription: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
   renameInput: {
@@ -633,8 +622,7 @@ const styles = createThemedStyles((theme) => ({
     borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.background,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
   },
   placeholder: {

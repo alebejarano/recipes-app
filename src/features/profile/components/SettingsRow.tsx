@@ -181,9 +181,7 @@ const styles = createThemedStyles((theme) => ({
   },
   subtitle: {
     marginTop: 2,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
 
@@ -193,9 +191,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
   },
   rightText: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   chevron: {

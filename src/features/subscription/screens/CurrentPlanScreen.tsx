@@ -361,9 +361,7 @@ const styles = createThemedStyles((theme) => ({
   },
   backText: {
     marginLeft: theme.spacing.xs,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   header: {
@@ -373,9 +371,7 @@ const styles = createThemedStyles((theme) => ({
   },
   pageTitle: {
     textAlign: 'center',
-    fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize.display,
-    lineHeight: theme.lineHeight.display,
+    ...theme.textVariants.display,
     color: theme.colors.foreground,
   },
   planPillWrap: {
@@ -391,9 +387,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.primarySoft,
   },
   planPillText: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
+    ...theme.textVariants.subtitle,
     color: theme.colors.secondaryForeground,
   },
   planPillTextPremium: {
@@ -409,9 +403,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.lg,
   },
   sectionTitle: {
-    fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
   },
   usageRowWrap: {
@@ -431,9 +423,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.foreground,
   },
   usageRowValue: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
+    ...theme.textVariants.subtitle,
     color: theme.colors.warmGray,
   },
   progressTrack: {
@@ -448,9 +438,7 @@ const styles = createThemedStyles((theme) => ({
   },
   usageMessage: {
     marginTop: theme.spacing.xs,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
   loadingRow: {
@@ -459,18 +447,14 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
   },
   loadingText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
     color: theme.colors.mutedForeground,
   },
   sectionBlock: {
     gap: theme.spacing.md,
   },
   sectionHeading: {
-    fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize.xxl,
-    lineHeight: theme.lineHeight.xxl,
+    ...theme.textVariants.title,
     color: theme.colors.foreground,
   },
   planCard: {
@@ -492,9 +476,7 @@ const styles = createThemedStyles((theme) => ({
     justifyContent: 'space-between',
   },
   planName: {
-    fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
     letterSpacing: 0.8,
   },
@@ -502,15 +484,11 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.xxs,
   },
   planMetaText: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
+    ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
   },
   planMetaSubtext: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
   featuresList: {
@@ -544,9 +522,7 @@ const styles = createThemedStyles((theme) => ({
   },
   pricingText: {
     textAlign: 'center',
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   ctaNotes: {
@@ -555,16 +531,12 @@ const styles = createThemedStyles((theme) => ({
   },
   ctaNote: {
     textAlign: 'center',
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
   supportText: {
     textAlign: 'center',
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   manageButton: {

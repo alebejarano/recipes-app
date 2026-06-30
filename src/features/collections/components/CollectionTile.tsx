@@ -66,9 +66,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   title: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xxl,
-    lineHeight: theme.lineHeight.xxl,
+    ...theme.textVariants.title,
     color: theme.colors.foreground,
   },
 

@@ -321,30 +321,24 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.md,
   },
   sectionLabel: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.mutedForeground,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
   email: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
   },
   body: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   field: {
     gap: theme.spacing.xs,
   },
   label: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
   },
   inputWrapper: {
@@ -366,8 +360,7 @@ const styles = createThemedStyles((theme) => ({
   },
   input: {
     flex: 1,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
   },
   visibilityButton: {
@@ -393,9 +386,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.primary,
   },
   successTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
     textAlign: 'center',
   },
@@ -409,9 +400,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.xs,
   },
   requirementsTitle: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
   },
@@ -428,9 +417,7 @@ const styles = createThemedStyles((theme) => ({
   },
   requirementText: {
     flex: 1,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
   requirementTextMet: {
@@ -451,9 +438,7 @@ const styles = createThemedStyles((theme) => ({
     textAlign: 'center',
   },
   fieldError: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.destructive,
   },
   button: {

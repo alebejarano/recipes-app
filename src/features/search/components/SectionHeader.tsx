@@ -50,9 +50,7 @@ const styles = createThemedStyles(theme => ({
     color: theme.colors.mutedForeground,
   },
   title: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
   },
   right: {

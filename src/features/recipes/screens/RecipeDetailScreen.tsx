@@ -670,13 +670,11 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.background,
   },
   loadingText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.label,
     color: theme.colors.mutedForeground,
   },
   errorText: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
     textAlign: 'center',
   },
@@ -690,8 +688,7 @@ const styles = createThemedStyles((theme) => ({
     borderColor: theme.colors.border,
   },
   retryText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
   },
   topBar: {
@@ -749,31 +746,24 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
   },
   title: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.display,
-    lineHeight: theme.lineHeight.display,
+    ...theme.textVariants.display,
     color: theme.colors.foreground,
   },
   subtitle: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   attributeBlock: {
     gap: theme.spacing.xs,
   },
   attributeLabel: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.mutedForeground,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   attributeHint: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
   tagsRow: {
@@ -788,8 +778,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.secondary,
   },
   tagText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.mutedForeground,
   },
   metaRow: {
@@ -806,8 +795,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
   metaText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.mutedForeground,
   },
   section: {
@@ -821,9 +809,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
   },
   sectionTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
+    ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
   },
   sectionActionButton: {
@@ -841,8 +827,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.primaryDark,
   },
   sectionActionText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
   },
   card: {
@@ -858,9 +843,7 @@ const styles = createThemedStyles((theme) => ({
   },
   ingredientText: {
     flex: 1,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
   },
   stepsBlock: {
@@ -886,20 +869,15 @@ const styles = createThemedStyles((theme) => ({
   },
   stepText: {
     flex: 1,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
   },
   emptyText: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   noteText: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
 }))

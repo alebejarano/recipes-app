@@ -307,9 +307,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
   },
   loadingText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
     color: theme.colors.mutedForeground,
   },
   simpleRow: {
@@ -338,9 +336,7 @@ const styles = createThemedStyles((theme) => ({
   },
   simpleRowTitle: {
     flex: 1,
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
     color: theme.colors.foreground,
   },
   noteTextWrap: {
@@ -348,15 +344,11 @@ const styles = createThemedStyles((theme) => ({
   },
   simpleRowMeta: {
     marginTop: 2,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
   emptyText: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
 }));

@@ -306,32 +306,26 @@ const styles = createThemedStyles((theme) => ({
 
   deleteButton: { paddingHorizontal: 0, alignSelf: 'flex-end' },
   deleteText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.destructive,
   },
 
   scroll: { paddingBottom: theme.spacing.xl },
 
   title: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.display,
-    lineHeight: theme.lineHeight.display,
+    ...theme.textVariants.display,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
   },
   subtitle: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
     marginBottom: theme.spacing.lg,
   },
 
   fieldGroup: { marginBottom: theme.spacing.lg },
   label: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.sm,
   },
@@ -355,16 +349,12 @@ const styles = createThemedStyles((theme) => ({
   },
 
   input: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
   },
   textArea: {
     flex: 1,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
   },
   placeholder: { color: theme.colors.mutedForeground },
@@ -389,8 +379,7 @@ const styles = createThemedStyles((theme) => ({
     paddingHorizontal: layout.screenPadding,
   },
   loadingText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.label,
     color: theme.colors.mutedForeground,
     textAlign: 'center',
   },

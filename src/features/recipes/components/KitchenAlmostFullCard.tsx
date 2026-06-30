@@ -114,15 +114,11 @@ const styles = createThemedStyles((theme) => ({
   },
   title: {
     flex: 1,
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.emphasis,
     color: theme.colors.foreground,
   },
   body: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
   actions: {
@@ -157,9 +153,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.background,
   },
   secondaryActionText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
   },
   dismissButton: {

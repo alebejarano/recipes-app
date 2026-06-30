@@ -74,16 +74,12 @@ const styles = createThemedStyles((theme) => ({
   },
   textBlock: { flex: 1 },
   title: {
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    fontFamily: theme.fontFamily.semibold,
+    ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
   },
   meta: {
     marginTop: 2,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.regular,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   chipsRow: {
@@ -101,9 +97,7 @@ const styles = createThemedStyles((theme) => ({
     justifyContent: 'center',
   },
   chipText: {
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
-    fontFamily: theme.fontFamily.medium,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
   },
 }));

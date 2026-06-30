@@ -718,16 +718,12 @@ const styles = createThemedStyles((theme) => ({
 
   header: { marginBottom: theme.spacing.lg },
   title: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.display,
-    lineHeight: theme.lineHeight.display,
+    ...theme.textVariants.display,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
   },
   subtitle: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
 
@@ -740,16 +736,12 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.card,
   },
   choiceTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
+    ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
   },
   choiceSubtitle: {
     marginTop: theme.spacing.xs,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   choiceButtons: {
@@ -757,9 +749,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
   },
   choiceHelperText: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
   choiceIconPrimary: { color: theme.colors.background },
@@ -788,9 +778,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.card,
   },
   errorText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.mutedForeground,
   },
 }))

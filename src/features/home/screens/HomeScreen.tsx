@@ -1093,9 +1093,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.muted,
   },
   mutedRowText: {
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.regular,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   wave: {
@@ -1108,9 +1106,7 @@ const styles = createThemedStyles((theme) => ({
     paddingVertical: theme.spacing.xl,
   },
   loadingText: {
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.medium,
+    ...theme.textVariants.label,
     color: theme.colors.mutedForeground,
   },
   contextBannerCard: {
@@ -1140,16 +1136,12 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
   contextBannerTitle: {
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    fontFamily: theme.fontFamily.semibold,
+    ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
     flexShrink: 1,
   },
   contextBannerBody: {
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.regular,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   contextBannerActionsRow: {
@@ -1167,9 +1159,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.background,
   },
   contextPrimaryActionText: {
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
-    fontFamily: theme.fontFamily.medium,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
     textDecorationLine: 'underline',
   },
@@ -1182,9 +1172,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: 'transparent',
   },
   contextSecondaryActionText: {
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
-    fontFamily: theme.fontFamily.regular,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
   actionPressed: {
@@ -1198,9 +1186,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.card,
   },
   localOnlyTitle: {
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
-    fontFamily: theme.fontFamily.semibold,
+    ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
   },
   localOnlyHeaderRow: {
@@ -1223,22 +1209,16 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
   localOnlyBody: {
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.regular,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   localOnlyLink: {
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.regular,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
     textDecorationLine: 'underline',
   },
   localOnlyPremiumLink: {
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.semibold,
+    ...theme.textVariants.emphasis,
     color: theme.colors.foreground,
     textDecorationLine: 'underline',
   },
@@ -1259,9 +1239,7 @@ const styles = createThemedStyles((theme) => ({
     opacity: 0.85,
   },
   gotItButtonText: {
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
-    fontFamily: theme.fontFamily.medium,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
   },
 }));

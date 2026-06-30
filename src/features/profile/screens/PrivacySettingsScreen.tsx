@@ -157,9 +157,7 @@ const styles = createThemedStyles((theme) => ({
   intro: {
     marginTop: -theme.spacing.sm,
     marginBottom: theme.spacing['3xl'],
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   dangerSection: {

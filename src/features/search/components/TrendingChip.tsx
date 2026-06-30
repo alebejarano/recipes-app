@@ -49,9 +49,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.primaryDark,
   },
   text: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
     color: theme.colors.foreground,
   },
 }));

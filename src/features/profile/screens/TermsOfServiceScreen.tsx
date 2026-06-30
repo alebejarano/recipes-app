@@ -168,9 +168,7 @@ const styles = createThemedStyles((theme) => ({
     intro: {
         marginTop: -theme.spacing.sm,
         marginBottom: theme.spacing.sm,
-        fontFamily: theme.fontFamily.regular,
-        fontSize: theme.fontSize.base,
-        lineHeight: theme.lineHeight.base,
+        ...theme.textVariants.body,
         color: theme.colors.mutedForeground,
     },
     card: {
@@ -182,9 +180,7 @@ const styles = createThemedStyles((theme) => ({
         gap: theme.spacing.sm,
     },
     sectionTitle: {
-        fontFamily: theme.fontFamily.semibold,
-        fontSize: theme.fontSize.xl,
-        lineHeight: theme.lineHeight.xl,
+        ...theme.textVariants.heading,
         color: theme.colors.foreground,
     },
     body: {

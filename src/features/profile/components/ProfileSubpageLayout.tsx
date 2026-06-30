@@ -72,9 +72,7 @@ const styles = createThemedStyles((theme) => ({
   },
   backText: {
     marginLeft: theme.spacing.xs,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   header: {
@@ -89,9 +87,7 @@ const styles = createThemedStyles((theme) => ({
     flex: 1,
   },
   pageTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.display,
-    lineHeight: theme.lineHeight.display,
+    ...theme.textVariants.display,
     color: theme.colors.foreground,
   },
   subtitle: {

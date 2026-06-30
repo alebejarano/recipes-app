@@ -51,6 +51,11 @@ export const textVariants = {
         fontSize: fontSize.xxl,
         lineHeight: lineHeight.xxl,
     },
+    heading: {
+        fontFamily: fontFamily.semibold,
+        fontSize: fontSize.xl,
+        lineHeight: lineHeight.xl,
+    },
     subtitle: {
         fontFamily: fontFamily.semibold,
         fontSize: fontSize.lg,
@@ -61,14 +66,24 @@ export const textVariants = {
         fontSize: fontSize.base,
         lineHeight: lineHeight.base,
     },
-    caption: {
-        fontFamily: fontFamily.regular,
-        fontSize: fontSize.sm,
-        lineHeight: lineHeight.sm,
+    label: {
+        fontFamily: fontFamily.medium,
+        fontSize: fontSize.base,
+        lineHeight: lineHeight.base,
     },
     emphasis: {
         fontFamily: fontFamily.semibold,
         fontSize: fontSize.base,
         lineHeight: lineHeight.base,
+    },
+    caption: {
+        fontFamily: fontFamily.regular,
+        fontSize: fontSize.sm,
+        lineHeight: lineHeight.sm,
+    },
+    labelSmall: {
+        fontFamily: fontFamily.medium,
+        fontSize: fontSize.sm,
+        lineHeight: lineHeight.sm,
     },
 } as const;

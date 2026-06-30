@@ -89,8 +89,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.card,
   },
   text: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
   },
   textIdle: {
     color: theme.colors.foreground,

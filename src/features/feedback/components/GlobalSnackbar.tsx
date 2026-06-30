@@ -52,9 +52,7 @@ const styles = createThemedStyles((theme) => ({
   },
   text: {
     flex: 1,
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.background,
   },
 }))

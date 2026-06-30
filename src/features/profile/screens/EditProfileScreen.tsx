@@ -149,9 +149,7 @@ const styles = createThemedStyles((theme) => ({
     opacity: 0.6,
   },
   saveText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
     color: theme.colors.primaryForeground,
   },
   avatarWrap: {

@@ -204,16 +204,12 @@ const styles = createThemedStyles(theme => ({
         marginBottom: theme.spacing.lg,
     },
     title: {
-        fontFamily: theme.fontFamily.semibold,
-        fontSize: theme.fontSize.display,
-        lineHeight: theme.lineHeight.display,
+        ...theme.textVariants.display,
         color: theme.colors.foreground,
         marginBottom: theme.spacing.xs,
     },
     subtitle: {
-        fontFamily: theme.fontFamily.regular,
-        fontSize: theme.fontSize.base,
-        lineHeight: theme.lineHeight.base,
+        ...theme.textVariants.body,
         color: theme.colors.mutedForeground,
     },
 
@@ -258,9 +254,7 @@ const styles = createThemedStyles(theme => ({
 
     optionLabel: {
         flex: 1,
-        fontFamily: theme.fontFamily.medium,
-        fontSize: theme.fontSize.base,
-        lineHeight: theme.lineHeight.base,
+        ...theme.textVariants.label,
         color: theme.colors.foreground,
     },
 

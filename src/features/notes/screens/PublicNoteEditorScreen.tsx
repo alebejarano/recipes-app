@@ -304,8 +304,7 @@ const styles = createThemedStyles((theme) => ({
   backIcon: { color: theme.colors.mutedForeground, fontSize: theme.fontSize.lg, },
   deleteButton: { paddingHorizontal: 0 },
   deleteText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.accent,
   },
 
@@ -313,24 +312,18 @@ const styles = createThemedStyles((theme) => ({
     paddingHorizontal: layout.screenPadding,
   },
   title: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.display,
-    lineHeight: theme.lineHeight.display,
+    ...theme.textVariants.display,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
   },
   subtitle: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
     marginBottom: theme.spacing.lg,
   },
   fieldGroup: { marginBottom: theme.spacing.lg },
   label: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.sm,
   },
@@ -343,9 +336,7 @@ const styles = createThemedStyles((theme) => ({
     paddingVertical: theme.spacing.sm,
   },
   input: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
   },
   placeholder: {
@@ -361,9 +352,7 @@ const styles = createThemedStyles((theme) => ({
     minHeight: 180,
   },
   textArea: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
   },
   footer: {
@@ -385,8 +374,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.background,
   },
   loadingText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.label,
     color: theme.colors.mutedForeground,
   },
 }))

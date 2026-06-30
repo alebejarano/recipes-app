@@ -596,17 +596,13 @@ const styles = createThemedStyles((theme) => ({
   },
 
   title: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.hero,
-    lineHeight: theme.lineHeight.hero,
+    ...theme.textVariants.hero,
     color: theme.colors.foreground,
   },
 
   subtitle: {
     marginTop: theme.spacing.xs,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
 
@@ -623,9 +619,7 @@ const styles = createThemedStyles((theme) => ({
   helperText: {
     marginTop: theme.spacing.lg,
     marginBottom: theme.spacing.lg,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
     maxWidth: 320,
   },
@@ -654,9 +648,7 @@ const styles = createThemedStyles((theme) => ({
   },
   successText: {
     flex: 1,
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
     color: theme.colors.foreground,
   },
   successClose: {
@@ -681,8 +673,7 @@ const styles = createThemedStyles((theme) => ({
     paddingVertical: theme.spacing.lg,
   },
   loadingText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.label,
     color: theme.colors.mutedForeground,
   },
   emptyState: {
@@ -700,24 +691,18 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.secondary,
   },
   emptyTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
+    ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
   },
   emptyBody: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
     textAlign: 'center',
     maxWidth: 280,
   },
   publicHint: {
     marginTop: theme.spacing.sm,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
     textAlign: 'center',
   },
@@ -732,9 +717,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.primary,
   },
   emptyCtaText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
     color: theme.colors.primaryForeground,
   },
 
@@ -758,31 +741,23 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.md,
   },
   modalTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
   },
   modalSubtitle: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   modalHelper: {
     marginTop: -theme.spacing.sm,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
   modalField: {
     gap: theme.spacing.xs,
   },
   modalLabel: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
   },
   modalInput: {
@@ -791,8 +766,7 @@ const styles = createThemedStyles((theme) => ({
     borderRadius: theme.radii.lg,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
     backgroundColor: theme.colors.card,
   },
@@ -818,8 +792,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.primary,
   },
   modalButtonText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.label,
     color: theme.colors.primaryForeground,
   },
   modalButtonTextGhost: {

@@ -75,17 +75,13 @@ const styles = createThemedStyles((theme) => ({
   title: {
     maxWidth: 360,
     textAlign: 'center',
-    fontSize: theme.fontSize.display,
-    lineHeight: theme.lineHeight.display,
-    fontFamily: theme.fontFamily.bold,
+    ...theme.textVariants.display,
     color: theme.colors.foreground,
   },
   body: {
     maxWidth: 360,
     marginTop: theme.spacing.md,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.regular,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
     textAlign: 'center',
   },
@@ -113,9 +109,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.mutedForeground,
   },
   secondaryText: {
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.medium,
+    ...theme.textVariants.label,
     color: theme.colors.mutedForeground,
   },
 }));

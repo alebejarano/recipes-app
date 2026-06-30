@@ -56,9 +56,7 @@ const styles = createThemedStyles((theme) => ({
   iconDefault: { color: theme.colors.foreground },
 
   text: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
   },
   textSelected: {
     color: theme.colors.primaryForeground,

@@ -66,9 +66,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.creamDark,
   },
   text: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
   },
   textActive: {
     color: theme.colors.primaryForeground,

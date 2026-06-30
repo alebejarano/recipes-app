@@ -51,9 +51,7 @@ const styles = createThemedStyles((theme) => ({
     marginBottom: layout.listGap,
   },
   headerTitle: {
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.regular,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   pill: {
@@ -70,15 +68,11 @@ const styles = createThemedStyles((theme) => ({
   },
   pillTitle: {
     flex: 1,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.medium,
+    ...theme.textVariants.label,
     color: theme.colors.foreground,
   },
   pillMeta: {
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
-    fontFamily: theme.fontFamily.regular,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
 }));

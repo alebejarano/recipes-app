@@ -173,9 +173,7 @@ const styles = createThemedStyles((theme) => ({
   helper: {
     marginTop: theme.spacing.lg,
     marginBottom: theme.spacing.lg,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
     maxWidth: 320,
   },
@@ -195,8 +193,7 @@ const styles = createThemedStyles((theme) => ({
     paddingTop: theme.spacing.lg,
   },
   loadingText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.label,
     color: theme.colors.mutedForeground,
   },
   emptyState: {
@@ -214,15 +211,11 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.secondary,
   },
   emptyTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
+    ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
   },
   emptyBody: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
     textAlign: 'center',
     maxWidth: 280,
@@ -238,9 +231,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.primary,
   },
   emptyCtaText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
     color: theme.colors.primaryForeground,
   },
 
@@ -268,17 +259,13 @@ const styles = createThemedStyles((theme) => ({
   rowText: { flex: 1 },
 
   rowTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
+    ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
   },
 
   rowDate: {
     marginTop: theme.spacing.xxs,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
 
@@ -297,9 +284,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   newItemText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
     color: theme.colors.mutedForeground,
   },
 }))

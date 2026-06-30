@@ -40,9 +40,7 @@ const styles = createThemedStyles((theme) => ({
   },
   title: {
     flex: 1,
-    fontSize: theme.fontSize.hero,
-    lineHeight: theme.lineHeight.hero,
-    fontFamily: theme.fontFamily.bold,
+    ...theme.textVariants.hero,
     color: theme.colors.foreground,
   },
   fab: {

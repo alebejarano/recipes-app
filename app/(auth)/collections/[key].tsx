@@ -365,16 +365,12 @@ const styles = createThemedStyles(theme => ({
   },
 
   title: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.hero,
-    lineHeight: theme.lineHeight.hero,
+    ...theme.textVariants.hero,
     color: theme.colors.foreground,
   },
 
   subtitle: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   moreButton: {
@@ -415,15 +411,12 @@ const styles = createThemedStyles(theme => ({
   },
 
   emptyTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
   },
 
   emptySubtitle: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
     textAlign: 'center',
   },
@@ -441,8 +434,7 @@ const styles = createThemedStyles(theme => ({
     paddingHorizontal: theme.spacing.lg,
   },
   loadingText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.label,
     color: theme.colors.mutedForeground,
     textAlign: 'center',
   },
@@ -462,24 +454,18 @@ const styles = createThemedStyles(theme => ({
     gap: theme.spacing.md,
   },
   modalTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
   },
   modalSubtitle: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   modalField: {
     gap: theme.spacing.xs,
   },
   modalLabel: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
   },
   modalInput: {
@@ -488,8 +474,7 @@ const styles = createThemedStyles(theme => ({
     borderRadius: theme.radii.lg,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
     backgroundColor: theme.colors.card,
   },
@@ -515,8 +500,7 @@ const styles = createThemedStyles(theme => ({
     backgroundColor: theme.colors.primary,
   },
   modalButtonText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.label,
     color: theme.colors.primaryForeground,
   },
   modalButtonTextGhost: {
@@ -533,8 +517,7 @@ const styles = createThemedStyles(theme => ({
     marginTop: theme.spacing.sm,
   },
   deleteText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.label,
     color: theme.colors.destructiveForeground,
   },
 }))

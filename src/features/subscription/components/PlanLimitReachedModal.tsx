@@ -106,15 +106,11 @@ const styles = createThemedStyles((theme) => ({
   },
   title: {
     marginTop: theme.spacing.sm,
-    fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize.xxl,
-    lineHeight: theme.lineHeight.xxl,
+    ...theme.textVariants.title,
     color: theme.colors.foreground,
   },
   body: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   actions: {
@@ -130,9 +126,7 @@ const styles = createThemedStyles((theme) => ({
     paddingHorizontal: theme.spacing.xl,
   },
   primaryButtonText: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.emphasis,
     color: theme.colors.accentForeground,
   },
   secondaryButton: {
@@ -146,9 +140,7 @@ const styles = createThemedStyles((theme) => ({
     paddingHorizontal: theme.spacing.xl,
   },
   secondaryButtonText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.label,
     color: theme.colors.foreground,
   },
   footer: {

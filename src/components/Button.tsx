@@ -190,14 +190,10 @@ const styles = createThemedStyles((theme) => ({
     lineHeight: theme.lineHeight.sm,
   },
   textSize_lg: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.emphasis,
   },
   textSize_xl: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
+    ...theme.textVariants.subtitle,
   },
 
   text_primary: {

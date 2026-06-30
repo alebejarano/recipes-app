@@ -59,9 +59,7 @@ const styles = createThemedStyles(theme => ({
   },
   title: {
     textAlign: 'center',
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.hero,
-    lineHeight: theme.lineHeight.hero,
+    ...theme.textVariants.hero,
     color: theme.colors.foreground,
   },
   titleHighlight: {

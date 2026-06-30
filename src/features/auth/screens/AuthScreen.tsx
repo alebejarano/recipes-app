@@ -479,8 +479,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   title: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.display,
+    ...theme.textVariants.display,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
     textAlign: 'center',
@@ -511,9 +510,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   errorTitle: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.emphasis,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
   },
@@ -531,8 +528,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   label: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     marginBottom: theme.spacing.xs,
     color: theme.colors.foreground,
   },
@@ -560,8 +556,7 @@ const styles = createThemedStyles((theme) => ({
 
   input: {
     flex: 1,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
   },
 
@@ -584,9 +579,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   requirementsTitle: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
   },
@@ -607,9 +600,7 @@ const styles = createThemedStyles((theme) => ({
 
   requirementText: {
     flex: 1,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
 
@@ -618,9 +609,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   fieldError: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.destructive,
     marginTop: theme.spacing.xs,
   },
@@ -632,8 +621,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   forgotText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.primary,
   },
 
@@ -696,14 +684,12 @@ const styles = createThemedStyles((theme) => ({
   },
 
   toggleText: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
 
   toggleAction: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.primary,
   },
 
@@ -718,8 +704,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   notNowText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.sm,
+    ...theme.textVariants.labelSmall,
     color: theme.colors.mutedForeground,
   },
 }))

@@ -35,9 +35,7 @@ const styles = createThemedStyles((theme) => ({
     paddingRight: theme.spacing.md,
   },
   title: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.display,
-    lineHeight: theme.lineHeight.display,
+    ...theme.textVariants.display,
     color: theme.colors.foreground,
   },
   environmentPill: {

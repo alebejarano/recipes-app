@@ -236,9 +236,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.foreground,
   },
   membershipStatusText: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
   },
   membershipStatusTextPremium: {
     color: theme.colors.accent,

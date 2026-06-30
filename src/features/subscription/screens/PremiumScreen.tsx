@@ -176,9 +176,7 @@ const styles = createThemedStyles((theme) => ({
   },
   backText: {
     marginLeft: theme.spacing.xs,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
   heroImage: {
@@ -190,18 +188,14 @@ const styles = createThemedStyles((theme) => ({
   title: {
     marginTop: theme.spacing.sm,
     textAlign: 'center',
-    fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize.hero,
-    lineHeight: theme.lineHeight.hero,
+    ...theme.textVariants.hero,
     color: theme.colors.foreground,
     maxWidth: 340,
   },
   subtitle: {
     marginTop: theme.spacing.xs,
     textAlign: 'center',
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.lg,
-    lineHeight: theme.lineHeight.lg,
+    ...theme.textVariants.subtitle,
     color: theme.colors.mutedForeground,
     maxWidth: 360,
   },
@@ -225,9 +219,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.background,
   },
   billingOptionText: {
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.mutedForeground,
   },
   billingOptionTextActive: {
@@ -241,9 +233,7 @@ const styles = createThemedStyles((theme) => ({
   },
   yearlyNote: {
     marginTop: -theme.spacing.xxs,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
     textAlign: 'center',
   },
@@ -256,17 +246,13 @@ const styles = createThemedStyles((theme) => ({
   pricePeriod: {
     marginLeft: theme.spacing.sm,
     marginBottom: theme.spacing.sm,
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.xxl,
-    lineHeight: theme.lineHeight.xxl,
+    ...theme.textVariants.title,
     color: theme.colors.mutedForeground,
   },
   includedTitle: {
     marginTop: theme.spacing.xl,
     textAlign: 'center',
-    fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.heading,
     color: theme.colors.foreground,
   },
   featuresList: {
@@ -287,9 +273,7 @@ const styles = createThemedStyles((theme) => ({
   },
   featureCheck: {
     color: theme.colors.primary,
-    fontFamily: theme.fontFamily.semibold,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.base,
+    ...theme.textVariants.emphasis,
   },
   featureTitle: {
     fontFamily: theme.fontFamily.bold,
@@ -304,9 +288,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.xs,
   },
   featureSubtitle: {
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
   ctaButton: {
@@ -318,9 +300,7 @@ const styles = createThemedStyles((theme) => ({
     marginTop: theme.spacing.md,
     textAlign: 'center',
     maxWidth: 320,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
 }))
