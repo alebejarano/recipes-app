@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
 import { useLargeScreenLayout } from '@/hooks/useLargeScreenLayout'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 
@@ -21,6 +22,7 @@ type CreateNewScreenProps = {
 
 export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps) {
   const largeScreen = useLargeScreenLayout({ maxContentWidth: layout.formContentMaxWidth })
+  const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(true)
   const [hasShoppingList, setHasShoppingList] = useState(false)
   const [isCreatingList, setIsCreatingList] = useState(false)
@@ -87,13 +89,13 @@ export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps
   }, [group, hasShoppingList, refreshShoppingListStatus])
 
   const shoppingSubtitle = useMemo(() => {
-    if (isLoading) return 'Checking…'
-    return hasShoppingList ? 'Tap to view or edit.' : 'Plan your grocery run'
-  }, [hasShoppingList, isLoading])
+    if (isLoading) return t('createNew.shoppingChecking')
+    return hasShoppingList ? t('createNew.shoppingExistingSubtitle') : t('createNew.shoppingEmptySubtitle')
+  }, [hasShoppingList, isLoading, t])
 
   const shoppingTitle = useMemo(() => {
-    return hasShoppingList ? 'Shopping List already created' : 'Shopping List'
-  }, [hasShoppingList])
+    return hasShoppingList ? t('createNew.shoppingExistingTitle') : t('createNew.shoppingTitle')
+  }, [hasShoppingList, t])
 
   const shoppingDisabled = isLoading || isCreatingList
 
@@ -109,7 +111,7 @@ export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps
         <View style={largeScreen.contentWidthStyle}>
         {/* Header */}
         <View style={styles.headerRow}>
-          <Text style={styles.title}>Create New</Text>
+          <Text style={styles.title}>{t('createNew.title')}</Text>
 
           <Button
             variant="ghost"
@@ -124,16 +126,16 @@ export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps
 
         <View style={styles.cards}>
           <CreateActionCard
-            title="Add Recipe"
-            subtitle="Save your favorite dishes"
+            title={t('createNew.addRecipeTitle')}
+            subtitle={t('createNew.addRecipeSubtitle')}
             tone="primary"
             onPress={handleCreateRecipe}
             icon={<Feather name="coffee" size={22} color={styles.icon.color} />}
           />
 
           <CreateActionCard
-            title="Create Note"
-            subtitle="Jot down cooking tips & ideas"
+            title={t('createNew.createNoteTitle')}
+            subtitle={t('createNew.createNoteSubtitle')}
             tone="peach"
             onPress={handleCreateNote}
             icon={<Feather name="file-text" size={22} color={styles.icon.color} />}

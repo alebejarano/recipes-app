@@ -13,6 +13,7 @@ import {
 } from '@/features/auth/utils/passwordPolicy'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
@@ -20,22 +21,26 @@ type PasswordSettingsScreenProps = {
   onBack: () => void
 }
 
-function getPasswordUpdateErrorMessage(error: any) {
+function getPasswordUpdateErrorMessage(
+  error: any,
+  t: (scope: string, params?: Record<string, string | number | boolean | null | undefined>) => string
+) {
   const message = typeof error?.message === 'string' ? error.message : ''
   const lowerMessage = message.toLowerCase()
 
   if (lowerMessage.includes('invalid login credentials')) {
-    return 'Current password is incorrect.'
+    return t('profile.passwordSettings.invalidCurrent')
   }
 
   if (lowerMessage.includes('same_password')) {
-    return 'Choose a new password that is different from your current password.'
+    return t('profile.passwordSettings.samePassword')
   }
 
-  return getUserFacingErrorMessage(error, 'Unable to update your password.')
+  return getUserFacingErrorMessage(error, t('profile.passwordSettings.updateFailed'))
 }
 
 export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScreenProps) {
+  const { t } = useTranslation()
   const { user, updatePasswordWithCurrentPassword, logout } = useAuth()
   const [currentPassword, setCurrentPassword] = useState('')
   const [password, setPassword] = useState('')
@@ -83,22 +88,22 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
     if (!email || isSubmitting) return
 
     if (!currentPassword) {
-      setError('Enter your current password.')
+      setError(t('profile.passwordSettings.missingCurrent'))
       return
     }
 
     if (!password || !confirmPassword) {
-      setError('Enter and confirm your new password.')
+      setError(t('profile.passwordSettings.missingNew'))
       return
     }
 
     if (passwordPolicyIssues.length > 0) {
-      setError('Choose a stronger password before continuing.')
+      setError(t('profile.passwordSettings.weak'))
       return
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.')
+      setError(t('profile.passwordSettings.mismatch'))
       return
     }
 
@@ -112,7 +117,7 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
       setConfirmPassword('')
       setSaved(true)
     } catch (submitError: any) {
-      setError(getPasswordUpdateErrorMessage(submitError))
+      setError(getPasswordUpdateErrorMessage(submitError, t))
     } finally {
       setIsSubmitting(false)
     }
@@ -143,11 +148,8 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
           <View style={styles.successIconWrapper}>
             <Feather name="check-circle" size={28} style={styles.successIcon} />
           </View>
-          <Text style={styles.successTitle}>Password updated</Text>
-          <Text style={styles.successText}>
-            Your password was updated successfully. Sign in again with your new password to
-            continue.
-          </Text>
+          <Text style={styles.successTitle}>{t('profile.passwordSettings.successTitle')}</Text>
+          <Text style={styles.successText}>{t('profile.passwordSettings.successBody')}</Text>
           <Button
             onPress={() => {
               void handleGoToSignIn()
@@ -155,7 +157,7 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
             loading={isSigningOut}
             style={styles.button}
           >
-            Go to sign in
+            {t('profile.passwordSettings.goToSignIn')}
           </Button>
         </View>
       </Screen>
@@ -164,26 +166,23 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
 
   return (
     <ProfileSubpageLayout
-      title="Password"
-      subtitle="Enter your current password before choosing a new one."
+      title={t('profile.passwordSettings.title')}
+      subtitle={t('profile.passwordSettings.subtitle')}
       onBack={onBack}
       bottomPadding={180}
       keyboardAware
     >
         <View style={styles.card}>
-          <Text style={styles.sectionLabel}>Account</Text>
-          <Text style={styles.email}>{email || 'No email address found'}</Text>
-          <Text style={styles.body}>
-            For security, changing your password signs you out. Sign in again with the new
-            password to continue.
-          </Text>
+          <Text style={styles.sectionLabel}>{t('profile.passwordSettings.accountLabel')}</Text>
+          <Text style={styles.email}>{email || t('profile.passwordSettings.missingEmail')}</Text>
+          <Text style={styles.body}>{t('profile.passwordSettings.body')}</Text>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Current password</Text>
+            <Text style={styles.label}>{t('profile.passwordSettings.currentLabel')}</Text>
             <View style={styles.inputWrapper}>
               <Feather name="lock" size={18} style={styles.inputIcon} />
               <TextInput
-                placeholder="Enter your current password"
+                placeholder={t('profile.passwordSettings.currentPlaceholder')}
                 placeholderTextColor={theme.colors.warmGray}
                 secureTextEntry={!showCurrentPassword}
                 autoCapitalize="none"
@@ -195,7 +194,11 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
               />
               <TouchableOpacity
                 accessibilityRole="button"
-                accessibilityLabel={showCurrentPassword ? 'Hide current password' : 'Show current password'}
+                accessibilityLabel={
+                  showCurrentPassword
+                    ? t('profile.passwordSettings.hideCurrent')
+                    : t('profile.passwordSettings.showCurrent')
+                }
                 onPress={() => setShowCurrentPassword((value) => !value)}
                 style={styles.visibilityButton}
                 disabled={isSubmitting}
@@ -210,11 +213,11 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>New password</Text>
+            <Text style={styles.label}>{t('profile.passwordSettings.newLabel')}</Text>
             <View style={styles.inputWrapper}>
               <Feather name="lock" size={18} style={styles.inputIcon} />
               <TextInput
-                placeholder="Enter a new password"
+                placeholder={t('profile.passwordSettings.newPlaceholder')}
                 placeholderTextColor={theme.colors.warmGray}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
@@ -226,7 +229,11 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
               />
               <TouchableOpacity
                 accessibilityRole="button"
-                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                accessibilityLabel={
+                  showPassword
+                    ? t('profile.passwordSettings.hidePassword')
+                    : t('profile.passwordSettings.showPassword')
+                }
                 onPress={() => setShowPassword((value) => !value)}
                 style={styles.visibilityButton}
                 disabled={isSubmitting}
@@ -236,9 +243,13 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
             </View>
 
             <View style={styles.requirementsCard}>
-              <Text style={styles.requirementsTitle}>Password must include:</Text>
+              <Text style={styles.requirementsTitle}>{t('profile.passwordSettings.requirementsTitle')}</Text>
               {PASSWORD_REQUIREMENTS.map((requirement) => {
                 const isMet = requirement.validate(password)
+                const requirementLabel =
+                  requirement.id === 'length'
+                    ? t('profile.passwordSettings.requirementLength')
+                    : t('profile.passwordSettings.requirementLetterNumber')
 
                 return (
                   <View key={requirement.id} style={styles.requirementRow}>
@@ -248,7 +259,7 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
                       style={[styles.requirementIcon, isMet && styles.requirementIconMet]}
                     />
                     <Text style={[styles.requirementText, isMet && styles.requirementTextMet]}>
-                      {requirement.label}
+                      {requirementLabel}
                     </Text>
                   </View>
                 )
@@ -257,11 +268,11 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Confirm password</Text>
+            <Text style={styles.label}>{t('profile.passwordSettings.confirmLabel')}</Text>
             <View style={[styles.inputWrapper, passwordsDoNotMatch && styles.inputWrapperError]}>
               <Feather name="check-circle" size={18} style={styles.inputIcon} />
               <TextInput
-                placeholder="Re-enter your new password"
+                placeholder={t('profile.passwordSettings.confirmPlaceholder')}
                 placeholderTextColor={theme.colors.warmGray}
                 secureTextEntry={!showConfirmPassword}
                 autoCapitalize="none"
@@ -274,7 +285,9 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
               <TouchableOpacity
                 accessibilityRole="button"
                 accessibilityLabel={
-                  showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'
+                  showConfirmPassword
+                    ? t('profile.passwordSettings.hideConfirm')
+                    : t('profile.passwordSettings.showConfirm')
                 }
                 onPress={() => setShowConfirmPassword((value) => !value)}
                 style={styles.visibilityButton}
@@ -287,7 +300,9 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
                 />
               </TouchableOpacity>
             </View>
-            {passwordsDoNotMatch ? <Text style={styles.fieldError}>Passwords do not match.</Text> : null}
+            {passwordsDoNotMatch ? (
+              <Text style={styles.fieldError}>{t('profile.passwordSettings.mismatch')}</Text>
+            ) : null}
           </View>
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -299,7 +314,7 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
             disabled={!canSubmit}
             style={styles.button}
           >
-            Update password
+            {t('profile.passwordSettings.update')}
           </Button>
         </View>
     </ProfileSubpageLayout>

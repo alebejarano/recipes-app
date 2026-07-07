@@ -13,6 +13,7 @@ import {
 } from '@/features/subscription/constants/limits'
 import { buildFreePlanUsageSnapshot } from '@/features/subscription/utils/planUsage'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { i18n } from '@/localization/i18n'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
@@ -33,18 +34,18 @@ type FeatureItem = {
 }
 
 const freeFeatures: FeatureItem[] = [
-  { icon: 'book-open', label: 'Up to 100 recipes' },
-  { icon: 'cloud', label: '50MB total storage for imports' },
-  { icon: 'coffee', label: 'Unlimited notes' },
-  { icon: 'wifi-off', label: 'Stored locally on this device' },
+  { icon: 'book-open', label: i18n.t('subscription.currentPlan.freeFeatures.recipes') },
+  { icon: 'cloud', label: i18n.t('subscription.currentPlan.freeFeatures.storage') },
+  { icon: 'coffee', label: i18n.t('subscription.currentPlan.freeFeatures.notes') },
+  { icon: 'wifi-off', label: i18n.t('subscription.currentPlan.freeFeatures.local') },
 ]
 
 const premiumFeatures: FeatureItem[] = [
-  { icon: 'book-open', label: 'Unlimited recipes' },
-  { icon: 'coffee', label: 'Unlimited notes' },
-  { icon: 'cloud', label: '5GB secure cloud storage' },
-  { icon: 'smartphone', label: 'Sync across all your devices' },
-  { icon: 'wifi', label: 'Offline access + Automatic backup' },
+  { icon: 'book-open', label: i18n.t('subscription.currentPlan.premiumFeatures.recipes') },
+  { icon: 'coffee', label: i18n.t('subscription.currentPlan.premiumFeatures.notes') },
+  { icon: 'cloud', label: i18n.t('subscription.currentPlan.premiumFeatures.storage') },
+  { icon: 'smartphone', label: i18n.t('subscription.currentPlan.premiumFeatures.sync') },
+  { icon: 'wifi', label: i18n.t('subscription.currentPlan.premiumFeatures.backup') },
 ]
 
 function formatStorageGigabytes(bytes: number) {
@@ -96,15 +97,15 @@ function getFreeUsageSummaryMessage(recipesUsagePercent: number, storageUsagePer
   const storageAtLimit = storageUsagePercent >= 100
 
   if (recipesAtLimit && storageAtLimit) {
-    return "Your Free kitchen is full for recipes and storage."
+    return i18n.t('subscription.currentPlan.messages.fullBoth')
   }
 
   if (recipesAtLimit) {
-    return "Your Free kitchen is full for recipes."
+    return i18n.t('subscription.currentPlan.messages.fullRecipes')
   }
 
   if (storageAtLimit) {
-    return "Your Free kitchen is full for storage."
+    return i18n.t('subscription.currentPlan.messages.fullStorage')
   }
 
   const highestUsage = Math.max(recipesUsagePercent, storageUsagePercent)
@@ -112,15 +113,15 @@ function getFreeUsageSummaryMessage(recipesUsagePercent: number, storageUsagePer
   if (highestUsage < 80) return null
 
   if (recipesUsagePercent >= 80 && storageUsagePercent >= 80) {
-    return "Recipes and storage are both getting close to full."
+    return i18n.t('subscription.currentPlan.messages.closeBoth')
   }
 
   if (recipesUsagePercent >= 80) {
-    return "You're getting close to the recipe limit on Free."
+    return i18n.t('subscription.currentPlan.messages.closeRecipes')
   }
 
   if (storageUsagePercent >= 80) {
-    return "You're getting close to the storage limit on Free."
+    return i18n.t('subscription.currentPlan.messages.closeStorage')
   }
 
   return null
@@ -165,12 +166,12 @@ function UsageStatusCard({
       <Text style={styles.sectionTitle}>{title}</Text>
       {isError ? (
         <Text style={styles.usageMessage}>
-          {getUserFacingErrorMessage(error, 'Unable to load usage right now.')}
+          {getUserFacingErrorMessage(error, i18n.t('subscription.currentPlan.usageLoadFailed'))}
         </Text>
       ) : (
         <View style={styles.loadingRow}>
           <ActivityIndicator size="small" color={styles.loadingText.color} />
-          <Text style={styles.loadingText}>Loading usage…</Text>
+          <Text style={styles.loadingText}>{i18n.t('subscription.currentPlan.loadingUsage')}</Text>
         </View>
       )}
     </View>
@@ -185,7 +186,7 @@ export default function CurrentPlanScreen({
   onManageExistingRecipes,
   onManageSubscription,
   premiumPlanLabel = '€5/month',
-  premiumNextRenewalLabel = 'Renews Mar 27, 2026',
+  premiumNextRenewalLabel = i18n.t('subscription.premium.renewsOn', { date: 'Mar 27, 2026' }),
 }: CurrentPlanScreenProps) {
   const recipesQuery = useStrategyRecipesList({ limit: 2000 }, mode)
   const storageUsageQuery = useRecipeDocumentUsageSummary()
@@ -204,29 +205,29 @@ export default function CurrentPlanScreen({
       <Screen scroll bottomPadding={theme.spacing['3xl']} contentStyle={styles.content}>
         <TouchableOpacity style={styles.backRow} onPress={onBack} activeOpacity={0.75}>
           <Feather name="chevron-left" size={18} style={styles.backIcon} />
-          <Text style={styles.backText}>Back</Text>
+          <Text style={styles.backText}>{i18n.t('subscription.currentPlan.back')}</Text>
         </TouchableOpacity>
 
         <View style={styles.header}>
-          <Text style={styles.pageTitle}>Your Kitchen Plan</Text>
+          <Text style={styles.pageTitle}>{i18n.t('subscription.currentPlan.title')}</Text>
           <View style={styles.planPillWrap}>
-            <PlanPill label="Premium" premium />
+            <PlanPill label={i18n.t('subscription.currentPlan.premium')} premium />
           </View>
         </View>
 
         {usageIsLoading || usageIsError ? (
-          <UsageStatusCard title="Your kitchen" isError={usageIsError} error={usageError} />
+          <UsageStatusCard title={i18n.t('subscription.currentPlan.yourKitchen')} isError={usageIsError} error={usageError} />
         ) : (
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Your kitchen</Text>
+            <Text style={styles.sectionTitle}>{i18n.t('subscription.currentPlan.yourKitchen')}</Text>
 
             <View style={styles.usageRowHeader}>
-              <Text style={styles.usageRowLabel}>Recipes synced</Text>
+              <Text style={styles.usageRowLabel}>{i18n.t('subscription.currentPlan.recipesSynced')}</Text>
               <Text style={styles.usageRowValue}>{recipesSaved}</Text>
             </View>
 
             <UsageProgressRow
-              label="Cloud storage"
+              label={i18n.t('subscription.currentPlan.cloudStorage')}
               value={`${formatStorageGigabytes(storageBytesUsed)} / 5GB`}
               percent={storagePercent}
             />
@@ -234,12 +235,12 @@ export default function CurrentPlanScreen({
         )}
 
         <View style={styles.sectionBlock}>
-          <Text style={styles.sectionHeading}>Your benefits</Text>
+          <Text style={styles.sectionHeading}>{i18n.t('subscription.currentPlan.yourBenefits')}</Text>
 
           <View style={[styles.planCard, styles.premiumPlanCard]}>
             <View style={styles.planCardHeader}>
               <Text style={styles.planName}>PREMIUM</Text>
-              <PlanPill label="Current" premium />
+              <PlanPill label={i18n.t('subscription.currentPlan.current')} premium />
             </View>
 
             <View style={styles.planMetaBlock}>
@@ -251,10 +252,10 @@ export default function CurrentPlanScreen({
           </View>
         </View>
 
-        <Text style={styles.supportText}>Thanks for supporting independent development.</Text>
+        <Text style={styles.supportText}>{i18n.t('subscription.currentPlan.thanks')}</Text>
 
         <Button onPress={manageSubscription} variant="secondary" size="md" style={styles.manageButton}>
-          Manage Subscription
+          {i18n.t('subscription.currentPlan.manageSubscription')}
         </Button>
       </Screen>
     )
@@ -268,31 +269,31 @@ export default function CurrentPlanScreen({
     <Screen scroll bottomPadding={theme.spacing['3xl']} contentStyle={styles.content}>
       <TouchableOpacity style={styles.backRow} onPress={onBack} activeOpacity={0.75}>
         <Feather name="chevron-left" size={18} style={styles.backIcon} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{i18n.t('subscription.currentPlan.back')}</Text>
       </TouchableOpacity>
 
       <View style={styles.header}>
-        <Text style={styles.pageTitle}>Your Kitchen Plan</Text>
+        <Text style={styles.pageTitle}>{i18n.t('subscription.currentPlan.title')}</Text>
         <View style={styles.planPillWrap}>
-          <PlanPill label="Free" />
+          <PlanPill label={i18n.t('subscription.currentPlan.free')} />
         </View>
       </View>
 
       {usageIsLoading || usageIsError ? (
-        <UsageStatusCard title="Your usage" isError={usageIsError} error={usageError} />
+        <UsageStatusCard title={i18n.t('subscription.currentPlan.yourUsage')} isError={usageIsError} error={usageError} />
       ) : (
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Your usage</Text>
+          <Text style={styles.sectionTitle}>{i18n.t('subscription.currentPlan.yourUsage')}</Text>
 
           <UsageProgressRow
-            label="Recipes saved"
+            label={i18n.t('subscription.currentPlan.recipesSaved')}
             value={`${recipesSaved} / ${FREE_PLAN_MAX_RECIPES}`}
             percent={usage.recipesUsagePercent}
             fillColor={getFreeUsageProgressColor(usage.recipesUsagePercent)}
           />
 
           <UsageProgressRow
-            label="Storage used"
+            label={i18n.t('subscription.currentPlan.storageUsed')}
             value={`${usage.storageMbUsed}MB / ${usage.storageMbLimit}MB`}
             percent={usage.storageUsagePercent}
             fillColor={getFreeUsageProgressColor(usage.storageUsagePercent)}
@@ -303,12 +304,12 @@ export default function CurrentPlanScreen({
       )}
 
       <View style={styles.sectionBlock}>
-        <Text style={styles.sectionHeading}>Compare plans</Text>
+        <Text style={styles.sectionHeading}>{i18n.t('subscription.currentPlan.comparePlans')}</Text>
 
         <View style={styles.planCard}>
           <View style={styles.planCardHeader}>
             <Text style={styles.planName}>FREE</Text>
-            <PlanPill label="Current" />
+            <PlanPill label={i18n.t('subscription.currentPlan.current')} />
           </View>
           <FeatureList items={freeFeatures} />
         </View>
@@ -316,7 +317,7 @@ export default function CurrentPlanScreen({
         <View style={[styles.planCard, styles.premiumPlanCard]}>
           <View style={styles.planCardHeader}>
             <Text style={styles.planName}>PREMIUM</Text>
-            <PlanPill label="Recommended" premium />
+            <PlanPill label={i18n.t('subscription.currentPlan.recommended')} premium />
           </View>
           <FeatureList items={premiumFeatures} premium />
         </View>
@@ -324,19 +325,19 @@ export default function CurrentPlanScreen({
 
       <View style={styles.ctaBlock}>
         <Button onPress={onUpgrade} variant="premium" size="xl" style={styles.ctaButton}>
-          Unlock Premium
+          {i18n.t('subscription.currentPlan.unlockPremium')}
         </Button>
-        <Text style={styles.pricingText}>€5/month · €36/year</Text>
+        <Text style={styles.pricingText}>{i18n.t('subscription.currentPlan.pricing')}</Text>
 
         <View style={styles.ctaNotes}>
-          <Text style={styles.ctaNote}>Your recipes will be safely backed up to the cloud.</Text>
-          <Text style={styles.ctaNote}>Nothing will be deleted.</Text>
-          <Text style={styles.ctaNote}>Cancel anytime.</Text>
+          <Text style={styles.ctaNote}>{i18n.t('subscription.currentPlan.backupNote')}</Text>
+          <Text style={styles.ctaNote}>{i18n.t('subscription.currentPlan.nothingDeleted')}</Text>
+          <Text style={styles.ctaNote}>{i18n.t('subscription.currentPlan.cancelAnytime')}</Text>
         </View>
 
         {usage.upgradeUsageBand === 'atLimit' ? (
           <Button onPress={handleManageExistingRecipes} size="md" variant="secondary">
-            Manage existing recipes
+            {i18n.t('subscription.currentPlan.manageExistingRecipes')}
           </Button>
         ) : null}
       </View>

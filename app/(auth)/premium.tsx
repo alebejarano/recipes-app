@@ -12,6 +12,7 @@ import { upgradeToPremium } from '@/features/subscription/services/upgradeToPrem
 import { createThemedStyles } from '@/styles/createStyles'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { i18n } from '@/localization/i18n'
 
 export default function PremiumRoute() {
   const router = useRouter()
@@ -24,7 +25,9 @@ export default function PremiumRoute() {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const shouldHoldRedirectRef = useRef(false)
   const premiumPlanLabel = billingCycle === 'year' ? '€36/year' : '€5/month'
-  const premiumNextRenewalLabel = billingCycle === 'year' ? 'Renews Mar 27, 2027' : 'Renews Mar 27, 2026'
+  const premiumNextRenewalLabel = i18n.t('subscription.premium.renewsOn', {
+    date: billingCycle === 'year' ? 'Mar 27, 2027' : 'Mar 27, 2026',
+  })
 
   useEffect(() => {
     if (plan === 'premium' && !showSuccessModal && !isUpgrading && !shouldHoldRedirectRef.current) {
@@ -49,7 +52,10 @@ export default function PremiumRoute() {
       setShowSuccessModal(true)
     } catch (error: any) {
       shouldHoldRedirectRef.current = false
-      Alert.alert('Upgrade failed', getUserFacingErrorMessage(error, 'Could not complete premium upgrade.'))
+      Alert.alert(
+        i18n.t('subscription.premium.upgradeFailedTitle'),
+        getUserFacingErrorMessage(error, i18n.t('subscription.premium.upgradeFailedMessage'))
+      )
     }
   }
 

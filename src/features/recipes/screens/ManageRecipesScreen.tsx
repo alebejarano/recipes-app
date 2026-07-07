@@ -13,6 +13,7 @@ import { useStrategyDeleteRecipe, useStrategyRecipesList } from '@/features/reci
 import { RECIPE_MEAL_TIMES, type RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { useTranslation } from '@/localization'
 
 type ManageRecipesScreenProps = {
   mode?: 'auth' | 'public'
@@ -21,6 +22,7 @@ type ManageRecipesScreenProps = {
 type SortMode = 'oldest' | 'largest'
 
 export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) {
+  const { locale, t } = useTranslation()
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const segments = useSegments()
   const resolvedMode =
@@ -159,14 +161,19 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
   const handleDelete = () => {
     if (selectedCount === 0 || isBulkDeleting) return
     Alert.alert(
-      selectedCount === 1 ? 'Delete recipe?' : `Delete ${selectedCount} recipes?`,
       selectedCount === 1
-        ? 'This will permanently remove this recipe from your collection.'
-        : `This will permanently remove ${selectedCount} recipes from your collection.`,
+        ? t('recipes.manage.deleteOneTitle')
+        : t('recipes.manage.deleteManyTitle', { count: selectedCount }),
+      selectedCount === 1
+        ? t('recipes.manage.deleteOneBody')
+        : t('recipes.manage.deleteManyBody', { count: selectedCount }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('recipes.manage.cancel'), style: 'cancel' },
         {
-          text: selectedCount === 1 ? 'Delete recipe' : `Delete ${selectedCount} recipes`,
+          text:
+            selectedCount === 1
+              ? t('recipes.manage.deleteOneCta')
+              : t('recipes.manage.deleteManyCta', { count: selectedCount }),
           style: 'destructive',
           onPress: async () => {
             const idsToDelete = [...selectedRecipeIds]
@@ -184,8 +191,11 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
               if (failedIds.length > 0) {
                 setSelectedRecipeIds(failedIds)
                 Alert.alert(
-                  'Some recipes could not be deleted',
-                  `${deletedCount} deleted, ${failedIds.length} failed.`
+                  t('recipes.manage.someFailedTitle'),
+                  t('recipes.manage.someFailedBody', {
+                    deleted: deletedCount,
+                    failed: failedIds.length,
+                  })
                 )
                 return
               }
@@ -195,7 +205,9 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
                 setIsSelectionMode(false)
               }
               setBulkDeleteSuccessMessage(
-                `${deletedCount} recipe${deletedCount === 1 ? '' : 's'} deleted`
+                deletedCount === 1
+                  ? t('recipes.manage.deletedOne')
+                  : t('recipes.manage.deletedMany', { count: deletedCount })
               )
             } finally {
               setIsBulkDeleting(false)
@@ -213,25 +225,31 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
           onPress={handleBack}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('recipes.manage.backA11y')}
         >
           <Feather name="arrow-left" size={18} color={theme.colors.mutedForeground} />
         </Pressable>
         <View style={styles.titleWrap}>
           <Text style={styles.title}>
             {isSelectionMode
-              ? `${selectedCount} recipe${selectedCount === 1 ? '' : 's'} selected`
-              : 'Manage recipes'}
+              ? selectedCount === 1
+                ? t('recipes.manage.selectedOne')
+                : t('recipes.manage.selectedMany', { count: selectedCount })
+              : t('recipes.manage.title')}
           </Text>
         </View>
         <Pressable
           onPress={isSelectionMode ? handleExitSelectionMode : () => setIsSelectionMode(true)}
           style={styles.selectButton}
           accessibilityRole="button"
-          accessibilityLabel={isSelectionMode ? 'Exit selection mode' : 'Select recipes'}
+          accessibilityLabel={
+            isSelectionMode ? t('recipes.manage.exitSelectionA11y') : t('recipes.manage.selectA11y')
+          }
           disabled={isBulkDeleting}
         >
-          <Text style={styles.selectButtonText}>{isSelectionMode ? 'Done' : 'Select'}</Text>
+          <Text style={styles.selectButtonText}>
+            {isSelectionMode ? t('recipes.manage.done') : t('recipes.manage.select')}
+          </Text>
         </Pressable>
       </View>
 
@@ -242,7 +260,7 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Search titles, folders, meal times..."
+              placeholder={t('recipes.manage.searchPlaceholder')}
               placeholderTextColor={styles.searchPlaceholder.color}
               style={styles.searchInput}
               autoCapitalize="none"
@@ -253,7 +271,7 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
               <Pressable
                 onPress={() => setSearchQuery('')}
                 accessibilityRole="button"
-                accessibilityLabel="Clear search"
+                accessibilityLabel={t('recipes.manage.clearSearchA11y')}
                 style={styles.clearSearchButton}
               >
                 <Feather name="x" size={14} color={styles.clearSearchIcon.color} />
@@ -262,7 +280,7 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
           </View>
 
           <View style={styles.filterSection}>
-            <Text style={styles.filterLabel}>Meal time</Text>
+            <Text style={styles.filterLabel}>{t('recipes.manage.mealTime')}</Text>
             <View style={styles.filterChipsRow}>
               {RECIPE_MEAL_TIMES.map((mealTime) => (
                 <MealTimeChip
@@ -282,20 +300,20 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
               onPress={() => setSortMode('oldest')}
               style={[styles.sortPill, sortMode === 'oldest' && styles.sortPillActive]}
               accessibilityRole="button"
-              accessibilityLabel="Sort recipes by oldest"
+              accessibilityLabel={t('recipes.manage.sortOldestA11y')}
             >
               <Text style={[styles.sortText, sortMode === 'oldest' && styles.sortTextActive]}>
-                Oldest
+                {t('recipes.manage.oldest')}
               </Text>
             </Pressable>
             <Pressable
               onPress={() => setSortMode('largest')}
               style={[styles.sortPill, sortMode === 'largest' && styles.sortPillActive]}
               accessibilityRole="button"
-              accessibilityLabel="Sort recipes by largest"
+              accessibilityLabel={t('recipes.manage.sortLargestA11y')}
             >
               <Text style={[styles.sortText, sortMode === 'largest' && styles.sortTextActive]}>
-                Largest
+                {t('recipes.manage.largest')}
               </Text>
             </Pressable>
           </View>
@@ -306,19 +324,19 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
         {recipesQuery.isLoading ? (
           <View style={styles.loadingState}>
             <ActivityIndicator size="small" color={styles.loadingText.color} />
-            <Text style={styles.loadingText}>Loading recipes…</Text>
+            <Text style={styles.loadingText}>{t('recipes.manage.loading')}</Text>
           </View>
         ) : recipesQuery.isError ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>Unable to load recipes</Text>
+            <Text style={styles.emptyTitle}>{t('recipes.manage.loadFailedTitle')}</Text>
             <Text style={styles.emptyBody}>
               {getUserFacingErrorMessage(recipesQuery.error)}
             </Text>
           </View>
         ) : sortedRecipes.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No recipes to manage</Text>
-            <Text style={styles.emptyBody}>Save recipes first, then return here to organize them.</Text>
+            <Text style={styles.emptyTitle}>{t('recipes.manage.emptyTitle')}</Text>
+            <Text style={styles.emptyBody}>{t('recipes.manage.emptyBody')}</Text>
           </View>
         ) : (
           <FlatList
@@ -334,8 +352,13 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
               const isSelected = selectedRecipeIds.includes(item.id)
               const rowMeta =
                 sortMode === 'largest'
-                  ? `${item.ingredients?.length ?? 0} ingredients · ${item.steps?.length ?? 0} steps`
-                  : `Saved ${new Date(item.createdAt).toLocaleDateString()}`
+                  ? t('recipes.manage.rowMetaLargest', {
+                    ingredients: item.ingredients?.length ?? 0,
+                    steps: item.steps?.length ?? 0,
+                  })
+                  : t('recipes.manage.rowMetaSaved', {
+                    date: new Date(item.createdAt).toLocaleDateString(locale),
+                  })
 
               return (
                 <View style={[styles.rowCard, isSelected && styles.rowCardSelected]}>
@@ -346,8 +369,13 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
                     accessibilityState={isSelectionMode ? { checked: isSelected } : undefined}
                     accessibilityLabel={
                       isSelectionMode
-                        ? `${isSelected ? 'Deselect' : 'Select'} ${item.title}`
-                        : `Open ${item.title}`
+                        ? t(
+                          isSelected
+                            ? 'recipes.manage.deselectA11y'
+                            : 'recipes.manage.selectItemA11y',
+                          { title: item.title }
+                        )
+                        : t('recipes.manage.openItemA11y', { title: item.title })
                     }
                   >
                     {isSelectionMode ? (
@@ -368,9 +396,9 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
                       onPress={() => openRecipe(item.id)}
                       style={styles.openButton}
                       accessibilityRole="button"
-                      accessibilityLabel={`Open ${item.title}`}
+                      accessibilityLabel={t('recipes.manage.openItemA11y', { title: item.title })}
                     >
-                      <Text style={styles.openButtonText}>Open</Text>
+                      <Text style={styles.openButtonText}>{t('recipes.manage.open')}</Text>
                     </Pressable>
                   ) : null}
                 </View>
@@ -385,33 +413,41 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
               onPress={handleSelectAll}
               style={styles.bulkButton}
               accessibilityRole="button"
-              accessibilityLabel={selectedCount === sortedRecipes.length ? 'Deselect all recipes' : 'Select all recipes'}
+              accessibilityLabel={
+                selectedCount === sortedRecipes.length
+                  ? t('recipes.manage.deselectAllA11y')
+                  : t('recipes.manage.selectAllA11y')
+              }
               disabled={isBulkDeleting}
             >
               <Text style={styles.bulkButtonText}>
-                {selectedCount === sortedRecipes.length ? 'Deselect all' : 'Select all'}
+                {selectedCount === sortedRecipes.length
+                  ? t('recipes.manage.deselectAll')
+                  : t('recipes.manage.selectAll')}
               </Text>
             </Pressable>
             <Pressable
               onPress={handleCancelSelection}
               style={styles.bulkButton}
               accessibilityRole="button"
-              accessibilityLabel="Cancel selection"
+              accessibilityLabel={t('recipes.manage.cancelSelectionA11y')}
               disabled={isBulkDeleting}
             >
-              <Text style={styles.bulkButtonText}>Cancel</Text>
+              <Text style={styles.bulkButtonText}>{t('recipes.manage.cancel')}</Text>
             </Pressable>
             <Pressable
               onPress={handleDelete}
               style={[styles.bulkButton, styles.bulkDeleteButton]}
               accessibilityRole="button"
-              accessibilityLabel={`Delete ${selectedCount} selected recipes`}
+              accessibilityLabel={t('recipes.manage.deleteSelectedA11y', { count: selectedCount })}
               disabled={isBulkDeleting}
             >
               {isBulkDeleting ? (
                 <ActivityIndicator size="small" color={theme.colors.primaryForeground} />
               ) : (
-                <Text style={styles.bulkDeleteButtonText}>Delete ({selectedCount})</Text>
+                <Text style={styles.bulkDeleteButtonText}>
+                  {t('recipes.manage.deleteSelected', { count: selectedCount })}
+                </Text>
               )}
             </Pressable>
           </View>

@@ -22,14 +22,14 @@ import {
 } from '@/features/notes/hooks/useStrategyNotes'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
-
-const FALLBACK_TITLE = 'Untitled note'
+import { useTranslation } from '@/localization'
 
 type NoteDetailScreenProps = {
   noteId: string
 }
 
 export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
+  const { t } = useTranslation()
   const segments = useSegments()
   const routeMode = segments[0] === '(public)' ? 'public' : 'auth'
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
@@ -44,7 +44,7 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
   const updateMutation = useStrategyUpdateNote(noteId, routeMode)
   const isPinned = Boolean(note?.pinnedAt)
 
-  const title = useMemo(() => note?.title?.trim() || FALLBACK_TITLE, [note?.title])
+  const title = useMemo(() => note?.title?.trim() || t('notes.fallbackTitle'), [note?.title, t])
   const content = useMemo(() => note?.content?.trim() ?? '', [note?.content])
 
   const handleEdit = () => {
@@ -58,35 +58,35 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
   }
 
   const handleMore = () => {
-    Alert.alert('Note actions', undefined, [
-      { text: 'Edit note', onPress: handleEdit },
+    Alert.alert(t('notes.detail.actionsTitle'), undefined, [
+      { text: t('notes.detail.edit'), onPress: handleEdit },
       {
-        text: 'Delete note',
+        text: t('notes.detail.delete'),
         style: 'destructive',
         onPress: () => {
-          Alert.alert('Delete note?', 'This cannot be undone.', [
-            { text: 'Cancel', style: 'cancel' },
+          Alert.alert(t('notes.editor.deleteAlertTitle'), t('notes.editor.deleteAlertMessage'), [
+            { text: t('notes.detail.cancel'), style: 'cancel' },
             {
-              text: 'Delete',
+              text: t('notes.detail.delete'),
               style: 'destructive',
               onPress: async () => {
                 try {
                   await deleteMutation.mutateAsync(noteId)
-                  showSnackbar('Note deleted')
+                  showSnackbar(t('notes.editor.deleted'))
                   if (safeReturnTo) {
                     router.replace(safeReturnTo)
                   } else {
                     router.back()
                   }
                 } catch (error: any) {
-                  Alert.alert('Delete failed', getUserFacingErrorMessage(error))
+                  Alert.alert(t('notes.editor.deleteFailedTitle'), getUserFacingErrorMessage(error))
                 }
               },
             },
           ])
         },
       },
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('notes.detail.cancel'), style: 'cancel' },
     ])
   }
 
@@ -96,9 +96,9 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
       await updateMutation.mutateAsync({
         pinnedAt: isPinned ? null : new Date().toISOString(),
       })
-      showSnackbar(isPinned ? 'Note unpinned' : 'Note pinned')
+      showSnackbar(isPinned ? t('notes.detail.unpinned') : t('notes.detail.pinned'))
     } catch (error: any) {
-      Alert.alert('Unable to update pin', getUserFacingErrorMessage(error))
+      Alert.alert(t('notes.detail.pinFailedTitle'), getUserFacingErrorMessage(error))
     }
   }
 
@@ -107,7 +107,7 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.loadingState}>
           <ActivityIndicator size="small" color={styles.loadingText.color} />
-          <Text style={styles.loadingText}>Loading note…</Text>
+          <Text style={styles.loadingText}>{t('notes.detail.loading')}</Text>
         </View>
       </SafeAreaView>
     )
@@ -117,7 +117,7 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.loadingState}>
-          <Text style={styles.loadingText}>Unable to load this note.</Text>
+          <Text style={styles.loadingText}>{t('notes.detail.loadFailed')}</Text>
         </View>
       </SafeAreaView>
     )
@@ -139,7 +139,7 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
               }
             }}
             accessibilityRole="button"
-            accessibilityLabel="Go back"
+            accessibilityLabel={t('notes.detail.goBackA11y')}
             style={styles.iconButton}
           >
             <Feather name="arrow-left" size={18} style={styles.icon} />
@@ -149,7 +149,7 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
             <TouchableOpacity
               onPress={() => { void handleTogglePin() }}
               accessibilityRole="button"
-              accessibilityLabel={isPinned ? 'Unpin note' : 'Pin note'}
+              accessibilityLabel={isPinned ? t('notes.detail.unpinA11y') : t('notes.detail.pinA11y')}
               style={styles.iconButton}
               disabled={updateMutation.isPending}
             >
@@ -162,7 +162,7 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
             <TouchableOpacity
               onPress={handleMore}
               accessibilityRole="button"
-              accessibilityLabel="More actions"
+              accessibilityLabel={t('notes.detail.moreA11y')}
               style={styles.iconButton}
               disabled={deleteMutation.isPending}
             >
@@ -173,14 +173,14 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
 
         <View style={styles.header}>
           <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle}>Last updated {new Date(note.updatedAt).toLocaleDateString()}</Text>
+          <Text style={styles.subtitle}>{t('notes.detail.updatedAt', { date: new Date(note.updatedAt).toLocaleDateString() })}</Text>
         </View>
 
         <View>
           {content ? (
             <Text style={styles.bodyText}>{content}</Text>
           ) : (
-            <Text style={styles.emptyText}>No note content yet.</Text>
+            <Text style={styles.emptyText}>{t('notes.emptyContent')}</Text>
           )}
         </View>
       </ScrollView>

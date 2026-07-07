@@ -24,6 +24,7 @@ import {
 } from '@/features/auth/utils/passwordPolicy'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { useLargeScreenLayout } from '@/hooks/useLargeScreenLayout'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 import { theme } from '@/styles/theme'
@@ -47,6 +48,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
   const largeScreen = useLargeScreenLayout({ maxContentWidth: layout.authContentMaxWidth })
   const { login, register } = useAuth()
   const captureAnalyticsEvent = useAnalyticsCapture()
+  const { t } = useTranslation()
 
   const [mode, setMode] = useState<AuthMode>(initialMode)
   const [showPassword, setShowPassword] = useState(false)
@@ -70,13 +72,13 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
   const emailError = useMemo(() => {
     const normalizedEmail = normalizeEmail(email)
     if (isLogin || !normalizedEmail || isValidEmail(normalizedEmail)) return null
-    return 'Enter a valid email address.'
-  }, [email, isLogin])
+    return t('auth.errors.invalidEmailInline')
+  }, [email, isLogin, t])
 
   const confirmPasswordError = useMemo(() => {
     if (isLogin || !confirmPassword || password === confirmPassword) return null
-    return 'Passwords do not match.'
-  }, [confirmPassword, isLogin, password])
+    return t('auth.errors.passwordMismatchInline')
+  }, [confirmPassword, isLogin, password, t])
 
   const passwordPolicyIssues = useMemo(() => getPasswordPolicyIssues(password), [password])
   const passwordMeetsPolicy = useMemo(() => isPasswordStrong(password), [password])
@@ -108,32 +110,32 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
     if (!normalizedEmail || !password) return
 
     if (!isLogin && !isValidEmail(normalizedEmail)) {
-      setError({ title: 'Invalid email', message: 'Please enter a valid email address.' })
+      setError({ title: t('auth.errors.invalidEmailTitle'), message: t('auth.errors.invalidEmailMessage') })
       return
     }
 
     if (!isLogin && !confirmPassword) {
-      setError({ title: 'Missing field', message: 'Please confirm your password.' })
+      setError({ title: t('auth.errors.missingFieldTitle'), message: t('auth.errors.missingConfirmPassword') })
       return
     }
 
     if (!isLogin && passwordPolicyIssues.length > 0) {
       setError({
-        title: 'Choose a stronger password',
-        message: 'Password should contain at least one character and one number.',
+        title: t('auth.errors.weakPasswordTitle'),
+        message: t('auth.errors.weakPasswordMessage'),
       })
       return
     }
 
     if (!isLogin && password !== confirmPassword) {
-      setError({ title: 'Passwords do not match', message: 'Please re-enter matching passwords.' })
+      setError({ title: t('auth.errors.passwordMismatchTitle'), message: t('auth.errors.passwordMismatchMessage') })
       return
     }
 
     if (!isLogin && !acceptedLegalTerms) {
       setError({
-        title: 'Agreement required',
-        message: 'Please agree to the Terms of Service and acknowledge the Privacy Policy before creating an account.',
+        title: t('auth.errors.agreementRequiredTitle'),
+        message: t('auth.errors.agreementRequiredMessage'),
       })
       return
     }
@@ -163,8 +165,8 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
       router.replace('/(auth)/(tabs)')
     } catch (e) {
       setError({
-        title: isLogin ? 'Sign in failed' : 'Registration failed',
-        message: getUserFacingErrorMessage(e, 'Something went wrong. Please try again.'),
+        title: isLogin ? t('auth.errors.signInFailed') : t('auth.errors.registrationFailed'),
+        message: getUserFacingErrorMessage(e, t('auth.errors.generic')),
       })
     } finally {
       setLoading(false)
@@ -199,11 +201,10 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
               <Text style={styles.emoji}>✉️</Text>
             </View>
 
-            <Text style={styles.title}>Check your email</Text>
+            <Text style={styles.title}>{t('auth.screen.confirmEmailTitle')}</Text>
 
             <Text style={styles.subtitle}>
-              We sent a confirmation link to <Text style={styles.inlineStrong}>{email.trim()}</Text>.
-              Open it to finish creating your account. If the app does not open automatically, come back and sign in.
+              {t('auth.screen.confirmEmailMessage', { email: email.trim() })}
             </Text>
           </View>
 
@@ -215,11 +216,11 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
             size="lg"
             style={styles.submitButton}
           >
-            Go to sign in
+            {t('auth.shared.actions.goToSignIn')}
           </Button>
 
           <TouchableOpacity onPress={goBackToGetStarted} style={styles.notNowLink}>
-            <Text style={styles.notNowText}>Back</Text>
+            <Text style={styles.notNowText}>{t('auth.shared.actions.back')}</Text>
           </TouchableOpacity>
           </View>
         </View>
@@ -255,10 +256,10 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
               resizeMode="contain"
             />
 
-            <Text style={styles.title}>{isLogin ? 'Welcome back' : 'Create account'}</Text>
+            <Text style={styles.title}>{isLogin ? t('auth.screen.loginTitle') : t('auth.screen.registerTitle')}</Text>
 
             <Text style={styles.subtitle}>
-              {isLogin ? 'Sign in to access your recipes' : 'Create an account to upgrade and sync your recipes later'}
+              {isLogin ? t('auth.screen.loginSubtitle') : t('auth.screen.registerSubtitle')}
             </Text>
           </View>
 
@@ -272,11 +273,11 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
           {/* Email */}
           <View style={styles.field}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>{t('auth.shared.emailLabel')}</Text>
             <View style={[styles.inputWrapper, emailError && styles.inputWrapperError]}>
               <Feather name="mail" size={18} style={styles.inputIcon} />
               <TextInput
-                placeholder="you@example.com"
+                placeholder={t('auth.shared.emailPlaceholder')}
                 placeholderTextColor={theme.colors.warmGray}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -292,13 +293,13 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
           {/* Password */}
           <View style={styles.field}>
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.label}>{t('auth.shared.passwordLabel')}</Text>
 
             <View style={styles.inputWrapper}>
               <Feather name="lock" size={18} style={styles.inputIcon} />
 
               <TextInput
-                placeholder="••••••••"
+                placeholder={t('auth.shared.passwordPlaceholder')}
                 placeholderTextColor={theme.colors.warmGray}
                 secureTextEntry={!showPassword}
                 style={styles.input}
@@ -312,7 +313,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
                 style={styles.eyeButton}
                 disabled={loading}
                 accessibilityRole="button"
-                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                accessibilityLabel={showPassword ? t('auth.shared.actions.hidePassword') : t('auth.shared.actions.showPassword')}
               >
                 <Feather name={showPassword ? 'eye-off' : 'eye'} size={18} style={styles.eyeIcon} />
               </TouchableOpacity>
@@ -320,9 +321,13 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
             {!isLogin ? (
               <View style={styles.requirementsCard}>
-                <Text style={styles.requirementsTitle}>Password must include:</Text>
+                <Text style={styles.requirementsTitle}>{t('auth.shared.passwordRequirementsTitle')}</Text>
                 {PASSWORD_REQUIREMENTS.map((requirement) => {
                   const isMet = requirement.validate(password)
+                  const requirementLabel =
+                    requirement.id === 'length'
+                      ? t('auth.shared.passwordRequirementLength')
+                      : t('auth.shared.passwordRequirementLetterNumber')
 
                   return (
                     <View key={requirement.id} style={styles.requirementRow}>
@@ -332,7 +337,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
                         style={[styles.requirementIcon, isMet && styles.requirementIconMet]}
                       />
                       <Text style={[styles.requirementText, isMet && styles.requirementTextMet]}>
-                        {requirement.label}
+                        {requirementLabel}
                       </Text>
                     </View>
                   )
@@ -344,13 +349,13 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
           {/* Confirm Password (register only) */}
           {!isLogin && (
             <View style={styles.field}>
-              <Text style={styles.label}>Confirm Password</Text>
+              <Text style={styles.label}>{t('auth.screen.confirmPasswordLabel')}</Text>
 
               <View style={[styles.inputWrapper, confirmPasswordError && styles.inputWrapperError]}>
                 <Feather name="lock" size={18} style={styles.inputIcon} />
 
                 <TextInput
-                  placeholder="••••••••"
+                  placeholder={t('auth.shared.passwordPlaceholder')}
                   placeholderTextColor={theme.colors.warmGray}
                   secureTextEntry={!showPassword}
                   style={styles.input}
@@ -366,7 +371,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
           {/* Forgot password — login only */}
           {isLogin && (
             <TouchableOpacity style={styles.forgotRow} onPress={handleForgotPassword} disabled={loading}>
-              <Text style={styles.forgotText}>Forgot password?</Text>
+              <Text style={styles.forgotText}>{t('auth.screen.forgotPassword')}</Text>
             </TouchableOpacity>
           )}
 
@@ -386,21 +391,21 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
               </View>
 
               <Text style={styles.legalConsentText}>
-                I agree to the{' '}
+                {t('auth.screen.legalPrefix')}
                 <Text
                   style={styles.legalConsentLink}
                   onPress={() => router.push('/(public)/terms')}
                 >
-                  Terms of Service
-                </Text>{' '}
-                and acknowledge the{' '}
+                  {t('auth.legal.termsTitle')}
+                </Text>
+                {t('auth.screen.legalMiddle')}
                 <Text
                   style={styles.legalConsentLink}
                   onPress={() => router.push('/(public)/privacy-policy')}
                 >
-                  Privacy Policy
+                  {t('auth.legal.privacyPolicyTitle')}
                 </Text>
-                .
+                {t('auth.screen.legalSuffix')}
               </Text>
             </TouchableOpacity>
           ) : null}
@@ -412,17 +417,17 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
             size="lg"
             style={[styles.submitButton, (!canSubmit || loading) && styles.submitButtonDisabled]}
           >
-            {loading ? '...' : isLogin ? 'Sign in' : 'Create account'}
+            {loading ? '...' : isLogin ? t('auth.shared.actions.signIn') : t('auth.shared.actions.createAccount')}
           </Button>
 
           {/* Toggle login/register */}
           <View style={styles.toggleRow}>
             <Text style={styles.toggleText}>
-              {isLogin ? "Don't have an account? " : 'Already have an account? '}
+              {isLogin ? t('auth.screen.toggleToRegisterPrompt') : t('auth.screen.toggleToLoginPrompt')}
             </Text>
 
             <TouchableOpacity onPress={toggleMode} disabled={loading}>
-              <Text style={styles.toggleAction}>{isLogin ? 'Sign up' : 'Sign in'}</Text>
+              <Text style={styles.toggleAction}>{isLogin ? t('auth.shared.actions.signUp') : t('auth.shared.actions.signIn')}</Text>
             </TouchableOpacity>
           </View>
           </View>

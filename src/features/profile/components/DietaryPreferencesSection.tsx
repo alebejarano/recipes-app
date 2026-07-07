@@ -1,6 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 
+import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 
 import DietaryChip from '@/features/profile/components/DietaryChip';
@@ -22,9 +23,11 @@ export default function DietaryPreferencesSection({
   value,
   onToggle,
 }: Props) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.wrap}>
-      <SectionHeader title={title} rightPillText={optional ? 'Optional' : undefined} />
+      <SectionHeader title={title} rightPillText={optional ? t('profile.optional') : undefined} />
 
       <View style={styles.grid}>
         {options.map((opt) => (

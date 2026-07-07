@@ -10,6 +10,7 @@ import PremiumScreen from '@/features/subscription/screens/PremiumScreen'
 import { upgradeToPremium } from '@/features/subscription/services/upgradeToPremium'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { i18n } from '@/localization/i18n'
 
 export default function PremiumRoute() {
   const router = useRouter()
@@ -23,7 +24,7 @@ export default function PremiumRoute() {
 
   const handleUpgrade = async (billingCycle: 'month' | 'year') => {
     if (!user?.id) {
-      Alert.alert('Create account first', 'Sign in or create an account to upgrade to Premium.')
+      Alert.alert(i18n.t('subscription.premium.authRequiredTitle'), i18n.t('subscription.premium.authRequiredMessage'))
       return
     }
     if (isUpgrading) return
@@ -40,7 +41,10 @@ export default function PremiumRoute() {
       })
       setShowSuccessModal(true)
     } catch (error: any) {
-      Alert.alert('Upgrade failed', getUserFacingErrorMessage(error, 'Could not complete premium upgrade.'))
+      Alert.alert(
+        i18n.t('subscription.premium.upgradeFailedTitle'),
+        getUserFacingErrorMessage(error, i18n.t('subscription.premium.upgradeFailedMessage'))
+      )
     }
   }
 

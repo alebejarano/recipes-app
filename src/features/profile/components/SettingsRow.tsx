@@ -166,6 +166,7 @@ const styles = createThemedStyles((theme) => ({
 
   textWrap: {
     flex: 1,
+    minWidth: 0,
   },
   title: {
     fontFamily: theme.fontFamily.medium,
@@ -189,10 +190,14 @@ const styles = createThemedStyles((theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.sm,
+    flexShrink: 1,
+    minWidth: 0,
   },
   rightText: {
     ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
+    flexShrink: 1,
+    textAlign: 'right',
   },
   chevron: {
     color: theme.colors.mutedForeground,

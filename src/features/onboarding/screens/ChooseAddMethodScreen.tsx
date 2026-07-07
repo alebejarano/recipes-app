@@ -1,4 +1,5 @@
 import Button from '@/components/Button';
+import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import React from 'react';
@@ -13,12 +14,13 @@ export default function ChooseAddMethodScreen({
   onSelectScratch,
   onSelectFile,
 }: ChooseAddMethodScreenProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Choose how to add your first recipe</Text>
+        <Text style={styles.title}>{t('onboarding.chooseMethod.title')}</Text>
         <Text style={styles.subtitle}>
-          Start from a blank recipe or import a file you already have.
+          {t('onboarding.chooseMethod.subtitle')}
         </Text>
       </View>
 
@@ -29,7 +31,7 @@ export default function ChooseAddMethodScreen({
           variant="primary"
           icon={<Feather name="edit-3" size={20} style={styles.primaryIcon} />}
         >
-          Create from scratch
+          {t('onboarding.chooseMethod.scratch')}
         </Button>
 
         <Button
@@ -38,7 +40,7 @@ export default function ChooseAddMethodScreen({
           variant="secondary"
           icon={<Ionicons name="document-outline" size={20} style={styles.secondaryIcon} />}
         >
-          Import from file
+          {t('onboarding.chooseMethod.file')}
         </Button>
       </View>
     </View>

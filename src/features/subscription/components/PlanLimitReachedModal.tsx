@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons'
 import React from 'react'
 import { Modal, Pressable, Text, View } from 'react-native'
 
+import { i18n } from '@/localization/i18n'
 import { createThemedStyles } from '@/styles/createStyles'
 
 export type PlanLimitReachedType = 'recipes' | 'storage'
@@ -30,37 +31,41 @@ export default function PlanLimitReachedModal({
           <Pressable
             onPress={onClose}
             accessibilityRole="button"
-            accessibilityLabel="Close"
+            accessibilityLabel={i18n.t('subscription.currentPlan.limitModal.close')}
             style={({ pressed }) => [styles.closeButton, pressed && styles.closeButtonPressed]}
           >
             <Feather name="x" size={16} style={styles.closeIcon} />
           </Pressable>
 
           <Text style={styles.title}>
-            {isRecipeLimit ? 'Your kitchen is full' : 'Out of storage space 📦'}
+            {isRecipeLimit
+              ? i18n.t('subscription.currentPlan.limitModal.recipeTitle')
+              : i18n.t('subscription.currentPlan.limitModal.storageTitle')}
           </Text>
 
           <Text style={styles.body}>
             {isRecipeLimit
-              ? 'You’ve reached the Free plan limit of 100 recipes.\nUpgrade to keep saving — plus backup & sync across devices.'
-              : 'You’ve used all 50MB of Free storage for photos & PDFs.\nUpgrade to keep adding imports — with cloud backup.'}
+              ? i18n.t('subscription.currentPlan.limitModal.recipeBody')
+              : i18n.t('subscription.currentPlan.limitModal.storageBody')}
           </Text>
 
           <View style={styles.actions}>
             <Pressable onPress={onPrimary} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
-              <Text style={styles.primaryButtonText}>Unlock Premium</Text>
+              <Text style={styles.primaryButtonText}>{i18n.t('subscription.currentPlan.limitModal.unlock')}</Text>
             </Pressable>
             <Pressable onPress={onSecondary} style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}>
               <Text style={styles.secondaryButtonText}>
-                {isRecipeLimit ? 'Manage recipes' : 'Review imports'}
+                {isRecipeLimit
+                  ? i18n.t('subscription.currentPlan.limitModal.manageRecipes')
+                  : i18n.t('subscription.currentPlan.limitModal.reviewImports')}
               </Text>
             </Pressable>
           </View>
 
           <Text style={styles.footer}>
             {isRecipeLimit
-              ? 'Nothing will be deleted. Your recipes will be safely imported.'
-              : 'Nothing will be deleted. Cancel anytime.'}
+              ? i18n.t('subscription.currentPlan.limitModal.recipeFooter')
+              : i18n.t('subscription.currentPlan.limitModal.storageFooter')}
           </Text>
         </View>
       </View>

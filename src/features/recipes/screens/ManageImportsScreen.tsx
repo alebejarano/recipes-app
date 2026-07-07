@@ -8,6 +8,7 @@ import Screen from '@/components/Screen'
 import { useDeleteManagedImport, useManagedImports } from '@/features/recipes/hooks/useManagedImports'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
@@ -26,6 +27,7 @@ function formatFileSize(bytes: number) {
 }
 
 export default function ManageImportsScreen({ mode }: ManageImportsScreenProps) {
+  const { locale, t } = useTranslation()
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const segments = useSegments()
   const resolvedMode =
@@ -111,14 +113,19 @@ export default function ManageImportsScreen({ mode }: ManageImportsScreenProps) 
   const handleDelete = () => {
     if (selectedCount === 0 || isBulkDeleting) return
     Alert.alert(
-      selectedCount === 1 ? 'Delete import?' : `Delete ${selectedCount} imports?`,
       selectedCount === 1
-        ? 'This will permanently remove the selected import from your storage.'
-        : `This will permanently remove ${selectedCount} imports from your storage.`,
+        ? t('recipes.importsManage.deleteOneTitle')
+        : t('recipes.importsManage.deleteManyTitle', { count: selectedCount }),
+      selectedCount === 1
+        ? t('recipes.importsManage.deleteOneBody')
+        : t('recipes.importsManage.deleteManyBody', { count: selectedCount }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('recipes.importsManage.cancel'), style: 'cancel' },
         {
-          text: selectedCount === 1 ? 'Delete import' : `Delete ${selectedCount} imports`,
+          text:
+            selectedCount === 1
+              ? t('recipes.importsManage.deleteOneCta')
+              : t('recipes.importsManage.deleteManyCta', { count: selectedCount }),
           style: 'destructive',
           onPress: async () => {
             const idsToDelete = [...selectedImportIds]
@@ -136,8 +143,11 @@ export default function ManageImportsScreen({ mode }: ManageImportsScreenProps) 
               if (failedIds.length > 0) {
                 setSelectedImportIds(failedIds)
                 Alert.alert(
-                  'Some imports could not be deleted',
-                  `${deletedCount} deleted, ${failedIds.length} failed.`
+                  t('recipes.importsManage.someFailedTitle'),
+                  t('recipes.importsManage.someFailedBody', {
+                    deleted: deletedCount,
+                    failed: failedIds.length,
+                  })
                 )
                 return
               }
@@ -147,7 +157,9 @@ export default function ManageImportsScreen({ mode }: ManageImportsScreenProps) 
                 setIsSelectionMode(false)
               }
               setBulkDeleteSuccessMessage(
-                `${deletedCount} import${deletedCount === 1 ? '' : 's'} deleted`
+                deletedCount === 1
+                  ? t('recipes.importsManage.deletedOne')
+                  : t('recipes.importsManage.deletedMany', { count: deletedCount })
               )
             } finally {
               setIsBulkDeleting(false)
@@ -175,25 +187,33 @@ export default function ManageImportsScreen({ mode }: ManageImportsScreenProps) 
           onPress={handleBack}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('recipes.importsManage.backA11y')}
         >
           <Feather name="arrow-left" size={18} color={theme.colors.mutedForeground} />
         </Pressable>
         <View style={styles.titleWrap}>
           <Text style={styles.title}>
             {isSelectionMode
-              ? `${selectedCount} import${selectedCount === 1 ? '' : 's'} selected`
-              : 'Manage imports'}
+              ? selectedCount === 1
+                ? t('recipes.importsManage.selectedOne')
+                : t('recipes.importsManage.selectedMany', { count: selectedCount })
+              : t('recipes.importsManage.title')}
           </Text>
         </View>
         <Pressable
           onPress={isSelectionMode ? handleExitSelectionMode : () => setIsSelectionMode(true)}
           style={styles.selectButton}
           accessibilityRole="button"
-          accessibilityLabel={isSelectionMode ? 'Exit selection mode' : 'Select imports'}
+          accessibilityLabel={
+            isSelectionMode
+              ? t('recipes.importsManage.exitSelectionA11y')
+              : t('recipes.importsManage.selectA11y')
+          }
           disabled={isBulkDeleting}
         >
-          <Text style={styles.selectButtonText}>{isSelectionMode ? 'Done' : 'Select'}</Text>
+          <Text style={styles.selectButtonText}>
+            {isSelectionMode ? t('recipes.importsManage.done') : t('recipes.importsManage.select')}
+          </Text>
         </Pressable>
       </View>
 
@@ -203,20 +223,20 @@ export default function ManageImportsScreen({ mode }: ManageImportsScreenProps) 
             onPress={() => setSortMode('oldest')}
             style={[styles.sortPill, sortMode === 'oldest' && styles.sortPillActive]}
             accessibilityRole="button"
-            accessibilityLabel="Sort imports by oldest"
+            accessibilityLabel={t('recipes.importsManage.sortOldestA11y')}
           >
             <Text style={[styles.sortText, sortMode === 'oldest' && styles.sortTextActive]}>
-              Oldest
+              {t('recipes.importsManage.oldest')}
             </Text>
           </Pressable>
           <Pressable
             onPress={() => setSortMode('largest')}
             style={[styles.sortPill, sortMode === 'largest' && styles.sortPillActive]}
             accessibilityRole="button"
-            accessibilityLabel="Sort imports by largest"
+            accessibilityLabel={t('recipes.importsManage.sortLargestA11y')}
           >
             <Text style={[styles.sortText, sortMode === 'largest' && styles.sortTextActive]}>
-              Largest
+              {t('recipes.importsManage.largest')}
             </Text>
           </Pressable>
         </View>
@@ -226,21 +246,19 @@ export default function ManageImportsScreen({ mode }: ManageImportsScreenProps) 
         {importsQuery.isLoading ? (
           <View style={styles.loadingState}>
             <ActivityIndicator size="small" color={styles.loadingText.color} />
-            <Text style={styles.loadingText}>Loading imports…</Text>
+            <Text style={styles.loadingText}>{t('recipes.importsManage.loading')}</Text>
           </View>
         ) : importsQuery.isError ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>Unable to load imports</Text>
+            <Text style={styles.emptyTitle}>{t('recipes.importsManage.loadFailedTitle')}</Text>
             <Text style={styles.emptyBody}>
               {getUserFacingErrorMessage(importsQuery.error)}
             </Text>
           </View>
         ) : sortedImports.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No imports to manage</Text>
-            <Text style={styles.emptyBody}>
-              Import files first, then return here to organize your storage.
-            </Text>
+            <Text style={styles.emptyTitle}>{t('recipes.importsManage.emptyTitle')}</Text>
+            <Text style={styles.emptyBody}>{t('recipes.importsManage.emptyBody')}</Text>
           </View>
         ) : (
           <FlatList
@@ -260,15 +278,24 @@ export default function ManageImportsScreen({ mode }: ManageImportsScreenProps) 
             ItemSeparatorComponent={() => <View style={{ height: theme.spacing.sm }} />}
             renderItem={({ item }) => {
               const isSelected = selectedImportIds.includes(item.id)
-              const kindLabel = item.kind === 'document' ? 'Document' : 'Image'
+              const kindLabel =
+                item.kind === 'document'
+                  ? t('recipes.importsManage.documentKind')
+                  : t('recipes.importsManage.imageKind')
               const displayTitle =
                 item.title?.trim() ||
                 item.fileName?.trim() ||
-                `Untitled ${kindLabel.toLowerCase()}`
+                t('recipes.importsManage.untitled', { kind: kindLabel.toLowerCase() })
               const rowMeta =
                 sortMode === 'largest'
-                  ? `${kindLabel} · ${formatFileSize(item.bytes)}`
-                  : `${kindLabel} · Saved ${new Date(item.createdAt).toLocaleDateString()}`
+                  ? t('recipes.importsManage.rowMetaLargest', {
+                    kind: kindLabel,
+                    size: formatFileSize(item.bytes),
+                  })
+                  : t('recipes.importsManage.rowMetaSaved', {
+                    kind: kindLabel,
+                    date: new Date(item.createdAt).toLocaleDateString(locale),
+                  })
 
               return (
                 <View style={[styles.rowCard, isSelected && styles.rowCardSelected]}>
@@ -279,8 +306,13 @@ export default function ManageImportsScreen({ mode }: ManageImportsScreenProps) 
                     accessibilityState={isSelectionMode ? { checked: isSelected } : undefined}
                     accessibilityLabel={
                       isSelectionMode
-                        ? `${isSelected ? 'Deselect' : 'Select'} ${displayTitle}`
-                        : `Select ${displayTitle}`
+                        ? t(
+                          isSelected
+                            ? 'recipes.importsManage.deselectA11y'
+                            : 'recipes.importsManage.selectItemA11y',
+                          { title: displayTitle }
+                        )
+                        : t('recipes.importsManage.selectItemA11y', { title: displayTitle })
                     }
                   >
                     {isSelectionMode ? (
@@ -304,7 +336,7 @@ export default function ManageImportsScreen({ mode }: ManageImportsScreenProps) 
               importsQuery.isFetchingNextPage ? (
                 <View style={styles.loadingMoreState}>
                   <ActivityIndicator size="small" color={styles.loadingText.color} />
-                  <Text style={styles.loadingText}>Loading more imports…</Text>
+                  <Text style={styles.loadingText}>{t('recipes.importsManage.loadingMore')}</Text>
                 </View>
               ) : null
             }
@@ -317,33 +349,41 @@ export default function ManageImportsScreen({ mode }: ManageImportsScreenProps) 
               onPress={handleSelectAll}
               style={styles.bulkButton}
               accessibilityRole="button"
-              accessibilityLabel={selectedCount === sortedImports.length ? 'Deselect all imports' : 'Select all imports'}
+              accessibilityLabel={
+                selectedCount === sortedImports.length
+                  ? t('recipes.importsManage.deselectAllA11y')
+                  : t('recipes.importsManage.selectAllA11y')
+              }
               disabled={isBulkDeleting}
             >
               <Text style={styles.bulkButtonText}>
-                {selectedCount === sortedImports.length ? 'Deselect all' : 'Select all'}
+                {selectedCount === sortedImports.length
+                  ? t('recipes.importsManage.deselectAll')
+                  : t('recipes.importsManage.selectAll')}
               </Text>
             </Pressable>
             <Pressable
               onPress={handleCancelSelection}
               style={styles.bulkButton}
               accessibilityRole="button"
-              accessibilityLabel="Cancel selection"
+              accessibilityLabel={t('recipes.importsManage.cancelSelectionA11y')}
               disabled={isBulkDeleting}
             >
-              <Text style={styles.bulkButtonText}>Cancel</Text>
+              <Text style={styles.bulkButtonText}>{t('recipes.importsManage.cancel')}</Text>
             </Pressable>
             <Pressable
               onPress={handleDelete}
               style={[styles.bulkButton, styles.bulkDeleteButton]}
               accessibilityRole="button"
-              accessibilityLabel={`Delete ${selectedCount} selected imports`}
+              accessibilityLabel={t('recipes.importsManage.deleteSelectedA11y', { count: selectedCount })}
               disabled={isBulkDeleting}
             >
               {isBulkDeleting ? (
                 <ActivityIndicator size="small" color={theme.colors.primaryForeground} />
               ) : (
-                <Text style={styles.bulkDeleteButtonText}>Delete ({selectedCount})</Text>
+                <Text style={styles.bulkDeleteButtonText}>
+                  {t('recipes.importsManage.deleteSelected', { count: selectedCount })}
+                </Text>
               )}
             </Pressable>
           </View>

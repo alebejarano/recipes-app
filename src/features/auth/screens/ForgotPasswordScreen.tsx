@@ -17,6 +17,7 @@ import { useAuth } from '@/features/auth/context/AuthContext'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import { useLargeScreenLayout } from '@/hooks/useLargeScreenLayout'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 import { theme } from '@/styles/theme'
@@ -25,23 +26,24 @@ function getParamValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value
 }
 
-function getResetErrorMessage(error: any) {
+function getResetErrorMessage(error: any, t: (scope: string) => string) {
   const message = typeof error?.message === 'string' ? error.message : ''
   const lowerMessage = message.toLowerCase()
 
   if (lowerMessage.includes('rate') || lowerMessage.includes('security purposes')) {
-    return 'For security, reset links can only be requested every few moments. Please wait and try again.'
+    return t('auth.forgotPassword.rateLimit')
   }
 
   if (lowerMessage.includes('network') || lowerMessage.includes('fetch')) {
-    return 'Check your connection and try sending the reset link again.'
+    return t('auth.forgotPassword.networkError')
   }
 
-  return getUserFacingErrorMessage(error, 'Unable to send the reset link. Please try again.')
+  return getUserFacingErrorMessage(error, t('auth.forgotPassword.genericError'))
 }
 
 export default function ForgotPasswordScreen() {
   const router = useRouter()
+  const { t } = useTranslation()
   const largeScreen = useLargeScreenLayout({ maxContentWidth: layout.authContentMaxWidth })
   const params = useLocalSearchParams<{ email?: string | string[] }>()
   const initialEmail = normalizeEmail(getParamValue(params.email) ?? '')
@@ -56,8 +58,8 @@ export default function ForgotPasswordScreen() {
   const normalizedEmail = useMemo(() => normalizeEmail(email), [email])
   const emailError = useMemo(() => {
     if (!touched || !normalizedEmail) return null
-    return isValidEmail(normalizedEmail) ? null : 'Please enter a valid email address.'
-  }, [normalizedEmail, touched])
+    return isValidEmail(normalizedEmail) ? null : t('auth.forgotPassword.invalidEmail')
+  }, [normalizedEmail, t, touched])
   const canSubmit = Boolean(normalizedEmail && isValidEmail(normalizedEmail) && !submitting)
 
   const handleEmailChange = (value: string) => {
@@ -71,12 +73,12 @@ export default function ForgotPasswordScreen() {
     setTouched(true)
 
     if (!normalizedEmail) {
-      setError('Email is required.')
+      setError(t('auth.forgotPassword.emailRequired'))
       return
     }
 
     if (!isValidEmail(normalizedEmail)) {
-      setError('Please enter a valid email address.')
+      setError(t('auth.forgotPassword.invalidEmail'))
       return
     }
 
@@ -88,7 +90,7 @@ export default function ForgotPasswordScreen() {
       setLastSentEmail(normalizedEmail)
       setSent(true)
     } catch (submitError: any) {
-      setError(getResetErrorMessage(submitError))
+      setError(getResetErrorMessage(submitError, t))
     } finally {
       setSubmitting(false)
     }
@@ -107,7 +109,7 @@ export default function ForgotPasswordScreen() {
           <View style={largeScreen.contentWidthStyle}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backRow}>
             <Feather name="arrow-left" size={18} style={styles.backIcon} />
-            <Text style={styles.backText}>Back</Text>
+            <Text style={styles.backText}>{t('auth.shared.actions.back')}</Text>
           </TouchableOpacity>
 
           <View style={styles.header}>
@@ -115,32 +117,29 @@ export default function ForgotPasswordScreen() {
               <Feather name={sent ? 'check-circle' : 'mail'} size={24} style={styles.icon} />
             </View>
 
-            <Text style={styles.title}>{sent ? 'Check your email' : 'Forgot password?'}</Text>
+            <Text style={styles.title}>{sent ? t('auth.forgotPassword.successTitle') : t('auth.forgotPassword.title')}</Text>
             <Text style={styles.subtitle}>
               {sent
-                ? 'Open the reset link on this device to choose a new password.'
-                : 'Enter the email you use for your account and we will send you a reset link.'}
+                ? t('auth.forgotPassword.successSubtitle')
+                : t('auth.forgotPassword.intro')}
             </Text>
           </View>
 
           {sent ? (
             <View style={styles.successCard}>
-              <Text style={styles.successLabel}>Reset link sent</Text>
+              <Text style={styles.successLabel}>{t('auth.forgotPassword.successLabel')}</Text>
               <Text style={styles.sentEmail}>{lastSentEmail}</Text>
-              <Text style={styles.successText}>
-                If an account exists with this email, the reset link should arrive in a few
-                minutes. Open it on this device so Dropsauce can finish the password reset.
-              </Text>
+              <Text style={styles.successText}>{t('auth.forgotPassword.successMessage')}</Text>
             </View>
           ) : null}
 
           <View style={styles.field}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>{t('auth.shared.emailLabel')}</Text>
 
             <View style={[styles.inputWrapper, (emailError || error) && styles.inputWrapperError]}>
               <Feather name="mail" size={18} style={styles.inputIcon} />
               <TextInput
-                placeholder="you@example.com"
+                placeholder={t('auth.shared.emailPlaceholder')}
                 placeholderTextColor={theme.colors.warmGray}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -163,11 +162,11 @@ export default function ForgotPasswordScreen() {
             }}
             disabled={!canSubmit}
             loading={submitting}
-            loadingLabel="Sending..."
+            loadingLabel={t('auth.forgotPassword.sending')}
             size="lg"
             style={styles.submitButton}
           >
-            {sent ? 'Resend reset link' : 'Send reset link'}
+            {sent ? t('auth.forgotPassword.resend') : t('auth.forgotPassword.send')}
           </Button>
 
           <Button
@@ -176,7 +175,7 @@ export default function ForgotPasswordScreen() {
             disabled={submitting}
             style={styles.secondaryButton}
           >
-            Back to sign in
+            {t('auth.forgotPassword.backToSignIn')}
           </Button>
           </View>
         </ScrollView>

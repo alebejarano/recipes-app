@@ -7,6 +7,7 @@ import { useAuth } from '@/features/auth/context/AuthContext'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
 import SettingsSection from '@/features/profile/components/SettingsSection'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 
 type PrivacySettingsScreenProps = {
@@ -15,6 +16,7 @@ type PrivacySettingsScreenProps = {
 }
 
 export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySettingsScreenProps) {
+  const { t } = useTranslation()
   const { user, deleteAccount } = useAuth()
   const { analyticsEnabled, isLoaded: analyticsConsentLoaded, setAnalyticsEnabled } = useAnalyticsConsent()
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
@@ -27,22 +29,22 @@ export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySe
     try {
       await deleteAccount()
     } catch (error: any) {
-      Alert.alert('Unable to delete account', getUserFacingErrorMessage(error))
+      Alert.alert(t('profile.privacySettings.deleteFailedTitle'), getUserFacingErrorMessage(error))
     } finally {
       setIsDeletingAccount(false)
     }
-  }, [deleteAccount, hasAccount, isDeletingAccount])
+  }, [deleteAccount, hasAccount, isDeletingAccount, t])
 
   const onDeleteAccountPress = useCallback(() => {
     if (!hasAccount || isDeletingAccount) return
 
     Alert.alert(
-      'Delete account',
-      'This permanently deletes your account and cannot be undone.',
+      t('profile.privacySettings.deleteTitle'),
+      t('profile.privacySettings.deleteBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('profile.privacySettings.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('profile.privacySettings.deleteAction'),
           style: 'destructive',
           onPress: () => {
             void performDeleteAccount()
@@ -50,17 +52,17 @@ export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySe
         },
       ]
     )
-  }, [hasAccount, isDeletingAccount, performDeleteAccount])
+  }, [hasAccount, isDeletingAccount, performDeleteAccount, t])
 
-  const unavailableSubtitle = 'Create an account to manage this setting'
+  const unavailableSubtitle = t('profile.privacySettings.unavailable')
   const settingsItems = useMemo(
     () => [
       {
         id: 'analytics-diagnostics',
         type: 'toggle' as const,
         icon: 'activity' as const,
-        title: 'Analytics & diagnostics',
-        subtitle: 'Optional. Shares only minimal, sanitized app events to improve reliability and features.',
+        title: t('profile.privacySettings.analyticsTitle'),
+        subtitle: t('profile.privacySettings.analyticsSubtitle'),
         value: analyticsEnabled,
         onValueChange: setAnalyticsEnabled,
         disabled: !analyticsConsentLoaded,
@@ -69,8 +71,8 @@ export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySe
         id: 'password',
         type: 'link' as const,
         icon: 'lock' as const,
-        title: 'Password',
-        subtitle: hasAccount ? 'Update your password to keep your account secure.' : unavailableSubtitle,
+        title: t('profile.privacySettings.passwordTitle'),
+        subtitle: hasAccount ? t('profile.privacySettings.passwordSubtitle') : unavailableSubtitle,
         onPress: hasAccount
           ? () => router.push('/(auth)/settings/password')
           : undefined,
@@ -80,38 +82,38 @@ export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySe
         id: 'export',
         type: 'link' as const,
         icon: 'download' as const,
-        title: 'Export recipes & data',
+        title: t('profile.privacySettings.exportTitle'),
         subtitle: hasAccount
-          ? 'Download a copy of your recipes and account data.'
-          : 'Download a copy of your recipes and data stored on this device.',
+          ? t('profile.privacySettings.exportSubtitleAccount')
+          : t('profile.privacySettings.exportSubtitleGuest'),
         onPress: () => router.push(exportRoute as any),
       },
       {
         id: 'policy',
         type: 'link' as const,
         icon: 'file-text' as const,
-        title: 'Privacy policy',
-        subtitle: 'Learn how we handle and protect your data.',
+        title: t('profile.privacySettings.policyTitle'),
+        subtitle: t('profile.privacySettings.policySubtitle'),
         onPress: () => router.push('/privacy-policy'),
       },
       {
         id: 'terms',
         type: 'link' as const,
         icon: 'file-text' as const,
-        title: 'Terms of service',
-        subtitle: 'Read the rules and conditions for using the app.',
+        title: t('profile.privacySettings.termsTitle'),
+        subtitle: t('profile.privacySettings.termsSubtitle'),
         onPress: () => router.push('/(public)/terms'),
       },
       {
         id: 'legal-notice',
         type: 'link' as const,
         icon: 'info' as const,
-        title: 'Legal notice',
-        subtitle: 'Business identification and legal information.',
+        title: t('profile.privacySettings.legalTitle'),
+        subtitle: t('profile.privacySettings.legalSubtitle'),
         onPress: () => router.push('/(public)/legal-notice' as any),
       },
     ],
-    [analyticsConsentLoaded, analyticsEnabled, exportRoute, hasAccount, setAnalyticsEnabled]
+    [analyticsConsentLoaded, analyticsEnabled, exportRoute, hasAccount, setAnalyticsEnabled, t, unavailableSubtitle]
   )
   const dangerItems = useMemo(
     () => [
@@ -119,33 +121,30 @@ export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySe
         id: 'delete-account',
         type: 'link' as const,
         icon: 'trash-2' as const,
-        title: isDeletingAccount ? 'Deleting account…' : 'Delete account',
+        title: isDeletingAccount ? t('profile.privacySettings.deleting') : t('profile.privacySettings.deleteTitle'),
         subtitle: hasAccount
-          ? 'Permanently remove your account and all saved recipes.'
+          ? t('profile.privacySettings.deleteSubtitle')
           : unavailableSubtitle,
         tone: 'danger' as const,
         onPress: hasAccount && !isDeletingAccount ? onDeleteAccountPress : undefined,
         disabled: !hasAccount || isDeletingAccount,
       },
     ],
-    [hasAccount, isDeletingAccount, onDeleteAccountPress]
+    [hasAccount, isDeletingAccount, onDeleteAccountPress, t, unavailableSubtitle]
   )
 
   return (
-    <ProfileSubpageLayout title="Privacy & Security" onBack={onBack}>
-      <Text style={styles.intro}>
-        Your recipes and account are private. Manage your security settings and control your data
-        here.
-      </Text>
+    <ProfileSubpageLayout title={t('profile.privacySettings.title')} onBack={onBack}>
+      <Text style={styles.intro}>{t('profile.privacySettings.intro')}</Text>
 
       <SettingsSection
-        title="Settings"
+        title={t('profile.privacySettings.settingsTitle')}
         items={settingsItems}
       />
 
       <View style={styles.dangerSection}>
         <SettingsSection
-          title="Danger Zone"
+          title={t('profile.privacySettings.dangerTitle')}
           items={dangerItems}
         />
       </View>

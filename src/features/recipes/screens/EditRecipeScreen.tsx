@@ -29,6 +29,7 @@ import RecipeForm, {
 import { useStrategyRecipe, useStrategyUpdateRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
+import { useTranslation } from '@/localization'
 import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
@@ -76,6 +77,7 @@ function buildInitialValues(recipe: RecipeFormSeed): RecipeFormValues {
 }
 
 export default function EditRecipeScreen() {
+  const { t } = useTranslation()
   const { id } = useLocalSearchParams<{ id?: string; returnTo?: string }>()
   const recipeId = id ?? ''
   const insets = useSafeAreaInsets()
@@ -119,13 +121,13 @@ export default function EditRecipeScreen() {
     async (values: RecipeFormSubmitValues) => {
       try {
         await updateMutation.mutateAsync(values)
-        showSnackbar('Recipe saved')
+        showSnackbar(t('recipes.manage.saved'))
         router.back()
       } catch (e: any) {
-        Alert.alert('Save failed', getUserFacingErrorMessage(e))
+        Alert.alert(t('recipes.manage.saveFailed'), getUserFacingErrorMessage(e))
       }
     },
-    [showSnackbar, updateMutation]
+    [showSnackbar, t, updateMutation]
   )
 
   const triggerSave = useCallback(() => {
@@ -156,7 +158,7 @@ export default function EditRecipeScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.loadingState}>
           <ActivityIndicator size="small" color={styles.loadingText.color} />
-          <Text style={styles.loadingText}>Loading recipe…</Text>
+          <Text style={styles.loadingText}>{t('recipes.detail.loading')}</Text>
         </View>
       </SafeAreaView>
     )
@@ -166,7 +168,7 @@ export default function EditRecipeScreen() {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.loadingState}>
-          <Text style={styles.loadingText}>Unable to load this recipe.</Text>
+          <Text style={styles.loadingText}>{t('recipes.detail.loadFailed')}</Text>
         </View>
       </SafeAreaView>
     )
@@ -184,7 +186,7 @@ export default function EditRecipeScreen() {
             icon={<Feather name="arrow-left" size={16} style={styles.backIcon} />}
             disabled={updateMutation.isPending}
           >
-            Back
+            {t('recipes.manage.back')}
           </Button>
         </View>
 
@@ -205,15 +207,15 @@ export default function EditRecipeScreen() {
             automaticallyAdjustKeyboardInsets
           >
             <View style={styles.header}>
-              <Text style={styles.title}>Edit recipe</Text>
-              <Text style={styles.subtitle}>Update any details and save your changes.</Text>
+              <Text style={styles.title}>{t('recipes.manage.editTitle')}</Text>
+              <Text style={styles.subtitle}>{t('recipes.manage.editSubtitle')}</Text>
             </View>
 
             <RecipeForm
               ref={formRef}
               mode="edit"
               initialValues={initialValues}
-              submitLabel="Save changes"
+              submitLabel={t('recipes.manage.saveChanges')}
               isSubmitting={updateMutation.isPending}
               onSubmit={handleSubmit}
               showActions={false}
@@ -226,7 +228,7 @@ export default function EditRecipeScreen() {
             {updateMutation.isError ? (
               <View style={styles.errorBanner}>
                 <Text style={styles.errorText}>
-                  Unable to save right now. Please try again.
+                  {getUserFacingErrorMessage(updateMutation.error, t('recipes.manage.saveFailed'))}
                 </Text>
               </View>
             ) : null}
@@ -240,7 +242,7 @@ export default function EditRecipeScreen() {
               disabled={updateMutation.isPending}
               style={styles.footerButton}
             >
-              Cancel
+              {t('recipes.manage.cancel')}
             </Button>
 
             <Button
@@ -251,7 +253,7 @@ export default function EditRecipeScreen() {
               disabled={updateMutation.isPending}
               style={styles.footerButton}
             >
-              Save changes
+              {t('recipes.manage.saveChanges')}
             </Button>
           </View>
         </KeyboardAvoidingView>

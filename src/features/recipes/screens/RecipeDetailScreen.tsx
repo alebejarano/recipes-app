@@ -36,6 +36,7 @@ import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { buildRecipeShareText, shareRecipeAsTextFile } from '@/features/recipes/utils/shareRecipe'
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding'
+import { useTranslation } from '@/localization'
 import { FREE_PLAN_MAX_RECIPES } from '@/features/subscription/constants/limits'
 import { KITCHEN_ALMOST_FULL_RECIPE_DISMISS_UNTIL_PREFIX } from '@/features/subscription/constants/reminderKeys'
 import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
@@ -102,6 +103,7 @@ function buildIngredientLines(ingredients: { name: string }[] | undefined): stri
 
 
 export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
+  const { t } = useTranslation()
   const bottomPadding = useTabBarBottomPadding(theme.spacing['3xl'])
   const [isIngredientImportOpen, setIsIngredientImportOpen] = useState(false)
   const [isImportingIngredients, setIsImportingIngredients] = useState(false)
@@ -260,35 +262,35 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
   }
 
   const handleMore = () => {
-    Alert.alert('Recipe actions', undefined, [
-      { text: 'Edit recipe', onPress: handleEdit },
+    Alert.alert(t('recipes.detail.actionsTitle'), undefined, [
+      { text: t('recipes.detail.edit'), onPress: handleEdit },
       {
-        text: 'Delete recipe',
+        text: t('recipes.detail.delete'),
         style: 'destructive',
         onPress: () => {
-          Alert.alert('Delete recipe?', 'This cannot be undone.', [
-            { text: 'Cancel', style: 'cancel' },
+          Alert.alert(t('recipes.detail.deletePromptTitle'), t('recipes.detail.deletePromptBody'), [
+            { text: t('recipes.detail.cancel'), style: 'cancel' },
             {
-              text: 'Delete',
+              text: t('recipes.detail.delete'),
               style: 'destructive',
               onPress: async () => {
                 try {
                   await deleteMutation.mutateAsync(recipeId)
-                  showSnackbar('Recipe deleted')
+                  showSnackbar(t('recipes.detail.deleted'))
                   if (safeReturnTo) {
                     router.replace(safeReturnTo)
                   } else {
                     router.back()
                   }
                 } catch (error: any) {
-                  Alert.alert('Delete failed', getUserFacingErrorMessage(error))
+                  Alert.alert(t('recipes.detail.deleteFailed'), getUserFacingErrorMessage(error))
                 }
               },
             },
           ])
         },
       },
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('recipes.detail.cancel'), style: 'cancel' },
     ])
   }
 
@@ -307,7 +309,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
         folders: recipe.folders,
       })
     } catch (shareError: any) {
-      Alert.alert('Share failed', getUserFacingErrorMessage(shareError, 'Unable to share this recipe right now.'))
+      Alert.alert(t('recipes.detail.shareFailed'), getUserFacingErrorMessage(shareError, t('recipes.detail.shareFailedBody')))
     }
   }
 
@@ -329,15 +331,15 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
         }),
       })
     } catch (shareError: any) {
-      Alert.alert('Share failed', getUserFacingErrorMessage(shareError, 'Unable to share this recipe right now.'))
+      Alert.alert(t('recipes.detail.shareFailed'), getUserFacingErrorMessage(shareError, t('recipes.detail.shareFailedBody')))
     }
   }
 
   const handleShare = () => {
-    Alert.alert('Share recipe', 'Choose how you want to share.', [
-      { text: 'Share as text', onPress: () => { void handleShareAsText() } },
-      { text: 'Share as file', onPress: () => { void handleShareAsFile() } },
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('recipes.detail.shareTitle'), t('recipes.detail.shareBody'), [
+      { text: t('recipes.detail.shareText'), onPress: () => { void handleShareAsText() } },
+      { text: t('recipes.detail.shareFile'), onPress: () => { void handleShareAsFile() } },
+      { text: t('recipes.detail.cancel'), style: 'cancel' },
     ])
   }
 
@@ -364,18 +366,18 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
       await updateMutation.mutateAsync(
         buildFavoriteTogglePayload(recipe, nextFolderNames)
       )
-      showSnackbar(isFavorited ? 'Removed from favorites' : 'Added to favorites')
+      showSnackbar(isFavorited ? t('recipes.detail.removedFavorite') : t('recipes.detail.addedFavorite'))
     } catch (favoriteError: any) {
       Alert.alert(
-        'Unable to update favorites',
-        favoriteError?.message ?? 'Please try again.'
+        t('recipes.detail.favoriteFailed'),
+        favoriteError?.message ?? t('recipes.detail.favoriteFailedBody')
       )
     }
   }
 
   const importIngredients = async (names: string[]) => {
     if (names.length === 0) {
-      Alert.alert('No ingredients', 'This recipe has no ingredients to add.')
+      Alert.alert(t('recipes.detail.noIngredientsTitle'), t('recipes.detail.noIngredientsBody'))
       return
     }
 
@@ -385,22 +387,22 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
       setIsIngredientImportOpen(false)
 
       if (added === 0) {
-        Alert.alert('Shopping list unchanged', 'All selected ingredients are already in your list.')
+        Alert.alert(t('recipes.detail.listUnchangedTitle'), t('recipes.detail.listUnchangedBody'))
         return
       }
 
       if (skipped > 0) {
-        Alert.alert('Ingredients added', `${added} added, ${skipped} already on your list.`)
+        Alert.alert(t('recipes.detail.ingredientsAddedTitle'), t('recipes.detail.ingredientsAddedSome', { added, skipped }))
         return
       }
 
       Alert.alert(
-        'Ingredients added',
-        `${added} ingredient${added === 1 ? '' : 's'} added to your shopping list.`
+        t('recipes.detail.ingredientsAddedTitle'),
+        t('recipes.detail.ingredientsAddedAll', { count: added, suffix: added === 1 ? '' : 's' })
       )
     } catch (importError: any) {
       Alert.alert(
-        'Unable to add ingredients',
+        t('recipes.detail.addIngredientsFailed'),
         getUserFacingErrorMessage(importError)
       )
     } finally {
@@ -414,7 +416,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.loadingState}>
           <ActivityIndicator size="small" color={styles.loadingText.color} />
-          <Text style={styles.loadingText}>Loading recipe…</Text>
+          <Text style={styles.loadingText}>{t('recipes.detail.loading')}</Text>
         </View>
       </SafeAreaView>
     )
@@ -424,7 +426,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.loadingState}>
-          <Text style={styles.loadingText}>Unable to load this recipe.</Text>
+          <Text style={styles.loadingText}>{t('recipes.detail.loadFailed')}</Text>
           {error ? (
             <Text style={styles.errorText}>
               {getUserFacingErrorMessage(error)}
@@ -441,7 +443,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
             accessibilityRole="button"
             style={styles.retryButton}
           >
-            <Text style={styles.retryText}>Go back</Text>
+            <Text style={styles.retryText}>{t('recipes.detail.goBack')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -464,7 +466,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
               }
             }}
             accessibilityRole="button"
-            accessibilityLabel="Go back"
+            accessibilityLabel={t('recipes.detail.goBackA11y')}
             style={styles.iconButton}
           >
             <Feather name="arrow-left" size={18} style={styles.icon} />
@@ -474,7 +476,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
             <TouchableOpacity
               onPress={() => { void handleToggleFavorite() }}
               accessibilityRole="button"
-              accessibilityLabel={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+              accessibilityLabel={isFavorited ? t('recipes.detail.removeFavoriteA11y') : t('recipes.detail.addFavoriteA11y')}
               style={styles.iconButton}
               disabled={updateMutation.isPending || createFolderMutation.isPending}
             >
@@ -487,7 +489,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
             <TouchableOpacity
               onPress={handleShare}
               accessibilityRole="button"
-              accessibilityLabel="Share recipe"
+              accessibilityLabel={t('recipes.detail.shareA11y')}
               style={styles.iconButton}
             >
               <Feather name="share-2" size={18} style={styles.icon} />
@@ -495,7 +497,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
             <TouchableOpacity
               onPress={handleMore}
               accessibilityRole="button"
-              accessibilityLabel="More actions"
+              accessibilityLabel={t('recipes.detail.moreA11y')}
               style={styles.iconButton}
             >
               <Feather name="more-vertical" size={18} style={styles.icon} />
@@ -512,10 +514,10 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
                   style={styles.mediaImage}
                   contentFit="cover"
                   cachePolicy="memory-disk"
-                  accessibilityLabel="Recipe thumbnail"
+                  accessibilityLabel={t('recipes.detail.thumbnailA11y')}
                 />
               ) : (
-                <Text style={styles.mediaEmoji} accessibilityLabel="Recipe emoji">
+                <Text style={styles.mediaEmoji} accessibilityLabel={t('recipes.detail.emojiA11y')}>
                   {recipe.emoji}
                 </Text>
               )}

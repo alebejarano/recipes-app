@@ -5,6 +5,7 @@ import { Image, Text, TouchableOpacity, View } from 'react-native'
 import Button from '@/components/Button'
 import { useAnalyticsCapture } from '@/features/analytics/events'
 import Screen from '@/components/Screen'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 
 type PremiumScreenProps = {
@@ -15,20 +16,6 @@ type PremiumScreenProps = {
   onManageSubscription?: () => void
 }
 
-const checklistItems = [
-  'Never lose a recipe',
-  'Sync across your devices',
-  'Save without limits',
-  'Backup your kitchen',
-]
-
-const supportingLines = [
-  'Cloud backup and sync all your recipes and notes.',
-  'Access your kitchen across all your devices.',
-  'Unlimited recipes.',
-  '5GB cloud storage for imports.',
-]
-
 export default function PremiumScreen({
   onUpgrade,
   onMaybeLater,
@@ -37,19 +24,32 @@ export default function PremiumScreen({
   onManageSubscription,
 }: PremiumScreenProps) {
   const captureAnalyticsEvent = useAnalyticsCapture()
+  const { t } = useTranslation()
   const [billingCycle, setBillingCycle] = React.useState<'month' | 'year'>('month')
   const monthlyPrice = 5
   const yearlyPrice = 36
   const yearlyMonthlyEquivalent = yearlyPrice / 12
   const priceValue = billingCycle === 'month' ? `€${monthlyPrice}` : `€${yearlyPrice}`
-  const pricePeriod = billingCycle === 'month' ? '/ month' : '/ year'
+  const pricePeriod = billingCycle === 'month' ? t('subscription.premium.perMonth') : t('subscription.premium.perYear')
+  const checklistItems = [
+    t('subscription.premium.checklist.neverLose'),
+    t('subscription.premium.checklist.syncDevices'),
+    t('subscription.premium.checklist.unlimited'),
+    t('subscription.premium.checklist.backup'),
+  ]
+  const supportingLines = [
+    t('subscription.premium.supporting.backup'),
+    t('subscription.premium.supporting.access'),
+    t('subscription.premium.supporting.unlimited'),
+    t('subscription.premium.supporting.storage'),
+  ]
 
   return (
     <Screen scroll contentStyle={styles.content}>
       {!!onMaybeLater && (
         <TouchableOpacity style={styles.backRow} onPress={onMaybeLater} activeOpacity={0.75}>
           <Feather name="chevron-left" size={18} style={styles.backIcon} />
-          <Text style={styles.backText}>Back</Text>
+          <Text style={styles.backText}>{t('subscription.premium.back')}</Text>
         </TouchableOpacity>
       )}
 
@@ -59,12 +59,12 @@ export default function PremiumScreen({
         resizeMode="cover"
       />
 
-      <Text style={styles.title}>Keep your recipes safe everywhere</Text>
+      <Text style={styles.title}>{t('subscription.premium.title')}</Text>
 
       <Text style={styles.subtitle}>
         {isActive
-          ? 'Your kitchen is synced, backed up, and fully unlocked.'
-          : 'Premium gives you backup, sync, and unlimited saves — so your kitchen is always with you.'}
+          ? t('subscription.premium.subtitleActive')
+          : t('subscription.premium.subtitleInactive')}
       </Text>
 
       {!isActive ? (
@@ -76,7 +76,7 @@ export default function PremiumScreen({
               activeOpacity={0.85}
             >
               <Text style={[styles.billingOptionText, billingCycle === 'month' && styles.billingOptionTextActive]}>
-                Monthly
+                {t('subscription.premium.monthly')}
               </Text>
             </TouchableOpacity>
 
@@ -86,7 +86,7 @@ export default function PremiumScreen({
               activeOpacity={0.85}
             >
               <Text style={[styles.billingOptionText, billingCycle === 'year' && styles.billingOptionTextActive]}>
-                Yearly
+                {t('subscription.premium.yearly')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -96,12 +96,12 @@ export default function PremiumScreen({
             <Text style={styles.pricePeriod}>{pricePeriod}</Text>
           </View>
           {billingCycle === 'year' ? (
-            <Text style={styles.yearlyNote}>That&apos;s €{yearlyMonthlyEquivalent} per month</Text>
+            <Text style={styles.yearlyNote}>{t('subscription.premium.yearlyNote', { price: `EUR ${yearlyMonthlyEquivalent}` })}</Text>
           ) : null}
         </>
       ) : null}
 
-      <Text style={styles.includedTitle}>Everything included</Text>
+      <Text style={styles.includedTitle}>{t('subscription.premium.includedTitle')}</Text>
 
       <View style={styles.featuresList}>
         {checklistItems.map((item) => (
@@ -128,7 +128,7 @@ export default function PremiumScreen({
           size="xl"
           style={styles.ctaButton}
         >
-          Manage Subscription
+          {t('subscription.premium.manage')}
         </Button>
       ) : (
         <Button
@@ -144,12 +144,12 @@ export default function PremiumScreen({
           style={styles.ctaButton}
           disabled={!onUpgrade || isUpgrading}
         >
-          {isUpgrading ? 'Upgrading...' : 'Unlock Premium'}
+          {isUpgrading ? t('subscription.premium.upgrading') : t('subscription.premium.unlock')}
         </Button>
       )}
       {!isActive ? (
         <Text style={styles.trustText}>
-          It&apos;s €5. Not €4.99. Yes, we rounded it — we cook honestly.
+          {t('subscription.premium.trust')}
         </Text>
       ) : null}
 

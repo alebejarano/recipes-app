@@ -16,6 +16,7 @@ import { SubscriptionProvider } from '@/features/subscription/context/Subscripti
 import { runLocalMigrations } from '@/lib/localMigrations'
 import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
 import { setProductionLogCapture } from '@/lib/productionLogger'
+import { LocalizationProvider } from '@/localization'
 import QueryProvider from '@/providers/QueryProvider'
 import { useLoadFonts } from '@/styles/useLoadFonts'
 
@@ -50,19 +51,21 @@ export default function RootLayout() {
   }
 
   const content = (
-    <QueryProvider>
-      <AuthProvider>
-        <SubscriptionProvider>
-          <StorageStrategyProvider>
-            <RecipeSyncBootstrap />
-            <OnboardingProvider>
-              <Slot />
-              <GlobalSnackbar />
-            </OnboardingProvider>
-          </StorageStrategyProvider>
-        </SubscriptionProvider>
-      </AuthProvider>
-    </QueryProvider>
+    <LocalizationProvider>
+      <QueryProvider>
+        <AuthProvider>
+          <SubscriptionProvider>
+            <StorageStrategyProvider>
+              <RecipeSyncBootstrap />
+              <OnboardingProvider>
+                <Slot />
+                <GlobalSnackbar />
+              </OnboardingProvider>
+            </StorageStrategyProvider>
+          </SubscriptionProvider>
+        </AuthProvider>
+      </QueryProvider>
+    </LocalizationProvider>
   )
 
   return (

@@ -3,6 +3,7 @@ import React from 'react'
 import { Text, View } from 'react-native'
 
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 
 type PolicyGroup = {
@@ -20,7 +21,8 @@ type PolicySection = {
     footer?: string
 }
 
-const POLICY_SECTIONS: readonly PolicySection[] = [
+const POLICY_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly PolicySection[]> = {
+    en: [
     {
         title: '1. Data Controller',
         paragraphs: [
@@ -199,21 +201,204 @@ const POLICY_SECTIONS: readonly PolicySection[] = [
             'This policy may be updated to reflect legal, technical, or service changes. Material changes will be communicated in the app or through another appropriate channel before they take effect where required.',
         ],
     },
-]
+    ],
+    es: [
+        {
+            title: '1. Responsable del Tratamiento',
+            paragraphs: [
+                'Esta Politica de Privacidad explica como Dropsauce accede, recopila, usa, almacena, comparte y elimina datos personales.',
+                'El responsable del tratamiento es:',
+            ],
+            details: [
+                'Nombre legal: Anthony Lajusticia',
+                'Nombre comercial: DropSauce',
+                'Situacion: Profesional autonomo dado de alta en Espana en el Regimen Especial de Trabajadores Autonomos',
+                'NIF: Z0570202Z',
+                'Domicilio profesional: Calle de Alcala 54, 4º izquierda, 28014 Madrid',
+                'Pais de establecimiento: Espana',
+                'Contacto de privacidad: hello@dropsauce.app',
+            ],
+            footer:
+                'Esta politica se aplica conforme al Reglamento (UE) 2016/679 (RGPD), la Ley Organica 3/2018 (LOPDGDD) y demas normativa espanola aplicable en materia de proteccion de datos.',
+        },
+        {
+            title: '2. Como Funciona la App',
+            paragraphs: [
+                'Dropsauce puede usarse sin cuenta. Las recetas, notas, carpetas, listas de la compra, imagenes, archivos importados, elecciones de onboarding y preferencias de la app en modo invitado se almacenan en el dispositivo del usuario.',
+                'El contenido de invitado no se envia al almacenamiento en la nube de Dropsauce. Si el usuario activa por separado la analitica opcional, solo se transmiten los datos limitados de analitica descritos abajo, no el contenido de recetas o notas.',
+                'Los usuarios pueden crear una cuenta gratuita. La cuenta es necesaria para la copia de seguridad Premium en la nube, la sincronizacion entre dispositivos y el almacenamiento en la nube de las importaciones.',
+            ],
+        },
+        {
+            title: '3. Datos Personales que Tratamos',
+            groups: [
+                {
+                    heading: 'Datos de cuenta y perfil',
+                    paragraphs: [
+                        'Cuando se crea una cuenta, tratamos la direccion de correo electronico, las credenciales de autenticacion a traves de nuestro proveedor de autenticacion, el identificador interno de usuario, las marcas temporales de la cuenta y cualquier nombre para mostrar que el usuario anada.',
+                        'Las contrasenas son tratadas por el proveedor de autenticacion de forma protegida. Dropsauce no recibe ni almacena una copia legible de la contrasena.',
+                    ],
+                },
+                {
+                    heading: 'Preferencias y comunicaciones',
+                    paragraphs: [
+                        'Tratamos elecciones relacionadas con actualizaciones opcionales por correo, comunicaciones de producto, preferencias de notificaciones push, consentimiento de analitica, idioma o preferencias de la app, y solicitudes de seguridad o de cuenta.',
+                        'La version actual de la app guarda preferencias de notificaciones, pero no sube un token push ni envia notificaciones push salvo que esa funcionalidad se active en una version futura.',
+                    ],
+                },
+                {
+                    heading: 'Contenido en la nube para usuarios Premium',
+                    paragraphs: [
+                        'Cuando se usan funciones Premium en la nube, tratamos y almacenamos recetas, ingredientes, instrucciones, notas, carpetas, informacion de comidas, imagenes, archivos importados PDF/JPG/PNG, nombres de archivo, tipos de archivo, tamanos de archivo, checksums, rutas de almacenamiento, identificadores de sincronizacion y marcas temporales de creacion o actualizacion.',
+                        'Este contenido se trata solo para prestar almacenamiento en la nube, copia de seguridad, gestion de importaciones, sincronizacion y funciones relacionadas de soporte o seguridad.',
+                    ],
+                },
+                {
+                    heading: 'Datos de suscripcion',
+                    paragraphs: [
+                        'Apple App Store o Google Play tratan las credenciales de pago y la transaccion de compra. Dropsauce no recibe datos completos de tarjeta o banco.',
+                        'Dropsauce puede recibir y almacenar informacion limitada de suscripcion necesaria para prestar Premium, como la tienda, el producto o plan, el periodo de facturacion, el estado de compra, el estado del derecho de acceso, la informacion de renovacion o vencimiento y los identificadores de transaccion o recibo.',
+                    ],
+                },
+                {
+                    heading: 'Datos tecnicos y de seguridad',
+                    paragraphs: [
+                        'Nuestros proveedores de servicio pueden tratar la direccion IP, marcas temporales de solicitudes, registros de autenticacion y seguridad, version de la app, sistema operativo, tipo de dispositivo, estado de la red y categorias de error cuando sea necesario para operar, asegurar y diagnosticar el servicio.',
+                        'El acceso a camara, fototeca y documentos solo ocurre despues de que el usuario elija la funcion correspondiente y conceda el permiso del sistema operativo. Los archivos seleccionados se almacenan localmente o se suben al almacenamiento en la nube segun el plan y la accion del usuario.',
+                    ],
+                },
+            ],
+        },
+        {
+            title: '4. Analitica Opcional con PostHog',
+            paragraphs: [
+                'La analitica y los diagnosticos son opcionales, estan desactivados por defecto y solo se activan cuando el usuario habilita el ajuste de Analitica y diagnostico. El consentimiento puede retirarse en cualquier momento desde Privacidad y seguridad.',
+                'Cuando esta activado, Dropsauce usa el endpoint europeo de PostHog. La app envia un identificador anonimo de analitica generado automaticamente, la hora del evento, propiedades tecnicas de la app y el dispositivo, y propiedades limitadas del evento.',
+                'Los eventos pueden incluir aperturas de la app, creacion de cuenta, categorias de respuestas del onboarding, creacion de recetas o notas, interacciones de mejora a Premium, estado de compra correcta, fallos o timeouts de solicitudes, guardados sin conexion y reintentos de sincronizacion o de subida/importacion.',
+            ],
+            bullets: [
+                'La autocaptura de PostHog esta desactivada',
+                'La reproduccion de sesion esta desactivada',
+                'El enriquecimiento GeoIP automatico esta desactivado',
+                'Dropsauce no llama a PostHog identify ni envia el email o el nombre de la cuenta',
+                'Se excluyen titulos de recetas, texto de recetas, ingredientes, instrucciones, notas, nombres de archivo, datos de pago, tokens de autenticacion, URLs completas y mensajes de error en bruto.',
+            ],
+            footer:
+                'La base juridica es el consentimiento. Desactivar la analitica detiene los nuevos eventos de analitica. Los eventos recogidos anteriormente se mantienen hasta que expire su periodo de retencion o se solicite su eliminacion cuando el identificador pueda relacionarse.',
+        },
+        {
+            title: '5. Finalidades y Bases Juridicas',
+            groups: [
+                {
+                    heading: 'Ejecucion de un contrato',
+                    paragraphs: [
+                        'Para crear y gestionar cuentas, autenticar usuarios, prestar funciones locales y en la nube, sincronizar contenido, administrar los derechos Premium, prestar soporte y enviar comunicaciones necesarias de cuenta o servicio.',
+                    ],
+                },
+                {
+                    heading: 'Consentimiento',
+                    paragraphs: [
+                        'Para tratar la analitica y los diagnosticos opcionales de PostHog, enviar correos opcionales de marketing o producto y usar permisos opcionales del dispositivo. El consentimiento puede retirarse en cualquier momento sin afectar al tratamiento licito anterior.',
+                    ],
+                },
+                {
+                    heading: 'Obligaciones legales',
+                    paragraphs: [
+                        'Para cumplir obligaciones fiscales, contables, de proteccion de consumidores, requerimientos de autoridades y otras exigencias legales vinculantes.',
+                    ],
+                },
+                {
+                    heading: 'Intereses legitimos',
+                    paragraphs: [
+                        'Para proteger cuentas e infraestructura, prevenir abuso o fraude, mantener la seguridad del servicio, formular o defender reclamaciones legales y mejorar la fiabilidad usando datos necesarios y proporcionados para esas finalidades.',
+                    ],
+                },
+            ],
+        },
+        {
+            title: '6. Proveedores de Servicio y Destinatarios',
+            paragraphs: [
+                'Los datos personales no se venden. Solo pueden ponerse a disposicion de proveedores de servicio que actuan para Dropsauce o de proveedores independientes implicados en una transaccion del usuario cuando sea necesario.',
+            ],
+            bullets: [
+                'Supabase: autenticacion, base de datos, almacenamiento en la nube, sincronizacion y funciones backend',
+                'PostHog: analitica y diagnosticos opcionales cuando el usuario se adhiere',
+                'Apple App Store y Google Play: compra de suscripciones, pago, facturacion, cancelacion y administracion de reembolsos',
+                'Asesores profesionales, juzgados, reguladores, autoridades publicas o fuerzas de seguridad cuando sea legalmente exigible o necesario para proteger derechos legales.',
+            ],
+        },
+        {
+            title: '7. Almacenamiento Europeo y Transferencias Internacionales',
+            paragraphs: [
+                'Dropsauce configura la residencia principal de su base de datos en la nube, almacenamiento de archivos, backend y analitica de PostHog en la Union Europea.',
+                'Algunos proveedores o sus subencargados pueden acceder a datos limitados desde fuera del Espacio Economico Europeo por soporte, seguridad u operacion del servicio. Cuando esto ocurre, Dropsauce se apoya en una decision de adecuacion aplicable, Clausulas Contractuales Tipo u otra garantia licita de transferencia conforme al RGPD.',
+                'Apple y Google tratan los datos de tienda y pago conforme a sus propios terminos de privacidad y mecanismos de transferencias internacionales.',
+            ],
+        },
+        {
+            title: '8. Conservacion y Eliminacion',
+            paragraphs: [
+                'Los datos de invitado permanecen en el dispositivo hasta que el usuario los elimine, borre los datos de la app o desinstale la app. Dropsauce no puede recuperar datos de invitado que nunca se hayan sincronizado.',
+                'Los datos de cuenta, perfil, preferencias, derechos y contenido en la nube se conservan mientras la cuenta este activa o mientras sean necesarios para prestar el servicio solicitado.',
+                'El usuario puede eliminar la cuenta desde Privacidad y seguridad, seguir las instrucciones en https://dropsauce.app/delete-account o solicitar la eliminacion en hello@dropsauce.app. La eliminacion de la cuenta borra la cuenta, el contenido de la base de datos en la nube, las imagenes de recetas almacenadas, los documentos importados y el estado de uso de importaciones de los sistemas activos.',
+                'Pueden conservarse registros limitados cuando lo exijan obligaciones fiscales, contables, de prevencion del fraude, resolucion de disputas u otras obligaciones legales. Las copias de seguridad cifradas residuales se eliminan o sobrescriben segun el ciclo de backups del proveedor de servicio y no se usan para fines ordinarios del negocio.',
+                'Los eventos opcionales de analitica solo se conservan durante el periodo configurado de retencion de analitica y no deben guardarse mas tiempo del necesario para el analisis del producto y la fiabilidad.',
+            ],
+        },
+        {
+            title: '9. Seguridad',
+            paragraphs: [
+                'Dropsauce usa medidas adecuadas al riesgo, incluyendo transporte cifrado de red, sesiones de autenticacion protegidas, controles de acceso, seguridad a nivel de fila en la base de datos, almacenamiento privado para documentos importados, enlaces firmados de acceso, validacion de tipo y tamano de archivo y credenciales backend restringidas.',
+                'Las imagenes de recetas almacenadas para uso en la nube pueden servirse mediante una URL publica del objeto. La URL no esta pensada como mecanismo de control de acceso, por lo que los usuarios no deben subir material confidencial o muy sensible como imagen de receta.',
+                'Ningun servicio de internet puede garantizar seguridad absoluta. Los usuarios deben usar una contrasena robusta y unica y proteger el acceso a su dispositivo y a su cuenta de tienda.',
+            ],
+        },
+        {
+            title: '10. Derechos',
+            paragraphs: [
+                'Segun las circunstancias, los usuarios pueden ejercer los derechos de acceso, rectificacion, supresion, limitacion, oposicion y portabilidad, y pueden retirar su consentimiento en cualquier momento.',
+                'Las solicitudes pueden enviarse a hello@dropsauce.app. Puede requerirse verificacion de identidad antes de completar una solicitud. Las solicitudes se gestionan dentro de los plazos exigidos por el RGPD.',
+                'Los usuarios pueden presentar una reclamacion ante la Agencia Espanola de Proteccion de Datos (www.aepd.es) o ante la autoridad de control del lugar donde vivan o trabajen.',
+            ],
+        },
+        {
+            title: '11. Datos Necesarios y Decisiones Automatizadas',
+            paragraphs: [
+                'Se requiere una direccion de email y una credencial de autenticacion para crear una cuenta. Si no se facilitan, no podran ofrecerse cuenta ni funciones en la nube, aunque el modo invitado seguira disponible.',
+                'Los datos necesarios para la facturacion de tienda y la verificacion de derechos son necesarios para prestar Premium.',
+                'Dropsauce no toma decisiones basadas unicamente en tratamientos automatizados que produzcan efectos juridicos o significativamente similares, y no usa datos personales para perfiles publicitarios.',
+            ],
+        },
+        {
+            title: '12. Menores',
+            paragraphs: [
+                'Dropsauce es una aplicacion de recetas para publico general y no esta dirigida especificamente a menores. Un menor que no pueda aceptar validamente estos terminos o prestar el consentimiento necesario segun la ley aplicable solo debe usar el servicio con autorizacion de un padre, madre o tutor legal.',
+            ],
+        },
+        {
+            title: '13. Cambios',
+            paragraphs: [
+                'Esta politica puede actualizarse para reflejar cambios legales, tecnicos o del servicio. Los cambios materiales se comunicaran en la app o a traves de otro canal apropiado antes de que surtan efecto cuando sea exigible.',
+            ],
+        },
+    ],
+}
 
 export default function PrivacyPolicyScreen() {
+    const { locale, t } = useTranslation()
+    const sections = locale.toLowerCase().startsWith('es')
+        ? POLICY_SECTIONS_BY_LOCALE.es
+        : POLICY_SECTIONS_BY_LOCALE.en
+
     return (
         <ProfileSubpageLayout
-            title="Privacy Policy"
-            subtitle="Last updated: June 9, 2026"
+            title={t('auth.legal.privacyPolicyTitle')}
+            subtitle={t('auth.legal.lastUpdated')}
             onBack={() => router.back()}
         >
-            <Text style={styles.intro}>
-                This policy explains how Dropsauce handles personal data in guest, account, and
-                Premium modes.
-            </Text>
+            <Text style={styles.intro}>{t('auth.legal.privacyIntro')}</Text>
 
-            {POLICY_SECTIONS.map((section) => (
+            {sections.map((section) => (
                 <View key={section.title} style={styles.card}>
                     <Text style={styles.sectionTitle}>{section.title}</Text>
 

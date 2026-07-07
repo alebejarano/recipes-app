@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 import { layout } from '@/styles/layout';
 
@@ -21,6 +22,7 @@ type Props = {
 };
 
 export default function FolderSpotlightCard({ title, recipes, onPress, onPressRecipe }: Props) {
+  const { t } = useTranslation()
   if (recipes.length === 0) return null;
 
   return (
@@ -29,7 +31,7 @@ export default function FolderSpotlightCard({ title, recipes, onPress, onPressRe
         onPress={onPress}
         style={({ pressed }) => [styles.headerRow, pressed && styles.pressed]}
         accessibilityRole="button"
-        accessibilityLabel={`Open ${title} folder`}
+        accessibilityLabel={t('home.cards.openFolderA11y', { title })}
       >
         <Text style={styles.title} numberOfLines={1}>
           {title}
@@ -48,7 +50,7 @@ export default function FolderSpotlightCard({ title, recipes, onPress, onPressRe
               pressed && styles.pressed,
             ]}
             accessibilityRole="button"
-            accessibilityLabel={`Open ${recipe.title}`}
+            accessibilityLabel={t('home.cards.openRecipeA11y', { title: recipe.title })}
           >
             <RecipeMedia emoji={recipe.emoji} imageUrl={recipe.imageUrl} />
             <Text style={styles.recipeTitle} numberOfLines={1}>

@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons'
 import React from 'react'
 import { Pressable, Text, View } from 'react-native'
 
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 import type { RecipeSegmentKey } from '../types'
@@ -13,16 +14,18 @@ type RecipeSegmentedTabsProps = {
 
 type TabDef = {
   key: RecipeSegmentKey
-  label: string
+  labelKey: string
   icon: keyof typeof Feather.glyphMap
 }
 
 const TABS: TabDef[] = [
-  { key: 'folders', label: 'Folders', icon: 'folder' },
-  { key: 'documents', label: 'Imports', icon: 'file-text' },
+  { key: 'folders', labelKey: 'collections.tabs.folders', icon: 'folder' },
+  { key: 'documents', labelKey: 'collections.tabs.imports', icon: 'file-text' },
 ]
 
 export default function RecipeSegmentedTabs({ value, onChange }: RecipeSegmentedTabsProps) {
+  const { t } = useTranslation()
+
   return (
     <View style={styles.wrap}>
       {TABS.map((tab) => {
@@ -39,7 +42,7 @@ export default function RecipeSegmentedTabs({ value, onChange }: RecipeSegmented
               size={16}
               color={active ? theme.colors.foreground : theme.colors.mutedForeground}
             />
-            <Text style={[styles.tabText, active && styles.tabTextActive]}>{tab.label}</Text>
+            <Text style={[styles.tabText, active && styles.tabTextActive]}>{t(tab.labelKey)}</Text>
           </Pressable>
         )
       })}

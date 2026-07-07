@@ -6,6 +6,7 @@ import { useTransientSnackbarStore } from '@/features/feedback/store/useTransien
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
 import SettingsSection from '@/features/profile/components/SettingsSection'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { useTranslation } from '@/localization'
 
 type EmailSettingsScreenProps = {
   onBack: () => void
@@ -33,6 +34,7 @@ function getSavedEmailPreferences(value: unknown): EmailPreferences {
 }
 
 export default function EmailSettingsScreen({ onBack }: EmailSettingsScreenProps) {
+  const { t } = useTranslation()
   const { updateEmailPreferences, user } = useAuth()
   const showSnackbar = useTransientSnackbarStore((state) => state.show)
   const hasAccountEmail = Boolean(user?.email)
@@ -62,30 +64,30 @@ export default function EmailSettingsScreen({ onBack }: EmailSettingsScreenProps
 
       void updateEmailPreferences(nextPreferences)
         .then(() => {
-          showSnackbar('Email settings updated')
+          showSnackbar(t('profile.emailSettings.updated'))
         })
         .catch((e: any) => {
           setPreferences(previousPreferences)
-          Alert.alert('Unable to save email settings', getUserFacingErrorMessage(e))
+          Alert.alert(t('profile.emailSettings.failedTitle'), getUserFacingErrorMessage(e))
         })
         .finally(() => {
           setIsSaving(false)
         })
     },
-    [hasAccountEmail, isSaving, preferences, showSnackbar, updateEmailPreferences]
+    [hasAccountEmail, isSaving, preferences, showSnackbar, t, updateEmailPreferences]
   )
 
   return (
-    <ProfileSubpageLayout title="Email Settings" onBack={onBack}>
+    <ProfileSubpageLayout title={t('profile.emailSettings.title')} onBack={onBack}>
       <SettingsSection
-        title="Email Updates"
+        title={t('profile.emailSettings.sectionTitle')}
         items={[
           {
             id: 'newsletter',
             type: 'toggle',
             icon: 'mail',
-            title: 'Weekly digest',
-            subtitle: hasAccountEmail ? 'Recipes and curated collections' : 'Create an account to receive emails',
+            title: t('profile.emailSettings.weeklyTitle'),
+            subtitle: hasAccountEmail ? t('profile.emailSettings.weeklySubtitle') : t('profile.emailSettings.noAccount'),
             value: preferences.weeklyDigest,
             disabled: !hasAccountEmail || isSaving,
             onValueChange: (next) => updatePreference('weeklyDigest', next),
@@ -94,8 +96,8 @@ export default function EmailSettingsScreen({ onBack }: EmailSettingsScreenProps
             id: 'tips',
             type: 'toggle',
             icon: 'book-open',
-            title: 'Cooking tips',
-            subtitle: hasAccountEmail ? 'Short guides and feature education' : 'Create an account to receive emails',
+            title: t('profile.emailSettings.tipsTitle'),
+            subtitle: hasAccountEmail ? t('profile.emailSettings.tipsSubtitle') : t('profile.emailSettings.noAccount'),
             value: preferences.cookingTips,
             disabled: !hasAccountEmail || isSaving,
             onValueChange: (next) => updatePreference('cookingTips', next),

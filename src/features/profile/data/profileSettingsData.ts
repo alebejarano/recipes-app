@@ -37,8 +37,11 @@ export type PreferenceToggles = {
 
 export type AccountPlan = 'free' | 'premium'
 
+type Translate = (scope: string) => string
+
 export function buildMembershipItems(args: {
   plan: AccountPlan
+  t: Translate
   onPlanDetailsPress: () => void
   onManageOrUpgradePress: () => void
 }): SettingsRowItem[] {
@@ -49,8 +52,8 @@ export function buildMembershipItems(args: {
       id: 'membership-plan-details',
       type: 'link',
       icon: 'book-open',
-      title: 'Your Kitchen Plan',
-      subtitle: 'Usage & limits',
+      title: args.t('profile.settings.membership.planTitle'),
+      subtitle: args.t('profile.settings.membership.planSubtitle'),
       onPress: args.onPlanDetailsPress,
     },
     {
@@ -58,8 +61,12 @@ export function buildMembershipItems(args: {
       type: 'link',
       icon: isPremium ? 'award' : 'sparkles-sharp',
       iconFamily: isPremium ? 'feather' : 'ionicons',
-      title: isPremium ? 'Manage Subscription' : 'Upgrade to Premium',
-      subtitle: isPremium ? 'Billing & payments' : 'Unlock all features',
+      title: isPremium
+        ? args.t('profile.settings.membership.manageTitle')
+        : args.t('profile.settings.membership.upgradeTitle'),
+      subtitle: isPremium
+        ? args.t('profile.settings.membership.manageSubtitle')
+        : args.t('profile.settings.membership.upgradeSubtitle'),
       tone: isPremium ? 'default' : 'accent',
       onPress: args.onManageOrUpgradePress,
     },
@@ -67,6 +74,7 @@ export function buildMembershipItems(args: {
 }
 
 export function buildNotificationsItems(args: {
+  t: Translate
   onPushPress: () => void
   onEmailPress: () => void
 }): SettingsRowItem[] {
@@ -75,49 +83,54 @@ export function buildNotificationsItems(args: {
       id: 'push-notifications',
       type: 'link',
       icon: 'bell',
-      title: 'Push Notifications',
-      subtitle: 'Push Settings',
+      title: args.t('profile.settings.notifications.pushTitle'),
+      subtitle: args.t('profile.settings.notifications.pushSubtitle'),
       onPress: args.onPushPress,
     },
     {
       id: 'email-updates',
       type: 'link',
       icon: 'mail',
-      title: 'Email Updates',
-      subtitle: 'Email Settings',
+      title: args.t('profile.settings.notifications.emailTitle'),
+      subtitle: args.t('profile.settings.notifications.emailSubtitle'),
       onPress: args.onEmailPress,
     },
   ]
 }
 
-export const PRIVACY_ITEMS: SettingsRowItem[] = [
-  {
-    id: 'privacy',
-    type: 'link',
-    icon: 'shield',
-    title: 'Privacy Settings',
-    subtitle: 'Privacy & Security',
-  },
-]
+export function buildPrivacyItems(t: Translate): SettingsRowItem[] {
+  return [
+    {
+      id: 'privacy',
+      type: 'link',
+      icon: 'shield',
+      title: t('profile.settings.privacy.title'),
+      subtitle: t('profile.settings.privacy.subtitle'),
+    },
+  ]
+}
 
-export const SUPPORT_ITEMS: SettingsRowItem[] = [
-  {
-    id: 'help',
-    type: 'link',
-    icon: 'help-circle',
-    title: 'Help Center',
-    subtitle: 'FAQ',
-  },
-  // {
-  //   id: 'rate',
-  //   type: 'link',
-  //   icon: 'star',
-  //   title: 'Rate the App',
-  //   subtitle: 'Open App Store',
-  // },
-]
+export function buildSupportItems(t: Translate): SettingsRowItem[] {
+  return [
+    {
+      id: 'help',
+      type: 'link',
+      icon: 'help-circle',
+      title: t('profile.settings.support.helpTitle'),
+      subtitle: t('profile.settings.support.helpSubtitle'),
+    },
+    // {
+    //   id: 'rate',
+    //   type: 'link',
+    //   icon: 'star',
+    //   title: 'Rate the App',
+    //   subtitle: 'Open App Store',
+    // },
+  ]
+}
 
 export function buildSessionItems(args: {
+  t: Translate
   onLogoutPress: () => void
   isLoggingOut?: boolean
 }): SettingsRowItem[] {
@@ -126,8 +139,10 @@ export function buildSessionItems(args: {
       id: 'logout',
       type: 'link',
       icon: 'log-out',
-      title: args.isLoggingOut ? 'Logging out…' : 'Log Out',
-      subtitle: 'Sign out of your account',
+      title: args.isLoggingOut
+        ? args.t('profile.settings.session.loggingOut')
+        : args.t('profile.settings.session.logout'),
+      subtitle: args.t('profile.settings.session.subtitle'),
       onPress: args.isLoggingOut ? undefined : args.onLogoutPress,
     },
   ]

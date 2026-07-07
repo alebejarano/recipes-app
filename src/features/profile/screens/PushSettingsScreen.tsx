@@ -6,6 +6,7 @@ import { useTransientSnackbarStore } from '@/features/feedback/store/useTransien
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
 import SettingsSection from '@/features/profile/components/SettingsSection'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { useTranslation } from '@/localization'
 
 type PushSettingsScreenProps = {
   onBack: () => void
@@ -33,6 +34,7 @@ function getSavedPushPreferences(value: unknown): PushPreferences {
 }
 
 export default function PushSettingsScreen({ onBack }: PushSettingsScreenProps) {
+  const { t } = useTranslation()
   const { updatePushPreferences, user } = useAuth()
   const showSnackbar = useTransientSnackbarStore((state) => state.show)
   const hasAccount = Boolean(user?.id)
@@ -62,30 +64,30 @@ export default function PushSettingsScreen({ onBack }: PushSettingsScreenProps) 
 
       void updatePushPreferences(nextPreferences)
         .then(() => {
-          showSnackbar('Push settings updated')
+          showSnackbar(t('profile.pushSettings.updated'))
         })
         .catch((e: any) => {
           setPreferences(previousPreferences)
-          Alert.alert('Unable to save push settings', getUserFacingErrorMessage(e))
+          Alert.alert(t('profile.pushSettings.failedTitle'), getUserFacingErrorMessage(e))
         })
         .finally(() => {
           setIsSaving(false)
         })
     },
-    [hasAccount, isSaving, preferences, showSnackbar, updatePushPreferences]
+    [hasAccount, isSaving, preferences, showSnackbar, t, updatePushPreferences]
   )
 
   return (
-    <ProfileSubpageLayout title="Push Settings" onBack={onBack}>
+    <ProfileSubpageLayout title={t('profile.pushSettings.title')} onBack={onBack}>
       <SettingsSection
-        title="Notifications"
+        title={t('profile.pushSettings.sectionTitle')}
         items={[
           {
             id: 'recipe-reminders',
             type: 'toggle',
             icon: 'bell',
-            title: 'Recipe reminders',
-            subtitle: hasAccount ? 'Get notified about your cooking plans' : 'Create an account to enable reminders',
+            title: t('profile.pushSettings.remindersTitle'),
+            subtitle: hasAccount ? t('profile.pushSettings.remindersSubtitle') : t('profile.pushSettings.noAccountReminders'),
             value: preferences.recipeReminders,
             disabled: !hasAccount || isSaving,
             onValueChange: (next) => updatePreference('recipeReminders', next),
@@ -94,8 +96,8 @@ export default function PushSettingsScreen({ onBack }: PushSettingsScreenProps) 
             id: 'activity-alerts',
             type: 'toggle',
             icon: 'activity',
-            title: 'Product updates',
-            subtitle: hasAccount ? 'Important app improvements and releases' : 'Create an account to enable notifications',
+            title: t('profile.pushSettings.updatesTitle'),
+            subtitle: hasAccount ? t('profile.pushSettings.updatesSubtitle') : t('profile.pushSettings.noAccountNotifications'),
             value: preferences.activityAlerts,
             disabled: !hasAccount || isSaving,
             onValueChange: (next) => updatePreference('activityAlerts', next),

@@ -1,4 +1,5 @@
 import { inferMealTimes } from '@/features/recipes/types/mealTimes'
+import { i18n } from '@/localization/i18n';
 export type MealTime = 'breakfast' | 'lunch' | 'snack' | 'dinner';
 
 type HomePickRecipe = {
@@ -16,7 +17,7 @@ type RecommendedPick<TRecipe> = {
 };
 
 const EXPLICIT_MATCH_SCORE = 100;
-const GENERIC_LABEL = 'Recommended for you';
+const GENERIC_LABEL_KEY = 'home.meals.recommended';
 
 export function getMealTime(now: Date): MealTime {
   const h = now.getHours();
@@ -29,13 +30,13 @@ export function getMealTime(now: Date): MealTime {
 export function getPickLabel(meal: MealTime) {
   switch (meal) {
     case 'breakfast':
-      return 'Breakfast';
+      return i18n.t('home.meals.breakfast');
     case 'lunch':
-      return 'Lunch';
+      return i18n.t('home.meals.lunch');
     case 'snack':
-      return 'Snack';
+      return i18n.t('home.meals.snack');
     case 'dinner':
-      return 'Dinner';
+      return i18n.t('home.meals.dinner');
   }
 }
 
@@ -68,7 +69,7 @@ export function getRecommendedPick<TRecipe extends HomePickRecipe>(
   if (!best) return null;
 
   return {
-    label: best.score >= 20 ? getPickLabel(meal) : GENERIC_LABEL,
+    label: best.score >= 20 ? getPickLabel(meal) : i18n.t(GENERIC_LABEL_KEY),
     recipe: best.recipe,
   };
 }
@@ -78,9 +79,9 @@ export function formatRelativeDay(iso?: string) {
   const d = new Date(iso);
   const now = new Date();
   const diffDays = Math.floor((+now - +d) / (1000 * 60 * 60 * 24));
-  if (diffDays <= 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
-  return `${diffDays} days ago`;
+  if (diffDays <= 0) return i18n.t('home.relative.today');
+  if (diffDays === 1) return i18n.t('home.relative.yesterday');
+  return i18n.t('home.relative.daysAgo', { count: diffDays });
 }
 
 export function sortMostRecent<T extends { updatedAt?: string; createdAt?: string }>(

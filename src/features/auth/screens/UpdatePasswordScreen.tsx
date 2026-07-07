@@ -21,6 +21,7 @@ import {
 } from '@/features/auth/utils/passwordPolicy'
 import { useLargeScreenLayout } from '@/hooks/useLargeScreenLayout'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 import { theme } from '@/styles/theme'
@@ -28,6 +29,7 @@ import { theme } from '@/styles/theme'
 const KEYBOARD_SCROLL_PADDING = 96
 
 export default function UpdatePasswordScreen() {
+  const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const largeScreen = useLargeScreenLayout({ maxContentWidth: layout.authContentMaxWidth })
   const { isLoading, session, updatePassword } = useAuth()
@@ -65,22 +67,22 @@ export default function UpdatePasswordScreen() {
 
   const handleSubmit = async () => {
     if (!session) {
-      setError('This recovery link is invalid or has expired. Request a new password reset email.')
+      setError(t('auth.updatePassword.invalidLink'))
       return
     }
 
     if (!password || !confirmPassword) {
-      setError('Enter and confirm your new password.')
+      setError(t('auth.updatePassword.missingFields'))
       return
     }
 
     if (passwordPolicyIssues.length > 0) {
-      setError('Choose a stronger password before continuing.')
+      setError(t('auth.updatePassword.weakPassword'))
       return
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.')
+      setError(t('auth.updatePassword.mismatch'))
       return
     }
 
@@ -93,7 +95,7 @@ export default function UpdatePasswordScreen() {
       setPassword('')
       setConfirmPassword('')
     } catch (submitError) {
-      setError(getUserFacingErrorMessage(submitError, 'Unable to update your password.'))
+      setError(getUserFacingErrorMessage(submitError, t('auth.updatePassword.genericError')))
     } finally {
       setSubmitting(false)
     }
@@ -121,7 +123,7 @@ export default function UpdatePasswordScreen() {
           <View style={largeScreen.contentWidthStyle}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backRow}>
             <Feather name="arrow-left" size={18} style={styles.backIcon} />
-            <Text style={styles.backText}>Back</Text>
+            <Text style={styles.backText}>{t('auth.shared.actions.back')}</Text>
           </TouchableOpacity>
 
           <View style={styles.header}>
@@ -129,33 +131,27 @@ export default function UpdatePasswordScreen() {
               <Feather name="lock" size={24} style={styles.icon} />
             </View>
 
-            <Text style={styles.title}>Set a new password</Text>
-            <Text style={styles.subtitle}>
-              Choose a new password for your account. This screen works after opening the reset link
-              from your email.
-            </Text>
+            <Text style={styles.title}>{t('auth.updatePassword.title')}</Text>
+            <Text style={styles.subtitle}>{t('auth.updatePassword.subtitle')}</Text>
           </View>
 
           {!isLoading && !session ? (
             <View style={styles.noticeCard}>
-              <Text style={styles.noticeTitle}>Recovery link needed</Text>
-              <Text style={styles.noticeText}>
-                Open the reset email on this device, or request a fresh password reset link from
-                the app.
-              </Text>
+              <Text style={styles.noticeTitle}>{t('auth.updatePassword.noSessionTitle')}</Text>
+              <Text style={styles.noticeText}>{t('auth.updatePassword.noSessionMessage')}</Text>
 
               <Button onPress={() => router.replace('/(public)/forgot-password')} style={styles.submitButton}>
-                Request new link
+                {t('auth.updatePassword.requestNewLink')}
               </Button>
             </View>
           ) : (
             <>
               <View style={styles.field}>
-                <Text style={styles.label}>New password</Text>
+                <Text style={styles.label}>{t('auth.updatePassword.newPasswordLabel')}</Text>
                 <View style={styles.inputWrapper}>
                   <Feather name="lock" size={18} style={styles.inputIcon} />
                   <TextInput
-                    placeholder="Enter a new password"
+                    placeholder={t('auth.updatePassword.newPasswordPlaceholder')}
                     placeholderTextColor={theme.colors.warmGray}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
@@ -166,7 +162,7 @@ export default function UpdatePasswordScreen() {
                   />
                   <TouchableOpacity
                     accessibilityRole="button"
-                    accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                    accessibilityLabel={showPassword ? t('auth.shared.actions.hidePassword') : t('auth.shared.actions.showPassword')}
                     onPress={() => setShowPassword((value) => !value)}
                     style={styles.visibilityButton}
                   >
@@ -178,9 +174,13 @@ export default function UpdatePasswordScreen() {
                   </TouchableOpacity>
                 </View>
                 <View style={styles.requirementsCard}>
-                  <Text style={styles.requirementsTitle}>Password must include:</Text>
+                  <Text style={styles.requirementsTitle}>{t('auth.shared.passwordRequirementsTitle')}</Text>
                   {PASSWORD_REQUIREMENTS.map((requirement) => {
                     const isMet = requirement.validate(password)
+                    const requirementLabel =
+                      requirement.id === 'length'
+                        ? t('auth.shared.passwordRequirementLength')
+                        : t('auth.shared.passwordRequirementLetterNumber')
 
                     return (
                       <View key={requirement.id} style={styles.requirementRow}>
@@ -198,7 +198,7 @@ export default function UpdatePasswordScreen() {
                             isMet && styles.requirementTextMet,
                           ]}
                         >
-                          {requirement.label}
+                          {requirementLabel}
                         </Text>
                       </View>
                     )
@@ -207,11 +207,11 @@ export default function UpdatePasswordScreen() {
               </View>
 
               <View style={styles.field}>
-                <Text style={styles.label}>Confirm password</Text>
+                <Text style={styles.label}>{t('auth.updatePassword.confirmPasswordLabel')}</Text>
                 <View style={styles.inputWrapper}>
                   <Feather name="check-circle" size={18} style={styles.inputIcon} />
                   <TextInput
-                    placeholder="Re-enter your new password"
+                    placeholder={t('auth.updatePassword.confirmPasswordPlaceholder')}
                     placeholderTextColor={theme.colors.warmGray}
                     secureTextEntry={!showConfirmPassword}
                     autoCapitalize="none"
@@ -223,7 +223,7 @@ export default function UpdatePasswordScreen() {
                   <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel={
-                      showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'
+                      showConfirmPassword ? t('auth.updatePassword.hideConfirm') : t('auth.updatePassword.showConfirm')
                     }
                     onPress={() => setShowConfirmPassword((value) => !value)}
                     style={styles.visibilityButton}
@@ -240,7 +240,7 @@ export default function UpdatePasswordScreen() {
               {error ? <Text style={styles.errorText}>{error}</Text> : null}
               {saved ? (
                 <Text style={styles.successText}>
-                  Password updated. Sign in again with your new password to continue.
+                  {t('auth.updatePassword.success')}
                 </Text>
               ) : null}
 
@@ -252,7 +252,7 @@ export default function UpdatePasswordScreen() {
                 disabled={!canSubmit}
                 style={styles.submitButton}
               >
-                Update password
+                {t('auth.updatePassword.update')}
               </Button>
 
               {saved ? (
@@ -261,7 +261,7 @@ export default function UpdatePasswordScreen() {
                   onPress={() => router.replace('/(public)/login')}
                   style={styles.secondaryButton}
                 >
-                  Go to sign in
+                  {t('auth.shared.actions.goToSignIn')}
                 </Button>
               ) : null}
             </>

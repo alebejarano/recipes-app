@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 import { layout } from '@/styles/layout';
 
@@ -35,6 +36,7 @@ export default function RecipeCarousel({
   showMeta = true,
   variant = 'default',
 }: Props) {
+  const { t } = useTranslation()
   if (items.length === 0) return null;
   const isCompact = variant === 'compact';
 
@@ -63,7 +65,7 @@ export default function RecipeCarousel({
                 isMinimal ? styles.cardMinimal : null,
               ]}
               accessibilityRole="button"
-              accessibilityLabel={`Open ${r.title}`}
+              accessibilityLabel={t('home.cards.openRecipeA11y', { title: r.title })}
             >
               {hasMedia ? (
                 <View style={[styles.iconWrap, isCompact ? styles.iconWrapCompact : null]}>

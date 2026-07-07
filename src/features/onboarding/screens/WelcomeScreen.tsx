@@ -1,5 +1,6 @@
 import Button from '@/components/Button';
 import IllustrationHero from '@/components/IllustrationHero';
+import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 import welcomeIllustration from '@assets/illustrations/welcome-illustration.png';
 import React from 'react';
@@ -10,6 +11,7 @@ interface WelcomeScreenProps {
 }
 
 export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
       <View style={styles.heroBlock}>
@@ -24,18 +26,18 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
 
       <View style={styles.textBlock}>
         <Text style={styles.title}>
-          Welcome to your kitchen.{'\n'}
-          <Text style={styles.titleHighlight}>A calm place for everything you love to cook.</Text>
+          {t('onboarding.welcome.titleLead')}{'\n'}
+          <Text style={styles.titleHighlight}>{t('onboarding.welcome.titleHighlight')}</Text>
         </Text>
 
         <Text style={styles.subtitle}>
-          Keep your recipes in one peaceful space — no clutter, no noise.
+          {t('onboarding.welcome.subtitle')}
         </Text>
       </View>
 
       <View style={styles.buttonWrapper}>
         <Button variant="primary" size="xl" onPress={onContinue}>
-          Start your kitchen
+          {t('onboarding.welcome.cta')}
         </Button>
       </View>
     </View>

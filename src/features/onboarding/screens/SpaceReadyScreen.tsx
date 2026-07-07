@@ -1,6 +1,7 @@
 // src/features/onboarding/screens/SpaceReadyScreen.tsx
 import Button from '@/components/Button';
 import IllustrationHero from '@/components/IllustrationHero';
+import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 import spaceReadyIllustration from '@assets/illustrations/space-ready-illustration.png';
 import { Feather } from '@expo/vector-icons';
@@ -16,6 +17,7 @@ export default function SpaceReadyScreen({
   onAddRecipe,
   onSkip,
 }: SpaceReadyScreenProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
       {/* TOP: illustration + text (keeps a tight, controlled spacing) */}
@@ -32,15 +34,15 @@ export default function SpaceReadyScreen({
         <View style={styles.textBlock}>
           <View style={styles.badge}>
             <View style={styles.badgeDot} />
-            <Text style={styles.badgeText}>Step 3 of 3</Text>
+            <Text style={styles.badgeText}>{t('onboarding.spaceReady.stepLabel')}</Text>
           </View>
 
           <Text style={styles.title}>
-            Your Kitchen is ready.
+            {t('onboarding.spaceReady.title')}
           </Text>
 
           <Text style={styles.subtitle}>
-            Start with one recipe.
+            {t('onboarding.spaceReady.subtitle')}
           </Text>
         </View>
       </View>
@@ -53,7 +55,7 @@ export default function SpaceReadyScreen({
           variant="primary"
           icon={<Feather name="plus" size={20} style={styles.addIconColor} />}
         >
-          Add your first recipe
+          {t('onboarding.spaceReady.addRecipe')}
         </Button>
 
         <Button
@@ -62,11 +64,11 @@ export default function SpaceReadyScreen({
           size="lg"
           style={styles.skipButton}
         >
-          Look around first
+          {t('onboarding.spaceReady.skip')}
         </Button>
 
         <Text style={styles.infoText}>
-          Your recipes stay on your device unless you choose to create an account.
+          {t('onboarding.spaceReady.info')}
         </Text>
       </View>
     </View>

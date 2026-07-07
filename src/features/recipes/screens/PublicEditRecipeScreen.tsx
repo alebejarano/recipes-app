@@ -23,6 +23,7 @@ import RecipeForm, {
   type RecipeFormValues,
 } from '@/features/recipes/components/RecipeForm'
 import { useLocalRecipe, useUpdateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
+import { useTranslation } from '@/localization'
 import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
@@ -68,6 +69,7 @@ function buildInitialValues(recipe: {
 }
 
 export default function PublicEditRecipeScreen() {
+  const { t } = useTranslation()
   const { id } = useLocalSearchParams<{ id?: string; returnTo?: string }>()
   const recipeId = id ?? ''
   const insets = useSafeAreaInsets()
@@ -88,13 +90,13 @@ export default function PublicEditRecipeScreen() {
     async (values: RecipeFormSubmitValues) => {
       try {
         await updateMutation.mutateAsync(values)
-        showSnackbar('Recipe saved')
+        showSnackbar(t('recipes.manage.saved'))
         router.back()
       } catch (e: any) {
-        Alert.alert('Save failed', getUserFacingErrorMessage(e))
+        Alert.alert(t('recipes.manage.saveFailed'), getUserFacingErrorMessage(e))
       }
     },
-    [showSnackbar, updateMutation]
+    [showSnackbar, t, updateMutation]
   )
 
   const triggerSave = useCallback(() => {
@@ -125,16 +127,16 @@ export default function PublicEditRecipeScreen() {
       await createFolderMutation.mutateAsync(input)
       if (folderCount >= 2) {
         Alert.alert(
-          'Keep your folders safe',
-          'Create an account to sync and back up your folders.',
+          t('collections.folderPrompt.title'),
+          t('collections.folderPrompt.body'),
           [
-            { text: 'Not now', style: 'cancel' },
-            { text: 'Create account', onPress: () => router.push('/(public)/get-started') },
+            { text: t('collections.folderPrompt.notNow'), style: 'cancel' },
+            { text: t('collections.folderPrompt.createAccount'), onPress: () => router.push('/(public)/get-started') },
           ]
         )
       }
     },
-    [createFolderMutation, foldersQuery.data]
+    [createFolderMutation, foldersQuery.data, t]
   )
 
   if (isLoading) {
@@ -142,7 +144,7 @@ export default function PublicEditRecipeScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.loadingState}>
           <ActivityIndicator size="small" color={styles.loadingText.color} />
-          <Text style={styles.loadingText}>Loading recipe…</Text>
+          <Text style={styles.loadingText}>{t('recipes.detail.loading')}</Text>
         </View>
       </SafeAreaView>
     )
@@ -152,7 +154,7 @@ export default function PublicEditRecipeScreen() {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.loadingState}>
-          <Text style={styles.loadingText}>Unable to load this recipe.</Text>
+          <Text style={styles.loadingText}>{t('recipes.detail.loadFailed')}</Text>
         </View>
       </SafeAreaView>
     )
@@ -170,7 +172,7 @@ export default function PublicEditRecipeScreen() {
             icon={<Feather name="arrow-left" size={16} style={styles.backIcon} />}
             disabled={updateMutation.isPending}
           >
-            Back
+            {t('recipes.manage.back')}
           </Button>
         </View>
 
@@ -191,15 +193,15 @@ export default function PublicEditRecipeScreen() {
             automaticallyAdjustKeyboardInsets
           >
             <View style={styles.header}>
-              <Text style={styles.title}>Edit recipe</Text>
-              <Text style={styles.subtitle}>Update any details and save your changes.</Text>
+              <Text style={styles.title}>{t('recipes.manage.editTitle')}</Text>
+              <Text style={styles.subtitle}>{t('recipes.manage.editSubtitle')}</Text>
             </View>
 
             <RecipeForm
               ref={formRef}
               mode="edit"
               initialValues={initialValues}
-              submitLabel="Save changes"
+              submitLabel={t('recipes.manage.saveChanges')}
               isSubmitting={updateMutation.isPending}
               onSubmit={handleSubmit}
               showActions={false}
@@ -211,7 +213,7 @@ export default function PublicEditRecipeScreen() {
             {updateMutation.isError ? (
               <View style={styles.errorBanner}>
                 <Text style={styles.errorText}>
-                  Unable to save right now. Please try again.
+                  {getUserFacingErrorMessage(updateMutation.error, t('recipes.manage.saveFailed'))}
                 </Text>
               </View>
             ) : null}
@@ -225,7 +227,7 @@ export default function PublicEditRecipeScreen() {
               disabled={updateMutation.isPending}
               style={styles.footerButton}
             >
-              Cancel
+              {t('recipes.manage.cancel')}
             </Button>
 
             <Button
@@ -236,7 +238,7 @@ export default function PublicEditRecipeScreen() {
               disabled={updateMutation.isPending}
               style={styles.footerButton}
             >
-              Save changes
+              {t('recipes.manage.saveChanges')}
             </Button>
           </View>
         </KeyboardAvoidingView>

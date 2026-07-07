@@ -4,6 +4,7 @@ import { Text, TouchableOpacity, View } from 'react-native'
 
 import Screen from '@/components/Screen'
 import { useLargeScreenLayout } from '@/hooks/useLargeScreenLayout'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 
@@ -27,6 +28,7 @@ export default function ProfileSubpageLayout({
   keyboardAware,
 }: ProfileSubpageLayoutProps) {
   const largeScreen = useLargeScreenLayout({ maxContentWidth: layout.formContentMaxWidth })
+  const { t } = useTranslation()
 
   return (
     <Screen
@@ -38,7 +40,7 @@ export default function ProfileSubpageLayout({
       <View style={largeScreen.contentWidthStyle}>
       <TouchableOpacity style={styles.backRow} onPress={onBack} activeOpacity={0.75}>
         <Feather name="chevron-left" size={18} style={styles.backIcon} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('profile.back')}</Text>
       </TouchableOpacity>
 
       <View style={styles.header}>

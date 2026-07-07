@@ -9,6 +9,7 @@ import { useStrategyNotesList } from '@/features/notes/hooks/useStrategyNotes';
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode';
 import { getSafeReturnTo } from '@/lib/navigation';
 import { getUserFacingErrorMessage } from '@/lib/userFacingError';
+import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 import { theme } from '@/styles/theme';
 
@@ -20,7 +21,6 @@ type NoteItem = {
   pinnedAt: string | null
 }
 
-const FALLBACK_TITLE = 'Untitled note'
 const PREVIEW_LIMIT = 80
 
 export default function NotesSegment({
@@ -30,6 +30,7 @@ export default function NotesSegment({
   bottomPadding: number
   mode?: 'auth' | 'public'
 }) {
+  const { t } = useTranslation()
   const isPublic = mode === 'public'
   const { shouldUseLocalData } = useStorageDataMode(mode)
   const notesQuery = useStrategyNotesList({ limit: 50 }, mode)
@@ -44,28 +45,28 @@ export default function NotesSegment({
     const notes = notesQuery.data ?? []
     return notes.map((note) => ({
       id: note.id,
-      title: note.title?.trim() || FALLBACK_TITLE,
-      preview: (note.content ?? '').trim().slice(0, PREVIEW_LIMIT) || 'No note content yet.',
+      title: note.title?.trim() || t('notes.fallbackTitle'),
+      preview: (note.content ?? '').trim().slice(0, PREVIEW_LIMIT) || t('notes.emptyContent'),
       relativeDate: formatRelativeDay(note.updatedAt),
       pinnedAt: note.pinnedAt ?? null,
     }))
-  }, [notesQuery.data])
+  }, [notesQuery.data, t])
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.helper}>Your kitchen notes and ideas</Text>
+      <Text style={styles.helper}>{t('notes.segment.helper')}</Text>
 
       {notesQuery.isLoading && !shouldUseLocalData ? (
         <View style={styles.loadingState}>
           <ActivityIndicator size="small" color={styles.loadingText.color} />
-          <Text style={styles.loadingText}>Loading notes…</Text>
+          <Text style={styles.loadingText}>{t('notes.segment.loading')}</Text>
         </View>
       ) : notesQuery.isError ? (
         <View style={styles.emptyState}>
           <View style={styles.emptyIcon}>
             <Feather name="alert-circle" size={22} color={theme.colors.mutedForeground} />
           </View>
-          <Text style={styles.emptyTitle}>Unable to load notes</Text>
+          <Text style={styles.emptyTitle}>{t('notes.segment.loadFailed')}</Text>
           <Text style={styles.emptyBody}>
             {getUserFacingErrorMessage(notesQuery.error)}
           </Text>
@@ -75,10 +76,8 @@ export default function NotesSegment({
           <View style={styles.emptyIcon}>
             <Feather name="file-text" size={22} color={theme.colors.mutedForeground} />
           </View>
-          <Text style={styles.emptyTitle}>No notes yet</Text>
-          <Text style={styles.emptyBody}>
-            Save substitutions, meal prep ideas, or reminders.
-          </Text>
+          <Text style={styles.emptyTitle}>{t('notes.segment.emptyTitle')}</Text>
+          <Text style={styles.emptyBody}>{t('notes.segment.emptyBody')}</Text>
           <Pressable
             onPress={() =>
               router.push({
@@ -90,10 +89,10 @@ export default function NotesSegment({
             }
             style={styles.emptyCta}
             accessibilityRole="button"
-            accessibilityLabel="Create your first note"
+            accessibilityLabel={t('notes.segment.createFirstA11y')}
           >
             <Feather name="plus" size={18} color={theme.colors.primaryForeground} />
-            <Text style={styles.emptyCtaText}>Create your first note</Text>
+            <Text style={styles.emptyCtaText}>{t('notes.segment.createFirst')}</Text>
           </Pressable>
         </View>
       ) : (
@@ -116,7 +115,7 @@ export default function NotesSegment({
             }
             style={[styles.row, item.pinnedAt ? styles.rowPinned : null]}
             accessibilityRole="button"
-            accessibilityLabel={`Open note ${item.title}`}
+            accessibilityLabel={t('notes.segment.openA11y', { title: item.title })}
           >
             <View style={[styles.iconWrap, item.pinnedAt ? styles.iconWrapPinned : null]}>
               <Feather
@@ -157,10 +156,10 @@ export default function NotesSegment({
             }
             style={styles.newNote}
             accessibilityRole="button"
-            accessibilityLabel="Create new note"
+            accessibilityLabel={t('notes.segment.createA11y')}
           >
             <Feather name="plus" size={18} color={theme.colors.mutedForeground} />
-            <Text style={styles.newNoteText}>New Note</Text>
+            <Text style={styles.newNoteText}>{t('notes.segment.create')}</Text>
           </Pressable>
         }
       />

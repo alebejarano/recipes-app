@@ -15,6 +15,7 @@ import {
 
 import Screen from '@/components/Screen'
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
@@ -55,6 +56,7 @@ type CollectionsScreenProps = {
 }
 
 export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
+  const { t } = useTranslation()
   const { segment: segmentParam, recipesSegment, docSuccess, docQueued, sort } = useLocalSearchParams<{
     segment?: SegmentKey
     recipesSegment?: RecipeSegmentKey
@@ -253,29 +255,29 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     if (folderCounts.uncategorized > 0) {
       items.push({
         key: 'Uncategorized',
-        label: 'Uncategorized',
+        label: t('collections.uncategorized'),
         count: folderCounts.uncategorized,
         kind: 'tag',
       })
     }
 
     items.sort((a, b) => a.label.localeCompare(b.label))
-    items.push({ key: 'new', label: 'Create folder', count: 0, kind: 'new' })
+    items.push({ key: 'new', label: t('collections.createFolder'), count: 0, kind: 'new' })
 
     return items
-  }, [segment, recipeData, foldersQuery.data, folderCounts])
+  }, [folderCounts, foldersQuery.data, recipeData, segment, t])
 
   const recipeHelperText =
     recipeSegment === 'documents'
       ? ''
-      : 'Recipes are grouped automatically based on tags'
+      : t('collections.helperText')
   const isCreatingFolder = createFolderMutation.isPending
   const showFab = segment === 'recipes'
 
   const fabLabel =
     recipeSegment === 'documents'
-      ? 'Import file'
-      : 'Create folder'
+      ? t('collections.fab.importFile')
+      : t('collections.fab.createFolder')
 
   const onPressFab = () => {
     if (recipeSegment === 'documents') {
@@ -302,11 +304,11 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
         await createFolderMutation.mutateAsync({ name, emoji })
         if (isPublic && folderCount >= 2) {
           Alert.alert(
-            'Keep your folders safe',
-            'Create an account to sync and back up your folders.',
+            t('collections.folderPrompt.title'),
+            t('collections.folderPrompt.body'),
             [
-              { text: 'Not now', style: 'cancel' },
-              { text: 'Create account', onPress: () => router.push('/(public)/get-started') },
+              { text: t('collections.folderPrompt.notNow'), style: 'cancel' },
+              { text: t('collections.folderPrompt.createAccount'), onPress: () => router.push('/(public)/get-started') },
             ]
           )
         }
@@ -316,9 +318,9 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     } catch (error: any) {
       const code = error?.code ?? error?.cause?.code
       if (code === '23505') {
-        Alert.alert('Folder already exists', 'Choose a different folder name.')
+        Alert.alert(t('collections.errors.folderExistsTitle'), t('collections.errors.folderExistsBody'))
       } else {
-        Alert.alert('Unable to create folder', 'Please try again.')
+        Alert.alert(t('collections.errors.createFolderTitle'), t('collections.errors.createFolderBody'))
       }
       return
     }
@@ -326,7 +328,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     setNewFolderName('')
     setNewFolderEmoji('')
     setIsCreateFolderOpen(false)
-    showSnackbar('Folder created')
+    showSnackbar(t('collections.snackbar.folderCreated'))
   }
 
   return (
@@ -334,8 +336,8 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
       {/* Header */}
       <View style={styles.headerRow}>
         <View style={styles.headerText}>
-          <Text style={styles.title}>Collections</Text>
-          <Text style={styles.subtitle}>Everything organized in one place</Text>
+          <Text style={styles.title}>{t('collections.title')}</Text>
+          <Text style={styles.subtitle}>{t('collections.subtitle')}</Text>
         </View>
 
         {showFab ? (
@@ -367,8 +369,8 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
             />
             <Text style={styles.successText}>
               {showDocQueued
-                ? 'Saved offline. This file will upload when your connection is back.'
-                : 'Your recipe file has been successfully uploaded.'}
+                ? t('collections.alerts.importQueued')
+                : t('collections.alerts.importUploaded')}
             </Text>
           </View>
           <Pressable
@@ -378,7 +380,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
             }}
             style={styles.successClose}
             accessibilityRole="button"
-            accessibilityLabel="Dismiss success message"
+            accessibilityLabel={t('home.cards.dismissA11y')}
           >
             <Feather name="x" size={16} color={styles.successCloseIcon.color} />
           </Pressable>
@@ -386,8 +388,8 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
       ) : null}
       {segment === 'recipes' && recipeSegment === 'documents' && !showDocSuccess && !showDocQueued && showStorageReminder ? (
         <KitchenAlmostFullCard
-          title="Your kitchen storage is almost full"
-          line1={`About ${storageLeftMb} MB left on Free.`}
+          title={t('recipes.detail.kitchenAlmostFull')}
+          line1={t('collections.alerts.storageLeft', { count: storageLeftMb })}
           line2="Premium keeps everything backed up & synced."
           onSeePremium={() =>
             router.push(
@@ -402,7 +404,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
               params: { returnTo: returnToParam },
             })
           }
-          secondaryActionLabel="Manage imports"
+          secondaryActionLabel={t('recipes.importsManage.title')}
           onDismiss={() => {
             void dismissStorageReminder()
           }}
@@ -425,19 +427,19 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
           ) : recipesQuery.isLoading && !shouldUseLocalData ? (
             <View style={styles.loadingState}>
               <ActivityIndicator size="small" color={styles.loadingText.color} />
-              <Text style={styles.loadingText}>Loading recipes…</Text>
+              <Text style={styles.loadingText}>{t('collections.detail.loading')}</Text>
             </View>
           ) : recipeData.length === 0 ? (
             <View style={styles.emptyState}>
               <View style={styles.emptyIcon}>
                 <Feather name="folder" size={22} color={theme.colors.mutedForeground} />
               </View>
-              <Text style={styles.emptyTitle}>No recipes yet</Text>
+              <Text style={styles.emptyTitle}>{t('collections.emptyRecipesTitle')}</Text>
               <Text style={styles.emptyBody}>
-                Add a recipe to start building folders.
+                {t('home.empty.primary')} to start building folders.
               </Text>
               {isPublic ? (
-                <Text style={styles.publicHint}>Sign in to sync folders across devices.</Text>
+                <Text style={styles.publicHint}>{t('collections.detail.publicHint')}</Text>
               ) : null}
               <Pressable
                 onPress={() =>
@@ -449,10 +451,10 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
                 }
                 style={styles.emptyCta}
                 accessibilityRole="button"
-                accessibilityLabel="Create your first recipe"
+                accessibilityLabel={t('collections.createFirstRecipe')}
               >
                 <Feather name="plus" size={18} color={theme.colors.primaryForeground} />
-                <Text style={styles.emptyCtaText}>Create your first recipe</Text>
+                <Text style={styles.emptyCtaText}>{t('collections.createFirstRecipe')}</Text>
               </Pressable>
             </View>
           ) : (
@@ -473,7 +475,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
                     count={item.count}
                     emoji={item.emoji}
                     onPress={() => {
-                      if (item.label === 'Uncategorized') {
+                      if (item.label === t('collections.uncategorized')) {
                         router.push({
                           pathname: isPublic ? '/(public)/collections/[key]' : '/(auth)/collections/[key]',
                           params: {
@@ -498,7 +500,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
             />
           )}
           {isPublic && recipeSegment !== 'documents' && recipeData.length > 0 ? (
-            <Text style={styles.publicHint}>Sign in to sync folders across devices.</Text>
+            <Text style={styles.publicHint}>{t('collections.detail.publicHint')}</Text>
           ) : null}
         </>
       ) : segment === 'notes' ? (
@@ -521,20 +523,20 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Create folder</Text>
-            <Text style={styles.modalSubtitle}>Add an emoji and a title.</Text>
+            <Text style={styles.modalTitle}>{t('collections.createFolder')}</Text>
+            <Text style={styles.modalSubtitle}>{t('collections.createModal.subtitle')}</Text>
             {isPublic ? (
               <Text style={styles.modalHelper}>
-                Folders are saved on this device.
+                {t('collections.createModal.helper')}
               </Text>
             ) : null}
 
             <View style={styles.modalField}>
-              <Text style={styles.modalLabel}>Emoji</Text>
+              <Text style={styles.modalLabel}>{t('collections.createModal.emojiLabel')}</Text>
               <TextInput
                 value={newFolderEmoji}
                 onChangeText={setNewFolderEmoji}
-                placeholder="e.g. 📁"
+                placeholder={t('collections.createModal.emojiPlaceholder')}
                 placeholderTextColor={styles.modalPlaceholder.color}
                 style={styles.modalInput}
                 autoCapitalize="none"
@@ -543,11 +545,11 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
             </View>
 
             <View style={styles.modalField}>
-              <Text style={styles.modalLabel}>Folder name</Text>
+              <Text style={styles.modalLabel}>{t('collections.detail.folderNameLabel')}</Text>
               <TextInput
                 value={newFolderName}
                 onChangeText={setNewFolderName}
-                placeholder="e.g. Weeknight dinners"
+                placeholder={t('collections.createModal.folderNamePlaceholder')}
                 placeholderTextColor={styles.modalPlaceholder.color}
                 style={styles.modalInput}
                 autoCapitalize="words"
@@ -563,14 +565,16 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
                 style={[styles.modalButton, styles.modalButtonGhost]}
                 disabled={isCreatingFolder}
               >
-                <Text style={[styles.modalButtonText, styles.modalButtonTextGhost]}>Cancel</Text>
+                <Text style={[styles.modalButtonText, styles.modalButtonTextGhost]}>{t('collections.createModal.cancel')}</Text>
               </Pressable>
               <Pressable
                 onPress={handleCreateFolder}
                 style={[styles.modalButton, styles.modalButtonPrimary]}
                 disabled={isCreatingFolder}
               >
-                <Text style={styles.modalButtonText}>{isCreatingFolder ? 'Creating…' : 'Create'}</Text>
+                <Text style={styles.modalButtonText}>
+                  {isCreatingFolder ? t('collections.createModal.creating') : t('collections.createModal.create')}
+                </Text>
               </Pressable>
             </View>
           </View>

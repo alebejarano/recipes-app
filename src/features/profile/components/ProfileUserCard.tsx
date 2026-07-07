@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 import { layout } from '@/styles/layout';
 
@@ -11,6 +12,8 @@ type Props = {
 };
 
 export default function ProfileUserCard({ name, email, onPressEdit }: Props) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.card}>
       <View style={styles.avatar}>
@@ -27,9 +30,9 @@ export default function ProfileUserCard({ name, email, onPressEdit }: Props) {
           onPress={onPressEdit}
           style={({ pressed }) => [styles.editAction, pressed && styles.pressed]}
           accessibilityRole="button"
-          accessibilityLabel="Edit profile"
+          accessibilityLabel={t('profile.editProfileA11y')}
         >
-          <Text style={styles.editText}>Edit</Text>
+          <Text style={styles.editText}>{t('profile.editAction')}</Text>
         </Pressable>
       ) : null}
     </View>

@@ -26,10 +26,9 @@ import {
 } from '@/features/recipes/hooks/useRecipeDocuments'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
-
-const FALLBACK_TITLE = 'Recipe file'
 
 type FileKind = 'pdf' | 'image' | 'unknown'
 
@@ -52,6 +51,7 @@ type RecipeDocumentDetailScreenProps = {
 }
 
 export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumentDetailScreenProps) {
+  const { locale, t } = useTranslation()
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const segments = useSegments()
   const routeMode = segments[0] === '(public)' ? 'public' : 'auth'
@@ -65,27 +65,27 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
 
   // Computed values
   const title = useMemo(() => {
-    return document?.title?.trim() || FALLBACK_TITLE
-  }, [document?.title])
+    return document?.title?.trim() || t('recipes.documentDetail.fallbackTitle')
+  }, [document?.title, t])
 
   const fileInfo = useMemo(() => getFileInfo(document?.fileName), [document?.fileName])
 
   const uploadedOn = useMemo(() => {
-    if (!document?.createdAt) return '—'
+    if (!document?.createdAt) return t('recipes.documentDetail.uploadedOnUnknown')
     
     try {
       const date = new Date(document.createdAt)
-      if (Number.isNaN(date.getTime())) return '—'
+      if (Number.isNaN(date.getTime())) return t('recipes.documentDetail.uploadedOnUnknown')
       
-      return date.toLocaleDateString('en-US', {
+      return date.toLocaleDateString(locale, {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
       })
     } catch {
-      return '—'
+      return t('recipes.documentDetail.uploadedOnUnknown')
     }
-  }, [document?.createdAt])
+  }, [document?.createdAt, locale, t])
 
   const fileSize = useMemo(() => {
     if (!document?.fileSize || document.fileSize <= 0) return '0 MB'
@@ -111,7 +111,10 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
   // Open file handler
   const handleOpenFile = useCallback(async () => {
     if (!document?.fileUri) {
-      Alert.alert('Unable to open file', 'No file path is available for this import.')
+      Alert.alert(
+        t('recipes.documentDetail.openFileErrorTitle'),
+        t('recipes.documentDetail.openFileMissingPath')
+      )
       return
     }
 
@@ -125,8 +128,8 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
           const file = new File(normalizedUri)
           if (!file.exists) {
             Alert.alert(
-              'File Not Found',
-              'The file could not be found. It may have been moved or deleted.'
+              t('recipes.documentDetail.fileNotFoundTitle'),
+              t('recipes.documentDetail.fileNotFoundBody')
             )
             return
           }
@@ -141,12 +144,18 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
           }
 
           if (!contentUri) {
-            Alert.alert('Unable to open file', 'This file cannot be prepared for opening right now.')
+            Alert.alert(
+              t('recipes.documentDetail.openFileErrorTitle'),
+              t('recipes.documentDetail.prepareFailed')
+            )
             return
           }
           openUri = contentUri
         } else if (!normalizedUri.startsWith('content://') && !normalizedUri.startsWith('http')) {
-          Alert.alert('Unable to open file', 'This file type is not supported.')
+          Alert.alert(
+            t('recipes.documentDetail.openFileErrorTitle'),
+            t('recipes.documentDetail.unsupportedType')
+          )
           return
         } else {
           openUri = normalizedUri
@@ -161,7 +170,10 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
         if (/^https?:\/\//i.test(document.fileUri)) {
           const canOpenRemote = await Linking.canOpenURL(document.fileUri)
           if (!canOpenRemote) {
-            Alert.alert('Cannot Open File', 'No application available to open this file.')
+            Alert.alert(
+              t('recipes.documentDetail.cannotOpenTitle'),
+              t('recipes.documentDetail.cannotOpenBody')
+            )
             return
           }
           await Linking.openURL(document.fileUri)
@@ -173,8 +185,8 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
         // iOS: use the local file URI directly
         if (file.uri.startsWith('file://') && !file.exists) {
           Alert.alert(
-            'File Not Found',
-            'The file could not be found. It may have been moved or deleted.'
+            t('recipes.documentDetail.fileNotFoundTitle'),
+            t('recipes.documentDetail.fileNotFoundBody')
           )
           return
         }
@@ -183,8 +195,8 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
 
         if (!canOpen) {
           Alert.alert(
-            'Cannot Open File',
-            'No application available to open this file.'
+            t('recipes.documentDetail.cannotOpenTitle'),
+            t('recipes.documentDetail.cannotOpenBody')
           )
           return
         }
@@ -195,25 +207,27 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
       // Check if it's because no viewer is installed
       if (error instanceof Error && error.message.includes('No Activity found')) {
         Alert.alert(
-          fileInfo.kind === 'pdf' ? 'No PDF Viewer Found' : 'No App Found',
           fileInfo.kind === 'pdf'
-            ? 'Please install a PDF viewer app (like Adobe Acrobat Reader, Google PDF Viewer, or any file manager) to open PDF files.'
-            : 'Please install an app that can open this file type.',
+            ? t('recipes.documentDetail.noPdfViewerTitle')
+            : t('recipes.documentDetail.cannotOpenTitle'),
+          fileInfo.kind === 'pdf'
+            ? t('recipes.documentDetail.noPdfViewerBody')
+            : t('recipes.documentDetail.noAppBody'),
           [
             {
-              text: 'OK',
+              text: t('recipes.documentDetail.ok'),
               style: 'default'
             }
           ]
         )
       } else {
         Alert.alert(
-          'Unable to open file',
-          getUserFacingErrorMessage(error, 'This file could not be opened. Please try again.')
+          t('recipes.documentDetail.openFileErrorTitle'),
+          getUserFacingErrorMessage(error, t('recipes.documentDetail.openFailedFallback'))
         )
       }
     }
-  }, [document?.fileUri, fileInfo])
+  }, [document?.fileUri, fileInfo, t])
 
   const handleOpenRename = useCallback(() => {
     setRenameValue(title)
@@ -237,55 +251,55 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
       setIsRenameVisible(false)
     } catch (error) {
       Alert.alert(
-        'Rename failed',
-        getUserFacingErrorMessage(error, 'The import name could not be updated. Please try again.')
+        t('recipes.documentDetail.renameFailedTitle'),
+        getUserFacingErrorMessage(error, t('recipes.documentDetail.renameFailedBody'))
       )
     }
-  }, [documentId, renameValue, title, updateTitleMutation])
+  }, [documentId, renameValue, t, title, updateTitleMutation])
 
   // Delete handler
   const handleDeleteFile = useCallback(() => {
     if (!documentId || deleteMutation.isPending) return
 
     Alert.alert(
-      'Delete file?',
-      `Are you sure you want to delete "${title}"? This action cannot be undone.`,
+      t('recipes.documentDetail.deleteTitle'),
+      t('recipes.documentDetail.deleteBody', { title }),
       [
         {
-          text: 'Cancel',
+          text: t('recipes.documentDetail.cancel'),
           style: 'cancel'
         },
         {
-          text: 'Delete',
+          text: t('recipes.documentDetail.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               await deleteMutation.mutateAsync(documentId)
 
-              Alert.alert('Deleted', 'File has been deleted successfully.', [
+              Alert.alert(t('recipes.documentDetail.deletedTitle'), t('recipes.documentDetail.deletedBody'), [
                 {
-                  text: 'OK',
+                  text: t('recipes.documentDetail.ok'),
                   onPress: handleGoBack
                 }
               ])
             } catch (error) {
               Alert.alert(
-                'Delete failed',
-                getUserFacingErrorMessage(error, 'Failed to delete the file. Please try again.')
+                t('recipes.documentDetail.deleteFailedTitle'),
+                getUserFacingErrorMessage(error, t('recipes.documentDetail.deleteFailedBody'))
               )
             }
           }
         }
       ]
     )
-  }, [documentId, deleteMutation, title, handleGoBack])
+  }, [documentId, deleteMutation, handleGoBack, t, title])
 
   // Loading state
   if (isLoading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.centeredContainer}>
-          <Text style={styles.statusText}>Loading file…</Text>
+          <Text style={styles.statusText}>{t('recipes.documentDetail.loading')}</Text>
         </View>
       </SafeAreaView>
     )
@@ -297,12 +311,10 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.centeredContainer}>
           <Feather name="alert-circle" size={48} style={styles.errorIcon} />
-          <Text style={styles.errorTitle}>Unable to load file</Text>
-          <Text style={styles.errorMessage}>
-            This document could not be loaded. It may have been deleted or is no longer available.
-          </Text>
+          <Text style={styles.errorTitle}>{t('recipes.documentDetail.loadFailedTitle')}</Text>
+          <Text style={styles.errorMessage}>{t('recipes.documentDetail.loadFailedBody')}</Text>
           <Button variant="secondary" size="md" onPress={handleGoBack}>
-            Go Back
+            {t('recipes.documentDetail.goBack')}
           </Button>
         </View>
       </SafeAreaView>
@@ -321,7 +333,7 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
           <TouchableOpacity
             onPress={handleGoBack}
             accessibilityRole="button"
-            accessibilityLabel="Go back"
+            accessibilityLabel={t('recipes.documentDetail.goBackA11y')}
             style={styles.backButton}
           >
             <Feather name="arrow-left" size={20} style={styles.backIcon} />
@@ -335,7 +347,7 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
           <TouchableOpacity
             onPress={handleOpenRename}
             accessibilityRole="button"
-            accessibilityLabel="Edit import name"
+            accessibilityLabel={t('recipes.documentDetail.editNameA11y')}
             style={styles.editTitleButton}
           >
             <Feather name="edit-2" size={18} style={styles.editTitleIcon} />
@@ -349,19 +361,19 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
           onPress={handleOpenFile}
           icon={<Feather name="external-link" size={18} style={styles.buttonIcon} />}
         >
-          {`Open ${fileInfo.label}`}
+          {t('recipes.documentDetail.openLabel', { label: fileInfo.label })}
         </Button>
 
         {/* Metadata Card */}
         <View style={styles.metadataCard}>
-          <Text style={styles.metadataTitle}>Document Information</Text>
+          <Text style={styles.metadataTitle}>{t('recipes.documentDetail.metadataTitle')}</Text>
           
           <View style={styles.divider} />
           
           <View style={styles.metadataRow}>
             <View style={styles.metadataItem}>
               <Feather name="calendar" size={16} style={styles.metadataIcon} />
-              <Text style={styles.metadataLabel}>Uploaded</Text>
+              <Text style={styles.metadataLabel}>{t('recipes.documentDetail.uploadedLabel')}</Text>
             </View>
             <Text style={styles.metadataValue}>{uploadedOn}</Text>
           </View>
@@ -369,7 +381,7 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
           <View style={styles.metadataRow}>
             <View style={styles.metadataItem}>
               <Feather name="hard-drive" size={16} style={styles.metadataIcon} />
-              <Text style={styles.metadataLabel}>File Size</Text>
+              <Text style={styles.metadataLabel}>{t('recipes.documentDetail.fileSizeLabel')}</Text>
             </View>
             <Text style={styles.metadataValue}>{fileSize}</Text>
           </View>
@@ -386,7 +398,7 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
           disabled={deleteMutation.isPending}
           icon={<Feather name="trash-2" size={16} style={styles.deleteIcon} />}
         >
-          {deleteMutation.isPending ? 'Deleting…' : 'Delete file'}
+          {deleteMutation.isPending ? t('recipes.documentDetail.deleting') : t('recipes.documentDetail.deleteFile')}
         </Button>
       </ScrollView>
 
@@ -401,14 +413,12 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
           style={styles.modalBackdrop}
         >
           <View style={styles.renameCard}>
-            <Text style={styles.renameTitle}>Edit import name</Text>
-            <Text style={styles.renameDescription}>
-              This changes the name shown in Dropsauce. The original file is not modified.
-            </Text>
+            <Text style={styles.renameTitle}>{t('recipes.documentDetail.renameTitle')}</Text>
+            <Text style={styles.renameDescription}>{t('recipes.documentDetail.renameDescription')}</Text>
             <TextInput
               value={renameValue}
               onChangeText={setRenameValue}
-              placeholder="Import name"
+              placeholder={t('recipes.documentDetail.renamePlaceholder')}
               placeholderTextColor={styles.placeholder.color}
               style={styles.renameInput}
               autoFocus
@@ -426,17 +436,17 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
                 disabled={updateTitleMutation.isPending}
                 style={styles.renameAction}
               >
-                Cancel
+                {t('recipes.documentDetail.cancel')}
               </Button>
               <Button
                 size="md"
                 onPress={() => void handleRename()}
                 disabled={!renameValue.trim() || renameValue.trim() === title}
                 loading={updateTitleMutation.isPending}
-                loadingLabel="Saving…"
+                loadingLabel={t('recipes.documentDetail.saving')}
                 style={styles.renameAction}
               >
-                Save
+                {t('recipes.documentDetail.save')}
               </Button>
             </View>
           </View>

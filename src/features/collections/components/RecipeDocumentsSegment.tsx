@@ -7,10 +7,9 @@ import { formatRelativeDay } from '@/features/home/utils/homeFormatters'
 import { useRecipeDocuments } from '@/features/recipes/hooks/useRecipeDocuments'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
-
-const FALLBACK_TITLE = 'Untitled recipe file'
 
 export default function RecipeDocumentsSegment({
   bottomPadding,
@@ -21,6 +20,7 @@ export default function RecipeDocumentsSegment({
   mode?: 'auth' | 'public'
   sortBy?: 'recent' | 'largest' | 'oldest'
 }) {
+  const { t } = useTranslation()
   const isPublic = mode === 'public'
   const createPath = isPublic ? '/(public)/recipes/create' : '/(auth)/recipes/create'
   const documentDetailPath = isPublic ? '/(public)/recipes/documents/[id]' : '/(auth)/recipes/documents/[id]'
@@ -36,12 +36,12 @@ export default function RecipeDocumentsSegment({
     () =>
       (docsQuery.data ?? []).map((doc) => ({
         id: doc.id,
-        title: doc.title?.trim() || FALLBACK_TITLE,
+        title: doc.title?.trim() || t('collections.documentsSegment.fallbackTitle'),
         createdAt: doc.createdAt,
         relativeDate: formatRelativeDay(doc.createdAt),
         fileSize: doc.fileSize,
       })),
-    [docsQuery.data]
+    [docsQuery.data, t]
   )
   const sortedData = useMemo(() => {
     const next = [...data]
@@ -59,21 +59,21 @@ export default function RecipeDocumentsSegment({
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.helper}>Recipes imported from PDF or image files</Text>
+      <Text style={styles.helper}>{t('collections.documentsSegment.helper')}</Text>
 
       {docsQuery.isLoading ? (
         <View style={styles.loadingState}>
           <ActivityIndicator size="small" color={styles.loadingText.color} />
-          <Text style={styles.loadingText}>Loading files…</Text>
+          <Text style={styles.loadingText}>{t('collections.documentsSegment.loading')}</Text>
         </View>
       ) : docsQuery.isError ? (
         <View style={styles.emptyState}>
           <View style={styles.emptyIcon}>
             <Feather name="alert-circle" size={22} color={theme.colors.mutedForeground} />
           </View>
-          <Text style={styles.emptyTitle}>Unable to load imports</Text>
+          <Text style={styles.emptyTitle}>{t('collections.documentsSegment.loadFailedTitle')}</Text>
           <Text style={styles.emptyBody}>
-            {getUserFacingErrorMessage(docsQuery.error, 'Please try again.')}
+            {getUserFacingErrorMessage(docsQuery.error, t('collections.documentsSegment.loadFailedBody'))}
           </Text>
         </View>
       ) : data.length === 0 ? (
@@ -81,10 +81,8 @@ export default function RecipeDocumentsSegment({
           <View style={styles.emptyIcon}>
             <Feather name="file-text" size={22} color={theme.colors.mutedForeground} />
           </View>
-          <Text style={styles.emptyTitle}>No imported recipes yet</Text>
-          <Text style={styles.emptyBody}>
-            Import a recipe PDF, JPG, or PNG to keep it with your collection.
-          </Text>
+          <Text style={styles.emptyTitle}>{t('collections.documentsSegment.emptyTitle')}</Text>
+          <Text style={styles.emptyBody}>{t('collections.documentsSegment.emptyBody')}</Text>
           <Pressable
             onPress={() =>
               router.push({
@@ -94,10 +92,10 @@ export default function RecipeDocumentsSegment({
             }
             style={styles.emptyCta}
             accessibilityRole="button"
-            accessibilityLabel="Import recipe file"
+            accessibilityLabel={t('collections.documentsSegment.importA11y')}
           >
             <Feather name="upload" size={18} color={theme.colors.primaryForeground} />
-            <Text style={styles.emptyCtaText}>Import file</Text>
+            <Text style={styles.emptyCtaText}>{t('collections.documentsSegment.import')}</Text>
           </Pressable>
         </View>
       ) : (
@@ -123,7 +121,7 @@ export default function RecipeDocumentsSegment({
               }
               style={styles.row}
               accessibilityRole="button"
-              accessibilityLabel={`Open ${item.title}`}
+              accessibilityLabel={t('collections.documentsSegment.openA11y', { title: item.title })}
             >
               <View style={styles.iconWrap}>
                 <Feather name="file-text" size={18} color={theme.colors.mutedForeground} />
@@ -142,7 +140,7 @@ export default function RecipeDocumentsSegment({
               {docsQuery.isFetchingNextPage ? (
                 <View style={styles.loadingMoreState}>
                   <ActivityIndicator size="small" color={styles.loadingText.color} />
-                  <Text style={styles.loadingText}>Loading more files…</Text>
+                  <Text style={styles.loadingText}>{t('collections.documentsSegment.loadingMore')}</Text>
                 </View>
               ) : null}
               <Pressable
@@ -154,10 +152,10 @@ export default function RecipeDocumentsSegment({
                 }
                 style={styles.newItem}
                 accessibilityRole="button"
-                accessibilityLabel="Import file"
+                accessibilityLabel={t('collections.documentsSegment.importA11y')}
               >
                 <Feather name="upload" size={18} color={theme.colors.mutedForeground} />
-                <Text style={styles.newItemText}>Import file</Text>
+                <Text style={styles.newItemText}>{t('collections.documentsSegment.import')}</Text>
               </Pressable>
             </View>
           }

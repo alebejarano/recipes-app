@@ -12,6 +12,7 @@ import React, {
 import { ActivityIndicator, Alert, Pressable, Text, TextInput, View } from 'react-native'
 
 import Button from '@/components/Button'
+import { useTranslation } from '@/localization'
 import { getCloudRecipeDocumentUsageSummary } from '@/features/recipes/api/recipeDocumentsCloudRepo'
 import { createThemedStyles } from '@/styles/createStyles'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
@@ -84,14 +85,17 @@ function inferFallbackName(mimeType?: string | null) {
   return 'recipe.pdf'
 }
 
-async function buildBestTitle(input: { uri: string; name: string; size: number; isPdf: boolean }) {
+async function buildBestTitle(
+  input: { uri: string; name: string; size: number; isPdf: boolean },
+  t: (scope: string) => string
+) {
   const filenameTitle = titleFromFilename(input.name)
   if (isSaneTitle(filenameTitle)) return filenameTitle
 
-  return 'Untitled recipe'
+  return t('recipes.documentForm.untitled')
 }
 
-function getPickFailureMessage(error: unknown) {
+function getPickFailureMessage(error: unknown, t: (scope: string) => string) {
   const message =
     error instanceof Error
       ? error.message.toLowerCase()
@@ -104,10 +108,10 @@ function getPickFailureMessage(error: unknown) {
     message.includes('filenotfound') ||
     message.includes('no such file')
   ) {
-    return 'We could not open this file. If it is stored in Drive, iCloud, or another cloud provider, make it available offline first or choose a local copy.'
+    return t('recipes.documentForm.unavailableCloud')
   }
 
-  return 'We could not open this file. Please choose it again from Files or another location.'
+  return t('recipes.documentForm.unavailableGeneric')
 }
 
 function formatBytes(bytes: number) {
@@ -118,16 +122,17 @@ function formatBytes(bytes: number) {
 
 function getAvailabilityNote(plan: ImportPlan) {
   if (plan === 'premium') {
-    return 'Files from Dropbox, Drive, iCloud, or similar providers must be available offline or downloaded to this device before import. Once the file is saved here, Premium can keep it locally and upload it to your account when you are back online.'
+    return 'premium'
   }
 
-  return 'Files from Dropbox, Drive, iCloud, or similar providers must be available offline or downloaded to this device before import. Free imports stay on this device after they are saved.'
+  return 'free'
 }
 
 const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function RecipeDocumentForm(
   { isSubmitting, autoPickPdf = false, plan = 'free', onSubmit },
   ref
 ) {
+  const { t } = useTranslation()
   const [title, setTitle] = useState('')
   const [file, setFile] = useState<PendingRecipeDocument | null>(null)
   const [usage, setUsage] = useState<RecipeDocumentUsageSummary>({ totalBytes: 0, totalCount: 0 })
@@ -172,8 +177,8 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
         })
       } catch (error) {
         Alert.alert(
-          'File not available',
-          getPickFailureMessage(error)
+          t('recipes.documentForm.fileUnavailableTitle'),
+          getPickFailureMessage(error, t)
         )
         return
       }
@@ -190,41 +195,42 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
       }
 
       if (size > FREE_PLAN_MAX_IMPORT_FILE_BYTES) {
-        Alert.alert('File too large', IMPORT_FILE_TOO_LARGE_MESSAGE)
+        Alert.alert(t('recipes.documentForm.fileTooLargeTitle'), IMPORT_FILE_TOO_LARGE_MESSAGE)
         return
       }
 
       const isPdf = isPdfFile(name, asset.mimeType)
       setFile({ uri: stagedUri, name, size })
-      const suggestedTitle = await buildBestTitle({ uri: stagedUri, name, size, isPdf })
+      const suggestedTitle = await buildBestTitle({ uri: stagedUri, name, size, isPdf }, t)
       setTitle((prev) => (prev.trim() ? prev : suggestedTitle))
     } catch (error) {
-      Alert.alert('File not available', getPickFailureMessage(error))
+      Alert.alert(t('recipes.documentForm.fileUnavailableTitle'), getPickFailureMessage(error, t))
     } finally {
       setIsPicking(false)
     }
-  }, [isPicking])
+  }, [isPicking, t])
 
   useImperativeHandle(
     ref,
     () => ({
       submit: () => {
         if (!file) {
-          Alert.alert('Add a file', 'Choose a PDF, JPG, or PNG file to upload first.')
+          Alert.alert(t('recipes.documentForm.addFileTitle'), t('recipes.documentForm.addFileBody'))
           return
         }
         onSubmit({ title }, file)
       },
     }),
-    [file, onSubmit, title]
+    [file, onSubmit, t, title]
   )
 
   const helperText = useMemo(() => {
+    const used = formatBytes(usage.totalBytes)
     if (plan === 'premium') {
-      return `Premium: PDF, JPG, PNG up to 10MB per file and 5GB total. ${formatBytes(usage.totalBytes)} used.`
+      return t('recipes.documentForm.helperPremium', { used })
     }
-    return `Free plan: PDF, JPG, PNG up to 10MB per file and 50MB total. ${formatBytes(usage.totalBytes)} used.`
-  }, [plan, usage.totalBytes])
+    return t('recipes.documentForm.helperFree', { used })
+  }, [plan, t, usage.totalBytes])
 
   React.useEffect(() => {
     void refreshUsage()
@@ -239,9 +245,13 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
   return (
     <View style={styles.form}>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Import file</Text>
+        <Text style={styles.sectionTitle}>{t('recipes.documentForm.importFile')}</Text>
         <Text style={styles.helperText}>{helperText}</Text>
-        <Text style={styles.availabilityNote}>{getAvailabilityNote(plan)}</Text>
+        <Text style={styles.availabilityNote}>
+          {getAvailabilityNote(plan) === 'premium'
+            ? t('recipes.documentForm.premiumNote')
+            : t('recipes.documentForm.freeNote')}
+        </Text>
 
         <View style={styles.fileCard}>
           <View style={styles.fileIconWrap}>
@@ -249,10 +259,10 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
           </View>
           <View style={styles.fileText}>
             <Text style={styles.fileName} numberOfLines={1}>
-              {file?.name ?? 'No file selected'}
+              {file?.name ?? t('recipes.documentForm.noFile')}
             </Text>
             <Text style={styles.fileMeta}>
-              {file ? formatBytes(file.size) : 'PDF, JPG, or PNG'}
+              {file ? formatBytes(file.size) : t('recipes.documentForm.fileTypes')}
             </Text>
           </View>
         </View>
@@ -271,18 +281,18 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
             )
           }
         >
-          {isPicking ? 'Choosing…' : 'Choose file'}
+          {isPicking ? t('recipes.documentForm.choosing') : t('recipes.documentForm.chooseFile')}
         </Button>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Details</Text>
+        <Text style={styles.sectionTitle}>{t('recipes.documentForm.details')}</Text>
         <View style={styles.field}>
-          <Text style={styles.label}>Title (optional)</Text>
+          <Text style={styles.label}>{t('recipes.documentForm.titleLabel')}</Text>
           <TextInput
             value={title}
             onChangeText={setTitle}
-            placeholder="Auto-filled from filename"
+            placeholder={t('recipes.documentForm.titlePlaceholder')}
             placeholderTextColor={styles.placeholder.color}
             style={styles.input}
             editable={!isSubmitting}
@@ -294,16 +304,16 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
         <Pressable
           onPress={pickFile}
           accessibilityRole="button"
-          accessibilityLabel="Replace file"
+          accessibilityLabel={t('recipes.documentForm.replaceA11y')}
           style={({ pressed }) => [styles.replaceRow, pressed && styles.replaceRowPressed]}
         >
           <Feather name="refresh-ccw" size={14} color={styles.replaceIcon.color} />
-          <Text style={styles.replaceText}>Replace file</Text>
+          <Text style={styles.replaceText}>{t('recipes.documentForm.replace')}</Text>
         </Pressable>
       ) : null}
 
       {!canSubmit && !file ? (
-        <Text style={styles.validationHint}>Select a file to continue.</Text>
+        <Text style={styles.validationHint}>{t('recipes.documentForm.selectToContinue')}</Text>
       ) : null}
     </View>
   )

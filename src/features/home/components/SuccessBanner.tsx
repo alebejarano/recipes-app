@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 import { layout } from '@/styles/layout';
 import { theme } from '@/styles/theme';
@@ -12,6 +13,8 @@ type Props = {
 };
 
 export default function SuccessBanner({ text, onDismiss }: Props) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.banner}>
       <Text style={styles.sparkle}>✨</Text>
@@ -21,7 +24,7 @@ export default function SuccessBanner({ text, onDismiss }: Props) {
         onPress={onDismiss}
         style={styles.close}
         accessibilityRole="button"
-        accessibilityLabel="Dismiss"
+        accessibilityLabel={t('home.cards.dismissA11y')}
         hitSlop={12}
       >
         <Feather name="x" size={18} color={theme.colors.mutedForeground} />

@@ -8,6 +8,8 @@ import { ActivityIndicator, Platform, Pressable, Text, View, useWindowDimensions
 
 import Screen from '@/components/Screen';
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
+import { i18n } from '@/localization/i18n';
+import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 import { layout } from '@/styles/layout';
 import { theme } from '@/styles/theme';
@@ -115,32 +117,32 @@ function getConversionBannerTrigger(params: {
   if (recipesCount >= FREE_PLAN_MAX_RECIPES) {
     return {
       id: 'recipes-100',
-      title: 'You reached the free recipe limit',
-      body: 'Premium keeps everything backed up and removes limits.',
+      title: i18n.t('home.conversion.limitTitle'),
+      body: i18n.t('home.conversion.body'),
     };
   }
 
   if (recipeUsageRatio >= 0.8) {
     return {
       id: 'recipes-80-plus',
-      title: "You're building a great collection",
-      body: "You're close to the free limit. Premium keeps everything backed up and removes limits.",
+      title: i18n.t('home.conversion.title'),
+      body: i18n.t('home.conversion.body'),
     };
   }
 
   if (importUsageRatio >= 0.8) {
     return {
       id: 'imports-80-plus',
-      title: "You're building a great collection",
-      body: "You're close to the free limit on imports. Premium keeps everything backed up and removes limits.",
+      title: i18n.t('home.conversion.title'),
+      body: i18n.t('home.conversion.importsBody'),
     };
   }
 
   if (totalInvestmentScore >= 40) {
     return {
       id: 'investment-40',
-      title: "You're building a great collection",
-      body: "You're close to the free limit. Premium keeps everything backed up and removes limits.",
+      title: i18n.t('home.conversion.title'),
+      body: i18n.t('home.conversion.body'),
     };
   }
 
@@ -279,6 +281,7 @@ export default function HomeScreen({
   showRecipeSuccessBanner,
   mode,
 }: HomeProps) {
+  const { t } = useTranslation();
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl);
   const segments = useSegments();
   const { user } = useAuth();
@@ -418,11 +421,11 @@ export default function HomeScreen({
       const source = notesQuery.data ?? [];
       return source.map((note) => ({
         id: note.id,
-        title: note.title?.trim() || 'Untitled note',
+        title: note.title?.trim() || t('notes.fallbackTitle'),
         updatedAt: note.updatedAt,
       }));
     },
-    [notesQuery.data]
+    [notesQuery.data, t]
   );
 
   const visibleNotes = notes;
@@ -521,8 +524,8 @@ export default function HomeScreen({
     !recipesQuery.data &&
     !notesQuery.data;
 
-  const emptyStateTitle = 'Your kitchen is just getting started.';
-  const emptyStateBody = 'Add your first recipe and make this space yours.';
+  const emptyStateTitle = t('home.empty.title');
+  const emptyStateBody = t('home.empty.body');
 
   const handlePrimaryCta = () => {
     router.push(
@@ -629,11 +632,11 @@ export default function HomeScreen({
 
   const greeting = useMemo(() => {
     const meal = getMealTime(new Date());
-    if (meal === 'breakfast') return 'Good morning';
-    if (meal === 'lunch') return 'Good afternoon';
-    if (meal === 'snack') return 'Good afternoon';
-    return 'Good evening';
-  }, []);
+    if (meal === 'breakfast') return t('home.greeting.morning');
+    if (meal === 'lunch') return t('home.greeting.afternoon');
+    if (meal === 'snack') return t('home.greeting.afternoon');
+    return t('home.greeting.evening');
+  }, [t]);
 
   const pick = useMemo(() => {
     const PICK_MIN_RECIPES = 6;
@@ -690,8 +693,11 @@ export default function HomeScreen({
         : '/(auth)/shopping-list';
   const shoppingListCard = activeShoppingList ? (
     <ActionCard
-      title="Shopping List"
-      meta={`${activeShoppingList.checkedCount}/${activeShoppingList.totalCount} items checked`}
+      title={t('home.shopping.activeTitle')}
+      meta={t('home.shopping.activeMeta', {
+        checked: activeShoppingList.checkedCount,
+        total: activeShoppingList.totalCount,
+      })}
       variant="shoppingActive"
       leftIcon={<Feather name="shopping-cart" size={24} color={theme.colors.primaryDark} />}
       onPress={() => {
@@ -700,8 +706,8 @@ export default function HomeScreen({
     />
   ) : (
     <ActionCard
-      title="Start a shopping list"
-      meta="Keep track of ingredients"
+      title={t('home.shopping.emptyTitle')}
+      meta={t('home.shopping.emptyMeta')}
       variant="shoppingEmpty"
       leftIcon={<Feather name="plus" size={28} color={theme.colors.primaryDark} />}
       onPress={() => {
@@ -715,7 +721,7 @@ export default function HomeScreen({
       <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
         <View style={styles.loadingState}>
           <ActivityIndicator size="small" color={styles.loadingText.color} />
-          <Text style={styles.loadingText}>Loading your recipes…</Text>
+          <Text style={styles.loadingText}>{t('home.loading')}</Text>
         </View>
       </Screen>
     );
@@ -725,13 +731,13 @@ export default function HomeScreen({
     <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
       {showAccountSuccessBanner && !bannerDismissed && !isPublic ? (
         <SuccessBanner
-          text="You&apos;re all set! Your recipes are safe."
+          text={t('home.success.account')}
           onDismiss={() => setBannerDismissed(true)}
         />
       ) : null}
       {showRecipeSuccessBanner && !bannerDismissed ? (
         <SuccessBanner
-          text="Recipe saved! Create an account to sync it everywhere."
+          text={t('home.success.recipe')}
           onDismiss={() => setBannerDismissed(true)}
         />
       ) : null}
@@ -740,7 +746,7 @@ export default function HomeScreen({
         greeting={greeting}
         title={
           <>
-            What&apos;s cooking? <Text style={styles.wave}>👋</Text>
+            {t('home.headerTitle')} <Text style={styles.wave}>👋</Text>
           </>
         }
         onPressAdd={() =>
@@ -753,8 +759,8 @@ export default function HomeScreen({
           <EmptyHomeCard
             title={emptyStateTitle}
             body={emptyStateBody}
-            primaryLabel="Add your first recipe"
-            secondaryLabel="Create a note"
+            primaryLabel={t('home.empty.primary')}
+            secondaryLabel={t('home.empty.secondary')}
             onPressPrimary={handlePrimaryCta}
             onPressSecondary={handleSecondaryCta}
           />
@@ -770,11 +776,11 @@ export default function HomeScreen({
                 size={20}
                 color={styles.contextBannerInfoIcon.color}
               />
-              <Text style={styles.contextBannerTitle}>Storage update</Text>
+              <Text style={styles.contextBannerTitle}>{t('home.banners.storageUpdateTitle')}</Text>
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Dismiss storage risk banner"
+              accessibilityLabel={t('home.banners.dismissStorageRiskA11y')}
               hitSlop={8}
               onPress={() => {
                 void dismissRiskBanner();
@@ -784,13 +790,12 @@ export default function HomeScreen({
             </Pressable>
           </View>
           <Text style={styles.contextBannerBody}>
-            This device doesn&apos;t have your previous data. Premium keeps everything backed up
-            across devices.
+            {t('home.banners.storageUpdateBody')}
           </Text>
           <View style={styles.contextBannerActionsRow}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Learn about Premium"
+              accessibilityLabel={t('home.banners.learnPremiumA11y')}
               onPress={() => {
                 dismissConversionBanner();
                 void dismissRiskBanner();
@@ -798,17 +803,17 @@ export default function HomeScreen({
               }}
               style={({ pressed }) => [styles.contextPrimaryAction, pressed && styles.actionPressed]}
             >
-              <Text style={styles.contextPrimaryActionText}>Learn about Premium</Text>
+              <Text style={styles.contextPrimaryActionText}>{t('home.banners.learnPremium')}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Not now"
+              accessibilityLabel={t('home.banners.notNowA11y')}
               onPress={() => {
                 void dismissRiskBanner();
               }}
               style={({ pressed }) => [styles.contextSecondaryAction, pressed && styles.actionPressed]}
             >
-              <Text style={styles.contextSecondaryActionText}>Not now</Text>
+              <Text style={styles.contextSecondaryActionText}>{t('home.banners.notNow')}</Text>
             </Pressable>
           </View>
         </View>
@@ -827,7 +832,7 @@ export default function HomeScreen({
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Dismiss premium suggestion banner"
+              accessibilityLabel={t('home.banners.dismissPremiumSuggestionA11y')}
               hitSlop={8}
               onPress={dismissConversionBanner}
             >
@@ -838,22 +843,22 @@ export default function HomeScreen({
           <View style={styles.contextBannerActionsRow}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Learn about Premium"
+              accessibilityLabel={t('home.banners.learnPremiumA11y')}
               onPress={() => {
                 dismissConversionBanner();
                 router.push('/(public)/premium');
               }}
               style={({ pressed }) => [styles.contextPrimaryAction, pressed && styles.actionPressed]}
             >
-              <Text style={styles.contextPrimaryActionText}>Learn about Premium</Text>
+              <Text style={styles.contextPrimaryActionText}>{t('home.banners.learnPremium')}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Not now"
+              accessibilityLabel={t('home.banners.notNowA11y')}
               onPress={dismissConversionBanner}
               style={({ pressed }) => [styles.contextSecondaryAction, pressed && styles.actionPressed]}
             >
-              <Text style={styles.contextSecondaryActionText}>Not now</Text>
+              <Text style={styles.contextSecondaryActionText}>{t('home.banners.notNow')}</Text>
             </Pressable>
           </View>
         </View>
@@ -868,11 +873,11 @@ export default function HomeScreen({
                 size={20}
                 color={styles.localOnlyInfoIcon.color}
               />
-              <Text style={styles.localOnlyTitle}>Local-only for now</Text>
+              <Text style={styles.localOnlyTitle}>{t('home.banners.localOnlyTitle')}</Text>
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Dismiss storage info banner"
+              accessibilityLabel={t('home.banners.dismissStorageInfoA11y')}
               hitSlop={8}
               onPress={() => {
                 void dismissStorageInfoBanner();
@@ -882,37 +887,37 @@ export default function HomeScreen({
             </Pressable>
           </View>
           <Text style={styles.localOnlyBody}>
-            Everything stays on this device.{'\n'}
-            You can{' '}
+            {t('home.banners.localOnlyBodyLead')}{'\n'}
+            {t('home.banners.localOnlyYouCan')}
             <Text
               style={styles.localOnlyLink}
               onPress={() => {
                 router.push('/(public)/register');
               }}
             >
-              Create an account
+              {t('home.banners.localOnlyBodyCreate')}
             </Text>{' '}
-            anytime. Cloud backup is available with{' '}
+            {t('home.banners.localOnlyBodyMiddle')}
             <Text
               style={styles.localOnlyPremiumLink}
               onPress={() => {
                 router.push('/(public)/premium');
               }}
             >
-              Premium
+              {t('home.banners.localOnlyBodyPremium')}
             </Text>
             .
           </Text>
           <View style={styles.localOnlyFooterRow}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Dismiss storage info banner"
+              accessibilityLabel={t('home.banners.dismissStorageInfoA11y')}
               onPress={() => {
                 void dismissStorageInfoBanner();
               }}
               style={({ pressed }) => [styles.gotItButton, pressed && styles.gotItButtonPressed]}
             >
-              <Text style={styles.gotItButtonText}>Got it</Text>
+              <Text style={styles.gotItButtonText}>{t('home.banners.gotIt')}</Text>
             </Pressable>
           </View>
         </View>
@@ -920,9 +925,9 @@ export default function HomeScreen({
 
       {isMediumRecipeLibrary && mediumHeroRecipe ? (
         <PickCard
-          label="Try this →"
+          label={t('home.picks.tryThis')}
           title={mediumHeroRecipe.title}
-          subtitle={mediumHeroRecipe.subtitle ?? 'A recipe that fits right now'}
+          subtitle={mediumHeroRecipe.subtitle ?? t('home.picks.fitsRightNow')}
           emoji={mediumHeroRecipe.emoji ?? undefined}
           imageUrl={mediumHeroRecipe.imageUrl ?? undefined}
           onPress={() => {
@@ -949,9 +954,9 @@ export default function HomeScreen({
 
       {!pick && isVeryFewRecipes && lowContentHeroRecipe ? (
         <PickCard
-          label={isFirstRecipesState ? 'Your first recipes' : 'Try this tonight'}
+          label={isFirstRecipesState ? t('home.picks.yourFirstRecipes') : t('home.picks.tryTonight')}
           title={lowContentHeroRecipe.title}
-          subtitle={lowContentHeroRecipe.subtitle ?? 'A recipe you saved'}
+          subtitle={lowContentHeroRecipe.subtitle ?? t('home.picks.savedRecipe')}
           emoji={lowContentHeroRecipe.emoji ?? undefined}
           imageUrl={lowContentHeroRecipe.imageUrl ?? undefined}
           onPress={() => {
@@ -965,7 +970,7 @@ export default function HomeScreen({
 
       {!isEmpty && isLargeRecipeLibrary ? (
         <View style={styles.section}>
-          <SectionHeaderRow title="Ideas for this week" />
+          <SectionHeaderRow title={t('home.sections.ideas')} />
 
           {weeklyIdeaCards.length > 0 ? (
             <RecipeCarousel
@@ -980,7 +985,7 @@ export default function HomeScreen({
             />
           ) : (
             <View style={styles.mutedRow}>
-              <Text style={styles.mutedRowText}>No suggestions yet.</Text>
+              <Text style={styles.mutedRowText}>{t('home.emptyState.noSuggestions')}</Text>
             </View>
           )}
 
@@ -1007,18 +1012,18 @@ export default function HomeScreen({
       ) : !isEmpty ? (
         <View style={styles.section}>
           {isVeryFewRecipes ? (
-            <SectionHeaderRow title="Your first recipes" />
+            <SectionHeaderRow title={t('home.sections.firstRecipes')} />
           ) : isMediumRecipeLibrary ? (
             <SectionHeaderRow
-              title="Recently added"
-              ctaLabel={isPublic ? undefined : 'See all'}
+              title={t('home.sections.recentlyAdded')}
+              ctaLabel={isPublic ? undefined : t('home.sections.seeAll')}
               onPressCta={isPublic ? undefined : () => router.push(collectionsPath)}
               inlineTitleCta
             />
           ) : (
             <SectionHeaderRow
-              title="Recently added"
-              ctaLabel={isPublic ? undefined : 'See all'}
+              title={t('home.sections.recentlyAdded')}
+              ctaLabel={isPublic ? undefined : t('home.sections.seeAll')}
               onPressCta={isPublic ? undefined : () => router.push(collectionsPath)}
               inlineTitleCta
             />
@@ -1037,7 +1042,7 @@ export default function HomeScreen({
             />
           ) : (
             <View style={styles.mutedRow}>
-              <Text style={styles.mutedRowText}>No recipes yet.</Text>
+              <Text style={styles.mutedRowText}>{t('home.emptyState.noRecipes')}</Text>
             </View>
           )}
         </View>

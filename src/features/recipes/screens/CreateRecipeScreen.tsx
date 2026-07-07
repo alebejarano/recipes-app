@@ -16,6 +16,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
@@ -118,12 +119,6 @@ function isConnectivityError(error: unknown) {
   )
 }
 
-function formatDuplicateImportMessage(input: { title: string | null; createdAt: string }) {
-  const title = input.title?.trim() || 'Untitled recipe'
-  const date = new Date(input.createdAt).toLocaleDateString()
-  return `Already imported as "${title}" on ${date}.`
-}
-
 function normalizeRequestedFolder(value?: string | string[]) {
   const raw = Array.isArray(value) ? value[0] : value
   if (typeof raw !== 'string') return null
@@ -137,6 +132,7 @@ export default function CreateRecipeScreen({
   onSaved,
   onBack,
 }: CreateRecipeScreenProps) {
+  const { locale, t } = useTranslation()
   const insets = useSafeAreaInsets()
   const largeScreen = useLargeScreenLayout({ maxContentWidth: layout.formContentMaxWidth })
   const queryClient = useQueryClient()
@@ -177,18 +173,18 @@ export default function CreateRecipeScreen({
   const documentFormRef = useRef<RecipeDocumentFormHandle>(null)
 
   const screenTitle = useMemo(
-    () => (isOnboarding ? 'Create your first recipe' : 'Create recipe'),
-    [isOnboarding]
+    () => (isOnboarding ? t('recipes.create.firstRecipe') : t('recipes.create.createRecipe')),
+    [isOnboarding, t]
   )
 
   const submitLabel = useMemo(
     () =>
       entryMode === 'pdf'
-        ? 'Save'
+        ? t('recipes.create.saveButton')
         : isOnboarding
-          ? 'Save and continue'
-          : 'Add Recipe',
-    [entryMode, isOnboarding]
+          ? t('recipes.create.saveContinue')
+          : t('recipes.create.addRecipe'),
+    [entryMode, isOnboarding, t]
   )
 
   const isSaving = entryMode === 'pdf'
@@ -210,9 +206,9 @@ export default function CreateRecipeScreen({
   const folderContextMessage = useMemo(
     () =>
       requestedFolder
-        ? `Saving in ${requestedFolder}. You can add this recipe to other folders too.`
+        ? t('recipes.create.folderContext', { folder: requestedFolder })
         : null,
-    [requestedFolder]
+    [requestedFolder, t]
   )
   const initialValues = useMemo(() => {
     const nextValues = createEmptyRecipeFormValues()
@@ -287,13 +283,15 @@ export default function CreateRecipeScreen({
         ? await findDuplicateRecipeDocumentByFile({ uri: normalizedFile.uri })
         : null
       if (duplicate) {
+        const duplicateTitle = duplicate.title?.trim() || t('recipes.documentForm.untitled')
+        const duplicateDate = new Date(duplicate.createdAt).toLocaleDateString(locale)
         Alert.alert(
-          'File already imported',
-          formatDuplicateImportMessage(duplicate),
+          t('recipes.create.duplicateTitle'),
+          t('recipes.create.duplicateImported', { title: duplicateTitle, date: duplicateDate }),
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: t('recipes.detail.cancel'), style: 'cancel' },
             {
-              text: 'Manage imports',
+              text: t('recipes.create.duplicateManage'),
               onPress: () =>
                 router.replace({
                   pathname: manageImportsPath as any,
@@ -365,7 +363,7 @@ export default function CreateRecipeScreen({
         },
       })
     },
-    [clearPendingRetry, collectionsPath, documentMutation, importPlan, manageImportsPath, queryClient, shouldUseLocalData, user?.id]
+    [clearPendingRetry, collectionsPath, documentMutation, importPlan, locale, manageImportsPath, queryClient, shouldUseLocalData, t, user?.id]
   )
 
   const handleSubmit = useCallback(
@@ -381,10 +379,10 @@ export default function CreateRecipeScreen({
           setLimitModalType('recipes')
           return
         }
-        Alert.alert('Save failed', getUserFacingErrorMessage(e))
+        Alert.alert(t('recipes.create.saveFailedTitle'), getUserFacingErrorMessage(e))
       }
     },
-    [pendingRetryKey, saveRecipe]
+    [pendingRetryKey, saveRecipe, t]
   )
 
   const handleDocumentSubmit = useCallback(
@@ -398,15 +396,19 @@ export default function CreateRecipeScreen({
             (shouldUseLocalData
               ? await findDuplicateRecipeDocumentByFile({ uri: file.uri })
               : null)
+          const duplicateTitle = duplicate?.title?.trim() || t('recipes.documentForm.untitled')
+          const duplicateDate = duplicate
+            ? new Date(duplicate.createdAt).toLocaleDateString(locale)
+            : null
           Alert.alert(
-            'File already imported',
+            t('recipes.create.duplicateTitle'),
             duplicate
-              ? formatDuplicateImportMessage(duplicate)
-              : 'This file already exists in your imports.',
+              ? t('recipes.create.duplicateImported', { title: duplicateTitle, date: duplicateDate })
+              : t('recipes.create.duplicateBody'),
             [
-              { text: 'Cancel', style: 'cancel' },
+              { text: t('recipes.detail.cancel'), style: 'cancel' },
               {
-                text: 'Manage imports',
+                text: t('recipes.create.duplicateManage'),
                 onPress: () =>
                   router.replace({
                     pathname: manageImportsPath as any,
@@ -427,12 +429,12 @@ export default function CreateRecipeScreen({
           setLimitModalType('storage')
           return
         }
-        Alert.alert('Save failed', getUserFacingErrorMessage(error))
+        Alert.alert(t('recipes.create.saveFailedTitle'), getUserFacingErrorMessage(error))
       } finally {
         setIsUploadingPremiumImport(false)
       }
     },
-    [collectionsPath, manageImportsPath, pendingRetryKey, saveDocument, shouldUseLocalData]
+    [collectionsPath, locale, manageImportsPath, pendingRetryKey, saveDocument, shouldUseLocalData, t]
   )
 
   const handleCreateFolder = useCallback(
@@ -491,11 +493,11 @@ export default function CreateRecipeScreen({
         await saveDocument(retry.values, retry.file)
       } catch {
         Alert.alert(
-          'Could not save automatically',
-          'Your draft is still here. Save when you are ready.',
+          t('recipes.create.autoRetryTitle'),
+          t('recipes.create.autoRetryBody'),
           [
-            { text: 'Later', style: 'cancel' },
-            { text: 'Save now', onPress: triggerSave },
+            { text: t('recipes.create.later'), style: 'cancel' },
+            { text: t('recipes.create.saveNow'), onPress: triggerSave },
           ]
         )
       } finally {
@@ -503,7 +505,7 @@ export default function CreateRecipeScreen({
       }
     }
     void runAutoRetry()
-  }, [isPremium, isSaving, pendingRetry, retryAfterUpgrade, saveDocument, saveRecipe, triggerSave])
+  }, [isPremium, isSaving, pendingRetry, retryAfterUpgrade, saveDocument, saveRecipe, t, triggerSave])
 
 
   return (
@@ -520,7 +522,7 @@ export default function CreateRecipeScreen({
             icon={<Feather name="arrow-left" size={16} style={styles.backIcon} />}
             disabled={isSaving}
           >
-            Back
+            {t('recipes.manage.back')}
           </Button>
           </View>
         </View>
@@ -549,8 +551,8 @@ export default function CreateRecipeScreen({
                   <Text style={styles.title}>{screenTitle}</Text>
                   <Text style={styles.subtitle}>
                     {entryMode === 'pdf'
-                      ? 'Upload a recipe file (PDF, JPG, or PNG) and add a title.'
-                      : folderContextMessage ?? 'Save the basics now. You can add more later.'}
+                      ? t('recipes.create.importSubtitle')
+                      : folderContextMessage ?? t('recipes.create.scratchSubtitle')}
                   </Text>
                 </View>
 
@@ -581,9 +583,9 @@ export default function CreateRecipeScreen({
               </>
             ) : (
               <View style={styles.choiceCard}>
-                <Text style={styles.choiceTitle}>How would you like to add this recipe?</Text>
+                <Text style={styles.choiceTitle}>{t('recipes.create.chooseTitle')}</Text>
                 <Text style={styles.choiceSubtitle}>
-                  Create it manually or import it from a file.
+                  {t('recipes.create.chooseSubtitle')}
                 </Text>
 
                 <View style={styles.choiceButtons}>
@@ -593,7 +595,7 @@ export default function CreateRecipeScreen({
                     onPress={() => setEntryMode('scratch')}
                     icon={<Feather name="edit-3" size={18} style={styles.choiceIconPrimary} />}
                   >
-                    Create from scratch
+                    {t('recipes.create.chooseScratch')}
                   </Button>
                   <Button
                     variant="secondary"
@@ -601,10 +603,10 @@ export default function CreateRecipeScreen({
                     onPress={() => setEntryMode('pdf')}
                     icon={<Feather name="file-text" size={18} style={styles.choiceIconSecondary} />}
                   >
-                    Import from file
+                    {t('recipes.create.chooseFile')}
                   </Button>
                   <Text style={styles.choiceHelperText}>
-                    Supports PDF and image files (PNG, JPG){'\n'}Max 10MB per file
+                    {t('recipes.create.chooseHelper')}
                   </Text>
                 </View>
               </View>
@@ -613,7 +615,10 @@ export default function CreateRecipeScreen({
             {createMutation.isError || documentMutation.isError ? (
               <View style={styles.errorBanner}>
                 <Text style={styles.errorText}>
-                  Unable to save right now. Please try again.
+                  {getUserFacingErrorMessage(
+                    createMutation.error ?? documentMutation.error,
+                    t('recipes.create.saveFailedTitle')
+                  )}
                 </Text>
               </View>
             ) : null}
@@ -636,7 +641,7 @@ export default function CreateRecipeScreen({
               disabled={isSaving}
               style={styles.footerButton}
             >
-              Cancel
+              {t('recipes.form.cancel')}
             </Button>
 
             <Button

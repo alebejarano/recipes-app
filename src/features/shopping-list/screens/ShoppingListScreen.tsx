@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 import { theme } from '@/styles/theme'
@@ -22,6 +23,7 @@ import { useShoppingListStore } from '@/features/shopping-list/store/useShopping
 const QUICK_ADD_ITEMS = ['Milk', 'Eggs', 'Bread', 'Butter', 'Cheese', 'Chicken', 'Rice', 'Onions']
 
 export default function ShoppingListScreen() {
+  const { t } = useTranslation()
   const inputRef = useRef<TextInput | null>(null)
   const [newItem, setNewItem] = useState('')
 
@@ -71,8 +73,8 @@ export default function ShoppingListScreen() {
             <Feather name="shopping-cart" size={34} style={styles.completeIcon} />
           </View>
 
-          <Text style={styles.completeTitle}>List Updated!</Text>
-          <Text style={styles.completeSubtitle}>{items.length} items in your list</Text>
+          <Text style={styles.completeTitle}>{t('shoppingList.updatedTitle')}</Text>
+          <Text style={styles.completeSubtitle}>{t('shoppingList.updatedSubtitle', { count: items.length })}</Text>
         </View>
       </SafeAreaView>
     )
@@ -84,7 +86,7 @@ export default function ShoppingListScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.overlayCenter}>
           <ActivityIndicator size="large" color={styles.spinner.color} />
-          <Text style={styles.savingTitle}>Creating list...</Text>
+          <Text style={styles.savingTitle}>{t('shoppingList.creating')}</Text>
         </View>
       </SafeAreaView>
     )
@@ -101,13 +103,13 @@ export default function ShoppingListScreen() {
           <Pressable
             onPress={() => router.back()}
             accessibilityRole="button"
-            accessibilityLabel="Back"
+            accessibilityLabel={t('shoppingList.backA11y')}
             style={({ pressed }) => [styles.headerIconButton, pressed && styles.headerIconPressed]}
           >
             <Feather name="arrow-left" size={20} color={theme.colors.foreground} />
           </Pressable>
 
-          <Text style={styles.headerTitle}>Shopping List</Text>
+          <Text style={styles.headerTitle}>{t('shoppingList.title')}</Text>
 
           <View style={styles.headerRightSpacer} />
         </View>
@@ -119,7 +121,7 @@ export default function ShoppingListScreen() {
         >
           {/* Add Items */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Add Items</Text>
+            <Text style={styles.sectionTitle}>{t('shoppingList.addItems')}</Text>
 
             <View style={styles.addRow}>
               <View style={styles.inputWrapper}>
@@ -127,7 +129,7 @@ export default function ShoppingListScreen() {
                   ref={inputRef}
                   value={newItem}
                   onChangeText={setNewItem}
-                  placeholder="Type an item..."
+                  placeholder={t('shoppingList.addPlaceholder')}
                   placeholderTextColor={styles.placeholder.color}
                   returnKeyType="done"
                   onSubmitEditing={() => onAdd()}
@@ -153,7 +155,7 @@ export default function ShoppingListScreen() {
 
           {/* Quick add */}
           <View style={styles.section}>
-            <Text style={styles.sectionLabelMuted}>Quick add</Text>
+            <Text style={styles.sectionLabelMuted}>{t('shoppingList.quickAddTitle')}</Text>
 
             <View style={styles.quickWrap}>
               {QUICK_ADD_ITEMS.map((label) => {
@@ -164,7 +166,7 @@ export default function ShoppingListScreen() {
                     key={label}
                     onPress={() => toggleItemByName(label)}
                     accessibilityRole="button"
-                    accessibilityLabel={isAdded ? `Remove ${label}` : `Add ${label}`}
+                    accessibilityLabel={isAdded ? t('shoppingList.removeA11y', { name: label }) : t('shoppingList.addA11y', { name: label })}
                     style={({ pressed }) => [
                       styles.quickChip,
                       isAdded && styles.quickChipAdded,
@@ -184,8 +186,8 @@ export default function ShoppingListScreen() {
           {/* Your List */}
           <View style={styles.section}>
             <View style={styles.listHeaderRow}>
-              <Text style={styles.sectionTitle}>Your List</Text>
-              {items.length > 0 && <Text style={styles.countText}>{items.length} items</Text>}
+              <Text style={styles.sectionTitle}>{t('shoppingList.yourList')}</Text>
+              {items.length > 0 && <Text style={styles.countText}>{t('shoppingList.itemsCount', { count: items.length })}</Text>}
             </View>
 
             {isLoading ? (
@@ -195,7 +197,7 @@ export default function ShoppingListScreen() {
             ) : items.length === 0 ? (
               <View style={styles.emptyState}>
                 <Feather name="shopping-cart" size={36} style={styles.emptyIcon} />
-                <Text style={styles.emptyText}>Add items to get started</Text>
+                <Text style={styles.emptyText}>{t('shoppingList.empty')}</Text>
               </View>
             ) : (
               <View style={styles.list}>
@@ -205,7 +207,11 @@ export default function ShoppingListScreen() {
                     <Pressable
                       onPress={() => setChecked(item.id, !item.checked)}
                       accessibilityRole="button"
-                      accessibilityLabel={item.checked ? `Uncheck ${item.name}` : `Check ${item.name}`}
+                      accessibilityLabel={
+                        item.checked
+                          ? t('shoppingList.uncheckA11y', { name: item.name })
+                          : t('shoppingList.checkA11y', { name: item.name })
+                      }
                       style={({ pressed }) => [styles.checkButton, pressed && styles.checkButtonPressed]}
                       hitSlop={8}
                     >

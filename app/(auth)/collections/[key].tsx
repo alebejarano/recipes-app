@@ -25,6 +25,7 @@ import { useStrategyDeleteFolder, useStrategyFoldersList, useStrategyUpdateFolde
 import RecipeRow from '@/features/recipes/components/RecipeRow'
 import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
 import { getSafeReturnTo } from '@/lib/navigation'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
@@ -42,6 +43,7 @@ function decodeKey(key: string) {
 }
 
 export default function CollectionDetailScreen() {
+  const { t } = useTranslation()
   const params = useLocalSearchParams<{ key?: string; returnTo?: string }>()
   const rawKey = params.key ?? ''
   const key = decodeKey(Array.isArray(rawKey) ? rawKey[0] : rawKey)
@@ -50,7 +52,7 @@ export default function CollectionDetailScreen() {
   const showSnackbar = useTransientSnackbarStore((state) => state.show)
 
   const isUncategorized = isUncategorizedKey(key)
-  const title = isUncategorized ? 'Uncategorized' : key
+  const title = isUncategorized ? t('collections.uncategorized') : key
   const recipesQuery = useStrategyRecipesList({ limit: 200 }, 'auth')
   const foldersQuery = useStrategyFoldersList('auth')
   const updateFolderMutation = useStrategyUpdateFolder('auth')
@@ -69,7 +71,10 @@ export default function CollectionDetailScreen() {
     return list.filter((r) => recipeMatchesCollection(r, title))
   }, [isUncategorized, title, recipesQuery.data])
 
-  const subtitle = `${recipes.length} recipe${recipes.length === 1 ? '' : 's'}`
+  const subtitle =
+    recipes.length === 1
+      ? t('collections.detail.recipesCountOne')
+      : t('collections.detail.recipesCountMany', { count: recipes.length })
   const folder = foldersQuery.data?.find(
     (item) => item.name.trim().toLowerCase() === title.trim().toLowerCase()
   )
@@ -97,7 +102,7 @@ export default function CollectionDetailScreen() {
       })
       await Promise.all([recipesQuery.refetch(), foldersQuery.refetch()])
       setIsEditOpen(false)
-      showSnackbar('Folder updated')
+      showSnackbar(t('collections.snackbar.folderUpdated'))
       if (updated.name !== title) {
         router.replace({
           pathname: '/(auth)/collections/[key]',
@@ -118,19 +123,19 @@ export default function CollectionDetailScreen() {
     if (!folderId) return
     const isFavoritesFolder = isFavoritesFolderName(title)
     Alert.alert(
-      'Delete folder?',
+      t('collections.detail.deleteAlertTitle'),
       isFavoritesFolder
-        ? 'Deleting Favorites will unmark favorite recipes. This cannot be undone.'
-        : 'Deleting this folder will delete all recipes inside it. This cannot be undone.',
+        ? t('collections.detail.deleteFavoritesBody')
+        : t('collections.detail.deleteBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('collections.detail.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('collections.detail.deleteFolder'),
           style: 'destructive',
           onPress: async () => {
             try {
               await deleteFolderMutation.mutateAsync(folderId)
-              showSnackbar('Folder deleted')
+              showSnackbar(t('collections.snackbar.folderDeleted'))
               if (safeReturnTo) {
                 router.replace(safeReturnTo)
               } else {
@@ -162,7 +167,7 @@ export default function CollectionDetailScreen() {
           textStyle={styles.backText}
           icon={<Feather name="arrow-left" size={16} style={styles.backIcon} />}
         >
-          Back
+          {t('collections.detail.back')}
         </Button>
 
         <View style={styles.titleRow}>
@@ -176,7 +181,7 @@ export default function CollectionDetailScreen() {
             <Pressable
               onPress={openEdit}
               accessibilityRole="button"
-              accessibilityLabel="Folder options"
+              accessibilityLabel={t('collections.detail.folderOptionsA11y')}
               style={styles.moreButton}
             >
               <Feather name="more-vertical" size={18} style={styles.moreIcon} />
@@ -188,11 +193,11 @@ export default function CollectionDetailScreen() {
       {recipesQuery.isLoading ? (
         <View style={styles.loadingState}>
           <ActivityIndicator size="small" color={styles.loadingText.color} />
-          <Text style={styles.loadingText}>Loading recipes…</Text>
+          <Text style={styles.loadingText}>{t('collections.detail.loading')}</Text>
         </View>
       ) : recipesQuery.isError ? (
         <View style={styles.loadingState}>
-          <Text style={styles.loadingText}>Unable to load recipes.</Text>
+          <Text style={styles.loadingText}>{t('collections.detail.loadFailed')}</Text>
         </View>
       ) : recipes.length === 0 ? (
         <View style={styles.emptyState}>
@@ -204,11 +209,11 @@ export default function CollectionDetailScreen() {
             />
           </View>
 
-          <Text style={styles.emptyTitle}>Nothing here yet</Text>
+          <Text style={styles.emptyTitle}>{t('collections.detail.emptyTitle')}</Text>
           <Text style={styles.emptySubtitle}>
             {isUncategorized
-              ? 'Recipes without folders appear here.'
-              : 'Add this folder to a recipe to see it here.'}
+              ? t('collections.detail.uncategorizedBody')
+              : t('collections.detail.folderBody')}
           </Text>
 
           <View style={styles.emptyCta}>
@@ -221,7 +226,7 @@ export default function CollectionDetailScreen() {
                 })
               }
             >
-              Add a recipe
+              {t('collections.detail.addRecipe')}
             </Button>
           </View>
         </View>
@@ -259,15 +264,15 @@ export default function CollectionDetailScreen() {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Edit folder</Text>
-            <Text style={styles.modalSubtitle}>Update emoji or name.</Text>
+            <Text style={styles.modalTitle}>{t('collections.detail.editTitle')}</Text>
+            <Text style={styles.modalSubtitle}>{t('collections.detail.editSubtitle')}</Text>
 
             <View style={styles.modalField}>
-              <Text style={styles.modalLabel}>Emoji</Text>
+              <Text style={styles.modalLabel}>{t('collections.detail.emojiLabel')}</Text>
               <TextInput
                 value={editEmoji}
                 onChangeText={setEditEmoji}
-                placeholder="e.g. 📁"
+                placeholder={t('collections.detail.emojiPlaceholder')}
                 placeholderTextColor={styles.modalPlaceholder.color}
                 style={styles.modalInput}
                 autoCapitalize="none"
@@ -276,11 +281,11 @@ export default function CollectionDetailScreen() {
             </View>
 
             <View style={styles.modalField}>
-              <Text style={styles.modalLabel}>Folder name</Text>
+              <Text style={styles.modalLabel}>{t('collections.detail.folderNameLabel')}</Text>
               <TextInput
                 value={editName}
                 onChangeText={setEditName}
-                placeholder="e.g. Weeknight dinners"
+                placeholder={t('collections.detail.folderNamePlaceholder')}
                 placeholderTextColor={styles.modalPlaceholder.color}
                 style={styles.modalInput}
                 autoCapitalize="words"
@@ -297,7 +302,7 @@ export default function CollectionDetailScreen() {
                 disabled={isSavingFolder}
               >
                 <Text style={[styles.modalButtonText, styles.modalButtonTextGhost]}>
-                  Cancel
+                  {t('collections.detail.cancel')}
                 </Text>
               </Pressable>
               <Pressable
@@ -306,13 +311,13 @@ export default function CollectionDetailScreen() {
                 disabled={isSavingFolder}
               >
                 <Text style={styles.modalButtonText}>
-                  {isSavingFolder ? 'Updating…' : 'Save'}
+                  {isSavingFolder ? t('collections.detail.updating') : t('collections.detail.save')}
                 </Text>
               </Pressable>
             </View>
 
             <Pressable onPress={handleDeleteFolder} style={styles.deleteButton}>
-              <Text style={styles.deleteText}>Delete folder</Text>
+              <Text style={styles.deleteText}>{t('collections.detail.deleteFolder')}</Text>
             </Pressable>
           </View>
         </View>

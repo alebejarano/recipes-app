@@ -1,5 +1,6 @@
 import Button from '@/components/Button'
 import IllustrationHero from '@/components/IllustrationHero'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 
@@ -15,15 +16,15 @@ type Benefit = {
   text: string
 }
 
-const BENEFITS: Benefit[] = [
-  { id: 'identity', text: 'Create your personal account' },
-  { id: 'upgrade', text: 'Upgrade anytime to enable sync and backup' },
-  { id: 'migration', text: 'Import your existing recipes when you upgrade' },
-]
-
-
 export default function GetStartedScreen() {
   const router = useRouter()
+  const { t } = useTranslation()
+
+  const benefits: Benefit[] = [
+    { id: 'identity', text: t('auth.getStarted.benefits.identity') },
+    { id: 'upgrade', text: t('auth.getStarted.benefits.upgrade') },
+    { id: 'migration', text: t('auth.getStarted.benefits.migration') },
+  ]
 
   const goToRegister = useCallback(() => {
     router.push('/(public)/register')
@@ -43,15 +44,13 @@ export default function GetStartedScreen() {
         <Header />
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>An account lets you:</Text>
+          <Text style={styles.cardTitle}>{t('auth.getStarted.cardTitle')}</Text>
 
-          <BenefitList benefits={BENEFITS} />
+          <BenefitList benefits={benefits} />
 
           <Actions onRegister={goToRegister} onLogin={goToLogin} />
 
-          <Text style={styles.microCopy}>
-           Your recipes stay on this device until you upgrade to Premium.
-          </Text>
+          <Text style={styles.microCopy}>{t('auth.getStarted.microCopy')}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -59,6 +58,8 @@ export default function GetStartedScreen() {
 }
 
 function Header() {
+  const { t } = useTranslation()
+
   return (
     <View style={styles.header}>
       <View style={styles.illustrationWrap}>
@@ -71,10 +72,10 @@ function Header() {
         />
       </View>
 
-     <Text style={styles.title}>Set up your account</Text>
+     <Text style={styles.title}>{t('auth.getStarted.title')}</Text>
 
       <Text style={styles.subtitle}>
-        Create an account to unlock Premium features like sync and backup when you&apos;re ready.
+        {t('auth.getStarted.subtitle')}
       </Text>
     </View>
   )
@@ -109,6 +110,8 @@ function Actions({
   onRegister: () => void
   onLogin: () => void
 }) {
+  const { t } = useTranslation()
+
   return (
     <View style={styles.actions}>
       <Button
@@ -117,7 +120,7 @@ function Actions({
         size="lg"
         style={styles.primaryButton}
       >
-        Create an account
+        {t('auth.getStarted.createAccount')}
       </Button>
 
       <Button
@@ -126,7 +129,7 @@ function Actions({
         size="lg"
         style={styles.secondaryButton}
       >
-        I already have an account
+        {t('auth.getStarted.login')}
       </Button>
     </View>
   )

@@ -5,6 +5,7 @@ import { Alert, Text, View } from 'react-native';
 
 import Screen from '@/components/Screen';
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles';
 import { theme } from '@/styles/theme';
 
@@ -17,9 +18,9 @@ import SettingsSection from '@/features/profile/components/SettingsSection';
 import {
   buildMembershipItems,
   buildNotificationsItems,
+  buildPrivacyItems,
   buildSessionItems,
-  PRIVACY_ITEMS,
-  SUPPORT_ITEMS,
+  buildSupportItems,
   type AccountPlan,
 } from '@/features/profile/data/profileSettingsData';
 
@@ -30,6 +31,7 @@ import { SubscriptionContext } from '@/features/subscription/context/Subscriptio
 
 export default function ProfileScreen() {
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
+  const { languagePreference, locale, t } = useTranslation()
 
   const { user, logout } = useAuth()
   const { plan } = useContext(SubscriptionContext)
@@ -42,9 +44,9 @@ export default function ProfileScreen() {
       return metadataName.trim()
     }
     const email = user?.email ?? ''
-    if (!email) return 'Account'
-    return email.split('@')[0] || 'Account'
-  }, [user?.email, user?.user_metadata?.display_name])
+    if (!email) return t('profile.guest.accountFallback')
+    return email.split('@')[0] || t('profile.guest.accountFallback')
+  }, [t, user?.email, user?.user_metadata?.display_name])
 
   const performLogout = useCallback(async () => {
     if (isLoggingOut) return
@@ -55,63 +57,84 @@ export default function ProfileScreen() {
       // No manual navigation needed:
       // (auth)/_layout.tsx will redirect when session/user becomes null.
     } catch (e: any) {
-      Alert.alert('Unable to log out', getUserFacingErrorMessage(e))
+      Alert.alert(t('profile.alerts.logoutErrorTitle'), getUserFacingErrorMessage(e))
     } finally {
       setIsLoggingOut(false)
     }
-  }, [isLoggingOut, logout])
+  }, [isLoggingOut, logout, t])
 
   const onLogoutPress = useCallback(() => {
     if (isLoggingOut) return
 
-    Alert.alert('Log out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('profile.alerts.logoutTitle'), t('profile.alerts.logoutMessage'), [
+      { text: t('profile.alerts.cancel'), style: 'cancel' },
       {
-        text: 'Log Out',
+        text: t('profile.alerts.confirmLogout'),
         style: 'destructive',
         onPress: () => {
           void performLogout()
         },
       },
     ])
-  }, [isLoggingOut, performLogout])
+  }, [isLoggingOut, performLogout, t])
 
   const membershipItems = useMemo(
     () =>
       buildMembershipItems({
         plan: accountPlan,
+        t,
         onPlanDetailsPress: () => router.push('/current-plan'),
         onManageOrUpgradePress: () =>
           accountPlan === 'premium'
             ? router.push('/(auth)/settings/subscription')
             : router.push('/premium'),
       }),
-    [accountPlan]
+    [accountPlan, t]
   )
-  const membershipStatusTitle = accountPlan === 'premium' ? 'Premium Active' : 'Free Plan'
+  const membershipStatusTitle = accountPlan === 'premium'
+    ? t('profile.membershipStatus.premium')
+    : t('profile.membershipStatus.free')
   const isPremiumPlan = accountPlan === 'premium'
 
   const notificationItems = useMemo(
     () =>
       buildNotificationsItems({
+        t,
         onPushPress: () => router.push('/(auth)/settings/push'),
         onEmailPress: () => router.push('/(auth)/settings/email'),
       }),
-    []
+    [t]
+  )
+
+  const preferenceItems = useMemo(
+    () => [
+      {
+        id: 'language',
+        type: 'link' as const,
+        icon: 'globe' as const,
+        title: t('profile.languageSummary'),
+        subtitle:
+          languagePreference === 'system'
+            ? t('profile.language.labels.system')
+            : t(`profile.language.labels.${locale}`),
+        onPress: () => router.push('/(auth)/settings/language' as any),
+      },
+    ],
+    [languagePreference, locale, t]
   )
 
   const privacyItems = useMemo(
     () =>
-      PRIVACY_ITEMS.map((item) => ({
+      buildPrivacyItems(t).map((item) => ({
         ...item,
         onPress: () => router.push('/privacy'),
       })),
-    []
+    [t]
   )
 
   const supportItems = useMemo(
     () =>
-      SUPPORT_ITEMS.map((item) => {
+      buildSupportItems(t).map((item) => {
         if (item.id === 'help') {
           return {
             ...item,
@@ -125,24 +148,29 @@ export default function ProfileScreen() {
           onPress: undefined,
         }
       }),
-    []
+    [t]
   )
 
   const sessionItems = useMemo(
     () =>
       buildSessionItems({
+        t,
         onLogoutPress,
         isLoggingOut,
       }),
-    [isLoggingOut, onLogoutPress]
+    [isLoggingOut, onLogoutPress, t]
   )
 
-  const environmentLabel = isProductionAppEnv ? null : `${appEnv} environment`
+  const environmentLabel = isProductionAppEnv
+    ? null
+    : t('profile.environmentLabel', {
+        env: t(`profile.environments.${appEnv}`),
+      })
 
   return (
     <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
       <ProfileHeader
-        title="Profile"
+        title={t('profile.title')}
         environmentLabel={environmentLabel}
       />
 
@@ -155,7 +183,7 @@ export default function ProfileScreen() {
       <View style={styles.bigSpace} />
 
       <View>
-        <SectionHeader title="Membership & Account" />
+        <SectionHeader title={t('profile.sections.membership')} />
         <View style={styles.membershipStatusRow}>
           {isPremiumPlan ? (
             <MaterialCommunityIcons
@@ -187,19 +215,23 @@ export default function ProfileScreen() {
 
       <View style={styles.mediumSpace} />
 
-      <SettingsSection title="Notifications" items={notificationItems} />
+      <SettingsSection title={t('profile.sections.preferences')} items={preferenceItems} />
 
       <View style={styles.mediumSpace} />
 
-      <SettingsSection title="Privacy & Security" items={privacyItems} />
+      <SettingsSection title={t('profile.sections.notifications')} items={notificationItems} />
 
       <View style={styles.mediumSpace} />
 
-      <SettingsSection title="Support" items={supportItems} />
+      <SettingsSection title={t('profile.sections.privacy')} items={privacyItems} />
 
       <View style={styles.mediumSpace} />
 
-      <SettingsSection title="Session" items={sessionItems} />
+      <SettingsSection title={t('profile.sections.support')} items={supportItems} />
+
+      <View style={styles.mediumSpace} />
+
+      <SettingsSection title={t('profile.sections.session')} items={sessionItems} />
 
       <View style={styles.bigSpace} />
     </Screen>

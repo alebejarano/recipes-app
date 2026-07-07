@@ -4,6 +4,7 @@ import { Alert, Linking, Platform, Text, View } from 'react-native'
 
 import Button from '@/components/Button'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
+import { i18n } from '@/localization/i18n'
 import { createThemedStyles } from '@/styles/createStyles'
 
 type ManageSubscriptionScreenProps = {
@@ -14,9 +15,9 @@ type ManageSubscriptionScreenProps = {
 }
 
 function getManageSubscriptionLabel() {
-  if (Platform.OS === 'ios') return 'Manage in App Store'
-  if (Platform.OS === 'android') return 'Manage in Google Play'
-  return 'Manage subscription'
+  if (Platform.OS === 'ios') return i18n.t('subscription.manage.manageAppStore')
+  if (Platform.OS === 'android') return i18n.t('subscription.manage.manageGooglePlay')
+  return i18n.t('subscription.manage.manageGeneric')
 }
 
 async function openStoreSubscriptionSettings() {
@@ -28,8 +29,8 @@ async function openStoreSubscriptionSettings() {
 
   if (!url) {
     Alert.alert(
-      'Manage subscription',
-      'Manage your Premium subscription from the App Store or Google Play account used for purchase.'
+      i18n.t('subscription.manage.fallbackTitle'),
+      i18n.t('subscription.manage.fallbackBody')
     )
     return
   }
@@ -38,8 +39,8 @@ async function openStoreSubscriptionSettings() {
     await Linking.openURL(url)
   } catch {
     Alert.alert(
-      'Manage subscription',
-      'Open your App Store or Google Play subscriptions to cancel or change Premium.'
+      i18n.t('subscription.manage.fallbackTitle'),
+      i18n.t('subscription.manage.fallbackOpenBody')
     )
   }
 }
@@ -48,27 +49,26 @@ export default function ManageSubscriptionScreen({
   onBack,
   onDowngradeToFreeForTest,
   premiumPlanLabel = '€5/month',
-  premiumNextRenewalLabel = 'Renews Mar 27, 2026',
+  premiumNextRenewalLabel = i18n.t('subscription.premium.renewsOn', { date: 'Mar 27, 2026' }),
 }: ManageSubscriptionScreenProps) {
   const manageSubscriptionLabel = getManageSubscriptionLabel()
 
   return (
-    <ProfileSubpageLayout title="Manage Subscription" onBack={onBack}>
+    <ProfileSubpageLayout title={i18n.t('subscription.manage.title')} onBack={onBack}>
       <View style={styles.card}>
         <View style={styles.headerRow}>
           <View style={styles.iconWrap}>
             <Feather name="credit-card" size={22} color={styles.icon.color} />
           </View>
           <View style={styles.headerText}>
-            <Text style={styles.cardTitle}>Premium</Text>
+            <Text style={styles.cardTitle}>{i18n.t('subscription.manage.premiumName')}</Text>
             <Text style={styles.cardSubtitle}>{premiumPlanLabel}</Text>
           </View>
         </View>
 
         <Text style={styles.renewal}>{premiumNextRenewalLabel}</Text>
         <Text style={styles.copy}>
-          To cancel or change Premium, manage the subscription from the store account used for
-          purchase. Premium access stays active until the end of the current billing period.
+          {i18n.t('subscription.manage.copy')}
         </Text>
 
         <Button
@@ -85,7 +85,7 @@ export default function ManageSubscriptionScreen({
 
       {onDowngradeToFreeForTest ? (
         <Button onPress={onDowngradeToFreeForTest} variant="secondary" size="md">
-          Downgrade to Free
+          {i18n.t('subscription.manage.downgrade')}
         </Button>
       ) : null}
     </ProfileSubpageLayout>

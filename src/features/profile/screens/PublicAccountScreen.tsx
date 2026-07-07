@@ -3,6 +3,7 @@ import React, { useMemo } from 'react'
 
 import Screen from '@/components/Screen'
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
@@ -10,18 +11,19 @@ import ProfileHeader from '@/features/profile/components/ProfileHeader'
 import ProfileUserCard from '@/features/profile/components/ProfileUserCard'
 import SettingsSection from '@/features/profile/components/SettingsSection'
 
-import { SUPPORT_ITEMS } from '@/features/profile/data/profileSettingsData'
+import { buildSupportItems } from '@/features/profile/data/profileSettingsData'
 
 export default function PublicAccountScreen() {
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
+  const { languagePreference, locale, t } = useTranslation()
 
   const accountItems = useMemo(
     () => [
       {
         id: 'create-account',
         type: 'link' as const,
-        title: 'Create an account',
-        subtitle: 'Upgrade to sync and back up your recipes',
+        title: t('profile.guest.items.createAccountTitle'),
+        subtitle: t('profile.guest.items.createAccountSubtitle'),
         icon: 'user-plus' as const,
         tone: 'accent' as const,
         onPress: () => router.push('/(public)/register'),
@@ -29,22 +31,22 @@ export default function PublicAccountScreen() {
       {
         id: 'guest-plan',
         type: 'link' as const,
-        title: 'Current plan',
-        subtitle: 'Guest mode, local only on this device',
+        title: t('profile.guest.items.currentPlanTitle'),
+        subtitle: t('profile.guest.items.currentPlanSubtitle'),
         icon: 'hard-drive' as const,
-        rightText: 'Guest',
+        rightText: t('profile.guest.items.currentPlanBadge'),
         onPress: () => router.push('/current-plan'),
       },
       {
         id: 'privacy',
         type: 'link' as const,
-        title: 'Privacy & Security',
-        subtitle: 'Manage optional analytics',
+        title: t('profile.guest.items.privacyTitle'),
+        subtitle: t('profile.guest.items.privacySubtitle'),
         icon: 'shield' as const,
         onPress: () => router.push('/privacy'),
       },
     ],
-    []
+    [t]
   )
 
   const notificationsItems = useMemo(
@@ -52,36 +54,55 @@ export default function PublicAccountScreen() {
       {
         id: 'push-disabled',
         type: 'link' as const,
-        title: 'Push Notifications',
-        subtitle: 'Create an account to customize',
+        title: t('profile.guest.items.pushTitle'),
+        subtitle: t('profile.guest.items.gatedSubtitle'),
         icon: 'bell' as const,
         disabled: true,
       },
       {
         id: 'email-disabled',
         type: 'link' as const,
-        title: 'Email Updates',
-        subtitle: 'Create an account to customize',
+        title: t('profile.guest.items.emailTitle'),
+        subtitle: t('profile.guest.items.gatedSubtitle'),
         icon: 'mail' as const,
         disabled: true,
       },
     ],
-    []
+    [t]
+  )
+
+  const preferenceItems = useMemo(
+    () => [
+      {
+        id: 'language',
+        type: 'link' as const,
+        title: t('profile.guest.items.languageTitle'),
+        subtitle:
+          languagePreference === 'system'
+            ? t('profile.language.labels.system')
+            : t(`profile.language.labels.${locale}`),
+        icon: 'globe' as const,
+        onPress: () => router.push('/(public)/settings/language' as any),
+      },
+    ],
+    [languagePreference, locale, t]
   )
 
   return (
     <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
-      <ProfileHeader title="Account" />
+      <ProfileHeader title={t('profile.guest.title')} />
 
-      <ProfileUserCard name="Guest" email="Not signed in" />
+      <ProfileUserCard name={t('profile.guest.name')} email={t('profile.guest.email')} />
 
-      <SettingsSection title="Notifications" items={notificationsItems} />
+      <SettingsSection title={t('profile.guest.sections.preferences')} items={preferenceItems} />
 
-      <SettingsSection title="Account" items={accountItems} />
+      <SettingsSection title={t('profile.guest.sections.notifications')} items={notificationsItems} />
+
+      <SettingsSection title={t('profile.guest.sections.account')} items={accountItems} />
 
       <SettingsSection
-        title="Support"
-        items={SUPPORT_ITEMS.map((item) =>
+        title={t('profile.guest.sections.support')}
+        items={buildSupportItems(t).map((item) =>
           item.id === 'help'
             ? {
                 ...item,

@@ -1,6 +1,7 @@
 // src/features/onboarding/screens/IdentityScreen.tsx
 import Button from '@/components/Button';
 import { useAnalyticsConsent } from '@/features/analytics/context/AnalyticsConsentContext';
+import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 import {
     Feather,
@@ -25,21 +26,21 @@ interface IdentityScreenProps {
 const options = [
     {
         id: 'organize',
-        label: 'I want all my recipes in one place.',
+        labelKey: 'onboarding.identity.options.organize',
         icon: (style: any) => (
             <MaterialIcons name="folder-open" size={20} style={style} />
         ),
     },
     {
         id: 'screenshots',
-        label: 'Stop losing recipes everywhere.',
+        labelKey: 'onboarding.identity.options.screenshots',
         icon: (style: any) => (
             <Feather name="camera" size={20} style={style} />
         ),
     },
     {
         id: 'healthy',
-        label: 'Eat better, with less thinking.',
+        labelKey: 'onboarding.identity.options.healthy',
         icon: (style: any) => (
             <MaterialCommunityIcons
                 name="food-apple-outline"
@@ -50,14 +51,14 @@ const options = [
     },
     {
         id: 'planning',
-        label: 'I want to plan my meals more easily.',
+        labelKey: 'onboarding.identity.options.planning',
         icon: (style: any) => (
             <Feather name="calendar" size={20} style={style} />
         ),
     },
     {
         id: 'inspiration',
-        label: 'I want inspiration based on what I already have at home.',
+        labelKey: 'onboarding.identity.options.inspiration',
         icon: (style: any) => (
             <Ionicons name="sparkles-outline" size={20} style={style} />
         ),
@@ -68,6 +69,7 @@ export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
     const [selected, setSelected] = useState<string[]>([]);
     const { analyticsEnabled } = useAnalyticsConsent();
     const posthog = usePostHog();
+    const { t } = useTranslation();
 
     const toggleOption = (id: string) => {
         setSelected(prev => {
@@ -87,9 +89,9 @@ export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
                 <View style={styles.content}>
                     {/* Header */}
                     <View style={styles.header}>
-                        <Text style={styles.title}>What brings you here today?</Text>
+                        <Text style={styles.title}>{t('onboarding.identity.title')}</Text>
                         <Text style={styles.subtitle}>
-                            Select all that resonate with you.
+                            {t('onboarding.identity.subtitle')}
                         </Text>
                     </View>
 
@@ -128,7 +130,7 @@ export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
                                     </View>
 
                                     <Text style={styles.optionLabel}>
-                                        {option.label}
+                                        {t(option.labelKey)}
                                     </Text>
 
                                     <View
@@ -170,7 +172,7 @@ export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
                             onContinue(selected);
                         }}
                     >
-                        Continue
+                        {t('onboarding.identity.continue')}
                     </Button>
                 </View>
             </View>

@@ -27,6 +27,7 @@ import {
 } from '@/features/notes/hooks/useStrategyNotes'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { useTranslation } from '@/localization'
 
 const FOOTER_HEIGHT = 72
 
@@ -35,6 +36,7 @@ type NoteEditorScreenProps = {
 }
 
 export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
+  const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const isEditing = Boolean(noteId)
   const resolvedNoteId = noteId ?? ''
@@ -85,11 +87,11 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
   const isDeleting = deleteMutation.isPending
   const canSave = isValid && hasChanges && !isSaving
 
-  const screenTitle = isEditing ? 'Edit note' : 'Create a note'
+  const screenTitle = isEditing ? t('notes.editor.editTitle') : t('notes.editor.createTitle')
   const screenSubtitle = isEditing
-    ? 'Update your note anytime.'
-    : 'Capture ideas, tips, and quick thoughts.'
-  const saveLabel = isEditing ? 'Save changes' : 'Save note'
+    ? t('notes.editor.editSubtitle')
+    : t('notes.editor.createSubtitle')
+  const saveLabel = isEditing ? t('notes.editor.saveChanges') : t('notes.editor.saveNew')
   const detailPath =
     routeMode === 'public'
         ? '/(public)/notes/[id]'
@@ -110,7 +112,7 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
     try {
       if (isEditing) {
         await updateMutation.mutateAsync({ title, content })
-        showSnackbar('Note saved')
+        showSnackbar(t('notes.editor.saved'))
         router.replace({
           pathname: detailPath,
           params: { id: resolvedNoteId, returnTo: returnToParam },
@@ -118,7 +120,7 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
         return
       } else {
         const note = await createMutation.mutateAsync({ title, content })
-        showSnackbar('Note created')
+        showSnackbar(t('notes.editor.created'))
         router.replace({
           pathname: detailPath,
           params: { id: note.id, returnTo: returnToParam },
@@ -126,25 +128,25 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
         return
       }
     } catch (error: any) {
-      Alert.alert('Save failed', getUserFacingErrorMessage(error))
+      Alert.alert(t('notes.editor.saveFailedTitle'), getUserFacingErrorMessage(error))
     }
   }
 
   const handleDelete = () => {
     if (!resolvedNoteId || isDeleting || isSaving) return
 
-    Alert.alert('Delete note?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('notes.editor.deleteAlertTitle'), t('notes.editor.deleteAlertMessage'), [
+      { text: t('notes.editor.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('notes.editor.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
             await deleteMutation.mutateAsync(resolvedNoteId)
-            showSnackbar('Note deleted')
+            showSnackbar(t('notes.editor.deleted'))
             router.back()
           } catch (error: any) {
-            Alert.alert('Delete failed', getUserFacingErrorMessage(error))
+            Alert.alert(t('notes.editor.deleteFailedTitle'), getUserFacingErrorMessage(error))
           }
         },
       },
@@ -156,7 +158,7 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.loadingState}>
           <ActivityIndicator size="small" color={styles.loadingText.color} />
-          <Text style={styles.loadingText}>Loading note…</Text>
+          <Text style={styles.loadingText}>{t('notes.editor.loading')}</Text>
         </View>
       </SafeAreaView>
     )
@@ -166,9 +168,9 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.loadingState}>
-          <Text style={styles.loadingText}>Unable to load this note.</Text>
+          <Text style={styles.loadingText}>{t('notes.editor.loadFailed')}</Text>
           <Button variant="secondary" size="md" onPress={handleBack}>
-            Go back
+            {t('notes.editor.goBack')}
           </Button>
         </View>
       </SafeAreaView>
@@ -188,7 +190,7 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
             icon={<Feather name="arrow-left" size={16} style={styles.backIcon} />}
             disabled={isSaving || isDeleting}
           >
-            Back
+            {t('notes.editor.back')}
           </Button>
 
           {isEditing ? (
@@ -200,7 +202,7 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
               textStyle={styles.deleteText}
               disabled={isSaving || isDeleting}
             >
-              Delete
+              {t('notes.editor.delete')}
             </Button>
           ) : null}
         </View>
@@ -224,12 +226,12 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
             <Text style={styles.subtitle}>{screenSubtitle}</Text>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Title (optional)</Text>
+              <Text style={styles.label}>{t('notes.editor.titleLabel')}</Text>
               <View style={styles.inputWrapper}>
                 <TextInput
                   value={title}
                   onChangeText={setTitle}
-                  placeholder="e.g., Meal prep ideas"
+                  placeholder={t('notes.editor.titlePlaceholder')}
                   placeholderTextColor={styles.placeholder.color}
                   style={styles.input}
                 />
@@ -237,12 +239,12 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Note</Text>
+              <Text style={styles.label}>{t('notes.editor.noteLabel')}</Text>
               <View style={styles.textAreaWrapper}>
                 <TextInput
                   value={content}
                   onChangeText={setContent}
-                  placeholder="Write here..."
+                  placeholder={t('notes.editor.notePlaceholder')}
                   placeholderTextColor={styles.placeholder.color}
                   multiline
                   textAlignVertical="top"
@@ -260,7 +262,7 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
               disabled={isSaving || isDeleting}
               style={styles.footerButton}
             >
-              Cancel
+              {t('notes.editor.cancel')}
             </Button>
 
             <Button

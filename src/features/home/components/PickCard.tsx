@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 import { layout } from '@/styles/layout';
 import { theme } from '@/styles/theme';
@@ -25,6 +26,7 @@ export default function PickCard({
   imageUrl,
   onPress,
 }: Props) {
+  const { t } = useTranslation();
   const normalizedImageUrl = useMemo(() => imageUrl?.trim() ?? '', [imageUrl]);
   const [imageFailed, setImageFailed] = useState(false);
 
@@ -40,7 +42,7 @@ export default function PickCard({
       onPress={onPress}
       style={({ pressed }) => [styles.cardPressable, pressed && styles.cardPressablePressed]}
       accessibilityRole="button"
-      accessibilityLabel={`Open ${title}`}
+      accessibilityLabel={t('home.cards.openRecipeA11y', { title })}
     >
       <LinearGradient
         colors={[theme.colors.primary15, theme.colors.primary10, theme.colors.accent10]}
@@ -72,7 +74,7 @@ export default function PickCard({
               {title}
             </Text>
             <Text style={styles.subtitle} numberOfLines={1}>
-              {subtitle ?? 'Light & satisfying'}
+              {subtitle ?? t('home.picks.fitsRightNow')}
             </Text>
           </View>
         </View>

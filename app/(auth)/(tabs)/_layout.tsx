@@ -5,6 +5,7 @@ import { Platform, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { createThemedStyles } from '@/styles/createStyles';
+import { useTranslation } from '@/localization';
 import { theme } from '@/styles/theme';
 
 const ICON_SIZE = 22;
@@ -52,6 +53,7 @@ const styles = createThemedStyles((theme) => ({
 }));
 
 export default function TabsLayout() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
   const baseHeight = Platform.select({ ios: 64, android: 62 }) ?? 62;
@@ -78,7 +80,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('tabs.home'),
           tabBarIcon: ({ color }) => (
             <Feather name="home" size={ICON_SIZE} color={color} />
           ),
@@ -88,7 +90,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="collections"
         options={{
-          title: 'Collections',
+          title: t('tabs.collections'),
           tabBarIcon: ({ color }) => (
             <Feather name="folder" size={ICON_SIZE} color={color} />
           ),
@@ -145,7 +147,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="search"
         options={{
-          title: 'Search',
+          title: t('tabs.search'),
           tabBarIcon: ({ color }) => (
             <Feather name="search" size={ICON_SIZE} color={color} />
           ),
@@ -155,7 +157,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t('tabs.profile'),
           tabBarIcon: ({ color }) => (
             <Feather name="user" size={ICON_SIZE} color={color} />
           ),

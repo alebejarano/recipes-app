@@ -3,22 +3,25 @@ import { router, useSegments } from 'expo-router'
 import React, { useMemo, useState } from 'react'
 import { Pressable, Text, TextInput, View } from 'react-native'
 
-import { FAQ_SECTIONS } from '@/features/help/content/faq'
+import { getFaqSections } from '@/features/help/content/faq'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 
 export default function FaqScreen() {
+  const { locale, t } = useTranslation()
   const segments = useSegments()
   const routeMode = segments[0] === '(public)' ? 'public' : 'auth'
 
   const [query, setQuery] = useState('')
   const [openId, setOpenId] = useState<string | null>(null)
+  const faqSections = useMemo(() => getFaqSections(locale), [locale])
 
   const filteredSections = useMemo(() => {
     const normalized = query.trim().toLowerCase()
-    if (!normalized) return FAQ_SECTIONS
+    if (!normalized) return faqSections
 
-    return FAQ_SECTIONS.map((section) => ({
+    return faqSections.map((section) => ({
       ...section,
       items: section.items.filter((item) => {
         const inQuestion = item.question.toLowerCase().includes(normalized)
@@ -26,7 +29,7 @@ export default function FaqScreen() {
         return inQuestion || inAnswers
       }),
     })).filter((section) => section.items.length > 0)
-  }, [query])
+  }, [faqSections, query])
 
   const onPressBack = () => {
     if (routeMode === 'public') {
@@ -38,13 +41,13 @@ export default function FaqScreen() {
   }
 
   return (
-    <ProfileSubpageLayout title="Help Center" subtitle="Find answers quickly" onBack={onPressBack}>
+    <ProfileSubpageLayout title={t('profile.faq.title')} subtitle={t('profile.faq.subtitle')} onBack={onPressBack}>
       <View style={styles.searchWrap}>
         <Feather name="search" size={20} style={styles.searchIcon} />
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Search questions..."
+          placeholder={t('profile.faq.searchPlaceholder')}
           placeholderTextColor={styles.placeholder.color}
           style={styles.searchInput}
           autoCapitalize="none"
@@ -94,11 +97,8 @@ export default function FaqScreen() {
       ))}
 
       <View style={styles.supportCard}>
-        <Text style={styles.supportTitle}>Still need help?</Text>
-        <Text style={styles.supportBody}>
-          Send us a note and we will help with account questions, exports, subscriptions, or
-          anything that does not look right.
-        </Text>
+        <Text style={styles.supportTitle}>{t('profile.faq.supportTitle')}</Text>
+        <Text style={styles.supportBody}>{t('profile.faq.supportBody')}</Text>
         <Text style={styles.supportEmail}>hello@dropsauce.app</Text>
       </View>
     </ProfileSubpageLayout>

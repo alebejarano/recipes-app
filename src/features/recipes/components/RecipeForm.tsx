@@ -29,6 +29,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
 import TagChip from '@/components/TagChip'
+import { useTranslation } from '@/localization'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { uploadRecipeImage } from '@/features/recipes/api/recipesRepo'
 import MealTimeChip from '@/features/recipes/components/MealTimeChip'
@@ -199,6 +200,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   },
   ref
 ) {
+  const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const [values, setValues] = useState<RecipeFormValues>(
     initialValues ?? createEmptyRecipeFormValues()
@@ -331,8 +333,8 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
           return
         }
         Alert.alert(
-          'Folder already exists',
-          'We used the existing folder instead.'
+          t('recipes.form.folderExistsTitle'),
+          t('recipes.form.folderExistsBody')
         )
       } else {
         void onCreateFolder({
@@ -342,11 +344,11 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
           const code = error?.code ?? error?.cause?.code
           if (code === '23505') {
             Alert.alert(
-              'Folder already exists',
-              'We used the existing folder instead.'
+              t('recipes.form.folderExistsTitle'),
+              t('recipes.form.folderExistsBody')
             )
           } else {
-            Alert.alert('Unable to create folder', 'Please try again.')
+            Alert.alert(t('recipes.form.createFolderErrorTitle'), t('recipes.form.createFolderErrorBody'))
           }
         })
       }
@@ -356,6 +358,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       folderInput,
       suggestedFolders,
       onCreateFolder,
+      t,
     ]
   )
 
@@ -381,7 +384,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   const buildPayload = useCallback((): RecipeFormSubmitValues | null => {
     const title = values.title.trim()
     if (!title) {
-      Alert.alert('Missing title', 'Please enter a recipe title.')
+      Alert.alert(t('recipes.form.missingTitleTitle'), t('recipes.form.missingTitleBody'))
       return null
     }
 
@@ -410,17 +413,17 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       folders: normalizedFolders.length ? normalizedFolders : null,
       mealTimes: values.mealTimes.length ? values.mealTimes : null,
     }
-  }, [values])
+  }, [t, values])
 
   const handleSubmit = useCallback(async () => {
     if (isUploadingImage) {
-      Alert.alert('Upload in progress', 'Please wait for the image to finish uploading.')
+      Alert.alert(t('recipes.form.uploadInProgressTitle'), t('recipes.form.uploadInProgressBody'))
       return
     }
     const payload = buildPayload()
     if (!payload) return
     await onSubmit(payload)
-  }, [buildPayload, isUploadingImage, onSubmit])
+  }, [buildPayload, isUploadingImage, onSubmit, t])
 
   useImperativeHandle(
     ref,
@@ -452,45 +455,45 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   const confirmPermissionPrompt = useCallback((title: string, message: string) => {
     return new Promise<boolean>((resolve) => {
       Alert.alert(title, message, [
-        { text: 'Not now', style: 'cancel', onPress: () => resolve(false) },
-        { text: 'Continue', onPress: () => resolve(true) },
+        { text: t('recipes.form.permissionNotNow'), style: 'cancel', onPress: () => resolve(false) },
+        { text: t('recipes.form.permissionContinue'), onPress: () => resolve(true) },
       ])
     })
-  }, [])
+  }, [t])
 
   const ensureLibraryPermission = useCallback(async () => {
     const existing = await ImagePicker.getMediaLibraryPermissionsAsync()
     if (existing.status === 'granted') return true
 
     const shouldContinue = await confirmPermissionPrompt(
-      'Allow photo access?',
-      'We use your photo library to add a cover image for your recipe.'
+      t('recipes.form.allowPhotoTitle'),
+      t('recipes.form.allowPhotoBody')
     )
     if (!shouldContinue) return false
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Allow access to your photo library to upload images.')
+      Alert.alert(t('recipes.form.permissionNeededTitle'), t('recipes.form.permissionPhotoBody'))
       return false
     }
     return true
-  }, [confirmPermissionPrompt])
+  }, [confirmPermissionPrompt, t])
 
   const ensureCameraPermission = useCallback(async () => {
     const existing = await ImagePicker.getCameraPermissionsAsync()
     if (existing.status === 'granted') return true
 
     const shouldContinue = await confirmPermissionPrompt(
-      'Allow camera access?',
-      'We use your camera to take a photo for your recipe cover.'
+      t('recipes.form.allowCameraTitle'),
+      t('recipes.form.allowCameraBody')
     )
     if (!shouldContinue) return false
     const { status } = await ImagePicker.requestCameraPermissionsAsync()
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Allow access to your camera to take a photo.')
+      Alert.alert(t('recipes.form.permissionNeededTitle'), t('recipes.form.permissionCameraBody'))
       return false
     }
     return true
-  }, [confirmPermissionPrompt])
+  }, [confirmPermissionPrompt, t])
 
   const uploadImageAsset = useCallback(
     async (asset: ImagePicker.ImagePickerAsset) => {
@@ -498,7 +501,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         setIsUploadingImage(true)
         const originalSize = await getPickedImageSizeBytes(asset)
         if (originalSize > RECIPE_IMAGE_UPLOAD_MAX_FILE_BYTES) {
-          Alert.alert('Photo too large', RECIPE_IMAGE_UPLOAD_TOO_LARGE_MESSAGE)
+          Alert.alert(t('recipes.form.photoTooLargeTitle'), RECIPE_IMAGE_UPLOAD_TOO_LARGE_MESSAGE)
           return
         }
 
@@ -516,7 +519,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
           }
 
           if (size > FREE_PLAN_MAX_IMPORT_FILE_BYTES) {
-            Alert.alert('File too large', IMPORT_FILE_TOO_LARGE_MESSAGE)
+            Alert.alert(t('recipes.form.fileTooLargeTitle'), IMPORT_FILE_TOO_LARGE_MESSAGE)
             return
           }
 
@@ -531,10 +534,10 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
               : FREE_PLAN_MAX_IMPORT_TOTAL_BYTES)
           ) {
             Alert.alert(
-              'Storage limit reached',
+              t('recipes.form.storageLimitTitle'),
               plan === 'premium'
-                ? 'Premium includes up to 5 GB total storage.'
-                : 'Free accounts can save up to 50 MB of files.'
+                ? t('recipes.form.storageLimitPremium')
+                : t('recipes.form.storageLimitFree')
             )
             return
           }
@@ -549,12 +552,12 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         update('imageUrl', url)
         update('emoji', '')
       } catch (error: any) {
-        Alert.alert('Upload failed', getUserFacingErrorMessage(error))
+        Alert.alert(t('recipes.form.uploadFailedTitle'), getUserFacingErrorMessage(error))
       } finally {
         setIsUploadingImage(false)
       }
     },
-    [imageUploadMode, plan, update, values.imageUrl]
+    [imageUploadMode, plan, t, update, values.imageUrl]
   )
 
   const handlePickImage = useCallback(async () => {
@@ -595,17 +598,17 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       onPress?: () => void
       style?: 'default' | 'cancel' | 'destructive'
     }[] = [
-      { text: 'Pick emoji', onPress: openEmojiModal },
-      { text: 'Upload photo', onPress: handlePickImage },
-      { text: 'Take photo', onPress: handleTakePhoto },
+      { text: t('recipes.form.coverPickEmoji'), onPress: openEmojiModal },
+      { text: t('recipes.form.coverUploadPhoto'), onPress: handlePickImage },
+      { text: t('recipes.form.coverTakePhoto'), onPress: handleTakePhoto },
     ]
     if (values.emoji || values.imageUrl) {
-      options.push({ text: 'Remove', style: 'destructive', onPress: clearCover })
+      options.push({ text: t('recipes.form.coverRemove'), style: 'destructive', onPress: clearCover })
     }
-    options.push({ text: 'Cancel', style: 'cancel' })
+    options.push({ text: t('recipes.form.coverCancel'), style: 'cancel' })
 
-    Alert.alert('Add cover', 'Choose an emoji or a photo.', options)
-  }, [clearCover, handlePickImage, handleTakePhoto, openEmojiModal, values])
+    Alert.alert(t('recipes.form.coverOptionsTitle'), t('recipes.form.coverOptionsBody'), options)
+  }, [clearCover, handlePickImage, handleTakePhoto, openEmojiModal, t, values])
 
   const moreDetailsSummary = useMemo(() => {
     const filledCount = [
@@ -617,8 +620,8 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       values.mealTimes.length > 0,
     ].filter(Boolean).length
 
-    if (!filledCount) return 'optional'
-    return `${filledCount} added`
+    if (!filledCount) return t('recipes.form.summaryOptional')
+    return t('recipes.form.summaryAdded', { count: filledCount })
   }, [
     values.cookTimeMinutes,
     values.description,
@@ -627,12 +630,15 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     values.mealTimes.length,
     values.prepTimeMinutes,
     values.servings,
+    t,
   ])
 
   const folderSummary = useMemo(() => {
-    if (!values.folders.length) return 'optional'
-    return values.folders.length === 1 ? '1 folder' : `${values.folders.length} folders`
-  }, [values.folders.length])
+    if (!values.folders.length) return t('recipes.form.summaryOptional')
+    return values.folders.length === 1
+      ? t('recipes.form.folderSummaryOne')
+      : t('recipes.form.folderSummaryMany', { count: values.folders.length })
+  }, [t, values.folders.length])
 
   const coverPreview = values.imageUrl ? (
     <Image
@@ -651,11 +657,11 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     <View style={styles.form}>
       <View style={styles.primarySection}>
         <View style={styles.fieldCompact}>
-          <Text style={styles.primaryFieldLabel}>Title</Text>
+          <Text style={styles.primaryFieldLabel}>{t('recipes.form.title')}</Text>
           <TextInput
             value={values.title}
             onChangeText={(t) => update('title', t)}
-            placeholder="Recipe name"
+            placeholder={t('recipes.form.titlePlaceholder')}
             placeholderTextColor={styles.placeholder.color}
             style={[
               styles.titleInput,
@@ -670,11 +676,11 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         </View>
 
         <View style={styles.fieldCompact}>
-          <Text style={styles.primarySectionLabel}>Ingredients</Text>
+          <Text style={styles.primarySectionLabel}>{t('recipes.form.ingredients')}</Text>
           <TextInput
             value={values.ingredientsText}
             onChangeText={(t) => update('ingredientsText', t)}
-            placeholder={'2 cups flour\n1 tsp salt\n3 eggs...'}
+            placeholder={t('recipes.form.ingredientsPlaceholder')}
             placeholderTextColor={styles.placeholder.color}
             style={[
               styles.textareaInput,
@@ -691,7 +697,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         </View>
 
         <View style={styles.fieldCompact}>
-          <Text style={styles.primarySectionLabel}>Steps</Text>
+          <Text style={styles.primarySectionLabel}>{t('recipes.form.steps')}</Text>
           <View style={styles.stepsStack}>
             {values.steps.map((step, index) => {
               const n = index + 1
@@ -714,7 +720,11 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
                       onBlur={() => {
                         setFocusedStepIndex((current) => (current === index ? null : current))
                       }}
-                      placeholder={n === 1 ? 'What happens first...' : `Step ${n}`}
+                      placeholder={
+                        n === 1
+                          ? t('recipes.form.firstStepPlaceholder')
+                          : t('recipes.form.stepPlaceholder', { step: n })
+                      }
                       placeholderTextColor={styles.placeholder.color}
                       style={[
                         styles.stepInput,
@@ -736,7 +746,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
                         hitSlop={8}
                         style={styles.stepClearButton}
                         accessibilityRole="button"
-                        accessibilityLabel={`Remove step ${n}`}
+                        accessibilityLabel={t('recipes.form.removeStepA11y', { step: n })}
                       >
                         <Feather name="x" size={16} color={styles.stepClearIcon.color} />
                       </Pressable>
@@ -756,7 +766,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
             textStyle={styles.addStepText}
             icon={<Feather name="plus" size={18} color={styles.addStepIcon.color} />}
           >
-            Add step
+            {t('recipes.form.addStep')}
           </Button>
         </View>
       </View>
@@ -766,10 +776,10 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
           onPress={() => setIsMoreDetailsExpanded((current) => !current)}
           style={styles.collapsibleHeader}
           accessibilityRole="button"
-          accessibilityLabel="Toggle more details"
+          accessibilityLabel={t('recipes.form.moreDetailsA11y')}
         >
           <View style={styles.collapsibleHeaderText}>
-            <Text style={styles.collapsibleTitle}>More details</Text>
+            <Text style={styles.collapsibleTitle}>{t('recipes.form.moreDetails')}</Text>
             <Text style={styles.collapsibleMeta}>· {moreDetailsSummary}</Text>
           </View>
           <Feather
@@ -782,7 +792,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         {isMoreDetailsExpanded ? (
           <View style={styles.collapsibleBody}>
             <View style={styles.fieldCompact}>
-              <Text style={styles.label}>Cover</Text>
+              <Text style={styles.label}>{t('recipes.form.cover')}</Text>
               <View style={styles.coverRow}>
                 <Pressable
                   onPress={openCoverOptions}
@@ -791,7 +801,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
                     pressed && styles.coverPreviewPressed,
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel="Edit cover"
+                  accessibilityLabel={t('recipes.form.editCoverA11y')}
                 >
                   {coverPreview}
                   {isUploadingImage ? (
@@ -810,7 +820,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
                     style={styles.coverActionButton}
                     icon={<Feather name="camera" size={18} color={styles.coverActionIcon.color} />}
                   >
-                    Photo
+                    {t('recipes.form.photo')}
                   </Button>
                   <Button
                     variant="secondary"
@@ -820,18 +830,18 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
                     style={styles.coverActionButton}
                     icon={<Feather name="smile" size={18} color={styles.coverActionIcon.color} />}
                   >
-                    Emoji
+                    {t('recipes.form.emoji')}
                   </Button>
                 </View>
               </View>
             </View>
 
             <View style={styles.fieldCompact}>
-              <Text style={styles.label}>Notes</Text>
+              <Text style={styles.label}>{t('recipes.form.notes')}</Text>
               <TextInput
                 value={values.description}
                 onChangeText={(t) => update('description', t)}
-                placeholder="Anything helpful to remember later..."
+                placeholder={t('recipes.form.notesPlaceholder')}
                 placeholderTextColor={styles.placeholder.color}
                 multiline
                 style={[
@@ -848,11 +858,11 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
 
             {mode === 'edit' ? (
               <View style={styles.fieldCompact}>
-                <Text style={styles.label}>Subtitle</Text>
+                <Text style={styles.label}>{t('recipes.form.subtitle')}</Text>
                 <TextInput
                   value={values.subtitle}
                   onChangeText={(t) => update('subtitle', t)}
-                  placeholder="Optional"
+                  placeholder={t('recipes.form.optionalPlaceholder')}
                   placeholderTextColor={styles.placeholder.color}
                   style={[
                     styles.detailInput,
@@ -869,11 +879,11 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
 
             <View style={styles.detailsGrid}>
               <View style={styles.detailField}>
-                <Text style={styles.label}>Prep time</Text>
+                <Text style={styles.label}>{t('recipes.form.prepTime')}</Text>
                 <TextInput
                   value={values.prepTimeMinutes}
                   onChangeText={(t) => update('prepTimeMinutes', t)}
-                  placeholder="10 min"
+                  placeholder={t('recipes.form.prepTimePlaceholder')}
                   placeholderTextColor={styles.placeholder.color}
                   keyboardType="number-pad"
                   style={[
@@ -887,11 +897,11 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
               </View>
 
               <View style={styles.detailField}>
-                <Text style={styles.label}>Cook time</Text>
+                <Text style={styles.label}>{t('recipes.form.cookTime')}</Text>
                 <TextInput
                   value={values.cookTimeMinutes}
                   onChangeText={(t) => update('cookTimeMinutes', t)}
-                  placeholder="25 min"
+                  placeholder={t('recipes.form.cookTimePlaceholder')}
                   placeholderTextColor={styles.placeholder.color}
                   keyboardType="number-pad"
                   style={[
@@ -905,11 +915,11 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
               </View>
 
               <View style={styles.detailField}>
-                <Text style={styles.label}>Servings</Text>
+                <Text style={styles.label}>{t('recipes.form.servings')}</Text>
                 <TextInput
                   value={values.servings}
                   onChangeText={(t) => update('servings', t)}
-                  placeholder="2"
+                  placeholder={t('recipes.form.servingsPlaceholder')}
                   placeholderTextColor={styles.placeholder.color}
                   keyboardType="number-pad"
                   style={[
@@ -924,7 +934,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
             </View>
 
             <View style={styles.fieldCompact}>
-              <Text style={styles.label}>Best for</Text>
+              <Text style={styles.label}>{t('recipes.form.bestFor')}</Text>
               <View style={styles.tagsRow}>
                 {RECIPE_MEAL_TIMES.map((mealTime) => (
                   <MealTimeChip
@@ -947,10 +957,10 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
           onPress={() => setIsFoldersExpanded((current) => !current)}
           style={styles.collapsibleHeader}
           accessibilityRole="button"
-          accessibilityLabel="Toggle folder assignment"
+          accessibilityLabel={t('recipes.form.foldersA11y')}
         >
           <View style={styles.collapsibleHeaderText}>
-            <Text style={styles.collapsibleTitle}>Add to folder</Text>
+            <Text style={styles.collapsibleTitle}>{t('recipes.form.addToFolder')}</Text>
             <Text style={styles.collapsibleMeta}>· {folderSummary}</Text>
           </View>
           <Feather
@@ -966,7 +976,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
               <Text style={styles.helperText}>{folderContextMessage}</Text>
             ) : (
               <Text style={styles.helperText}>
-                Keep this light. You can organize it later if you want.
+                {t('recipes.form.helper')}
               </Text>
             )}
 
@@ -991,7 +1001,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
               <TextInput
                 value={folderInput}
                 onChangeText={setFolderInput}
-                placeholder="Add to folder"
+                placeholder={t('recipes.form.folderPlaceholder')}
                 placeholderTextColor={styles.placeholder.color}
                 style={[styles.detailInput, styles.folderInput]}
                 editable={!isSubmitting}
@@ -1011,7 +1021,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
                 style={styles.tagAddButton}
                 textStyle={styles.tagAddText}
               >
-                Add
+                {t('recipes.form.add')}
               </Button>
             </View>
 
@@ -1052,14 +1062,14 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         <View style={styles.actions}>
           {onCancel ? (
             <Button variant="ghost" size="md" onPress={onCancel} disabled={isSubmitting}>
-              Cancel
+              {t('recipes.form.cancel')}
             </Button>
           ) : (
             <View />
           )}
 
           <Button variant="primary" size="md" onPress={handleSubmit} disabled={!canSubmit}>
-            {isSubmitting ? 'Saving…' : submitLabel}
+            {isSubmitting ? t('recipes.form.saving') : submitLabel}
           </Button>
         </View>
       ) : null}
@@ -1084,14 +1094,12 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
               },
             ]}
           >
-            <Text style={styles.modalTitle}>Pick an emoji</Text>
-            <Text style={styles.modalSubtitle}>
-              Choose a single emoji to represent this recipe.
-            </Text>
+            <Text style={styles.modalTitle}>{t('recipes.form.pickEmojiTitle')}</Text>
+            <Text style={styles.modalSubtitle}>{t('recipes.form.pickEmojiBody')}</Text>
             <TextInput
               value={emojiDraft}
               onChangeText={setEmojiDraft}
-              placeholder="e.g. 🍋"
+              placeholder={t('recipes.form.pickEmojiPlaceholder')}
               placeholderTextColor={styles.placeholder.color}
               style={styles.modalInput}
               autoCapitalize="none"
@@ -1106,7 +1114,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
                 onPress={() => setIsEmojiModalOpen(false)}
                 style={styles.modalActionButton}
               >
-                Cancel
+                {t('recipes.form.cancel')}
               </Button>
               <Button
                 variant="primary"
@@ -1114,7 +1122,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
                 onPress={saveEmoji}
                 style={styles.modalActionButton}
               >
-                Save
+                {t('recipes.form.save')}
               </Button>
             </View>
           </View>

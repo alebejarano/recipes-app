@@ -23,12 +23,14 @@ import {
   type BrowseCategory,
   type SearchFilterId,
 } from '@/features/search/data/searchData';
+import { useTranslation } from '@/localization'
 
 type SearchScreenProps = {
   mode?: 'auth' | 'public';
 };
 
 export default function SearchScreen({ mode }: SearchScreenProps) {
+  const { t } = useTranslation()
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<SearchFilterId>('all');
   const segments = useSegments();
@@ -58,15 +60,19 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
   const placeholder = useMemo(() => {
     switch (activeFilter) {
       case 'recipes':
-        return 'Search recipes...';
+        return t('search.placeholders.recipes');
       case 'collections':
-        return 'Search folders...';
+        return t('search.placeholders.collections');
       case 'notes':
-        return 'Search notes...';
+        return t('search.placeholders.notes');
       default:
-        return 'Search anything...';
+        return t('search.placeholders.all');
     }
-  }, [activeFilter]);
+  }, [activeFilter, t]);
+  const filters = useMemo(
+    () => SEARCH_FILTERS.map((filter) => ({ ...filter, label: t(`search.filters.${filter.id}`) })),
+    [t]
+  )
 
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl);
   const root = resolvedMode === 'public' ? '(public)' : '(auth)';
@@ -127,8 +133,8 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
       contentStyle={styles.content}
     >
       <SearchHeader
-        title="Search"
-        subtitle="Find recipes, folders, and notes in one place."
+        title={t('search.title')}
+        subtitle={t('search.subtitle')}
       />
 
       <SearchBar
@@ -138,7 +144,7 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
       />
 
       <SearchFilterPills
-        options={SEARCH_FILTERS}
+        options={filters}
         value={activeFilter}
         onChange={setActiveFilter}
       />
@@ -148,11 +154,11 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
           {activeFilter === 'collections' ? (
             collectionCards.length > 0 ? (
               <BrowseCategorySection
-                title="Folders"
+                title={t('search.sections.folders')}
                 items={collectionCards}
                 onPressItem={(label) => {
                   const key =
-                    label === 'Uncategorized'
+                    label === t('search.uncategorized')
                       ? 'uncategorized'
                       : encodeURIComponent(label);
                   router.push({
@@ -162,7 +168,7 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
                 }}
               />
             ) : (
-              <Text style={styles.emptyText}>No folders yet.</Text>
+              <Text style={styles.emptyText}>{t('search.emptyFolders')}</Text>
             )
           ) : null}
         </>
@@ -171,13 +177,13 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
           {isSearching ? (
             <View style={styles.loadingState}>
               <ActivityIndicator size="small" color={styles.loadingText.color} />
-              <Text style={styles.loadingText}>Searching…</Text>
+              <Text style={styles.loadingText}>{t('search.searching')}</Text>
             </View>
           ) : null}
 
           {showRecipes && recipeItems.length > 0 ? (
             <View style={styles.sectionWrap}>
-              <SectionHeader icon="book-open" title="Recipes" />
+              <SectionHeader icon="book-open" title={t('search.sections.recipes')} />
               <View style={styles.resultsList}>
                 {recipeItems.map((item) => (
                   <RecipeRow
@@ -206,14 +212,14 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
 
           {showFolders && folderItems.length > 0 ? (
             <View style={styles.sectionWrap}>
-              <SectionHeader icon="folder" title="Folders" />
+              <SectionHeader icon="folder" title={t('search.sections.folders')} />
               <View style={styles.resultsList}>
                 {folderItems.map((folder) => (
                   <Pressable
                     key={folder.id}
                     onPress={() => {
                       const key =
-                        folder.name === 'Uncategorized'
+                        folder.name === t('search.uncategorized')
                           ? 'uncategorized'
                           : encodeURIComponent(folder.name);
                       router.push({
@@ -223,7 +229,7 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
                     }}
                     style={styles.simpleRow}
                     accessibilityRole="button"
-                    accessibilityLabel={`Open folder ${folder.name}`}
+                    accessibilityLabel={t('search.openFolderA11y', { name: folder.name })}
                   >
                     <View style={styles.simpleRowIcon}>
                       <Text style={styles.emoji}>{folder.emoji ?? '📁'}</Text>
@@ -240,7 +246,7 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
 
           {showNotes && noteItems.length > 0 ? (
             <View style={styles.sectionWrap}>
-              <SectionHeader icon="file-text" title="Notes" />
+              <SectionHeader icon="file-text" title={t('search.sections.notes')} />
               <View style={styles.resultsList}>
                 {noteItems.map((note) => (
                   <Pressable
@@ -259,17 +265,17 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
                     }
                     style={styles.simpleRow}
                     accessibilityRole="button"
-                    accessibilityLabel={`Open note ${note.title?.trim() || 'Untitled note'}`}
+                    accessibilityLabel={t('search.openNoteA11y', { name: note.title?.trim() || t('notes.fallbackTitle') })}
                   >
                     <View style={styles.simpleRowIcon}>
                       <Feather name="file-text" size={16} color={theme.colors.mutedForeground} />
                     </View>
                     <View style={styles.noteTextWrap}>
                       <Text style={styles.simpleRowTitle} numberOfLines={1}>
-                        {note.title?.trim() || 'Untitled note'}
+                        {note.title?.trim() || t('notes.fallbackTitle')}
                       </Text>
                       <Text style={styles.simpleRowMeta} numberOfLines={1}>
-                        {(note.content ?? '').trim() || 'No note content yet.'}
+                        {(note.content ?? '').trim() || t('notes.emptyContent')}
                       </Text>
                     </View>
                     <Feather name="chevron-right" size={16} color={theme.colors.mutedForeground} />

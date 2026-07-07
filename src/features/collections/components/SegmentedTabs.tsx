@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 import { theme } from '@/styles/theme';
 import type { SegmentKey } from '../types';
@@ -13,17 +14,19 @@ type SegmentedTabsProps = {
 
 type TabDef = {
   key: SegmentKey;
-  label: string;
+  labelKey: string;
   icon: keyof typeof Feather.glyphMap;
 };
 
 const TABS: TabDef[] = [
-  { key: 'recipes', label: 'Recipes', icon: 'folder' },
-  { key: 'notes', label: 'Notes', icon: 'file-text' },
-  { key: 'shopping', label: 'Shopping', icon: 'shopping-cart' },
+  { key: 'recipes', labelKey: 'collections.tabs.recipes', icon: 'folder' },
+  { key: 'notes', labelKey: 'collections.tabs.notes', icon: 'file-text' },
+  { key: 'shopping', labelKey: 'collections.tabs.shopping', icon: 'shopping-cart' },
 ];
 
 export default function SegmentedTabs({ value, onChange }: SegmentedTabsProps) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.wrap}>
       {TABS.map((tab) => {
@@ -41,7 +44,7 @@ export default function SegmentedTabs({ value, onChange }: SegmentedTabsProps) {
               color={active ? theme.colors.foreground : theme.colors.mutedForeground}
             />
             <Text style={[styles.tabText, active && styles.tabTextActive]}>
-              {tab.label}
+              {t(tab.labelKey)}
             </Text>
           </Pressable>
         );

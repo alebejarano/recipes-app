@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 import { layout } from '@/styles/layout';
 import { theme } from '@/styles/theme';
@@ -19,6 +20,7 @@ type Props = {
 };
 
 export default function NotesStrip({ title, note, meta, onPress }: Props) {
+  const { t } = useTranslation()
   return (
     <View>
       <View style={styles.header}>
@@ -30,7 +32,7 @@ export default function NotesStrip({ title, note, meta, onPress }: Props) {
         onPress={onPress}
         style={styles.pill}
         accessibilityRole="button"
-        accessibilityLabel={`Open note ${note.title}`}
+        accessibilityLabel={t('notes.segment.openA11y', { title: note.title })}
       >
         <Text style={styles.pillTitle} numberOfLines={1}>
           {note.title}

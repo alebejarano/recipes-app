@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import React, { useEffect, useMemo } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 import { theme } from '@/styles/theme';
 
@@ -17,6 +18,7 @@ export default function ShoppingSegment({
   bottomPadding: number
   mode?: 'auth' | 'public'
 }) {
+  const { t } = useTranslation()
   const hydrate = useShoppingListStore((s) => s.hydrate)
   const isHydrated = useShoppingListStore((s) => s.isHydrated)
   const isHydrating = useShoppingListStore((s) => s.isHydrating)
@@ -40,10 +42,10 @@ export default function ShoppingSegment({
     const highlights = source.slice(0, HIGHLIGHTS_COUNT).map((i) => i.name)
     const moreCount = Math.max(0, source.length - highlights.length)
 
-    const statusLabel = total === 0 ? 'Empty' : 'Active'
+    const statusLabel = total === 0 ? t('collections.shoppingSegment.emptyStatus') : t('collections.shoppingSegment.activeStatus')
 
     return { total, checked, progress, highlights, moreCount, statusLabel }
-  }, [items])
+  }, [items, t])
 
   const onOpenList = () => {
     const route =
@@ -58,14 +60,14 @@ export default function ShoppingSegment({
       showsVerticalScrollIndicator={false}
       contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}
     >
-      <Text style={styles.helper}>Everything you need, in one list</Text>
+      <Text style={styles.helper}>{t('collections.shoppingSegment.helper')}</Text>
 
       {/* Current List card */}
       <Pressable
         onPress={onOpenList}
         style={styles.currentCard}
         accessibilityRole="button"
-        accessibilityLabel="Open current shopping list"
+        accessibilityLabel={t('collections.shoppingSegment.openA11y')}
       >
         <View style={styles.currentTop}>
           <View style={styles.cartIconWrap}>
@@ -74,7 +76,7 @@ export default function ShoppingSegment({
 
           <View style={styles.currentMain}>
             <View style={styles.currentTitleRow}>
-              <Text style={styles.currentTitle}>Current List</Text>
+              <Text style={styles.currentTitle}>{t('collections.shoppingSegment.currentTitle')}</Text>
 
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{statusLabel}</Text>
@@ -83,12 +85,12 @@ export default function ShoppingSegment({
 
             <Text style={styles.currentSub}>
               {isLoading ? (
-                <>Loading…</>
+                <>{t('collections.shoppingSegment.loading')}</>
               ) : total === 0 ? (
-                <>No items yet</>
+                <>{t('collections.shoppingSegment.noItems')}</>
               ) : (
                 <>
-                  {checked}/{total} items checked
+                  {t('collections.shoppingSegment.checkedProgress', { checked, total })}
                 </>
               )}
             </Text>
@@ -108,7 +110,7 @@ export default function ShoppingSegment({
                   </View>
                 ))}
 
-                {moreCount > 0 ? <Text style={styles.moreText}>+{moreCount} more</Text> : null}
+                {moreCount > 0 ? <Text style={styles.moreText}>{t('collections.shoppingSegment.more', { count: moreCount })}</Text> : null}
               </View>
             ) : null}
           </View>
@@ -121,7 +123,7 @@ export default function ShoppingSegment({
       {/* Tip banner */}
       <View style={styles.tip}>
         <Text style={styles.tipText}>
-            💡 Tip: Add ingredients from any recipe directly to your shopping list
+            {`💡 ${t('collections.shoppingSegment.tip')}`}
         </Text>
       </View>
     </ScrollView>

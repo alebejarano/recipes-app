@@ -7,11 +7,13 @@ import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 
 export default function EditProfileScreen() {
   const { user, updateEmailAddress, updateProfileName } = useAuth()
   const showSnackbar = useTransientSnackbarStore((state) => state.show)
+  const { t } = useTranslation()
   const initialName = useMemo(() => {
     const metadataName = user?.user_metadata?.display_name
     if (typeof metadataName === 'string' && metadataName.trim()) return metadataName.trim()
@@ -30,15 +32,15 @@ export default function EditProfileScreen() {
     const normalizedEmail = normalizeEmail(email)
 
     if (!trimmedName) {
-      Alert.alert('Name required', 'Please enter your name.')
+      Alert.alert(t('profile.editProfile.nameRequiredTitle'), t('profile.editProfile.nameRequiredMessage'))
       return
     }
     if (!normalizedEmail) {
-      Alert.alert('Email required', 'Please enter your email.')
+      Alert.alert(t('profile.editProfile.emailRequiredTitle'), t('profile.editProfile.emailRequiredMessage'))
       return
     }
     if (!isValidEmail(normalizedEmail)) {
-      Alert.alert('Invalid email', 'Please enter a valid email address.')
+      Alert.alert(t('profile.editProfile.invalidEmailTitle'), t('profile.editProfile.invalidEmailMessage'))
       return
     }
 
@@ -57,16 +59,19 @@ export default function EditProfileScreen() {
       if (emailChanged) {
         const { pendingEmail } = await updateEmailAddress(normalizedEmail)
         if (pendingEmail) {
-          Alert.alert('Email update requested', `Check your inbox at ${pendingEmail} to confirm this email change.`)
+          Alert.alert(
+            t('profile.editProfile.emailUpdateRequestedTitle'),
+            t('profile.editProfile.emailUpdateRequestedMessage', { email: pendingEmail })
+          )
         } else {
-          Alert.alert('Profile updated', 'Your email has been updated.')
+          Alert.alert(t('profile.editProfile.updatedTitle'), t('profile.editProfile.updatedMessage'))
         }
       } else {
-        showSnackbar('Profile updated')
+        showSnackbar(t('profile.editProfile.updatedSnackbar'))
       }
       router.replace(profileRoute)
     } catch (error: any) {
-      Alert.alert('Unable to save profile', getUserFacingErrorMessage(error))
+      Alert.alert(t('profile.editProfile.saveFailedTitle'), getUserFacingErrorMessage(error))
     } finally {
       setSaving(false)
     }
@@ -74,7 +79,7 @@ export default function EditProfileScreen() {
 
   return (
     <ProfileSubpageLayout
-      title="Edit Profile"
+      title={t('profile.editProfile.title')}
       onBack={() => router.replace(profileRoute)}
       headerRight={
         <Pressable
@@ -85,10 +90,10 @@ export default function EditProfileScreen() {
             pressed && styles.pressed,
           ]}
           accessibilityRole="button"
-          accessibilityLabel="Save profile"
+          accessibilityLabel={t('profile.editProfile.saveA11y')}
           disabled={saving || !name.trim() || !email.trim()}
         >
-          <Text style={styles.saveText}>{saving ? 'Saving...' : 'Save'}</Text>
+          <Text style={styles.saveText}>{saving ? t('profile.editProfile.saving') : t('profile.editProfile.save')}</Text>
         </Pressable>
       }
     >
@@ -100,11 +105,11 @@ export default function EditProfileScreen() {
       </View>
 
       <View style={styles.field}>
-        <Text style={styles.label}>Name</Text>
+        <Text style={styles.label}>{t('profile.editProfile.nameLabel')}</Text>
         <TextInput
           value={name}
           onChangeText={setName}
-          placeholder="Your name"
+          placeholder={t('profile.editProfile.namePlaceholder')}
           placeholderTextColor={styles.placeholder.color}
           style={styles.input}
           autoCapitalize="words"
@@ -114,11 +119,11 @@ export default function EditProfileScreen() {
       </View>
 
       <View style={styles.field}>
-        <Text style={styles.label}>Email</Text>
+        <Text style={styles.label}>{t('profile.editProfile.emailLabel')}</Text>
         <TextInput
           value={email}
           onChangeText={setEmail}
-          placeholder="you@example.com"
+          placeholder={t('profile.editProfile.emailPlaceholder')}
           placeholderTextColor={styles.placeholder.color}
           style={styles.input}
           autoCapitalize="none"
