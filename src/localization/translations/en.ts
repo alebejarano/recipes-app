@@ -432,6 +432,12 @@ export const en = {
             manageAppStore: 'Manage in App Store',
             manageGooglePlay: 'Manage in Google Play',
             manageGeneric: 'Manage subscription',
+            restorePurchases: 'Restore purchases',
+            restoring: 'Restoring...',
+            restoreSuccessTitle: 'Purchases restored',
+            restoreSuccessActive: 'Your Premium access is active again.',
+            restoreSuccessInactive: 'No active Premium subscription was found for this store account.',
+            restoreFailedTitle: 'Restore failed',
             fallbackTitle: 'Manage subscription',
             fallbackBody:
                 'Manage your Premium subscription from the App Store or Google Play account used for purchase.',

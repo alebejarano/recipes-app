@@ -434,6 +434,12 @@ export const es: TranslationSchema = {
             manageAppStore: 'Gestionar en App Store',
             manageGooglePlay: 'Gestionar en Google Play',
             manageGeneric: 'Gestionar suscripción',
+            restorePurchases: 'Restaurar compras',
+            restoring: 'Restaurando...',
+            restoreSuccessTitle: 'Compras restauradas',
+            restoreSuccessActive: 'Tu acceso Premium vuelve a estar activo.',
+            restoreSuccessInactive: 'No se ha encontrado una suscripción Premium activa para esta cuenta de tienda.',
+            restoreFailedTitle: 'No se pudo restaurar',
             fallbackTitle: 'Gestionar suscripción',
             fallbackBody:
                 'Gestiona tu suscripción Premium desde la cuenta de App Store o Google Play usada en la compra.',

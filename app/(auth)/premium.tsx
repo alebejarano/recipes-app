@@ -1,6 +1,7 @@
-import React, { useContext, useEffect, useRef, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
+import { PAYWALL_RESULT } from 'react-native-purchases-ui'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { useAnalyticsCapture } from '@/features/analytics/events'
@@ -8,11 +9,35 @@ import CurrentPlanScreen from '@/features/subscription/screens/CurrentPlanScreen
 import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
 import PremiumScreen from '@/features/subscription/screens/PremiumScreen'
 import PremiumSuccessModal from '@/features/subscription/components/PremiumSuccessModal'
-import { upgradeToPremium } from '@/features/subscription/services/upgradeToPremium'
+import { REVENUECAT_ENTITLEMENT_ID } from '@/features/subscription/constants/revenueCat'
 import { createThemedStyles } from '@/styles/createStyles'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { i18n } from '@/localization/i18n'
+
+function isPurchaseCancelledError(error: unknown) {
+  if (!error || typeof error !== 'object') return false
+
+  return (
+    (error as { userCancelled?: boolean | null }).userCancelled === true ||
+    (error as { code?: string }).code === 'PURCHASE_CANCELLED_ERROR'
+  )
+}
+
+function formatRenewalLabel(expirationDate: string | null) {
+  if (!expirationDate) return undefined
+
+  const parsed = new Date(expirationDate)
+  if (Number.isNaN(parsed.getTime())) return undefined
+
+  return i18n.t('subscription.premium.renewsOn', {
+    date: parsed.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }),
+  })
+}
 
 export default function PremiumRoute() {
   const router = useRouter()
@@ -20,14 +45,40 @@ export default function PremiumRoute() {
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
   const { user } = useAuth()
-  const { plan, billingCycle, upgradeStatus, setPlan, setUpgradeStatus } = useContext(SubscriptionContext)
+  const {
+    plan,
+    billingCycle,
+    customerInfo,
+    currentOffering,
+    getPackageForBillingCycle,
+    purchasePackageForBillingCycle,
+    presentPaywall,
+    refreshCustomerInfo,
+    upgradeStatus,
+  } = useContext(SubscriptionContext)
   const isUpgrading = upgradeStatus === 'running'
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const shouldHoldRedirectRef = useRef(false)
-  const premiumPlanLabel = billingCycle === 'year' ? '€36/year' : '€5/month'
-  const premiumNextRenewalLabel = i18n.t('subscription.premium.renewsOn', {
-    date: billingCycle === 'year' ? 'Mar 27, 2027' : 'Mar 27, 2026',
-  })
+
+  const monthlyPackage = getPackageForBillingCycle('month')
+  const yearlyPackage = getPackageForBillingCycle('year')
+  const monthlyPriceLabel = monthlyPackage?.product.priceString ?? '€5'
+  const yearlyPriceLabel = yearlyPackage?.product.priceString ?? '€36'
+  const yearlyMonthlyEquivalentLabel = yearlyPackage?.product.pricePerMonthString ?? null
+
+  const activeEntitlement =
+    customerInfo?.entitlements.active[REVENUECAT_ENTITLEMENT_ID] ?? null
+  const premiumPlanLabel = useMemo(() => {
+    const activePackage =
+      billingCycle === 'year' ? yearlyPackage : monthlyPackage
+
+    if (activePackage?.product.priceString) {
+      return `${activePackage.product.priceString}${billingCycle === 'year' ? '/year' : '/month'}`
+    }
+
+    return billingCycle === 'year' ? '€36/year' : '€5/month'
+  }, [billingCycle, monthlyPackage, yearlyPackage])
+  const premiumNextRenewalLabel = formatRenewalLabel(activeEntitlement?.expirationDate ?? null)
 
   useEffect(() => {
     if (plan === 'premium' && !showSuccessModal && !isUpgrading && !shouldHoldRedirectRef.current) {
@@ -35,23 +86,51 @@ export default function PremiumRoute() {
     }
   }, [isUpgrading, plan, router, safeReturnTo, showSuccessModal])
 
-  const handleUpgrade = async (billingCycle: 'month' | 'year') => {
+  const handleUpgrade = async (selectedBillingCycle: 'month' | 'year') => {
     if (!user?.id || isUpgrading) return
+
     shouldHoldRedirectRef.current = true
+
     try {
-      await upgradeToPremium({
-        userId: user.id,
-        billingCycle,
-        setPlan,
-        setUpgradeStatus,
-      })
+      let premiumActivated = false
+
+      if (currentOffering) {
+        const paywallResult = await presentPaywall({ offering: currentOffering })
+
+        if (paywallResult === PAYWALL_RESULT.CANCELLED) {
+          shouldHoldRedirectRef.current = false
+          return
+        }
+
+        if (paywallResult === PAYWALL_RESULT.ERROR) {
+          throw new Error('RevenueCat paywall failed to complete the purchase.')
+        }
+
+        const nextCustomerInfo = await refreshCustomerInfo()
+        premiumActivated = Boolean(
+          nextCustomerInfo?.entitlements.active[REVENUECAT_ENTITLEMENT_ID]
+        )
+      } else {
+        const nextCustomerInfo = await purchasePackageForBillingCycle(selectedBillingCycle)
+        premiumActivated = Boolean(
+          nextCustomerInfo.entitlements.active[REVENUECAT_ENTITLEMENT_ID]
+        )
+      }
+
+      if (!premiumActivated) {
+        shouldHoldRedirectRef.current = false
+        return
+      }
+
       captureAnalyticsEvent('purchase_succeeded', {
         plan: 'premium',
-        billing_cycle: billingCycle,
+        billing_cycle: selectedBillingCycle,
       })
       setShowSuccessModal(true)
-    } catch (error: any) {
+    } catch (error) {
       shouldHoldRedirectRef.current = false
+      if (isPurchaseCancelledError(error)) return
+
       Alert.alert(
         i18n.t('subscription.premium.upgradeFailedTitle'),
         getUserFacingErrorMessage(error, i18n.t('subscription.premium.upgradeFailedMessage'))
@@ -96,6 +175,9 @@ export default function PremiumRoute() {
           onUpgrade={handleUpgrade}
           onMaybeLater={handleMaybeLater}
           isUpgrading={isUpgrading}
+          monthlyPriceLabel={monthlyPriceLabel}
+          yearlyPriceLabel={yearlyPriceLabel}
+          yearlyMonthlyEquivalentLabel={yearlyMonthlyEquivalentLabel}
         />
       )}
 

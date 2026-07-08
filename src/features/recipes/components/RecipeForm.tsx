@@ -879,7 +879,9 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
 
             <View style={styles.detailsGrid}>
               <View style={styles.detailField}>
-                <Text style={styles.label}>{t('recipes.form.prepTime')}</Text>
+                <Text style={[styles.label, styles.detailFieldLabel]}>
+                  {t('recipes.form.prepTime')}
+                </Text>
                 <TextInput
                   value={values.prepTimeMinutes}
                   onChangeText={(t) => update('prepTimeMinutes', t)}
@@ -897,7 +899,9 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
               </View>
 
               <View style={styles.detailField}>
-                <Text style={styles.label}>{t('recipes.form.cookTime')}</Text>
+                <Text style={[styles.label, styles.detailFieldLabel]}>
+                  {t('recipes.form.cookTime')}
+                </Text>
                 <TextInput
                   value={values.cookTimeMinutes}
                   onChangeText={(t) => update('cookTimeMinutes', t)}
@@ -915,7 +919,9 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
               </View>
 
               <View style={styles.detailField}>
-                <Text style={styles.label}>{t('recipes.form.servings')}</Text>
+                <Text style={[styles.label, styles.detailFieldLabel]}>
+                  {t('recipes.form.servings')}
+                </Text>
                 <TextInput
                   value={values.servings}
                   onChangeText={(t) => update('servings', t)}
@@ -1413,6 +1419,9 @@ const styles = createThemedStyles((theme) => ({
   detailField: {
     flex: 1,
     gap: theme.spacing.sm,
+  },
+  detailFieldLabel: {
+    minHeight: theme.lineHeight.sm * 2,
   },
   detailInput: {
     borderWidth: 1,

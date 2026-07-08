@@ -12,6 +12,9 @@ type ManageSubscriptionScreenProps = {
   onDowngradeToFreeForTest?: () => void
   premiumPlanLabel?: string
   premiumNextRenewalLabel?: string
+  onOpenCustomerCenter?: () => void
+  onRestorePurchases?: () => void
+  isRestoring?: boolean
 }
 
 function getManageSubscriptionLabel() {
@@ -50,6 +53,9 @@ export default function ManageSubscriptionScreen({
   onDowngradeToFreeForTest,
   premiumPlanLabel = '€5/month',
   premiumNextRenewalLabel = i18n.t('subscription.premium.renewsOn', { date: 'Mar 27, 2026' }),
+  onOpenCustomerCenter,
+  onRestorePurchases,
+  isRestoring = false,
 }: ManageSubscriptionScreenProps) {
   const manageSubscriptionLabel = getManageSubscriptionLabel()
 
@@ -73,6 +79,11 @@ export default function ManageSubscriptionScreen({
 
         <Button
           onPress={() => {
+            if (onOpenCustomerCenter) {
+              onOpenCustomerCenter()
+              return
+            }
+
             void openStoreSubscriptionSettings()
           }}
           variant="secondary"
@@ -81,6 +92,14 @@ export default function ManageSubscriptionScreen({
         >
           {manageSubscriptionLabel}
         </Button>
+
+        {onRestorePurchases ? (
+          <Button onPress={onRestorePurchases} variant="secondary" size="md">
+            {isRestoring
+              ? i18n.t('subscription.manage.restoring')
+              : i18n.t('subscription.manage.restorePurchases')}
+          </Button>
+        ) : null}
       </View>
 
       {onDowngradeToFreeForTest ? (

@@ -14,6 +14,9 @@ type PremiumScreenProps = {
   isActive?: boolean
   isUpgrading?: boolean
   onManageSubscription?: () => void
+  monthlyPriceLabel?: string
+  yearlyPriceLabel?: string
+  yearlyMonthlyEquivalentLabel?: string | null
 }
 
 export default function PremiumScreen({
@@ -22,14 +25,14 @@ export default function PremiumScreen({
   isActive = false,
   isUpgrading = false,
   onManageSubscription,
+  monthlyPriceLabel = '€5',
+  yearlyPriceLabel = '€36',
+  yearlyMonthlyEquivalentLabel,
 }: PremiumScreenProps) {
   const captureAnalyticsEvent = useAnalyticsCapture()
   const { t } = useTranslation()
   const [billingCycle, setBillingCycle] = React.useState<'month' | 'year'>('month')
-  const monthlyPrice = 5
-  const yearlyPrice = 36
-  const yearlyMonthlyEquivalent = yearlyPrice / 12
-  const priceValue = billingCycle === 'month' ? `€${monthlyPrice}` : `€${yearlyPrice}`
+  const priceValue = billingCycle === 'month' ? monthlyPriceLabel : yearlyPriceLabel
   const pricePeriod = billingCycle === 'month' ? t('subscription.premium.perMonth') : t('subscription.premium.perYear')
   const checklistItems = [
     t('subscription.premium.checklist.neverLose'),
@@ -95,8 +98,8 @@ export default function PremiumScreen({
             <Text style={styles.priceValue}>{priceValue}</Text>
             <Text style={styles.pricePeriod}>{pricePeriod}</Text>
           </View>
-          {billingCycle === 'year' ? (
-            <Text style={styles.yearlyNote}>{t('subscription.premium.yearlyNote', { price: `EUR ${yearlyMonthlyEquivalent}` })}</Text>
+          {billingCycle === 'year' && yearlyMonthlyEquivalentLabel ? (
+            <Text style={styles.yearlyNote}>{t('subscription.premium.yearlyNote', { price: yearlyMonthlyEquivalentLabel })}</Text>
           ) : null}
         </>
       ) : null}
