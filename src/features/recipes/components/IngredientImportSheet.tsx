@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native'
 
 import Button from '@/components/Button'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 
 type IngredientImportSheetProps = {
@@ -22,6 +23,7 @@ export default function IngredientImportSheet({
   onAddAll,
   onAddSelected,
 }: IngredientImportSheetProps) {
+  const { t } = useTranslation()
   const [selectedIndexes, setSelectedIndexes] = useState<number[]>([])
 
   useEffect(() => {
@@ -57,10 +59,8 @@ export default function IngredientImportSheet({
 
         <View style={styles.sheet}>
           <View style={styles.handle} />
-          <Text style={styles.title}>Add ingredients</Text>
-          <Text style={styles.subtitle}>
-            Add everything at once or choose specific items.
-          </Text>
+          <Text style={styles.title}>{t('recipes.ingredientImportSheet.title')}</Text>
+          <Text style={styles.subtitle}>{t('recipes.ingredientImportSheet.subtitle')}</Text>
 
           <ScrollView
             style={styles.list}
@@ -75,7 +75,9 @@ export default function IngredientImportSheet({
                     key={`${ingredient}-${index}`}
                     onPress={() => toggleIngredient(index)}
                     accessibilityRole="button"
-                    accessibilityLabel={selected ? `Unselect ${ingredient}` : `Select ${ingredient}`}
+                    accessibilityLabel={selected
+                      ? t('recipes.ingredientImportSheet.unselectA11y', { ingredient })
+                      : t('recipes.ingredientImportSheet.selectA11y', { ingredient })}
                     style={({ pressed }) => [
                       styles.row,
                       selected && styles.rowSelected,
@@ -92,7 +94,7 @@ export default function IngredientImportSheet({
                 )
               })
             ) : (
-              <Text style={styles.emptyText}>No ingredients listed.</Text>
+              <Text style={styles.emptyText}>{t('recipes.ingredientImportSheet.empty')}</Text>
             )}
           </ScrollView>
 
@@ -104,7 +106,7 @@ export default function IngredientImportSheet({
               disabled={!canAddAll}
               onPress={onAddAll}
             >
-              Add all ingredients
+              {t('recipes.ingredientImportSheet.addAll')}
             </Button>
 
             <Button
@@ -113,7 +115,7 @@ export default function IngredientImportSheet({
               disabled={!canAddSelected}
               onPress={() => onAddSelected(selectedIngredients)}
             >
-              Add selected ({selectedIngredients.length})
+              {t('recipes.ingredientImportSheet.addSelected', { count: selectedIngredients.length })}
             </Button>
 
             <Button
@@ -122,7 +124,7 @@ export default function IngredientImportSheet({
               disabled={isSubmitting}
               onPress={onClose}
             >
-              Cancel
+              {t('recipes.ingredientImportSheet.cancel')}
             </Button>
           </View>
         </View>

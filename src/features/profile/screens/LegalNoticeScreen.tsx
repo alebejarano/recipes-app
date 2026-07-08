@@ -75,54 +75,54 @@ const NOTICE_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly NoticeSection[]> =
         {
             title: '1. Prestador del Servicio',
             paragraphs: [
-                'De conformidad con la Ley 34/2002, de Servicios de la Sociedad de la Informacion y de Comercio Electronico (LSSI-CE), el prestador de Dropsauce es:',
+                'De conformidad con la Ley 34/2002, de Servicios de la Sociedad de la Información y de Comercio Electrónico (LSSI-CE), el prestador de Dropsauce es:',
             ],
             details: [
                 'Nombre legal: Anthony Lajusticia',
                 'Nombre comercial: Dropsauce',
-                'Situacion legal: Profesional autonomo dado de alta en Espana en el Regimen Especial de Trabajadores Autonomos',
+                'Situación legal: Profesional autónomo dado de alta en España en el Régimen Especial de Trabajadores Autónomos',
                 'NIF: Z0570202Z',
-                'Domicilio profesional: Calle de Alcala 54, 4º izquierda, 28014 Madrid',
-                'Residencia y lugar de establecimiento: Espana',
+                'Domicilio profesional: Calle de Alcalá 54, 4º izquierda, 28014 Madrid',
+                'Residencia y lugar de establecimiento: España',
                 'Email: hello@dropsauce.app',
             ],
             footer:
-                'Salvo que se indique lo contrario, la prestacion de esta app no esta sujeta a autorizacion administrativa previa, colegiacion profesional regulada ni inscripcion en el registro mercantil.',
+                'Salvo que se indique lo contrario, la prestación de esta app no está sujeta a autorización administrativa previa, colegiación profesional regulada ni inscripción en el registro mercantil.',
         },
         {
             title: '2. Finalidad',
             paragraphs: [
-                'Este Aviso Legal identifica al prestador del servicio y establece las condiciones generales de acceso a Dropsauce y a sus paginas legales publicas.',
-                'El uso de funciones de cuenta, nube y suscripcion tambien esta sujeto a los Terminos del Servicio y a la Politica de Privacidad.',
+                'Este Aviso Legal identifica al prestador del servicio y establece las condiciones generales de acceso a Dropsauce y a sus páginas legales públicas.',
+                'El uso de funciones de cuenta, nube y suscripción también está sujeto a los Términos del Servicio y a la Política de Privacidad.',
             ],
         },
         {
             title: '3. Propiedad Intelectual',
             paragraphs: [
-                'El software, diseno, marca, logotipos, textos y materiales visuales originales de Dropsauce pertenecen a Anthony Lajusticia o se usan bajo licencia y estan protegidos por la normativa de propiedad intelectual.',
-                'Ningun contenido puede copiarse, modificarse, distribuirse, someterse a ingenieria inversa ni explotarse comercialmente salvo que lo permita la ley, una licencia de codigo abierto aplicable o una autorizacion previa por escrito.',
-                'Los usuarios conservan los derechos sobre el contenido que crean o suben, sujeto al permiso limitado necesario para prestar el servicio tal como se describe en los Terminos.',
+                'El software, diseño, marca, logotipos, textos y materiales visuales originales de Dropsauce pertenecen a Anthony Lajusticia o se usan bajo licencia y están protegidos por la normativa de propiedad intelectual.',
+                'Ningún contenido puede copiarse, modificarse, distribuirse, someterse a ingeniería inversa ni explotarse comercialmente salvo que lo permita la ley, una licencia de código abierto aplicable o una autorización previa por escrito.',
+                'Los usuarios conservan los derechos sobre el contenido que crean o suben, sujeto al permiso limitado necesario para prestar el servicio tal como se describe en los Términos.',
             ],
         },
         {
             title: '4. Responsabilidad',
             paragraphs: [
-                'Se realizan esfuerzos razonables para mantener el servicio y la informacion legal exactos, seguros y disponibles. Puede haber interrupciones temporales por mantenimiento, conectividad, servicios de terceros, incidentes de seguridad o acontecimientos fuera de un control razonable.',
-                'Los enlaces externos y servicios de terceros, incluidos Apple App Store, Google Play, Supabase y PostHog, se rigen por sus propios terminos y politicas. Dropsauce no es responsable del contenido o disponibilidad de terceros mas alla de la responsabilidad impuesta por la ley.',
+                'Se realizan esfuerzos razonables para mantener el servicio y la información legal exactos, seguros y disponibles. Puede haber interrupciones temporales por mantenimiento, conectividad, servicios de terceros, incidentes de seguridad o acontecimientos fuera de un control razonable.',
+                'Los enlaces externos y servicios de terceros, incluidos Apple App Store, Google Play, Supabase y PostHog, se rigen por sus propios términos y políticas. Dropsauce no es responsable del contenido o disponibilidad de terceros más allá de la responsabilidad impuesta por la ley.',
                 'Nada en este aviso excluye responsabilidad imperativa ni derechos de los consumidores.',
             ],
         },
         {
             title: '5. Precios y Compras',
             paragraphs: [
-                'Los precios de Premium, periodos de facturacion, impuestos aplicables y condiciones de suscripcion se muestran en Apple App Store o Google Play antes de la compra.',
-                'Los pagos, renovaciones, cancelaciones y reembolsos de tienda se administran a traves de la tienda usada para la compra, sin limitar los derechos concedidos por la normativa imperativa de consumo.',
+                'Los precios de Premium, períodos de facturación, impuestos aplicables y condiciones de suscripción se muestran en Apple App Store o Google Play antes de la compra.',
+                'Los pagos, renovaciones, cancelaciones y reembolsos de tienda se administran a través de la tienda usada para la compra, sin limitar los derechos concedidos por la normativa imperativa de consumo.',
             ],
         },
         {
             title: '6. Ley Aplicable',
             paragraphs: [
-                'Este Aviso Legal se rige por la ley espanola. Los consumidores conservan cualquier proteccion imperativa y el fuero legalmente competente disponible en su pais de residencia habitual.',
+                'Este Aviso Legal se rige por la ley española. Los consumidores conservan cualquier protección imperativa y el fuero legalmente competente disponible en su país de residencia habitual.',
                 'Las preguntas o reclamaciones pueden enviarse a hello@dropsauce.app.',
             ],
         },

@@ -33,21 +33,6 @@ type FeatureItem = {
   label: string
 }
 
-const freeFeatures: FeatureItem[] = [
-  { icon: 'book-open', label: i18n.t('subscription.currentPlan.freeFeatures.recipes') },
-  { icon: 'cloud', label: i18n.t('subscription.currentPlan.freeFeatures.storage') },
-  { icon: 'coffee', label: i18n.t('subscription.currentPlan.freeFeatures.notes') },
-  { icon: 'wifi-off', label: i18n.t('subscription.currentPlan.freeFeatures.local') },
-]
-
-const premiumFeatures: FeatureItem[] = [
-  { icon: 'book-open', label: i18n.t('subscription.currentPlan.premiumFeatures.recipes') },
-  { icon: 'coffee', label: i18n.t('subscription.currentPlan.premiumFeatures.notes') },
-  { icon: 'cloud', label: i18n.t('subscription.currentPlan.premiumFeatures.storage') },
-  { icon: 'smartphone', label: i18n.t('subscription.currentPlan.premiumFeatures.sync') },
-  { icon: 'wifi', label: i18n.t('subscription.currentPlan.premiumFeatures.backup') },
-]
-
 function formatStorageGigabytes(bytes: number) {
   const gigabytes = bytes / (1024 * 1024 * 1024)
   return `${Math.max(0, Math.round(gigabytes * 10) / 10)}GB`
@@ -196,6 +181,19 @@ export default function CurrentPlanScreen({
 
   const recipesSaved = recipesQuery.data?.length ?? 0
   const storageBytesUsed = storageUsageQuery.data?.totalBytes ?? 0
+  const freeFeatures: FeatureItem[] = [
+    { icon: 'book-open', label: i18n.t('subscription.currentPlan.freeFeatures.recipes') },
+    { icon: 'cloud', label: i18n.t('subscription.currentPlan.freeFeatures.storage') },
+    { icon: 'coffee', label: i18n.t('subscription.currentPlan.freeFeatures.notes') },
+    { icon: 'wifi-off', label: i18n.t('subscription.currentPlan.freeFeatures.local') },
+  ]
+  const premiumFeatures: FeatureItem[] = [
+    { icon: 'book-open', label: i18n.t('subscription.currentPlan.premiumFeatures.recipes') },
+    { icon: 'coffee', label: i18n.t('subscription.currentPlan.premiumFeatures.notes') },
+    { icon: 'cloud', label: i18n.t('subscription.currentPlan.premiumFeatures.storage') },
+    { icon: 'smartphone', label: i18n.t('subscription.currentPlan.premiumFeatures.sync') },
+    { icon: 'wifi', label: i18n.t('subscription.currentPlan.premiumFeatures.backup') },
+  ]
 
   if (accountType === 'premium') {
     const storagePercent = Math.min((storageBytesUsed / PREMIUM_PLAN_MAX_STORAGE_BYTES) * 100, 100)
@@ -239,7 +237,7 @@ export default function CurrentPlanScreen({
 
           <View style={[styles.planCard, styles.premiumPlanCard]}>
             <View style={styles.planCardHeader}>
-              <Text style={styles.planName}>PREMIUM</Text>
+              <Text style={styles.planName}>{i18n.t('subscription.currentPlan.premium').toUpperCase()}</Text>
               <PlanPill label={i18n.t('subscription.currentPlan.current')} premium />
             </View>
 
@@ -308,7 +306,7 @@ export default function CurrentPlanScreen({
 
         <View style={styles.planCard}>
           <View style={styles.planCardHeader}>
-            <Text style={styles.planName}>FREE</Text>
+            <Text style={styles.planName}>{i18n.t('subscription.currentPlan.free').toUpperCase()}</Text>
             <PlanPill label={i18n.t('subscription.currentPlan.current')} />
           </View>
           <FeatureList items={freeFeatures} />
@@ -316,7 +314,7 @@ export default function CurrentPlanScreen({
 
         <View style={[styles.planCard, styles.premiumPlanCard]}>
           <View style={styles.planCardHeader}>
-            <Text style={styles.planName}>PREMIUM</Text>
+            <Text style={styles.planName}>{i18n.t('subscription.currentPlan.premium').toUpperCase()}</Text>
             <PlanPill label={i18n.t('subscription.currentPlan.recommended')} premium />
           </View>
           <FeatureList items={premiumFeatures} premium />

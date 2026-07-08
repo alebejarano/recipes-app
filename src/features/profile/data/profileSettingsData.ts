@@ -17,16 +17,6 @@ export type DietaryOption = {
   icon: React.ComponentProps<typeof Feather>['name']
 }
 
-export const DIETARY_OPTIONS: DietaryOption[] = [
-  { id: 'vegetarian', label: 'Vegetarian', icon: 'feather' },
-  { id: 'vegan', label: 'Vegan', icon: 'activity' },
-  { id: 'pescatarian', label: 'Pescatarian', icon: 'anchor' },
-  { id: 'glutenFree', label: 'Gluten-Free', icon: 'slash' },
-  { id: 'dairyFree', label: 'Dairy-Free', icon: 'droplet' },
-  { id: 'eggFree', label: 'Egg-Free', icon: 'circle' },
-  { id: 'nutFree', label: 'Nut-Free', icon: 'alert-triangle' },
-]
-
 // Default selection
 export const DEFAULT_DIETARY_PREFERENCES: DietaryId[] = ['vegetarian']
 
@@ -38,6 +28,18 @@ export type PreferenceToggles = {
 export type AccountPlan = 'free' | 'premium'
 
 type Translate = (scope: string) => string
+
+export function buildDietaryOptions(t: Translate): DietaryOption[] {
+  return [
+    { id: 'vegetarian', label: t('profile.dietary.vegetarian'), icon: 'feather' },
+    { id: 'vegan', label: t('profile.dietary.vegan'), icon: 'activity' },
+    { id: 'pescatarian', label: t('profile.dietary.pescatarian'), icon: 'anchor' },
+    { id: 'glutenFree', label: t('profile.dietary.glutenFree'), icon: 'slash' },
+    { id: 'dairyFree', label: t('profile.dietary.dairyFree'), icon: 'droplet' },
+    { id: 'eggFree', label: t('profile.dietary.eggFree'), icon: 'circle' },
+    { id: 'nutFree', label: t('profile.dietary.nutFree'), icon: 'alert-triangle' },
+  ]
+}
 
 export function buildMembershipItems(args: {
   plan: AccountPlan

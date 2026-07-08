@@ -420,19 +420,25 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
             <View style={styles.metaItem}>
               <Feather name="clock" size={14} style={styles.metaIcon} />
               <Text style={styles.metaText}>
-                {recipe.prepTimeMinutes ? `${recipe.prepTimeMinutes} min prep` : 'Prep time'}
+                {recipe.prepTimeMinutes
+                  ? t('recipes.detail.prepValue', { value: recipe.prepTimeMinutes })
+                  : t('recipes.detail.prepFallback')}
               </Text>
             </View>
             <View style={styles.metaItem}>
               <Feather name="clock" size={14} style={styles.metaIcon} />
               <Text style={styles.metaText}>
-                {recipe.cookTimeMinutes ? `${recipe.cookTimeMinutes} min cook` : 'Cook time'}
+                {recipe.cookTimeMinutes
+                  ? t('recipes.detail.cookValue', { value: recipe.cookTimeMinutes })
+                  : t('recipes.detail.cookFallback')}
               </Text>
             </View>
             <View style={styles.metaItem}>
               <Feather name="users" size={14} style={styles.metaIcon} />
               <Text style={styles.metaText}>
-                {recipe.servings ? `${recipe.servings} servings` : 'Servings'}
+                {recipe.servings
+                  ? t('recipes.detail.servingsValue', { value: recipe.servings })
+                  : t('recipes.detail.servingsFallback')}
               </Text>
             </View>
           </View>
@@ -440,11 +446,11 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
 
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Ingredients</Text>
+            <Text style={styles.sectionTitle}>{t('recipes.detail.ingredients')}</Text>
             <TouchableOpacity
               onPress={() => setIsIngredientImportOpen(true)}
               accessibilityRole="button"
-              accessibilityLabel="Add ingredients to shopping list"
+              accessibilityLabel={t('recipes.detail.addIngredientsA11y')}
               style={styles.sectionActionButton}
             >
               <MaterialIcons
@@ -452,7 +458,7 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
                 size={16}
                 style={styles.sectionActionIcon}
               />
-              <Text style={styles.sectionActionText}>Add ingredients to your listt</Text>
+              <Text style={styles.sectionActionText}>{t('recipes.detail.addIngredients')}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.card}>
@@ -463,13 +469,13 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
                 </View>
               ))
             ) : (
-              <Text style={styles.emptyText}>No ingredients listed.</Text>
+              <Text style={styles.emptyText}>{t('recipes.detail.noIngredientsListed')}</Text>
             )}
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Instructions</Text>
+          <Text style={styles.sectionTitle}>{t('recipes.detail.instructions')}</Text>
           <View style={styles.stepsBlock}>
             {recipe.steps.length > 0 ? (
               recipe.steps.map((step, index) => {
@@ -484,14 +490,14 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
                 )
               })
             ) : (
-              <Text style={styles.emptyText}>No instructions yet.</Text>
+              <Text style={styles.emptyText}>{t('recipes.detail.noInstructions')}</Text>
             )}
           </View>
         </View>
 
         {recipe.description ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Notes</Text>
+            <Text style={styles.sectionTitle}>{t('recipes.detail.notes')}</Text>
             <View style={styles.card}>
               <Text style={styles.noteText}>{recipe.description}</Text>
             </View>

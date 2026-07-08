@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons'
 import React from 'react'
 import { Animated, Easing, Pressable, Text, TouchableOpacity, View } from 'react-native'
 
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 
@@ -26,6 +27,7 @@ export default function KitchenAlmostFullCard({
   secondaryActionLabel,
   onDismiss,
 }: KitchenAlmostFullCardProps) {
+  const { t } = useTranslation()
   const entry = React.useRef(new Animated.Value(0)).current
 
   React.useEffect(() => {
@@ -43,7 +45,7 @@ export default function KitchenAlmostFullCard({
   })
 
   const secondaryAction = onSecondaryAction ?? onManageRecipes
-  const secondaryLabel = secondaryActionLabel ?? 'Manage recipes'
+  const secondaryLabel = secondaryActionLabel ?? t('subscription.reminders.manageRecipes')
 
   return (
     <Animated.View
@@ -60,7 +62,7 @@ export default function KitchenAlmostFullCard({
         <Pressable
           onPress={onDismiss}
           accessibilityRole="button"
-          accessibilityLabel="Dismiss kitchen usage reminder"
+          accessibilityLabel={t('subscription.reminders.dismissA11y')}
           style={({ pressed }) => [styles.dismissButton, pressed && styles.dismissButtonPressed]}
         >
           <Feather name="x" size={14} style={styles.dismissIcon} />
@@ -77,7 +79,7 @@ export default function KitchenAlmostFullCard({
           activeOpacity={0.85}
           style={styles.primaryAction}
         >
-          <Text style={styles.primaryActionText}>See Premium</Text>
+          <Text style={styles.primaryActionText}>{t('subscription.reminders.seePremium')}</Text>
         </TouchableOpacity>
         {secondaryAction ? (
           <TouchableOpacity

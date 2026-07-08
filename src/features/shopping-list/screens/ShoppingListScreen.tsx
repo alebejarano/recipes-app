@@ -248,7 +248,7 @@ export default function ShoppingListScreen() {
         {/* Footer */}
         <View style={styles.footer}>
           <Button size="xl" variant="primary" disabled={!isHydrated} onPress={onDone}>
-            Done
+            {t('shoppingList.done')}
           </Button>
 
           {/* Optional: if you want a manual “save/confirm” UX still:

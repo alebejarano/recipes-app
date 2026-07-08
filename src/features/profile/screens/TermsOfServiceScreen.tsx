@@ -132,56 +132,56 @@ const TERMS_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly TermsSection[]> = {
     ],
     es: [
         {
-            title: '1. Proveedor y Aceptacion',
+            title: '1. Proveedor y Aceptación',
             paragraphs: [
-                'Estos Terminos del Servicio regulan el uso de Dropsauce, prestado bajo el nombre comercial DropSauce por Anthony Lajusticia, NIF Z0570202Z, profesional autonomo establecido en Espana y dado de alta en el Regimen Especial de Trabajadores Autonomos.',
+                'Estos Términos del Servicio regulan el uso de Dropsauce, prestado bajo el nombre comercial DropSauce por Anthony Lajusticia, NIF Z0570202Z, profesional autónomo establecido en España y dado de alta en el Régimen Especial de Trabajadores Autónomos.',
                 'Contacto: hello@dropsauce.app.',
-                'Al crear una cuenta o usar Dropsauce, aceptas estos Terminos. Si no puedes aceptarlos validamente conforme a la ley aplicable, tu uso debe estar autorizado por un padre, madre o tutor legal.',
+                'Al crear una cuenta o usar Dropsauce, aceptas estos Términos. Si no puedes aceptarlos válidamente conforme a la ley aplicable, tu uso debe estar autorizado por un padre, madre o tutor legal.',
             ],
         },
         {
             title: '2. Servicio',
             paragraphs: [
-                'Dropsauce ofrece herramientas para crear, importar, guardar, organizar, ver y compartir recetas, notas, carpetas, informacion de compra, imagenes y documentos relacionados con la cocina.',
+                'Dropsauce ofrece herramientas para crear, importar, guardar, organizar, ver y compartir recetas, notas, carpetas, información de compra, imágenes y documentos relacionados con la cocina.',
                 'El modo invitado puede usarse sin cuenta y guarda los datos localmente en el dispositivo. Una cuenta gratuita proporciona acceso a la cuenta y puede ser necesaria antes de comprar Premium.',
-                'Premium puede ofrecer recetas y notas ilimitadas, copia de seguridad en la nube, sincronizacion entre dispositivos y almacenamiento en la nube para importaciones, sujeto a los limites de almacenamiento y uso razonable mostrados en la app.',
-                'Las funciones pueden mejorarse, sustituirse o discontinuarse. Los cambios que afecten materialmente a una suscripcion de pago se gestionaran conforme a la normativa de consumo aplicable.',
+                'Premium puede ofrecer recetas y notas ilimitadas, copia de seguridad en la nube, sincronización entre dispositivos y almacenamiento en la nube para importaciones, sujeto a los límites de almacenamiento y uso razonable mostrados en la app.',
+                'Las funciones pueden mejorarse, sustituirse o dejar de ofrecerse. Los cambios que afecten materialmente a una suscripción de pago se gestionarán conforme a la normativa de consumo aplicable.',
             ],
         },
         {
             title: '3. Cuentas',
             paragraphs: [
-                'Los usuarios deben proporcionar informacion exacta de la cuenta, mantener confidenciales sus credenciales y avisar sin demora a hello@dropsauce.app si sospechan un acceso no autorizado.',
-                'Ninguna persona puede usar el servicio para interferir con la cuenta o los datos de otro usuario. Dropsauce puede restringir o suspender el acceso cuando sea razonablemente necesario para afrontar problemas de seguridad, fraude, actividad ilicita o un incumplimiento material de estos Terminos.',
+                'Los usuarios deben proporcionar información exacta de la cuenta, mantener confidenciales sus credenciales y avisar sin demora a hello@dropsauce.app si sospechan un acceso no autorizado.',
+                'Ninguna persona puede usar el servicio para interferir con la cuenta o los datos de otro usuario. Dropsauce puede restringir o suspender el acceso cuando sea razonablemente necesario para afrontar problemas de seguridad, fraude, actividad ilícita o un incumplimiento material de estos Términos.',
             ],
         },
         {
             title: '4. Contenido del Usuario',
             paragraphs: [
-                'Conservas la titularidad de las recetas, notas, imagenes, archivos y demas contenido que crees o subas.',
+                'Conservas la titularidad de las recetas, notas, imágenes, archivos y demás contenido que crees o subas.',
                 'Concedes a Dropsauce un permiso limitado y no exclusivo para alojar, copiar, tratar, mostrar, respaldar y sincronizar ese contenido solo en la medida necesaria para prestar y asegurar las funciones que elijas.',
-                'Eres responsable de disponer de los derechos necesarios para subir y usar el contenido. No debes subir contenido ilicito, malware, contenido que infrinja derechos de propiedad intelectual o privacidad, ni informacion muy sensible que no resulte apropiada para un servicio de gestion de recetas.',
+                'Eres responsable de disponer de los derechos necesarios para subir y usar el contenido. No debes subir contenido ilícito, malware, contenido que infrinja derechos de propiedad intelectual o privacidad, ni información muy sensible que no resulte apropiada para un servicio de gestión de recetas.',
             ],
         },
         {
             title: '5. Uso Aceptable',
             paragraphs: ['No debes:'],
             bullets: [
-                'usar el servicio para actividades ilicitas, fraudulentas, abusivas o perjudiciales',
-                'intentar acceder sin autorizacion a cuentas, sistemas, almacenamiento o datos',
-                'eludir limites de plan, controles de seguridad o salvaguardas de subida',
-                'interferir con el servicio o introducir codigo malicioso',
+                'usar el servicio para actividades ilícitas, fraudulentas, abusivas o perjudiciales',
+                'intentar acceder sin autorización a cuentas, sistemas, almacenamiento o datos',
+                'eludir límites de plan, controles de seguridad o salvaguardas de subida',
+                'interferir con el servicio o introducir código malicioso',
                 'revender o explotar comercialmente el servicio sin permiso por escrito.',
             ],
         },
         {
             title: '6. Planes Free y Premium',
             paragraphs: [
-                'Las funciones del plan, los precios, periodos de facturacion, capacidad de almacenamiento y cualquier limite de uso razonable se muestran antes de la compra. Los precios mostrados en la tienda incluyen los impuestos aplicables cuando la tienda asi lo indique.',
-                'Las suscripciones Premium se compran y procesan a traves de Apple App Store o Google Play. Apple o Google son responsables de recopilar los datos de pago y administrar la facturacion de la tienda. Dropsauce no recibe datos completos de tarjeta o banco.',
-                'Las suscripciones se renuevan automaticamente por el periodo de facturacion seleccionado salvo cancelacion desde la cuenta de la tienda antes de la renovacion. Premium normalmente sigue disponible hasta el final del periodo pagado tras la cancelacion.',
-                'Los cambios de precio, la confirmacion de compra, la facturacion, la cancelacion y los reembolsos tambien se rigen por los terminos de la tienda usada para la compra. Nada de lo dispuesto en estos Terminos limita los derechos imperativos de los consumidores ni cualquier derecho de reembolso previsto por la ley aplicable.',
-                'Eliminar la cuenta de Dropsauce no cancela necesariamente una suscripcion activa de la tienda. La suscripcion tambien debe cancelarse en Apple App Store o Google Play.',
+                'Las funciones del plan, los precios, períodos de facturación, capacidad de almacenamiento y cualquier límite de uso razonable se muestran antes de la compra. Los precios mostrados en la tienda incluyen los impuestos aplicables cuando la tienda así lo indique.',
+                'Las suscripciones Premium se compran y procesan a través de Apple App Store o Google Play. Apple o Google son responsables de recopilar los datos de pago y administrar la facturación de la tienda. Dropsauce no recibe datos completos de tarjeta o banco.',
+                'Las suscripciones se renuevan automáticamente por el período de facturación seleccionado salvo cancelación desde la cuenta de la tienda antes de la renovación. Premium normalmente sigue disponible hasta el final del período pagado tras la cancelación.',
+                'Los cambios de precio, la confirmación de compra, la facturación, la cancelación y los reembolsos también se rigen por los términos de la tienda usada para la compra. Nada de lo dispuesto en estos Términos limita los derechos imperativos de los consumidores ni cualquier derecho de reembolso previsto por la ley aplicable.',
+                'Eliminar la cuenta de Dropsauce no cancela necesariamente una suscripción activa de la tienda. La suscripción también debe cancelarse en Apple App Store o Google Play.',
             ],
         },
         {
@@ -189,60 +189,60 @@ const TERMS_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly TermsSection[]> = {
             paragraphs: [
                 'Las funciones en la nube requieren un dispositivo compatible, acceso a internet, una cuenta activa y cualquier derecho Premium exigible.',
                 'Dropsauce aplica medidas razonables de seguridad y continuidad, pero no puede garantizar un funcionamiento ininterrumpido ni que toda copia local o en la nube vaya a poder recuperarse siempre. Los usuarios deben conservar copias independientes del contenido que sea importante para ellos.',
-                'Si Premium finaliza, la sincronizacion en la nube o las nuevas subidas a la nube pueden detenerse. Se facilitaran mecanismos razonables de acceso, exportacion, degradacion o eliminacion segun exija la ley aplicable y conforme a la funcionalidad descrita en la app.',
+                'Si Premium finaliza, la sincronización en la nube o las nuevas subidas a la nube pueden detenerse. Se facilitarán mecanismos razonables de acceso, exportación, degradación o eliminación según exija la ley aplicable y conforme a la funcionalidad descrita en la app.',
             ],
         },
         {
             title: '8. Privacidad y Comunicaciones',
             paragraphs: [
-                'El tratamiento de datos personales se rige por la Politica de Privacidad.',
-                'Pueden enviarse comunicaciones necesarias de cuenta, autenticacion, seguridad, estado de facturacion y servicio para operar la cuenta o ejecutar el contrato.',
-                'Los correos de marketing y la analitica de PostHog son opcionales, estan desactivados por defecto y requieren una aceptacion separada. Pueden desactivarse desde el ajuste correspondiente de la app.',
-                'No estan habilitados session replay, analytics autocapture, seguimiento publicitario ni la transmision de contenido de recetas o notas a PostHog.',
+                'El tratamiento de datos personales se rige por la Política de Privacidad.',
+                'Pueden enviarse comunicaciones necesarias de cuenta, autenticación, seguridad, estado de facturación y servicio para operar la cuenta o ejecutar el contrato.',
+                'Los correos de marketing y la analítica de PostHog son opcionales, están desactivados por defecto y requieren una aceptación separada. Pueden desactivarse desde el ajuste correspondiente de la app.',
+                'No están habilitados `session replay`, `analytics autocapture`, el seguimiento publicitario ni la transmisión de contenido de recetas o notas a PostHog.',
             ],
         },
         {
             title: '9. Propiedad Intelectual',
             paragraphs: [
-                'Dropsauce, su diseno, software, marca y materiales originales pertenecen al proveedor o a sus licenciantes y estan protegidos por la normativa aplicable de propiedad intelectual.',
-                'Estos Terminos solo conceden un derecho personal, limitado, revocable, no exclusivo e intransferible para usar la app conforme a estos Terminos. No transfieren la titularidad de la app ni de la marca.',
+                'Dropsauce, su diseño, software, marca y materiales originales pertenecen al proveedor o a sus licenciantes y están protegidos por la normativa aplicable de propiedad intelectual.',
+                'Estos Términos solo conceden un derecho personal, limitado, revocable, no exclusivo e intransferible para usar la app conforme a estos Términos. No transfieren la titularidad de la app ni de la marca.',
             ],
         },
         {
-            title: '10. Eliminacion de Cuenta y Terminacion',
+            title: '10. Eliminación de Cuenta y Terminación',
             paragraphs: [
-                'Puedes dejar de usar Dropsauce en cualquier momento. La eliminacion de la cuenta esta disponible desde Privacidad y seguridad o contactando con hello@dropsauce.app.',
-                'La eliminacion de la cuenta es permanente y borra la cuenta y el contenido asociado en la nube de los sistemas activos, sujeto a una retencion limitada exigida por ley y a los ciclos de copia de seguridad del proveedor. El contenido local del dispositivo puede permanecer hasta que se elimine del dispositivo o se borren los datos de la app.',
-                'Dropsauce puede terminar o suspender una cuenta por incumplimiento grave o reiterado, uso ilicito, fraude o riesgo de seguridad. Cuando sea razonablemente posible y legalmente permitido, se dara aviso y oportunidad de subsanar el problema.',
+                'Puedes dejar de usar Dropsauce en cualquier momento. La eliminación de la cuenta está disponible desde Privacidad y seguridad o contactando con hello@dropsauce.app.',
+                'La eliminación de la cuenta es permanente y borra la cuenta y el contenido asociado en la nube de los sistemas activos, sujeto a una retención limitada exigida por ley y a los ciclos de copia de seguridad del proveedor. El contenido local del dispositivo puede permanecer hasta que se elimine del dispositivo o se borren los datos de la app.',
+                'Dropsauce puede terminar o suspender una cuenta por incumplimiento grave o reiterado, uso ilícito, fraude o riesgo de seguridad. Cuando sea razonablemente posible y legalmente permitido, se dará aviso y oportunidad de subsanar el problema.',
             ],
         },
         {
-            title: '11. Garantias y Responsabilidad',
+            title: '11. Garantías y Responsabilidad',
             paragraphs: [
-                'Dropsauce se presta con diligencia y cuidado razonables. Salvo los derechos y garantias que no puedan excluirse legalmente, el servicio se presta sin garantias adicionales.',
-                'Nada en estos Terminos excluye o limita responsabilidad cuando tal exclusion este prohibida, incluyendo responsabilidad por fraude, dolo, negligencia grave, danos personales causados por negligencia o derechos imperativos de los consumidores.',
-                'En la medida permitida por la ley, Dropsauce no responde por perdidas indirectas no razonablemente previsibles, perdidas causadas por el dispositivo del usuario o por un servicio de terceros, ni por contenido subido sin los derechos necesarios.',
+                'Dropsauce se presta con diligencia y cuidado razonables. Salvo los derechos y garantías que no puedan excluirse legalmente, el servicio se presta sin garantías adicionales.',
+                'Nada en estos Términos excluye o limita responsabilidad cuando tal exclusión esté prohibida, incluyendo responsabilidad por fraude, dolo, negligencia grave, daños personales causados por negligencia o derechos imperativos de los consumidores.',
+                'En la medida permitida por la ley, Dropsauce no responde por pérdidas indirectas no razonablemente previsibles, pérdidas causadas por el dispositivo del usuario o por un servicio de terceros, ni por contenido subido sin los derechos necesarios.',
             ],
         },
         {
-            title: '12. Cambios en Estos Terminos',
+            title: '12. Cambios en Estos Términos',
             paragraphs: [
-                'Estos Terminos pueden actualizarse por razones legales, de seguridad, tecnicas o del servicio. Los cambios materiales se comunicaran a traves de la app o por otro canal adecuado antes de entrar en vigor cuando sea exigible.',
-                'Un cambio no eliminara retroactivamente derechos de consumo ya adquiridos. Si un cambio material requiere un nuevo consentimiento, Dropsauce lo solicitara.',
+                'Estos Términos pueden actualizarse por razones legales, de seguridad, técnicas o del servicio. Los cambios materiales se comunicarán a través de la app o por otro canal adecuado antes de entrar en vigor cuando sea exigible.',
+                'Un cambio no eliminará retroactivamente derechos de consumo ya adquiridos. Si un cambio material requiere un nuevo consentimiento, Dropsauce lo solicitará.',
             ],
         },
         {
             title: '13. Ley Aplicable y Disputas',
             paragraphs: [
-                'Estos Terminos se rigen por la ley espanola, sin privar a los consumidores de las protecciones imperativas disponibles conforme a la ley de su pais de residencia habitual.',
+                'Estos Términos se rigen por la ley española, sin privar a los consumidores de las protecciones imperativas disponibles conforme a la ley de su país de residencia habitual.',
                 'Antes de iniciar procedimientos formales, se anima a los usuarios a contactar con hello@dropsauce.app para revisar el problema.',
-                'En el caso de consumidores, las disputas podran plantearse ante los juzgados determinados por la normativa imperativa de consumo y procesal. Ninguna clausula de estos Terminos obliga a un consumidor a renunciar a un fuero legalmente protegido.',
+                'En el caso de consumidores, las disputas podrán plantearse ante los juzgados determinados por la normativa imperativa de consumo y procesal. Ninguna cláusula de estos Términos obliga a un consumidor a renunciar a un fuero legalmente protegido.',
             ],
         },
         {
             title: '14. Documentos Legales',
             paragraphs: [
-                'La Politica de Privacidad y el Aviso Legal forman parte de la informacion legal de Dropsauce y estan disponibles desde Privacidad y seguridad.',
+                'La Política de Privacidad y el Aviso Legal forman parte de la información legal de Dropsauce y están disponibles desde Privacidad y seguridad.',
             ],
         },
     ],

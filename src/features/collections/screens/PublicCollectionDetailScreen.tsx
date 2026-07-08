@@ -78,7 +78,10 @@ export default function PublicCollectionDetailScreen({
     return list.filter((r) => recipeMatchesCollection(r, title))
   }, [isUncategorized, title, recipesQuery.data])
 
-  const subtitle = `${recipes.length} recipe${recipes.length === 1 ? '' : 's'}`
+  const subtitle =
+    recipes.length === 1
+      ? t('collections.detail.recipesCountOne')
+      : t('collections.detail.recipesCountMany', { count: recipes.length })
   const folder = foldersQuery.data?.find(
     (item) => item.name.trim().toLowerCase() === title.trim().toLowerCase()
   )

@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 import { theme } from '@/styles/theme';
 
@@ -10,12 +11,14 @@ type NewCollectionTileProps = {
 };
 
 export default function NewCollectionTile({ onPress }: NewCollectionTileProps) {
+  const { t } = useTranslation();
+
   return (
     <Pressable onPress={onPress} style={styles.tile}>
       <View style={styles.plus}>
         <Feather name="plus" size={22} color={theme.colors.mutedForeground} />
       </View>
-      <Text style={styles.label}>Create folder</Text>
+      <Text style={styles.label}>{t('collections.createFolder')}</Text>
     </Pressable>
   );
 }

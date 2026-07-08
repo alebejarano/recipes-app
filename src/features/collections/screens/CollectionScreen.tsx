@@ -390,7 +390,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
         <KitchenAlmostFullCard
           title={t('recipes.detail.kitchenAlmostFull')}
           line1={t('collections.alerts.storageLeft', { count: storageLeftMb })}
-          line2="Premium keeps everything backed up & synced."
+          line2={t('subscription.reminders.backedUp')}
           onSeePremium={() =>
             router.push(
               resolvedMode === 'public'

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 
 type OnboardingLayoutProps = {
@@ -24,10 +25,11 @@ export default function OnboardingLayout({
                                              step,
                                              totalSteps,
                                              children,
-                                             showBackButton = false,
-                                             onBackPress,
-                                             scrollEnabled = true,
+                                         showBackButton = false,
+                                         onBackPress,
+                                         scrollEnabled = true,
                                          }: OnboardingLayoutProps) {
+    const { t } = useTranslation();
     const showProgress = totalSteps > 0 && step >= 1 && step <= totalSteps;
     const progress =
         showProgress && totalSteps > 0 ? step / totalSteps : 0;
@@ -46,7 +48,7 @@ export default function OnboardingLayout({
                             size={18}
                             style={styles.backIcon}
                         />
-                        <Text style={styles.backText}>Back</Text>
+                        <Text style={styles.backText}>{t('onboarding.layout.back')}</Text>
                     </TouchableOpacity>
                 ) : (
                     // keep spacing even when no back button
@@ -56,7 +58,7 @@ export default function OnboardingLayout({
                 {showProgress && (
                     <View style={styles.progressContainer}>
                         <Text style={styles.progressLabel}>
-                            Step {step} of {totalSteps}
+                            {t('onboarding.layout.progress', { step, total: totalSteps })}
                         </Text>
                         <View style={styles.progressTrack}>
                             <View

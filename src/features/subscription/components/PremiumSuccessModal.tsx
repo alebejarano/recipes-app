@@ -1,6 +1,7 @@
 import React from 'react'
 import { Animated, Easing, Image, Modal, Pressable, Text, View } from 'react-native'
 
+import { i18n } from '@/localization/i18n'
 import { createThemedStyles } from '@/styles/createStyles'
 
 type PremiumSuccessModalProps = {
@@ -18,8 +19,6 @@ type ConfettiPiece = {
   rotation: number
 }
 
-const highlightedBenefits = ['Unlimited recipes.', 'Cloud backup.', 'Sync everywhere.']
-
 const CONFETTI_COLORS = [
   'hsl(25, 80%, 52%)',
   'hsl(42, 85%, 62%)',
@@ -31,6 +30,11 @@ const CONFETTI_COLORS = [
 
 export default function PremiumSuccessModal({ visible, onClose }: PremiumSuccessModalProps) {
   const [cardHeight, setCardHeight] = React.useState(0)
+  const highlightedBenefits = [
+    i18n.t('subscription.premium.success.benefits.unlimited'),
+    i18n.t('subscription.premium.success.benefits.backup'),
+    i18n.t('subscription.premium.success.benefits.sync'),
+  ]
   const confettiPieces = React.useMemo(
     () =>
       Array.from({ length: 24 }, (_, index): ConfettiPiece => ({
@@ -153,8 +157,8 @@ export default function PremiumSuccessModal({ visible, onClose }: PremiumSuccess
             />
           </View>
 
-          <Text style={styles.title}>Welcome to Premium!</Text>
-          <Text style={styles.subtitle}>Your kitchen just got an upgrade.</Text>
+          <Text style={styles.title}>{i18n.t('subscription.premium.success.title')}</Text>
+          <Text style={styles.subtitle}>{i18n.t('subscription.premium.success.subtitle')}</Text>
 
           <View style={styles.benefitsWrap}>
             {highlightedBenefits.map((benefit) => (
@@ -165,12 +169,12 @@ export default function PremiumSuccessModal({ visible, onClose }: PremiumSuccess
           </View>
 
           <View style={styles.footerCopy}>
-            <Text style={styles.footerLine}>Nothing gets lost.</Text>
-            <Text style={styles.footerLine}>Everything stays deliciously organized.</Text>
+            <Text style={styles.footerLine}>{i18n.t('subscription.premium.success.footerPrimary')}</Text>
+            <Text style={styles.footerLine}>{i18n.t('subscription.premium.success.footerSecondary')}</Text>
           </View>
 
           <Pressable onPress={onClose} style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}>
-            <Text style={styles.closeButtonText}>Let&apos;s cook  →</Text>
+            <Text style={styles.closeButtonText}>{i18n.t('subscription.premium.success.cta')}</Text>
           </Pressable>
         </View>
       </View>

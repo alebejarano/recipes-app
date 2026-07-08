@@ -257,7 +257,7 @@ const FAQ_SECTIONS_BY_LOCALE: Record<'en' | 'es', FaqSection[]> = {
       items: [
         {
           id: 'account-use',
-          question: 'Necesito una cuenta para usar la app?',
+          question: '¿Necesito una cuenta para usar la app?',
           answers: [
             'No. Puedes usar la app sin cuenta y guardar recetas localmente en tu dispositivo.',
             'Crea una cuenta si quieres pasarte a Premium y sincronizar tu biblioteca entre dispositivos.',
@@ -265,27 +265,27 @@ const FAQ_SECTIONS_BY_LOCALE: Record<'en' | 'es', FaqSection[]> = {
         },
         {
           id: 'offline',
-          question: 'La app funciona sin conexion?',
+          question: '¿La app funciona sin conexión?',
           answers: [
-            'Si. Puedes crear, editar y ver recetas sin conexion a internet.',
-            'Las importaciones desde Dropbox, Drive, iCloud y proveedores similares deben estar disponibles sin conexion o descargadas en tu telefono antes de importarlas.',
-            'Si tienes Premium, los cambios se sincronizan automaticamente cuando vuelvas a conectarte.',
+            'Sí. Puedes crear, editar y ver recetas sin conexión a internet.',
+            'Las importaciones desde Dropbox, Drive, iCloud y proveedores similares deben estar disponibles sin conexión o descargadas en tu teléfono antes de importarlas.',
+            'Si tienes Premium, los cambios se sincronizan automáticamente cuando vuelvas a conectarte.',
           ],
         },
         {
           id: 'add-first-recipe',
-          question: 'Como anado mi primera receta?',
+          question: '¿Cómo añado mi primera receta?',
           answers: [
-            "Toca el boton '+' de la barra de pestañas y despues elige 'Receta'.",
+            "Toca el botón '+' de la barra de pestañas y después elige 'Receta'.",
             'Puedes escribirla manualmente o importar un PDF o una imagen.',
           ],
         },
         {
           id: 'collections',
-          question: 'Como funcionan las colecciones?',
+          question: '¿Cómo funcionan las colecciones?',
           answers: [
-            'Las colecciones son tu biblioteca principal. Incluyen tus recetas, importaciones, notas y lista de la compra.',
-            'Puedes agrupar recetas en carpetas para organizarlas por categoria, cocina u ocasion.',
+            'Las colecciones son tu biblioteca principal. Incluyen tus recetas, importaciones, notas y lista de compras.',
+            'Puedes agrupar recetas en carpetas para organizarlas por categoría, cocina u ocasión.',
           ],
         },
       ],
@@ -296,83 +296,83 @@ const FAQ_SECTIONS_BY_LOCALE: Record<'en' | 'es', FaqSection[]> = {
       items: [
         {
           id: 'free-plan-limits',
-          question: 'Cuales son los limites del plan gratuito?',
+          question: '¿Cuáles son los límites del plan gratuito?',
           answers: [
             'El plan gratuito incluye:',
             '• Hasta 100 recetas',
             '• Hasta 10 MB por archivo importado (PDF o imagen)',
-            '• Hasta 50 MB de almacenamiento total para importaciones e imagenes',
+            '• Hasta 50 MB de almacenamiento total para importaciones e imágenes',
             '• Notas ilimitadas',
-            '• Acceso completo sin conexion en este dispositivo',
-            'Los archivos en la nube deben seguir estando disponibles sin conexion o descargados localmente antes de importarlos.',
-            'Puedes mejorar tu plan en cualquier momento para eliminar los limites de recetas y almacenamiento y activar la sincronizacion en la nube.',
+            '• Acceso completo sin conexión en este dispositivo',
+            'Los archivos en la nube deben seguir estando disponibles sin conexión o descargados localmente antes de importarlos.',
+            'Puedes mejorar tu plan en cualquier momento para eliminar los límites de recetas y almacenamiento y activar la sincronización en la nube.',
           ],
         },
         {
           id: 'free-plan-reach',
-          question: 'Que pasa si llego al limite del plan gratuito?',
+          question: '¿Qué pasa si llego al límite del plan gratuito?',
           answers: [
-            'Si llegas al limite de recetas o almacenamiento, no podras Añadir nuevas recetas o importaciones hasta liberar espacio o pasarte a Premium.',
-            'Tu contenido actual seguira siendo accesible.',
+            'Si llegas al límite de recetas o almacenamiento, no podrás añadir nuevas recetas o importaciones hasta liberar espacio o pasarte a Premium.',
+            'Tu contenido actual seguirá siendo accesible.',
           ],
         },
         {
           id: 'free-plan-device-space',
-          question: 'Por que puedo guardar mas recetas, notas o importaciones si todavia no he alcanzado los limites del plan gratuito?',
+          question: '¿Por qué puedo guardar más recetas, notas o importaciones si todavía no he alcanzado los límites del plan gratuito?',
           answers: [
-            'Los limites del plan gratuito son limites de la app, pero tu dispositivo tambien necesita espacio disponible para guardar nuevos datos.',
-            'Si tu telefono tiene poco espacio, las importaciones o imagenes pueden fallar aunque todavia no hayas alcanzado los limites de tu plan.',
+            'Los límites del plan gratuito son límites de la app, pero tu dispositivo también necesita espacio disponible para guardar nuevos datos.',
+            'Si tu teléfono tiene poco espacio, las importaciones o imágenes pueden fallar aunque todavía no hayas alcanzado los límites de tu plan.',
             'Prueba a liberar espacio en el dispositivo y vuelve a importar.',
           ],
         },
         {
           id: 'no-upgrade',
-          question: 'Que pasa si no mejoro mi plan?',
+          question: '¿Qué pasa si no mejoro mi plan?',
           answers: [
-            'Tus recetas seguiran guardadas de forma segura en este dispositivo.',
-            'Si desinstalas la app o cambias de dispositivo sin Premium, tus recetas no se transferiran automaticamente.',
+            'Tus recetas seguirán guardadas de forma segura en este dispositivo.',
+            'Si desinstalas la app o cambias de dispositivo sin Premium, tus recetas no se transferirán automáticamente.',
             'Puedes pasarte a Premium en cualquier momento para sincronizarlas.',
           ],
         },
         {
           id: 'upgrade-premium-data',
-          question: 'Que pasa cuando me paso a Premium?',
+          question: '¿Qué pasa cuando me paso a Premium?',
           answers: [
-            'Importamos automaticamente a tu cuenta todas las recetas, notas y carpetas de este dispositivo.',
-            'A partir de ese momento, todo se mantendra sincronizado entre tus dispositivos.',
+            'Importamos automáticamente a tu cuenta todas las recetas, notas y carpetas de este dispositivo.',
+            'A partir de ese momento, todo se mantendrá sincronizado entre tus dispositivos.',
             'No se sobrescribe nada. No se elimina nada.',
           ],
         },
         {
           id: 'cancel-premium-data',
-          question: 'Que pasa si cancelo Premium?',
+          question: '¿Qué pasa si cancelo Premium?',
           answers: [
-            'Tus datos sincronizados seguiran guardados de forma segura en tu cuenta.',
-            'La sincronizacion se detiene al final de tu suscripcion.',
-            'Los cambios nuevos se quedaran en tu dispositivo salvo que renueves.',
+            'Tus datos sincronizados seguirán guardados de forma segura en tu cuenta.',
+            'La sincronización se detiene al final de tu suscripción.',
+            'Los cambios nuevos se quedarán en tu dispositivo salvo que renueves.',
           ],
         },
         {
           id: 'change-phones',
-          question: 'Que pasa si cambio de telefono?',
+          question: '¿Qué pasa si cambio de teléfono?',
           answers: [
-            'Con Premium, instala la app e inicia sesion. Tus recetas se sincronizaran automaticamente.',
-            'Sin Premium, tus recetas seguiran en tu dispositivo original.',
+            'Con Premium, instala la app e inicia sesión. Tus recetas se sincronizarán automáticamente.',
+            'Sin Premium, tus recetas seguirán en tu dispositivo original.',
           ],
         },
         {
           id: 'recipes-private',
-          question: 'Mis recetas son privadas?',
+          question: '¿Mis recetas son privadas?',
           answers: [
-            'Si. Tus recetas y archivos son privados para tu cuenta.',
+            'Sí. Tus recetas y archivos son privados para tu cuenta.',
             'No accedemos ni compartimos tu contenido personal.',
           ],
         },
         {
           id: 'change-email',
-          question: 'Como cambio mi email o mi nombre?',
+          question: '¿Cómo cambio mi correo o mi nombre?',
           answers: [
-            'Ve a los ajustes de tu perfil para actualizar la informacion de tu cuenta.',
+            'Ve a la configuración de tu perfil para actualizar la información de tu cuenta.',
           ],
         },
       ],
@@ -383,64 +383,64 @@ const FAQ_SECTIONS_BY_LOCALE: Record<'en' | 'es', FaqSection[]> = {
       items: [
         {
           id: 'premium-includes',
-          question: 'Que incluye Premium?',
+          question: '¿Qué incluye Premium?',
           answers: [
-            'Premium elimina los limites del plan gratuito y activa una sincronizacion segura en la nube.',
+            'Premium elimina los límites del plan gratuito y activa una sincronización segura en la nube.',
             'Incluye:',
             '• Recetas ilimitadas',
-            '• Sincronizacion entre dispositivos',
-            '• Imagenes (PNG, JPG)',
+            '• Sincronización entre dispositivos',
+            '• Imágenes (PNG, JPG)',
             '• PDFs importados',
             '• Notas y carpetas',
-            'Cuando te pasas a Premium, importamos automaticamente todo lo que ya habias creado en este dispositivo.',
-            'La app sigue siendo totalmente utilizable sin conexion una vez que el archivo se ha guardado en este dispositivo. Los proveedores en la nube como Dropbox siguen necesitando que el archivo seleccionado este disponible localmente antes de importarlo.',
+            'Cuando te pasas a Premium, importamos automáticamente todo lo que ya habías creado en este dispositivo.',
+            'La app sigue siendo totalmente usable sin conexión una vez que el archivo se ha guardado en este dispositivo. Los proveedores en la nube como Dropbox siguen necesitando que el archivo seleccionado esté disponible localmente antes de importarlo.',
           ],
         },
         {
           id: 'storage-limit',
-          question: 'Hay un limite de almacenamiento con Premium?',
+          question: '¿Hay un límite de almacenamiento con Premium?',
           answers: [
             'Premium incluye:',
             '• Hasta 10 MB por archivo (PDF o imagen)',
             '• 5 GB de almacenamiento total para tu biblioteca',
             '• Recetas y notas ilimitadas',
-            'Si alguna vez te acercas al limite, te avisaremos.',
+            'Si alguna vez te acercas al límite, te avisaremos.',
           ],
         },
         {
           id: 'subscription-multiple-devices',
-          question: 'Puedo usar Premium en varios dispositivos?',
+          question: '¿Puedo usar Premium en varios dispositivos?',
           answers: [
-            'Si. Siempre que inicies sesion con la misma cuenta, tu biblioteca sincronizada estara disponible en todos tus dispositivos.',
+            'Sí. Siempre que inicies sesión con la misma cuenta, tu biblioteca sincronizada estará disponible en todos tus dispositivos.',
           ],
         },
       ],
     },
     {
       id: 'billing',
-      title: 'Facturacion',
+      title: 'Facturación',
       items: [
         {
           id: 'upgrade',
-          question: 'Como me paso a Premium?',
+          question: '¿Cómo me paso a Premium?',
           answers: [
-            'Ve a la pestana de Perfil y selecciona Premium.',
-            'Elige mensual o anual y confirma a traves de la tienda de aplicaciones.',
+            'Ve a la pestaña de Perfil y selecciona Premium.',
+            'Elige mensual o anual y confirma a través de la tienda de aplicaciones.',
           ],
         },
         {
           id: 'cancel',
-          question: 'Puedo cancelar mi suscripcion?',
+          question: '¿Puedo cancelar mi suscripción?',
           answers: [
-            'Si. Puedes cancelarla en cualquier momento desde los ajustes de suscripciones de Apple o Google.',
-            'Premium seguira activo hasta el final de tu periodo de facturacion.',
+            'Sí. Puedes cancelarla en cualquier momento desde los ajustes de suscripciones de Apple o Google.',
+            'Premium seguirá activo hasta el final de tu periodo de facturación.',
           ],
         },
         {
           id: 'switch-plan',
-          question: 'Puedo cambiar entre el plan mensual y anual?',
+          question: '¿Puedo cambiar entre el plan mensual y anual?',
           answers: [
-            'Si. Puedes cambiar en cualquier momento desde los ajustes de suscripcion de tu tienda de aplicaciones.',
+            'Sí. Puedes cambiar en cualquier momento desde los ajustes de suscripción de tu tienda de aplicaciones.',
           ],
         },
       ],
@@ -451,16 +451,16 @@ const FAQ_SECTIONS_BY_LOCALE: Record<'en' | 'es', FaqSection[]> = {
       items: [
         {
           id: 'shopping-list',
-          question: 'Para que sirve la lista de la compra?',
+          question: '¿Para qué sirve la lista de compras?',
           answers: [
-            'La lista de la compra reúne los ingredientes de tus recetas en un solo lugar para que puedas ir marcando elementos mientras compras.',
+            'La lista de compras reúne los ingredientes de tus recetas en un solo lugar para que puedas ir marcando artículos mientras compras.',
           ],
         },
         {
           id: 'share-recipes',
-          question: 'Puedo compartir recetas?',
+          question: '¿Puedo compartir recetas?',
           answers: [
-            'Si. Abre cualquier receta y toca el icono de compartir.',
+            'Sí. Abre cualquier receta y toca el icono de compartir.',
             'Puedes exportarla como archivo .txt o compartirla directamente como texto plano.',
           ],
         },
@@ -468,13 +468,13 @@ const FAQ_SECTIONS_BY_LOCALE: Record<'en' | 'es', FaqSection[]> = {
     },
     {
       id: 'troubleshooting',
-      title: 'Solucion de problemas',
+      title: 'Solución de problemas',
       items: [
         {
           id: 'import-issue',
-          question: 'Mi receta no se importo correctamente',
+          question: 'Mi receta no se importó correctamente',
           answers: [
-            'Prueba a importarla de nuevo con una fuente mas clara.',
+            'Prueba a importarla de nuevo con una fuente más clara.',
             'Siempre puedes editar la receta manualmente para corregir campos que falten.',
           ],
         },
@@ -483,7 +483,7 @@ const FAQ_SECTIONS_BY_LOCALE: Record<'en' | 'es', FaqSection[]> = {
           question: 'La app va lenta',
           answers: [
             'Cierra y vuelve a abrir la app.',
-            'Asegurate de que tu dispositivo tiene suficiente almacenamiento libre y una conexion estable a internet.',
+            'Asegúrate de que tu dispositivo tiene suficiente almacenamiento libre y una conexión estable a internet.',
           ],
         },
       ],
