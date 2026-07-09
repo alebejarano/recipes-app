@@ -1,5 +1,5 @@
 // src/hooks/useTabBarBottomPadding.ts
-import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
+import { BottomTabBarHeightContext } from 'expo-router/build/react-navigation/bottom-tabs';
 import { useContext } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 

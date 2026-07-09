@@ -22,7 +22,6 @@ const config: ExpoConfig = {
   userInterfaceStyle: 'automatic',
   newArchEnabled: true,
   ios: {
-    buildNumber: '1',
     supportsTablet: true,
     infoPlist: {
       NSPhotoLibraryUsageDescription: 'Allow access to your photo library to add recipe images.',
@@ -31,7 +30,6 @@ const config: ExpoConfig = {
     },
   },
   android: {
-    versionCode: 1,
     softwareKeyboardLayoutMode: 'resize',
     permissions: [
       'CAMERA',
@@ -43,7 +41,6 @@ const config: ExpoConfig = {
       foregroundImage: './assets/images/android-icon-foreground.png',
       monochromeImage: './assets/images/android-icon-monochrome.png',
     },
-    edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: 'studio.alpinova.dropsauce',
   },
@@ -54,6 +51,7 @@ const config: ExpoConfig = {
   plugins: [
     'expo-web-browser',
     'expo-router',
+    'expo-image',
     [
       'expo-splash-screen',
       {
@@ -69,6 +67,9 @@ const config: ExpoConfig = {
     'expo-font',
     'expo-secure-store',
     'expo-localization',
+    'expo-sharing',
+    'expo-sqlite',
+    'expo-status-bar',
   ],
   experiments: {
     typedRoutes: true,
