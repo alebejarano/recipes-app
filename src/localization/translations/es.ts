@@ -31,7 +31,7 @@ export const es: TranslationSchema = {
             privacyPolicyTitle: 'Política de privacidad',
             termsTitle: 'Términos del servicio',
             legalNoticeTitle: 'Aviso legal',
-            lastUpdated: 'Última actualización: 9 de junio de 2026',
+            lastUpdated: 'Última actualización: 15 de julio de 2026',
             privacyIntro: 'Esta política explica como gestiona Dropsauce los datos personales en modo invitado, con cuenta y Premium.',
             termsIntro: 'Estos términos describen el servicio, las suscripciones, las responsabilidades del usuario y las protecciones obligatorias para consumidores.',
             legalIntro: 'Identificación empresarial e información legal general de Dropsauce.',

@@ -29,7 +29,7 @@ export const en = {
             privacyPolicyTitle: 'Privacy Policy',
             termsTitle: 'Terms of Service',
             legalNoticeTitle: 'Legal Notice',
-            lastUpdated: 'Last updated: June 9, 2026',
+            lastUpdated: 'Last updated: July 15, 2026',
             privacyIntro: 'This policy explains how Dropsauce handles personal data in guest, account, and Premium modes.',
             termsIntro: 'These terms describe the service, subscriptions, user responsibilities, and mandatory consumer protections.',
             legalIntro: 'Business identification and general legal information for Dropsauce.',
