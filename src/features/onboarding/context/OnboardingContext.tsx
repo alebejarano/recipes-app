@@ -5,6 +5,7 @@ export type OnboardingPath = 'choose' | 'scratch' | 'pdf' | null;
 
 type OnboardingState = {
   path: OnboardingPath;
+  identitySelections: string[];
   step: number; // 0-based step index in your flow controller
   completed: boolean;
   updatedAt: number;
@@ -21,6 +22,7 @@ type OnboardingContextValue = {
 
   // actions
   setPath: (path: OnboardingPath) => Promise<void>;
+  setIdentitySelections: (identitySelections: string[]) => Promise<void>;
   setStep: (step: number) => Promise<void>;
   markCompleted: () => Promise<void>;
   resetOnboarding: () => Promise<void>;
@@ -30,6 +32,7 @@ const STORAGE_KEY = 'onboarding:state';
 
 const DEFAULT_STATE: OnboardingState = {
   path: null,
+  identitySelections: [],
   step: 0,
   completed: false,
   updatedAt: Date.now(),
@@ -59,6 +62,9 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
             setState({
               ...DEFAULT_STATE,
               ...parsed,
+              identitySelections: Array.isArray(parsed.identitySelections)
+                ? parsed.identitySelections.filter((value): value is string => typeof value === 'string')
+                : DEFAULT_STATE.identitySelections,
               path: normalizePath(parsed.path),
             });
           } else {
@@ -84,6 +90,15 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     const next: OnboardingState = {
       ...state,
       path,
+      updatedAt: Date.now(),
+    };
+    await persist(next);
+  }, [persist, state]);
+
+  const setIdentitySelections = useCallback(async (identitySelections: string[]) => {
+    const next: OnboardingState = {
+      ...state,
+      identitySelections,
       updatedAt: Date.now(),
     };
     await persist(next);
@@ -129,11 +144,12 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
       hasCompletedOnboarding,
       shouldResumeOnboarding,
       setPath,
+      setIdentitySelections,
       setStep,
       markCompleted,
       resetOnboarding,
     };
-  }, [isLoaded, markCompleted, resetOnboarding, setPath, setStep, state]);
+  }, [isLoaded, markCompleted, resetOnboarding, setIdentitySelections, setPath, setStep, state]);
 
   return (
     <OnboardingContext.Provider value={value}>

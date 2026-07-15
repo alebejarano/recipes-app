@@ -82,7 +82,7 @@ const TERMS_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly TermsSection[]> = {
             'Personal-data processing is governed by the Privacy Policy.',
             'Necessary account, authentication, security, billing-status, and service communications may be sent to operate the account or perform the contract.',
             'Marketing emails and PostHog analytics are optional, off by default, and require a separate opt-in. They can be disabled through the relevant app setting.',
-            'Session replay, analytics autocapture, advertising tracking, and the transmission of recipe or note content to PostHog are not enabled.',
+            'Session replay, analytics autocapture, advertising tracking, and the transmission of recipe content, note content, or onboarding choices to PostHog are not enabled.',
         ],
     },
     {
@@ -198,7 +198,7 @@ const TERMS_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly TermsSection[]> = {
                 'El tratamiento de datos personales se rige por la Política de Privacidad.',
                 'Pueden enviarse comunicaciones necesarias de cuenta, autenticación, seguridad, estado de facturación y servicio para operar la cuenta o ejecutar el contrato.',
                 'Los correos de marketing y la analítica de PostHog son opcionales, están desactivados por defecto y requieren una aceptación separada. Pueden desactivarse desde el ajuste correspondiente de la app.',
-                'No están habilitados `session replay`, `analytics autocapture`, el seguimiento publicitario ni la transmisión de contenido de recetas o notas a PostHog.',
+                'No están habilitados `session replay`, `analytics autocapture`, el seguimiento publicitario ni la transmisión a PostHog del contenido de recetas, del contenido de notas o de las elecciones de onboarding.',
             ],
         },
         {

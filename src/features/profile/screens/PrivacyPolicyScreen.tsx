@@ -59,13 +59,14 @@ const POLICY_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly PolicySection[]> =
                     'Passwords are handled by the authentication provider in protected form. Dropsauce does not receive or store a readable copy of the password.',
                 ],
             },
-            {
-                heading: 'Preferences and communications',
-                paragraphs: [
-                    'We process choices relating to optional email updates, product communications, push-notification preferences, analytics consent, language or app preferences, and security or account requests.',
-                    'The current app stores notification preferences but does not upload a push token or send push notifications unless that functionality is activated in a future version.',
-                ],
-            },
+                {
+                    heading: 'Preferences and communications',
+                    paragraphs: [
+                        'We process choices relating to onboarding, optional email updates, product communications, push-notification preferences, analytics consent, language or app preferences, and security or account requests.',
+                        'Onboarding choices are stored on the device in guest mode and used to tailor the first-run product experience unless the user later creates an account and enables cloud features.',
+                        'The current app stores notification preferences but does not upload a push token or send push notifications unless that functionality is activated in a future version.',
+                    ],
+                },
             {
                 heading: 'Cloud content for Premium users',
                 paragraphs: [
@@ -94,7 +95,7 @@ const POLICY_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly PolicySection[]> =
         paragraphs: [
             'Analytics and diagnostics are optional, off by default, and activated only when the user enables the Analytics & diagnostics setting. Consent can be withdrawn at any time from Privacy & Security settings.',
             'When enabled, Dropsauce uses PostHog\'s European service endpoint. The app sends an automatically generated anonymous analytics identifier, event time, app and device technical properties, and limited event properties.',
-            'Events may include app opens, account creation, onboarding answer categories, recipe or note creation, Premium upgrade interactions, successful purchase status, request failures or timeouts, offline fallback saves, synchronization retries, and upload or import retry status.',
+            'Events may include app opens, account creation, recipe or note creation, Premium upgrade interactions, successful purchase status, request failures or timeouts, offline fallback saves, synchronization retries, and upload or import retry status.',
         ],
         bullets: [
             'PostHog autocapture is disabled',
@@ -242,7 +243,8 @@ const POLICY_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly PolicySection[]> =
                 {
                     heading: 'Preferencias y comunicaciones',
                     paragraphs: [
-                        'Tratamos elecciones relacionadas con actualizaciones opcionales por correo, comunicaciones de producto, preferencias de notificaciones push, consentimiento de analítica, idioma o preferencias de la app, y solicitudes de seguridad o de cuenta.',
+                        'Tratamos elecciones relacionadas con el onboarding, actualizaciones opcionales por correo, comunicaciones de producto, preferencias de notificaciones push, consentimiento de analítica, idioma o preferencias de la app, y solicitudes de seguridad o de cuenta.',
+                        'Las elecciones de onboarding se guardan en el dispositivo en modo invitado y se usan para adaptar la experiencia inicial del producto, salvo que el usuario cree después una cuenta y active funciones en la nube.',
                         'La versión actual de la app guarda preferencias de notificaciones, pero no sube un token push ni envía notificaciones push salvo que esa funcionalidad se active en una versión futura.',
                     ],
                 },
@@ -274,7 +276,7 @@ const POLICY_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly PolicySection[]> =
             paragraphs: [
                 'La analítica y los diagnósticos son opcionales, están desactivados por defecto y solo se activan cuando el usuario habilita el ajuste de Analítica y diagnóstico. El consentimiento puede retirarse en cualquier momento desde Privacidad y seguridad.',
                 'Cuando está activado, Dropsauce usa el endpoint europeo de PostHog. La app envía un identificador anónimo de analítica generado automáticamente, la hora del evento, propiedades técnicas de la app y el dispositivo, y propiedades limitadas del evento.',
-                'Los eventos pueden incluir aperturas de la app, creación de cuenta, categorías de respuestas del onboarding, creación de recetas o notas, interacciones de mejora a Premium, estado de compra correcta, fallos o timeouts de solicitudes, guardados sin conexión y reintentos de sincronización o de subida/importación.',
+                'Los eventos pueden incluir aperturas de la app, creación de cuenta, creación de recetas o notas, interacciones de mejora a Premium, estado de compra correcta, fallos o timeouts de solicitudes, guardados sin conexión y reintentos de sincronización o de subida/importación.',
             ],
             bullets: [
                 'La autocaptura de PostHog está desactivada',

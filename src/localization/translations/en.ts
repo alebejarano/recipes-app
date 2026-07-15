@@ -303,7 +303,7 @@ export const en = {
             unavailable: 'Create an account to manage this setting',
             analyticsTitle: 'Analytics & diagnostics',
             analyticsSubtitle:
-                'Optional. Shares only minimal, sanitized app events to improve reliability and features.',
+                'Optional. Shares only minimal, sanitized app events, never recipe content or onboarding answers.',
             passwordTitle: 'Password',
             passwordSubtitle: 'Update your password to keep your account secure.',
             exportTitle: 'Export recipes & data',

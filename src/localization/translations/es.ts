@@ -305,7 +305,7 @@ export const es: TranslationSchema = {
             unavailable: 'Crea una cuenta para gestionar este ajuste',
             analyticsTitle: 'Analítica y diagnóstico',
             analyticsSubtitle:
-                'Opcional. Solo comparte eventos mínimos y saneados de la app para mejorar la fiabilidad y las funciones.',
+                'Opcional. Solo comparte eventos mínimos y saneados de la app, nunca contenido de recetas ni respuestas de onboarding.',
             passwordTitle: 'Contraseña',
             passwordSubtitle: 'Actualiza tu contraseña para mantener tu cuenta segura.',
             exportTitle: 'Exportar recetas y datos',

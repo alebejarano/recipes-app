@@ -24,6 +24,7 @@ export default function OnboardingFlowScreen() {
     isLoaded,
     state,
     setPath: persistPath,
+    setIdentitySelections: persistIdentitySelections,
     setStep: persistStep,
     markCompleted,
   } = useOnboarding();
@@ -65,6 +66,11 @@ export default function OnboardingFlowScreen() {
     await setStep(3);
   };
 
+  const handleIdentityContinue = async (selected: string[]) => {
+    await persistIdentitySelections(selected);
+    await setStep(2);
+  };
+
   const handleChooseBack = async () => {
     await setPath(null);
     await setStep(2);
@@ -95,7 +101,7 @@ export default function OnboardingFlowScreen() {
 
   const renderScreen = () => {
     if (step === 0) return <WelcomeScreen onContinue={() => setStep(1)} />;
-    if (step === 1) return <IdentityScreen onContinue={() => setStep(2)} />;
+    if (step === 1) return <IdentityScreen onContinue={handleIdentityContinue} />;
     if (step === 2) {
       return (
         <SpaceReadyScreen

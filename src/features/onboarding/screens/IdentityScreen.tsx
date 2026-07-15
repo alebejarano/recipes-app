@@ -1,6 +1,6 @@
 // src/features/onboarding/screens/IdentityScreen.tsx
 import Button from '@/components/Button';
-import { useAnalyticsConsent } from '@/features/analytics/context/AnalyticsConsentContext';
+import { useOnboarding } from '@/features/onboarding/context/OnboardingContext';
 import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 import {
@@ -9,7 +9,6 @@ import {
     MaterialCommunityIcons,
     MaterialIcons,
 } from '@expo/vector-icons';
-import { usePostHog } from 'posthog-react-native';
 import React, { useState } from 'react';
 import {
     ScrollView,
@@ -66,9 +65,10 @@ const options = [
 ];
 
 export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
-    const [selected, setSelected] = useState<string[]>([]);
-    const { analyticsEnabled } = useAnalyticsConsent();
-    const posthog = usePostHog();
+    const {
+        state: { identitySelections },
+    } = useOnboarding();
+    const [selected, setSelected] = useState<string[]>(identitySelections);
     const { t } = useTranslation();
 
     const toggleOption = (id: string) => {
@@ -162,15 +162,7 @@ export default function IdentityScreen({ onContinue }: IdentityScreenProps) {
                         variant="primary"
                         size="xl"
                         disabled={isContinueDisabled}
-                        onPress={() => {
-                            if (analyticsEnabled) {
-                                posthog?.capture('onboarding_identity_continue', {
-                                    selected,
-                                    selected_count: selected.length,
-                                });
-                            }
-                            onContinue(selected);
-                        }}
+                        onPress={() => onContinue(selected)}
                     >
                         {t('onboarding.identity.continue')}
                     </Button>
