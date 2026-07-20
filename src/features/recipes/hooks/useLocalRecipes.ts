@@ -61,9 +61,10 @@ export function useUpdateLocalRecipe(id: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (values: RecipeFormSubmitValues) => updateLocalRecipe(id, values, { plan }),
-    onSuccess: () => {
+    onSuccess: (recipe) => {
+      qc.setQueryData(['recipes', 'local', 'detail', 'id', id], recipe)
+      qc.setQueryData(['recipes', 'local', 'detail', 'any', id], recipe)
       qc.invalidateQueries({ queryKey: LIST_KEY })
-      qc.invalidateQueries({ queryKey: ['recipes', 'local', 'detail', id] })
       void triggerRecipeSync()
     },
   })

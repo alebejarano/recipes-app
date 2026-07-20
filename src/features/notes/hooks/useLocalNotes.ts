@@ -56,9 +56,10 @@ export function useUpdateLocalNote(id: string) {
   return useMutation({
     mutationFn: (input: { title?: string; content?: string; pinnedAt?: string | null }) =>
       updateLocalNote(id, input),
-    onSuccess: () => {
+    onSuccess: (note) => {
+      qc.setQueryData(['notes', 'local', 'detail', 'id', id], note)
+      qc.setQueryData(['notes', 'local', 'detail', 'any', id], note)
       qc.invalidateQueries({ queryKey: LIST_KEY })
-      qc.invalidateQueries({ queryKey: ['notes', 'local', 'detail', id] })
       void triggerNoteSync()
     },
   })

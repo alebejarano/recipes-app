@@ -6,6 +6,7 @@ import React, { useEffect, useRef } from 'react'
 import { AppState, LogBox } from 'react-native'
 
 import { AnalyticsConsentProvider, useAnalyticsConsent } from '@/features/analytics/context/AnalyticsConsentContext'
+import { AnalyticsCaptureProvider } from '@/features/analytics/events'
 import { AuthProvider } from '@/features/auth/context/AuthContext'
 import GlobalSnackbar from '@/features/feedback/components/GlobalSnackbar'
 import { OnboardingProvider } from '@/features/onboarding/context/OnboardingContext'
@@ -99,7 +100,7 @@ function PostHogGate({
 
   // For MVP, keep analytics infra but allow a hard off-switch via env.
   if (!isActive || !apiKey) {
-    return <>{children}</>
+    return <AnalyticsCaptureProvider>{children}</AnalyticsCaptureProvider>
   }
 
   return (
@@ -146,5 +147,5 @@ function ProductionLoggingBridge({ children }: { children: React.ReactNode }) {
     return () => subscription.remove()
   }, [posthog])
 
-  return <>{children}</>
+  return <AnalyticsCaptureProvider posthog={posthog}>{children}</AnalyticsCaptureProvider>
 }

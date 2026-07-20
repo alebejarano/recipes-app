@@ -108,6 +108,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
   const [isIngredientImportOpen, setIsIngredientImportOpen] = useState(false)
   const [isImportingIngredients, setIsImportingIngredients] = useState(false)
   const [shouldShowCapacityReminder, setShouldShowCapacityReminder] = useState(false)
+  const [favoriteOverride, setFavoriteOverride] = useState<boolean | null>(null)
   const { user } = useAuth()
   const showSnackbar = useTransientSnackbarStore((state) => state.show)
 
@@ -147,10 +148,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
     () => recipe?.folders?.map((folder) => folder.name) ?? FALLBACK_FOLDERS,
     [recipe?.folders]
   )
-  const isFavorited = useMemo(
-    () => (recipe?.folders ?? []).some((folder) => isFavoritesFolder(folder.name)),
-    [recipe?.folders]
-  )
+  const isFavorited = favoriteOverride ?? (recipe?.folders ?? []).some((folder) => isFavoritesFolder(folder.name))
   const favoritesFolderExists = useMemo(
     () => (foldersQuery.data ?? []).some((folder) => isFavoritesFolder(folder.name)),
     [foldersQuery.data]
@@ -345,11 +343,14 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
 
   const handleToggleFavorite = async () => {
     if (!recipe) return
+    const nextIsFavorited = !isFavorited
     const currentFolderNames = (recipe.folders ?? []).map((folder) => folder.name.trim()).filter(Boolean)
     const withoutFavorites = currentFolderNames.filter((name) => !isFavoritesFolder(name))
-    const nextFolderNames = isFavorited
-      ? withoutFavorites
-      : [...withoutFavorites, FAVORITES_FOLDER_NAME]
+    const nextFolderNames = nextIsFavorited
+      ? [...withoutFavorites, FAVORITES_FOLDER_NAME]
+      : withoutFavorites
+
+    setFavoriteOverride(nextIsFavorited)
 
     try {
       if (!isFavorited && !favoritesFolderExists) {
@@ -366,8 +367,10 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
       await updateMutation.mutateAsync(
         buildFavoriteTogglePayload(recipe, nextFolderNames)
       )
+      setFavoriteOverride(null)
       showSnackbar(isFavorited ? t('recipes.detail.removedFavorite') : t('recipes.detail.addedFavorite'))
     } catch (favoriteError: any) {
+      setFavoriteOverride(null)
       Alert.alert(
         t('recipes.detail.favoriteFailed'),
         favoriteError?.message ?? t('recipes.detail.favoriteFailedBody')

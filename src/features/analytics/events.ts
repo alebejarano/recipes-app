@@ -1,5 +1,5 @@
-import { useCallback } from 'react'
-import { usePostHog } from 'posthog-react-native'
+import { createContext, createElement, useCallback, useContext } from 'react'
+import type { PostHog } from 'posthog-react-native'
 
 export type AnalyticsEventName =
   | 'app_opened'
@@ -38,16 +38,32 @@ export type AnalyticsEventProperties = {
   }
 }
 
-export function useAnalyticsCapture() {
-  const posthog = usePostHog()
+type AnalyticsCapture = <TEventName extends AnalyticsEventName>(
+  event: TEventName,
+  properties: AnalyticsEventProperties[TEventName]
+) => void
 
-  return useCallback(
-    <TEventName extends AnalyticsEventName>(
-      event: TEventName,
-      properties: AnalyticsEventProperties[TEventName]
-    ) => {
+const noopCapture: AnalyticsCapture = () => undefined
+
+const AnalyticsCaptureContext = createContext<AnalyticsCapture>(noopCapture)
+
+export function AnalyticsCaptureProvider({
+  children,
+  posthog,
+}: {
+  children: React.ReactNode
+  posthog?: Pick<PostHog, 'capture'>
+}) {
+  const capture = useCallback<AnalyticsCapture>(
+    (event, properties) => {
       posthog?.capture(event, properties)
     },
     [posthog]
   )
+
+  return createElement(AnalyticsCaptureContext.Provider, { value: capture }, children)
+}
+
+export function useAnalyticsCapture() {
+  return useContext(AnalyticsCaptureContext)
 }

@@ -1,7 +1,7 @@
 // src/features/notes/screens/NoteDetailScreen.tsx
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons'
 import { router, useLocalSearchParams, useSegments } from 'expo-router'
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -42,7 +42,8 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
   const isError = noteQuery.isError
   const deleteMutation = useStrategyDeleteNote(routeMode)
   const updateMutation = useStrategyUpdateNote(noteId, routeMode)
-  const isPinned = Boolean(note?.pinnedAt)
+  const [pinnedOverride, setPinnedOverride] = useState<boolean | null>(null)
+  const isPinned = pinnedOverride ?? Boolean(note?.pinnedAt)
 
   const title = useMemo(() => note?.title?.trim() || t('notes.fallbackTitle'), [note?.title, t])
   const content = useMemo(() => note?.content?.trim() ?? '', [note?.content])
@@ -92,12 +93,17 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
 
   const handleTogglePin = async () => {
     if (!note) return
+    const nextIsPinned = !isPinned
+    setPinnedOverride(nextIsPinned)
+
     try {
       await updateMutation.mutateAsync({
-        pinnedAt: isPinned ? null : new Date().toISOString(),
+        pinnedAt: nextIsPinned ? new Date().toISOString() : null,
       })
+      setPinnedOverride(null)
       showSnackbar(isPinned ? t('notes.detail.unpinned') : t('notes.detail.pinned'))
     } catch (error: any) {
+      setPinnedOverride(null)
       Alert.alert(t('notes.detail.pinFailedTitle'), getUserFacingErrorMessage(error))
     }
   }
