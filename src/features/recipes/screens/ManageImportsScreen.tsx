@@ -63,12 +63,15 @@ export default function ManageImportsScreen({ mode }: ManageImportsScreenProps) 
   }, [importData, sortMode])
 
   useEffect(() => {
-    if (!isSelectionMode) {
-      setSelectedImportIds([])
-      return
-    }
-    const existingIds = new Set(sortedImports.map((file) => file.id))
-    setSelectedImportIds((current) => current.filter((id) => existingIds.has(id)))
+    const timeout = setTimeout(() => {
+      if (!isSelectionMode) {
+        setSelectedImportIds([])
+        return
+      }
+      const existingIds = new Set(sortedImports.map((file) => file.id))
+      setSelectedImportIds((current) => current.filter((id) => existingIds.has(id)))
+    }, 0)
+    return () => clearTimeout(timeout)
   }, [isSelectionMode, sortedImports])
 
   useEffect(() => {

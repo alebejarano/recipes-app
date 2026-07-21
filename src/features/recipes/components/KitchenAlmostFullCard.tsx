@@ -28,7 +28,7 @@ export default function KitchenAlmostFullCard({
   onDismiss,
 }: KitchenAlmostFullCardProps) {
   const { t } = useTranslation()
-  const entry = React.useRef(new Animated.Value(0)).current
+  const [entry] = React.useState(() => new Animated.Value(0))
 
   React.useEffect(() => {
     Animated.timing(entry, {

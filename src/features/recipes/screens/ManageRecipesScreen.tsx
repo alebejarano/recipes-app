@@ -100,12 +100,15 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
   }, [filteredRecipes, sortMode])
 
   useEffect(() => {
-    if (!isSelectionMode) {
-      setSelectedRecipeIds([])
-      return
-    }
-    const existingIds = new Set(sortedRecipes.map((recipe) => recipe.id))
-    setSelectedRecipeIds((current) => current.filter((id) => existingIds.has(id)))
+    const timeout = setTimeout(() => {
+      if (!isSelectionMode) {
+        setSelectedRecipeIds([])
+        return
+      }
+      const existingIds = new Set(sortedRecipes.map((recipe) => recipe.id))
+      setSelectedRecipeIds((current) => current.filter((id) => existingIds.has(id)))
+    }, 0)
+    return () => clearTimeout(timeout)
   }, [isSelectionMode, sortedRecipes])
 
   useEffect(() => {

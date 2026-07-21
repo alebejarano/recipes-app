@@ -28,6 +28,21 @@ const CONFETTI_COLORS = [
   'hsl(45, 100%, 75%)',
 ] as const
 
+function createConfettiPieces(): ConfettiPiece[] {
+  return Array.from({ length: 24 }, (_, index): ConfettiPiece => {
+    const seed = (index * 37 + 17) % 100
+    return {
+      id: index,
+      left: `${seed}%` as `${number}%`,
+      delayMs: (seed * 19) % 2000,
+      durationMs: 2000 + ((seed * 23) % 2000),
+      color: CONFETTI_COLORS[index % CONFETTI_COLORS.length],
+      size: 4 + ((seed * 7) % 60) / 10,
+      rotation: (seed * 29) % 360,
+    }
+  })
+}
+
 export default function PremiumSuccessModal({ visible, onClose }: PremiumSuccessModalProps) {
   const [cardHeight, setCardHeight] = React.useState(0)
   const highlightedBenefits = [
@@ -35,21 +50,9 @@ export default function PremiumSuccessModal({ visible, onClose }: PremiumSuccess
     i18n.t('subscription.premium.success.benefits.backup'),
     i18n.t('subscription.premium.success.benefits.sync'),
   ]
-  const confettiPieces = React.useMemo(
-    () =>
-      Array.from({ length: 24 }, (_, index): ConfettiPiece => ({
-        id: index,
-        left: `${Math.random() * 100}%` as `${number}%`,
-        delayMs: Math.floor(Math.random() * 2000),
-        durationMs: Math.floor((2 + Math.random() * 2) * 1000),
-        color: CONFETTI_COLORS[index % CONFETTI_COLORS.length],
-        size: 4 + Math.random() * 6,
-        rotation: Math.random() * 360,
-      })),
-    [],
-  )
-  const fallValues = React.useRef(confettiPieces.map(() => new Animated.Value(0))).current
-  const spinValues = React.useRef(confettiPieces.map(() => new Animated.Value(0))).current
+  const [confettiPieces] = React.useState(createConfettiPieces)
+  const [fallValues] = React.useState(() => confettiPieces.map(() => new Animated.Value(0)))
+  const [spinValues] = React.useState(() => confettiPieces.map(() => new Animated.Value(0)))
   const animationsRef = React.useRef<Animated.CompositeAnimation[]>([])
 
   React.useEffect(() => {

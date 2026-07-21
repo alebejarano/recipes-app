@@ -46,7 +46,8 @@ export default function EmailSettingsScreen({ onBack }: EmailSettingsScreenProps
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
-    setPreferences(savedPreferences)
+    const timeout = setTimeout(() => setPreferences(savedPreferences), 0)
+    return () => clearTimeout(timeout)
   }, [savedPreferences])
 
   const updatePreference = useCallback(

@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { useTranslation } from '@/localization';
@@ -65,11 +65,8 @@ export default function FolderSpotlightCard({ title, recipes, onPress, onPressRe
 
 function RecipeMedia({ emoji, imageUrl }: Pick<FolderSpotlightRecipe, 'emoji' | 'imageUrl'>) {
   const normalizedImageUrl = useMemo(() => imageUrl?.trim() ?? '', [imageUrl]);
-  const [imageFailed, setImageFailed] = useState(false);
-
-  useEffect(() => {
-    setImageFailed(false);
-  }, [normalizedImageUrl]);
+  const [failedImageUrl, setFailedImageUrl] = useState('');
+  const imageFailed = failedImageUrl === normalizedImageUrl;
 
   if (normalizedImageUrl && !imageFailed) {
     return (
@@ -78,7 +75,7 @@ function RecipeMedia({ emoji, imageUrl }: Pick<FolderSpotlightRecipe, 'emoji' | 
         style={styles.recipeImage}
         contentFit="cover"
         cachePolicy="memory-disk"
-        onError={() => setImageFailed(true)}
+        onError={() => setFailedImageUrl(normalizedImageUrl)}
       />
     );
   }

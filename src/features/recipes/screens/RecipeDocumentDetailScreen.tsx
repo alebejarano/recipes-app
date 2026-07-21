@@ -85,7 +85,7 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
     } catch {
       return t('recipes.documentDetail.uploadedOnUnknown')
     }
-  }, [document?.createdAt, locale, t])
+  }, [document, locale, t])
 
   const fileSize = useMemo(() => {
     if (!document?.fileSize || document.fileSize <= 0) return '0 MB'
@@ -97,7 +97,7 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
       return `${mb.toFixed(mb >= 10 ? 0 : 1)} MB`
     }
     return `${kb.toFixed(0)} KB`
-  }, [document?.fileSize])
+  }, [document])
 
   // Navigation handler
   const handleGoBack = useCallback(() => {
@@ -227,7 +227,7 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
         )
       }
     }
-  }, [document?.fileUri, fileInfo, t])
+  }, [document, fileInfo, t])
 
   const handleOpenRename = useCallback(() => {
     setRenameValue(title)

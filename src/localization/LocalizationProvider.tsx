@@ -49,7 +49,9 @@ export function LocalizationProvider({ children }: { children: React.ReactNode }
   const locale =
     languagePreference === 'system' ? resolveSupportedLocale(deviceLocale) : languagePreference
 
-  i18n.locale = locale
+  useEffect(() => {
+    i18n.locale = locale
+  }, [locale])
 
   useEffect(() => {
     void AsyncStorage.getItem(LANGUAGE_PREFERENCE_STORAGE_KEY).then((storedValue) => {

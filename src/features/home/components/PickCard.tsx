@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { useTranslation } from '@/localization';
@@ -28,11 +28,8 @@ export default function PickCard({
 }: Props) {
   const { t } = useTranslation();
   const normalizedImageUrl = useMemo(() => imageUrl?.trim() ?? '', [imageUrl]);
-  const [imageFailed, setImageFailed] = useState(false);
-
-  useEffect(() => {
-    setImageFailed(false);
-  }, [normalizedImageUrl]);
+  const [failedImageUrl, setFailedImageUrl] = useState('');
+  const imageFailed = failedImageUrl === normalizedImageUrl;
 
   const hasImage = Boolean(normalizedImageUrl) && !imageFailed;
   const hasMedia = Boolean(emoji || hasImage);
@@ -60,7 +57,7 @@ export default function PickCard({
                   style={styles.image}
                   contentFit="cover"
                   cachePolicy="memory-disk"
-                  onError={() => setImageFailed(true)}
+                  onError={() => setFailedImageUrl(normalizedImageUrl)}
                 />
               ) : (
                 <Text style={styles.emoji}>{emoji}</Text>

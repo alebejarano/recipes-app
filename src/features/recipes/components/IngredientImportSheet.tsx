@@ -28,7 +28,8 @@ export default function IngredientImportSheet({
 
   useEffect(() => {
     if (visible) {
-      setSelectedIndexes([])
+      const timeout = setTimeout(() => setSelectedIndexes([]), 0)
+      return () => clearTimeout(timeout)
     }
   }, [visible])
 

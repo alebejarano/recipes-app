@@ -46,7 +46,8 @@ export default function PushSettingsScreen({ onBack }: PushSettingsScreenProps) 
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
-    setPreferences(savedPreferences)
+    const timeout = setTimeout(() => setPreferences(savedPreferences), 0)
+    return () => clearTimeout(timeout)
   }, [savedPreferences])
 
   const updatePreference = useCallback(

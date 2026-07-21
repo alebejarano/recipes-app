@@ -76,12 +76,12 @@ export default function NoteEditorScreen({ noteId }: NoteEditorScreenProps) {
 
   const hasChanges = useMemo(() => {
     if (!isEditing) return true
-    if (!initialValuesRef.current) return false
+    if (!noteQuery.data) return false
     return (
-      normalizedTitle !== initialValuesRef.current.title.trim() ||
-      normalizedContent !== initialValuesRef.current.content.trim()
+      normalizedTitle !== (noteQuery.data.title ?? '').trim() ||
+      normalizedContent !== (noteQuery.data.content ?? '').trim()
     )
-  }, [isEditing, normalizedTitle, normalizedContent])
+  }, [isEditing, normalizedContent, normalizedTitle, noteQuery.data])
 
   const isSaving = createMutation.isPending || updateMutation.isPending
   const isDeleting = deleteMutation.isPending

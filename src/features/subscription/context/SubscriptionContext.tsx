@@ -21,7 +21,6 @@ import { useAuth } from '@/features/auth/context/AuthContext'
 import { FREE_PLAN_MAX_RECIPES } from '@/features/subscription/constants/limits'
 import {
   REVENUECAT_ENTITLEMENT_ID,
-  REVENUECAT_FALLBACK_API_KEY,
   REVENUECAT_MONTHLY_PACKAGE_ID,
   REVENUECAT_YEARLY_PACKAGE_ID,
 } from '@/features/subscription/constants/revenueCat'
@@ -64,7 +63,7 @@ function getRevenueCatApiKey() {
     default: undefined,
   })
 
-  return platformKey ?? process.env.EXPO_PUBLIC_REVENUECAT_API_KEY ?? REVENUECAT_FALLBACK_API_KEY
+  return platformKey ?? process.env.EXPO_PUBLIC_REVENUECAT_API_KEY
 }
 
 function getBillingCycleFromPackage(pkg: PurchasesPackage | null | undefined): BillingCycle | null {
@@ -194,7 +193,9 @@ export function SubscriptionProvider({
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null)
   const [currentOffering, setCurrentOffering] = useState<PurchasesOffering | null>(null)
   const [upgradeStatus, setUpgradeStatusState] = useState<UpgradeStatus>('idle')
-  const [isLoaded, setIsLoaded] = useState(!IS_REVENUECAT_NATIVE_PLATFORM)
+  const [isLoaded, setIsLoaded] = useState(
+    () => !IS_REVENUECAT_NATIVE_PLATFORM || !getRevenueCatApiKey()
+  )
   const activeUserIdRef = useRef<string | null>(null)
   const listenerRef = useRef<((info: CustomerInfo) => void) | null>(null)
 
@@ -217,15 +218,14 @@ export function SubscriptionProvider({
 
   useEffect(() => {
     if (!IS_REVENUECAT_NATIVE_PLATFORM) {
-      setIsLoaded(true)
       return
     }
 
     const apiKey = getRevenueCatApiKey()
     if (!apiKey) {
-      setIsLoaded(true)
       return
     }
+    const configuredApiKey = apiKey
 
     let isMounted = true
 
@@ -236,7 +236,7 @@ export function SubscriptionProvider({
         )
 
         if (!hasConfiguredRevenueCat) {
-          Purchases.configure({ apiKey })
+          Purchases.configure({ apiKey: configuredApiKey })
           hasConfiguredRevenueCat = true
         }
 

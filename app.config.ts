@@ -11,7 +11,7 @@ function resolveAppEnv(): AppEnv {
 
 const appEnv = resolveAppEnv()
 
-const config: ExpoConfig = {
+const config: ExpoConfig & { newArchEnabled: boolean } = {
   name: 'Dropsauce',
   slug: 'dropsauce',
   owner: 'lejitas',

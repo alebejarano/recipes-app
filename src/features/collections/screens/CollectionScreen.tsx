@@ -108,33 +108,41 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
 
   useEffect(() => {
     if (segmentParam === 'notes' || segmentParam === 'recipes' || segmentParam === 'shopping') {
-      setSegment(segmentParam)
+      const timeout = setTimeout(() => setSegment(segmentParam), 0)
+      return () => clearTimeout(timeout)
     }
   }, [segmentParam])
 
   useEffect(() => {
     if (recipesSegment === 'documents' || recipesSegment === 'folders') {
-      setRecipeSegment(recipesSegment)
+      const timeout = setTimeout(() => setRecipeSegment(recipesSegment), 0)
+      return () => clearTimeout(timeout)
     }
   }, [recipesSegment])
 
   useEffect(() => {
     if (docSuccess === '1') {
-      setSegment('recipes')
-      setRecipeSegment('documents')
-      setShowDocSuccess(true)
-      setShowDocQueued(false)
-      setShowStorageReminder(false)
+      const timeout = setTimeout(() => {
+        setSegment('recipes')
+        setRecipeSegment('documents')
+        setShowDocSuccess(true)
+        setShowDocQueued(false)
+        setShowStorageReminder(false)
+      }, 0)
+      return () => clearTimeout(timeout)
     }
   }, [docSuccess])
 
   useEffect(() => {
     if (docQueued === '1') {
-      setSegment('recipes')
-      setRecipeSegment('documents')
-      setShowDocQueued(true)
-      setShowDocSuccess(false)
-      setShowStorageReminder(false)
+      const timeout = setTimeout(() => {
+        setSegment('recipes')
+        setRecipeSegment('documents')
+        setShowDocQueued(true)
+        setShowDocSuccess(false)
+        setShowStorageReminder(false)
+      }, 0)
+      return () => clearTimeout(timeout)
     }
   }, [docQueued])
 
@@ -148,12 +156,12 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   }, [showDocQueued, showDocSuccess])
 
   useEffect(() => {
-    if (recipeSegment !== 'documents' && showDocSuccess) {
-      setShowDocSuccess(false)
-    }
-    if (recipeSegment !== 'documents' && showDocQueued) {
-      setShowDocQueued(false)
-    }
+    if (recipeSegment === 'documents') return
+    const timeout = setTimeout(() => {
+      if (showDocSuccess) setShowDocSuccess(false)
+      if (showDocQueued) setShowDocQueued(false)
+    }, 0)
+    return () => clearTimeout(timeout)
   }, [recipeSegment, showDocQueued, showDocSuccess])
 
   useEffect(() => {
@@ -196,9 +204,12 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     if (!queueStorageReminderAfterSuccess) return
     if (showDocSuccess) return
     if (recipeSegment !== 'documents' || segment !== 'recipes') return
-    markStorageReminderShownInSession()
-    setShowStorageReminder(true)
-    setQueueStorageReminderAfterSuccess(false)
+    const timeout = setTimeout(() => {
+      markStorageReminderShownInSession()
+      setShowStorageReminder(true)
+      setQueueStorageReminderAfterSuccess(false)
+    }, 0)
+    return () => clearTimeout(timeout)
   }, [queueStorageReminderAfterSuccess, recipeSegment, segment, showDocSuccess])
 
   const dismissStorageReminder = async () => {

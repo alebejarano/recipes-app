@@ -606,13 +606,16 @@ export default function HomeScreen({
     if (seenConversionTriggerIds.includes(conversionTrigger.id)) return;
 
     const next = [...seenConversionTriggerIds, conversionTrigger.id];
-    setSeenConversionTriggerIds(next);
-    setActiveConversionTriggerId(conversionTrigger.id);
-    AsyncStorage.setItem(STORAGE_CONVERSION_BANNER_SEEN_TRIGGERS_KEY, JSON.stringify(next)).catch(
-      () => {
-        // ignore persistence errors; we still keep in-memory state for this session
-      }
-    );
+    const timeout = setTimeout(() => {
+      setSeenConversionTriggerIds(next);
+      setActiveConversionTriggerId(conversionTrigger.id);
+      AsyncStorage.setItem(STORAGE_CONVERSION_BANNER_SEEN_TRIGGERS_KEY, JSON.stringify(next)).catch(
+        () => {
+          // ignore persistence errors; we still keep in-memory state for this session
+        }
+      );
+    }, 0);
+    return () => clearTimeout(timeout);
   }, [conversionTrigger, isAuthenticated, isPublic, seenConversionTriggerIds]);
 
   const isTransitional = totalItems >= 1 && totalItems <= 4;

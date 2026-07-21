@@ -40,7 +40,7 @@ export default function ExportDataScreen({ onBack }: ExportDataScreenProps) {
     } finally {
       setIsExportingData(false)
     }
-  }, [isExportingData, strategy, t, user?.email, user?.id, user?.user_metadata?.display_name])
+  }, [isExportingData, strategy, t, user])
 
   return (
     <ProfileSubpageLayout title={t('profile.exportData.title')} onBack={onBack}>
