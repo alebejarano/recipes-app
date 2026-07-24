@@ -727,7 +727,7 @@ export const en = {
             notNowA11y: 'Not now',
         },
         picks: {
-            tryThis: 'Try this ->',
+            tryThis: 'Try this',
             yourFirstRecipes: 'Your first recipes',
             tryTonight: 'Try this tonight',
             fitsRightNow: 'A recipe that fits right now',

@@ -729,7 +729,7 @@ export const es: TranslationSchema = {
             notNowA11y: 'Ahora no',
         },
         picks: {
-            tryThis: 'Prueba esto ->',
+            tryThis: 'Prueba esto',
             yourFirstRecipes: 'Tus primeras recetas',
             tryTonight: 'Prueba esto esta noche',
             fitsRightNow: 'Una receta que encaja ahora mismo',
