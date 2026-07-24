@@ -1,5 +1,4 @@
 import { router } from 'expo-router'
-import React from 'react'
 import { Text, View } from 'react-native'
 
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
@@ -31,7 +30,7 @@ const POLICY_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly PolicySection[]> =
         ],
         details: [
             'Legal name: Anthony Lajusticia',
-            'Trade name: DropSauce',
+            'Trade name: Dropsauce',
             'Status: Self-employed professional registered in Spain under the Régimen Especial de Trabajadores Autónomos',
             'NIF: Z0570202Z',
             'Business address: Calle de Alcalá 54, 4º izquierda, 28014 Madrid',
@@ -212,7 +211,7 @@ const POLICY_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly PolicySection[]> =
             ],
             details: [
                 'Nombre legal: Anthony Lajusticia',
-                'Nombre comercial: DropSauce',
+                'Nombre comercial: Dropsauce',
                 'Situación: Profesional autónomo dado de alta en España en el Régimen Especial de Trabajadores Autónomos',
                 'NIF: Z0570202Z',
                 'Domicilio profesional: Calle de Alcalá 54, 4º izquierda, 28014 Madrid',

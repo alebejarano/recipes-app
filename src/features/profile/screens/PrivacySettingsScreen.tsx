@@ -1,5 +1,5 @@
 import { router } from 'expo-router'
-import React, { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Alert, Text, View } from 'react-native'
 
 import { useAnalyticsConsent } from '@/features/analytics/context/AnalyticsConsentContext'

@@ -1,5 +1,4 @@
 import { router } from 'expo-router'
-import React from 'react'
 import { Text, View } from 'react-native'
 
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
