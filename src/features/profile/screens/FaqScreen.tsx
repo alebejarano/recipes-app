@@ -42,64 +42,66 @@ export default function FaqScreen() {
 
   return (
     <ProfileSubpageLayout title={t('profile.faq.title')} subtitle={t('profile.faq.subtitle')} onBack={onPressBack}>
-      <View style={styles.searchWrap}>
-        <Feather name="search" size={20} style={styles.searchIcon} />
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder={t('profile.faq.searchPlaceholder')}
-          placeholderTextColor={styles.placeholder.color}
-          style={styles.searchInput}
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="search"
-        />
-      </View>
-
-      {filteredSections.map((section) => (
-        <View key={section.id} style={styles.sectionWrap}>
-          <Text style={styles.sectionTitle}>{section.title}</Text>
-
-          <View style={styles.card}>
-            {section.items.map((item, index) => {
-              const isOpen = openId === item.id
-
-              return (
-                <View
-                  key={item.id}
-                  style={[styles.itemWrap, index !== section.items.length - 1 && styles.itemDivider]}
-                >
-                  <Pressable
-                    onPress={() => setOpenId((prev) => (prev === item.id ? null : item.id))}
-                    style={({ pressed }) => [styles.questionRow, pressed && styles.questionPressed]}
-                    accessibilityRole="button"
-                    accessibilityState={{ expanded: isOpen }}
-                    accessibilityLabel={item.question}
-                  >
-                    <Text style={styles.question}>{item.question}</Text>
-                    <Feather name={isOpen ? 'chevron-up' : 'chevron-down'} size={18} style={styles.chevron} />
-                  </Pressable>
-
-                  {isOpen ? (
-                    <View style={styles.answersWrap}>
-                      {item.answers.map((answer, answerIndex) => (
-                        <Text key={`${item.id}-${answerIndex}`} style={styles.answer}>
-                          {answer}
-                        </Text>
-                      ))}
-                    </View>
-                  ) : null}
-                </View>
-              )
-            })}
-          </View>
+      <View style={styles.content}>
+        <View style={styles.searchWrap}>
+          <Feather name="search" size={20} style={styles.searchIcon} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder={t('profile.faq.searchPlaceholder')}
+            placeholderTextColor={styles.placeholder.color}
+            style={styles.searchInput}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+          />
         </View>
-      ))}
 
-      <View style={styles.supportCard}>
-        <Text style={styles.supportTitle}>{t('profile.faq.supportTitle')}</Text>
-        <Text style={styles.supportBody}>{t('profile.faq.supportBody')}</Text>
-        <Text style={styles.supportEmail}>hello@dropsauce.app</Text>
+        {filteredSections.map((section) => (
+          <View key={section.id} style={styles.sectionWrap}>
+            <Text style={styles.sectionTitle}>{section.title}</Text>
+
+            <View style={styles.card}>
+              {section.items.map((item, index) => {
+                const isOpen = openId === item.id
+
+                return (
+                  <View
+                    key={item.id}
+                    style={[styles.itemWrap, index !== section.items.length - 1 && styles.itemDivider]}
+                  >
+                    <Pressable
+                      onPress={() => setOpenId((prev) => (prev === item.id ? null : item.id))}
+                      style={({ pressed }) => [styles.questionRow, pressed && styles.questionPressed]}
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: isOpen }}
+                      accessibilityLabel={item.question}
+                    >
+                      <Text style={styles.question}>{item.question}</Text>
+                      <Feather name={isOpen ? 'chevron-up' : 'chevron-down'} size={18} style={styles.chevron} />
+                    </Pressable>
+
+                    {isOpen ? (
+                      <View style={styles.answersWrap}>
+                        {item.answers.map((answer, answerIndex) => (
+                          <Text key={`${item.id}-${answerIndex}`} style={styles.answer}>
+                            {answer}
+                          </Text>
+                        ))}
+                      </View>
+                    ) : null}
+                  </View>
+                )
+              })}
+            </View>
+          </View>
+        ))}
+
+        <View style={styles.supportCard}>
+          <Text style={styles.supportTitle}>{t('profile.faq.supportTitle')}</Text>
+          <Text style={styles.supportBody}>{t('profile.faq.supportBody')}</Text>
+          <Text style={styles.supportEmail}>hello@dropsauce.app</Text>
+        </View>
       </View>
     </ProfileSubpageLayout>
   )

@@ -1,6 +1,7 @@
 // app/_layout.tsx
 import { Slot } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
+import { StatusBar } from 'expo-status-bar'
 import { PostHogProvider, usePostHog } from 'posthog-react-native'
 import React, { useEffect, useRef } from 'react'
 import { AppState, LogBox } from 'react-native'
@@ -19,6 +20,7 @@ import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
 import { setProductionLogCapture } from '@/lib/productionLogger'
 import { LocalizationProvider } from '@/localization'
 import QueryProvider from '@/providers/QueryProvider'
+import { theme } from '@/styles/theme'
 import { useLoadFonts } from '@/styles/useLoadFonts'
 
 export default function RootLayout() {
@@ -71,6 +73,7 @@ export default function RootLayout() {
 
   return (
     <AnalyticsConsentProvider>
+      <StatusBar style="dark" backgroundColor={theme.colors.background} />
       <PostHogGate enabled={posthogEnabled} apiKey={posthogApiKey} host={posthogHost}>
         {content}
       </PostHogGate>

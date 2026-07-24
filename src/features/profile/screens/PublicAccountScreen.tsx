@@ -34,7 +34,6 @@ export default function PublicAccountScreen() {
         title: t('profile.guest.items.currentPlanTitle'),
         subtitle: t('profile.guest.items.currentPlanSubtitle'),
         icon: 'hard-drive' as const,
-        rightText: t('profile.guest.items.currentPlanBadge'),
         onPress: () => router.push('/current-plan'),
       },
       {

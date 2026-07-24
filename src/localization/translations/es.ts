@@ -227,7 +227,6 @@ export const es: TranslationSchema = {
                 createAccountSubtitle: 'Pásate a una cuenta para sincronizar y guardar copia de tus recetas',
                 currentPlanTitle: 'Plan actual',
                 currentPlanSubtitle: 'Modo invitado, solo local en este dispositivo',
-                currentPlanBadge: 'Invitado',
                 privacyTitle: 'Privacidad y seguridad',
                 privacySubtitle: 'Gestiona la analítica opcional',
                 pushTitle: 'Notificaciones push',

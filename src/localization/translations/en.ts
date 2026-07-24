@@ -225,7 +225,6 @@ export const en = {
                 createAccountSubtitle: 'Upgrade to sync and back up your recipes',
                 currentPlanTitle: 'Current plan',
                 currentPlanSubtitle: 'Guest mode, local only on this device',
-                currentPlanBadge: 'Guest',
                 privacyTitle: 'Privacy & Security',
                 privacySubtitle: 'Manage optional analytics',
                 pushTitle: 'Push Notifications',
