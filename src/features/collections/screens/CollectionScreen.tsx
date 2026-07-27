@@ -426,7 +426,12 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
       {segment === 'recipes' ? (
         <>
           {recipeHelperText ? (
-            <Text style={styles.helperText}>{recipeHelperText}</Text>
+            <View style={styles.helperSection}>
+              <Text style={styles.helperText}>{recipeHelperText}</Text>
+              {isPublic ? (
+                <Text style={styles.publicHint}>{t('collections.detail.publicHint')}</Text>
+              ) : null}
+            </View>
           ) : null}
 
           {recipeSegment === 'documents' ? (
@@ -447,11 +452,8 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
               </View>
               <Text style={styles.emptyTitle}>{t('collections.emptyRecipesTitle')}</Text>
               <Text style={styles.emptyBody}>
-                {t('home.empty.primary')} to start building folders.
+                {t('collections.emptyRecipesBody')}
               </Text>
-              {isPublic ? (
-                <Text style={styles.publicHint}>{t('collections.detail.publicHint')}</Text>
-              ) : null}
               <Pressable
                 onPress={() =>
                   router.push(
@@ -510,9 +512,6 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
               }}
             />
           )}
-          {isPublic && recipeSegment !== 'documents' && recipeData.length > 0 ? (
-            <Text style={styles.publicHint}>{t('collections.detail.publicHint')}</Text>
-          ) : null}
         </>
       ) : segment === 'notes' ? (
         <NotesSegment
@@ -631,9 +630,11 @@ const styles = createThemedStyles((theme) => ({
     ...theme.shadows.soft,
   },
 
-  helperText: {
+  helperSection: {
     marginTop: theme.spacing.lg,
     marginBottom: theme.spacing.lg,
+  },
+  helperText: {
     ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
     maxWidth: 320,
@@ -719,7 +720,7 @@ const styles = createThemedStyles((theme) => ({
     marginTop: theme.spacing.sm,
     ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
-    textAlign: 'center',
+    maxWidth: 320,
   },
   emptyCta: {
     marginTop: theme.spacing.sm,

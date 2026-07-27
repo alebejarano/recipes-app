@@ -835,6 +835,7 @@ export const en = {
             deleteBody: 'Deleting this folder will remove it from your recipes. This cannot be undone.',
         },
         emptyRecipesTitle: 'No recipes yet',
+        emptyRecipesBody: 'Add your first recipe to start building folders.',
         createFirstRecipe: 'Create your first recipe',
         createModal: {
             subtitle: 'Add an emoji and a title.',

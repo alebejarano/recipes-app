@@ -837,6 +837,7 @@ export const es: TranslationSchema = {
             deleteBody: 'Eliminar esta carpeta la quitará de tus recetas. Esto no se puede deshacer.',
         },
         emptyRecipesTitle: 'Todavía no hay recetas',
+        emptyRecipesBody: 'Añade tu primera receta para empezar a crear carpetas.',
         createFirstRecipe: 'Crea tu primera receta',
         createModal: {
             subtitle: 'Añade un emoji y un título.',
