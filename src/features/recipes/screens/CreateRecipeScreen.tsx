@@ -542,7 +542,6 @@ export default function CreateRecipeScreen({
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             showsVerticalScrollIndicator={false}
-            automaticallyAdjustKeyboardInsets
           >
             <View style={largeScreen.contentWidthStyle}>
             {entryMode ? (

@@ -440,7 +440,6 @@ export default function PublicCreateRecipeScreen({
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             showsVerticalScrollIndicator={false}
-            automaticallyAdjustKeyboardInsets
           >
             {entryMode ? (
               <>

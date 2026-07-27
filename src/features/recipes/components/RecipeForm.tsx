@@ -158,6 +158,7 @@ const IMAGE_QUALITY_STEPS = [
   0.58,
   0.5,
 ]
+const INGREDIENTS_MIN_HEIGHT = 148
 
 async function getPickedImageSizeBytes(asset: ImagePicker.ImagePickerAsset): Promise<number> {
   const fileSize = (asset as { fileSize?: number | null }).fileSize
@@ -211,6 +212,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   const [emojiDraft, setEmojiDraft] = useState('')
   const [emojiKeyboardInset, setEmojiKeyboardInset] = useState(0)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [ingredientsInputHeight, setIngredientsInputHeight] = useState(INGREDIENTS_MIN_HEIGHT)
   const [focusedStepIndex, setFocusedStepIndex] = useState<number | null>(null)
   const [isMoreDetailsExpanded, setIsMoreDetailsExpanded] = useState(() => {
     const source = initialValues ?? createEmptyRecipeFormValues()
@@ -685,12 +687,23 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
             style={[
               styles.textareaInput,
               styles.ingredientsInput,
+              { height: ingredientsInputHeight },
               shouldTintPrefilledValues &&
                 isPrefilledValue(values.ingredientsText, initialFormValues.ingredientsText) &&
                 styles.prefilledValue,
             ]}
             editable={!isSubmitting}
             multiline
+            scrollEnabled={false}
+            onContentSizeChange={({ nativeEvent }) => {
+              const nextHeight = Math.max(
+                INGREDIENTS_MIN_HEIGHT,
+                Math.ceil(nativeEvent.contentSize.height)
+              )
+              setIngredientsInputHeight((currentHeight) =>
+                currentHeight === nextHeight ? currentHeight : nextHeight
+              )
+            }}
             autoCapitalize="sentences"
             textAlignVertical="top"
           />
@@ -1209,7 +1222,7 @@ const styles = createThemedStyles((theme) => ({
     textAlignVertical: 'top',
   },
   ingredientsInput: {
-    minHeight: 148,
+    minHeight: INGREDIENTS_MIN_HEIGHT,
   },
   notesInput: {
     minHeight: 112,

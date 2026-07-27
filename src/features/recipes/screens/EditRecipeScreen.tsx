@@ -204,7 +204,6 @@ export default function EditRecipeScreen() {
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             showsVerticalScrollIndicator={false}
-            automaticallyAdjustKeyboardInsets
           >
             <View style={styles.header}>
               <Text style={styles.title}>{t('recipes.manage.editTitle')}</Text>
