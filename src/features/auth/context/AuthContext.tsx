@@ -22,7 +22,6 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string) => Promise<AuthResponse['data']>
   updateProfileName: (name: string) => Promise<void>
-  updateEmailPreferences: (preferences: EmailPreferences) => Promise<void>
   updatePushPreferences: (preferences: PushPreferences) => Promise<void>
   updateEmailAddress: (email: string) => Promise<{ pendingEmail: string | null }>
   sendPasswordResetEmail: (email: string) => Promise<void>
@@ -30,11 +29,6 @@ type AuthContextValue = {
   updatePasswordWithCurrentPassword: (currentPassword: string, nextPassword: string) => Promise<void>
   deleteAccount: () => Promise<void>
   logout: () => Promise<void>
-}
-
-export type EmailPreferences = {
-  weeklyDigest: boolean
-  cookingTips: boolean
 }
 
 export type PushPreferences = {
@@ -178,19 +172,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession((prev) => (prev ? { ...prev, user: data.user } : prev))
     }
   }
-
-  const updateEmailPreferences = useCallback(async (preferences: EmailPreferences) => {
-    const { data, error } = await supabase.auth.updateUser({
-      data: {
-        email_updates: preferences,
-      },
-    })
-    if (error) throw error
-
-    if (data.user) {
-      setSession((prev) => (prev ? { ...prev, user: data.user } : prev))
-    }
-  }, [])
 
   const updatePushPreferences = useCallback(async (preferences: PushPreferences) => {
     const { data, error } = await supabase.auth.updateUser({
@@ -337,7 +318,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       register,
       updateProfileName,
-      updateEmailPreferences,
       updatePushPreferences,
       updateEmailAddress,
       sendPasswordResetEmail,
@@ -349,7 +329,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [
       session,
       isLoading,
-      updateEmailPreferences,
       updatePushPreferences,
       updateEmailAddress,
       sendPasswordResetEmail,

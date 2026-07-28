@@ -2,6 +2,11 @@ import { create } from 'zustand'
 
 import type { ShoppingItem } from '../storage/shoppingListItemsStorage'
 import {
+  getShoppingItemHistory,
+  recordShoppingItemAddition,
+  type ShoppingItemHistory,
+} from '../storage/shoppingListItemHistoryStorage'
+import {
     clearShoppingListItems,
     getShoppingListItems,
     setShoppingListItems,
@@ -36,6 +41,7 @@ type ShoppingListState = {
   // data
   listId: string | null
   items: ShoppingItem[]
+  itemHistory: ShoppingItemHistory[]
 
   // derived
   normalizedNames: Set<string>
@@ -43,9 +49,9 @@ type ShoppingListState = {
   // actions
   hydrate: () => Promise<void>
   ensureList: () => Promise<string>
-  addItem: (name: string) => Promise<void>
+  addItem: (name: string, historyKey?: string) => Promise<void>
   bulkAdd: (names: string[]) => Promise<{ added: number; skipped: number }>
-  toggleItemByName: (name: string) => Promise<void>
+  toggleItemByName: (name: string, historyKey?: string) => Promise<void>
   removeItem: (id: string) => Promise<void>
   setChecked: (id: string, checked: boolean) => Promise<void>
 
@@ -78,6 +84,7 @@ export const useShoppingListStore = create<ShoppingListState>((set, get) => {
 
     listId: null,
     items: [],
+    itemHistory: [],
     normalizedNames: new Set(),
 
     hydrate: async () => {
@@ -91,11 +98,15 @@ export const useShoppingListStore = create<ShoppingListState>((set, get) => {
         set({ isHydrating: true })
 
         const id = await getShoppingListId()
-        const items = id ? await getShoppingListItems() : []
+        const [items, itemHistory] = await Promise.all([
+          id ? getShoppingListItems() : [],
+          getShoppingItemHistory(),
+        ])
 
         set({
           listId: id,
           items,
+          itemHistory,
           normalizedNames: buildNameSet(items),
           isHydrating: false,
           isHydrated: true,
@@ -128,7 +139,7 @@ export const useShoppingListStore = create<ShoppingListState>((set, get) => {
       return id
     },
 
-    addItem: async (rawName: string) => {
+    addItem: async (rawName: string, historyKey?: string) => {
       const name = normalizeName(rawName)
       if (!name) return
 
@@ -142,6 +153,8 @@ export const useShoppingListStore = create<ShoppingListState>((set, get) => {
       const nextItems = [...get().items, next]
 
       await commitItems(nextItems, { rebuildNames: true })
+      const itemHistory = await recordShoppingItemAddition(name, historyKey)
+      set({ itemHistory })
     },
 
     bulkAdd: async (names: string[]) => {
@@ -179,11 +192,16 @@ export const useShoppingListStore = create<ShoppingListState>((set, get) => {
 
       const nextItems = [...get().items, ...additions]
       await commitItems(nextItems, { rebuildNames: true })
+      let itemHistory = get().itemHistory
+      for (const item of additions) {
+        itemHistory = await recordShoppingItemAddition(item.name)
+      }
+      set({ itemHistory })
       return { added: additions.length, skipped }
     },
 
 
-    toggleItemByName: async (rawName: string) => {
+    toggleItemByName: async (rawName: string, historyKey?: string) => {
       const name = normalizeName(rawName)
       if (!name) return
 
@@ -194,7 +212,7 @@ export const useShoppingListStore = create<ShoppingListState>((set, get) => {
       const exists = get().normalizedNames.has(normalized)
 
       if (!exists) {
-        await get().addItem(name)
+        await get().addItem(name, historyKey)
         return
       }
 

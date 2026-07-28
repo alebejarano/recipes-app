@@ -1,8 +1,15 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Alert } from 'react-native'
 
-import { type EmailPreferences, useAuth } from '@/features/auth/context/AuthContext'
+import { useAuth } from '@/features/auth/context/AuthContext'
 import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
+import {
+  createDefaultEmailPreferences,
+  getEmailPreferences,
+  type EmailPreferenceKey,
+  type EmailPreferences,
+  updateEmailPreference,
+} from '@/features/profile/api/emailPreferencesRepo'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
 import SettingsSection from '@/features/profile/components/SettingsSection'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
@@ -12,59 +19,59 @@ type EmailSettingsScreenProps = {
   onBack: () => void
 }
 
-const DEFAULT_EMAIL_PREFERENCES: EmailPreferences = {
-  weeklyDigest: false,
-  cookingTips: false,
-}
-
-function getSavedEmailPreferences(value: unknown): EmailPreferences {
-  if (!value || typeof value !== 'object') return DEFAULT_EMAIL_PREFERENCES
-
-  const preferences = value as Partial<Record<keyof EmailPreferences, unknown>>
-  return {
-    weeklyDigest:
-      typeof preferences.weeklyDigest === 'boolean'
-        ? preferences.weeklyDigest
-        : DEFAULT_EMAIL_PREFERENCES.weeklyDigest,
-    cookingTips:
-      typeof preferences.cookingTips === 'boolean'
-        ? preferences.cookingTips
-        : DEFAULT_EMAIL_PREFERENCES.cookingTips,
-  }
-}
-
 export default function EmailSettingsScreen({ onBack }: EmailSettingsScreenProps) {
-  const { t } = useTranslation()
-  const { updateEmailPreferences, user } = useAuth()
+  const { locale, t } = useTranslation()
+  const { user } = useAuth()
   const showSnackbar = useTransientSnackbarStore((state) => state.show)
   const hasAccountEmail = Boolean(user?.email)
-  const savedPreferences = useMemo(
-    () => getSavedEmailPreferences(user?.user_metadata?.email_updates),
-    [user?.user_metadata?.email_updates]
-  )
-  const [preferences, setPreferences] = useState<EmailPreferences>(savedPreferences)
+  const [preferences, setPreferences] = useState<EmailPreferences>(createDefaultEmailPreferences)
+  const [isLoadingPreferences, setIsLoadingPreferences] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
-    const timeout = setTimeout(() => setPreferences(savedPreferences), 0)
-    return () => clearTimeout(timeout)
-  }, [savedPreferences])
+    if (!user?.id) return
+
+    let isMounted = true
+
+    void getEmailPreferences()
+      .then((nextPreferences) => {
+        if (isMounted) setPreferences(nextPreferences)
+      })
+      .catch((error) => {
+        if (isMounted) {
+          Alert.alert(t('profile.emailSettings.failedTitle'), getUserFacingErrorMessage(error))
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingPreferences(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [t, user?.id])
+
+  const formatConsentStatus = useCallback((preference: EmailPreferenceKey) => {
+    const value = preferences[preference]
+    const timestamp = value.optedIn ? value.optedInAt : value.optedOutAt
+    if (!timestamp) return null
+
+    const date = new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(timestamp))
+    return value.optedIn
+      ? t('profile.emailSettings.subscribedOn', { date })
+      : t('profile.emailSettings.unsubscribedOn', { date })
+  }, [locale, preferences, t])
 
   const updatePreference = useCallback(
-    (key: keyof EmailPreferences, next: boolean) => {
-      if (!hasAccountEmail || isSaving) return
+    (key: EmailPreferenceKey, next: boolean) => {
+      if (!hasAccountEmail || isLoadingPreferences || isSaving) return
 
       const previousPreferences = preferences
-      const nextPreferences = {
-        ...previousPreferences,
-        [key]: next,
-      }
-
-      setPreferences(nextPreferences)
       setIsSaving(true)
 
-      void updateEmailPreferences(nextPreferences)
-        .then(() => {
+      void updateEmailPreference(key, next)
+        .then((updatedPreference) => {
+          setPreferences((current) => ({ ...current, [key]: updatedPreference }))
           showSnackbar(t('profile.emailSettings.updated'))
         })
         .catch((e: any) => {
@@ -75,7 +82,7 @@ export default function EmailSettingsScreen({ onBack }: EmailSettingsScreenProps
           setIsSaving(false)
         })
     },
-    [hasAccountEmail, isSaving, preferences, showSnackbar, t, updateEmailPreferences]
+    [hasAccountEmail, isLoadingPreferences, isSaving, preferences, showSnackbar, t]
   )
 
   return (
@@ -88,20 +95,24 @@ export default function EmailSettingsScreen({ onBack }: EmailSettingsScreenProps
             type: 'toggle',
             icon: 'mail',
             title: t('profile.emailSettings.weeklyTitle'),
-            subtitle: hasAccountEmail ? t('profile.emailSettings.weeklySubtitle') : t('profile.emailSettings.noAccount'),
-            value: preferences.weeklyDigest,
-            disabled: !hasAccountEmail || isSaving,
-            onValueChange: (next) => updatePreference('weeklyDigest', next),
+            subtitle: hasAccountEmail
+              ? formatConsentStatus('weekly_digest') ?? t('profile.emailSettings.weeklySubtitle')
+              : t('profile.emailSettings.noAccount'),
+            value: preferences.weekly_digest.optedIn,
+            disabled: !hasAccountEmail || isLoadingPreferences || isSaving,
+            onValueChange: (next) => updatePreference('weekly_digest', next),
           },
           {
             id: 'tips',
             type: 'toggle',
             icon: 'book-open',
             title: t('profile.emailSettings.tipsTitle'),
-            subtitle: hasAccountEmail ? t('profile.emailSettings.tipsSubtitle') : t('profile.emailSettings.noAccount'),
-            value: preferences.cookingTips,
-            disabled: !hasAccountEmail || isSaving,
-            onValueChange: (next) => updatePreference('cookingTips', next),
+            subtitle: hasAccountEmail
+              ? formatConsentStatus('cooking_tips') ?? t('profile.emailSettings.tipsSubtitle')
+              : t('profile.emailSettings.noAccount'),
+            value: preferences.cooking_tips.optedIn,
+            disabled: !hasAccountEmail || isLoadingPreferences || isSaving,
+            onValueChange: (next) => updatePreference('cooking_tips', next),
           },
         ]}
       />

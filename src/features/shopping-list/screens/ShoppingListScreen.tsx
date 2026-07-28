@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons'
 import { router } from 'expo-router'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Keyboard,
@@ -20,7 +20,8 @@ import { theme } from '@/styles/theme'
 
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
 
-const QUICK_ADD_ITEMS = ['Milk', 'Eggs', 'Bread', 'Butter', 'Cheese', 'Chicken', 'Rice', 'Onions']
+const QUICK_ADD_ITEM_KEYS = ['milk', 'eggs', 'bread', 'butter', 'cheese', 'chicken', 'rice', 'onions'] as const
+const QUICK_ADD_HISTORY_PREFIX = 'quick-add:'
 
 export default function ShoppingListScreen() {
   const { t } = useTranslation()
@@ -36,6 +37,7 @@ export default function ShoppingListScreen() {
   const isComplete = useShoppingListStore((s) => s.isComplete)
 
   const items = useShoppingListStore((s) => s.items)
+  const itemHistory = useShoppingListStore((s) => s.itemHistory)
   const normalizedNames = useShoppingListStore((s) => s.normalizedNames)
 
   const addItem = useShoppingListStore((s) => s.addItem)
@@ -48,6 +50,24 @@ export default function ShoppingListScreen() {
   }, [hydrate])
 
   const canAddTyped = newItem.trim().length > 0
+
+  const quickAddItems = useMemo(() => {
+    const defaultItems = QUICK_ADD_ITEM_KEYS.map((key) => ({
+      key: `${QUICK_ADD_HISTORY_PREFIX}${key}`,
+      label: t(`shoppingList.quickAddItems.${key}`),
+    }))
+    const defaultItemsByKey = new Map(defaultItems.map((item) => [item.key, item]))
+    const personalizedItems = itemHistory.map((item) =>
+      defaultItemsByKey.get(item.key) ?? { key: item.key, label: item.name },
+    )
+    const seenKeys = new Set(personalizedItems.map((item) => item.key))
+    const seenLabels = new Set(personalizedItems.map((item) => item.label.toLowerCase()))
+
+    return [
+      ...personalizedItems,
+      ...defaultItems.filter((item) => !seenKeys.has(item.key) && !seenLabels.has(item.label.toLowerCase())),
+    ].slice(0, 8)
+  }, [itemHistory, t])
 
   const onAdd = async (name?: string) => {
     const raw = (name ?? newItem).trim()
@@ -158,13 +178,13 @@ export default function ShoppingListScreen() {
             <Text style={styles.sectionLabelMuted}>{t('shoppingList.quickAddTitle')}</Text>
 
             <View style={styles.quickWrap}>
-              {QUICK_ADD_ITEMS.map((label) => {
+              {quickAddItems.map(({ key, label }) => {
                 const isAdded = normalizedNames.has(label.toLowerCase())
 
                 return (
                   <Pressable
-                    key={label}
-                    onPress={() => toggleItemByName(label)}
+                    key={key}
+                    onPress={() => toggleItemByName(label, key)}
                     accessibilityRole="button"
                     accessibilityLabel={isAdded ? t('shoppingList.removeA11y', { name: label }) : t('shoppingList.addA11y', { name: label })}
                     style={({ pressed }) => [
