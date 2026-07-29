@@ -21,6 +21,7 @@ type AuthContextValue = {
 
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string) => Promise<AuthResponse['data']>
+  resendEmailConfirmation: (email: string) => Promise<void>
   updateProfileName: (name: string) => Promise<void>
   updatePushPreferences: (preferences: PushPreferences) => Promise<void>
   updateEmailAddress: (email: string) => Promise<{ pendingEmail: string | null }>
@@ -158,6 +159,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error
     return data
   }
+
+  const resendEmailConfirmation = useCallback(async (email: string) => {
+    const normalized = normalizeEmail(email)
+    if (!normalized) throw new Error('Email is required')
+    if (!isValidEmail(normalized)) throw new Error('Please enter a valid email address.')
+
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: normalized,
+      options: {
+        emailRedirectTo: getEmailConfirmationRedirectUrl(),
+      },
+    })
+    if (error) throw error
+  }, [])
 
   const updateProfileName = async (name: string) => {
     const trimmed = name.trim()
@@ -317,6 +333,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isLoading,
       login,
       register,
+      resendEmailConfirmation,
       updateProfileName,
       updatePushPreferences,
       updateEmailAddress,
@@ -329,6 +346,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [
       session,
       isLoading,
+      resendEmailConfirmation,
       updatePushPreferences,
       updateEmailAddress,
       sendPasswordResetEmail,

@@ -104,34 +104,36 @@ export default function EditProfileScreen() {
         </View>
       </View>
 
-      <View style={styles.field}>
-        <Text style={styles.label}>{t('profile.editProfile.nameLabel')}</Text>
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          placeholder={t('profile.editProfile.namePlaceholder')}
-          placeholderTextColor={styles.placeholder.color}
-          style={styles.input}
-          autoCapitalize="words"
-          autoCorrect={false}
-          returnKeyType="next"
-        />
-      </View>
+      <View style={styles.fields}>
+        <View style={styles.field}>
+          <Text style={styles.label}>{t('profile.editProfile.nameLabel')}</Text>
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder={t('profile.editProfile.namePlaceholder')}
+            placeholderTextColor={styles.placeholder.color}
+            style={styles.input}
+            autoCapitalize="words"
+            autoCorrect={false}
+            returnKeyType="next"
+          />
+        </View>
 
-      <View style={styles.field}>
-        <Text style={styles.label}>{t('profile.editProfile.emailLabel')}</Text>
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          placeholder={t('profile.editProfile.emailPlaceholder')}
-          placeholderTextColor={styles.placeholder.color}
-          style={styles.input}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="email-address"
-          returnKeyType="done"
-          onSubmitEditing={onSave}
-        />
+        <View style={styles.field}>
+          <Text style={styles.label}>{t('profile.editProfile.emailLabel')}</Text>
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            placeholder={t('profile.editProfile.emailPlaceholder')}
+            placeholderTextColor={styles.placeholder.color}
+            style={styles.input}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="email-address"
+            returnKeyType="done"
+            onSubmitEditing={onSave}
+          />
+        </View>
       </View>
     </ProfileSubpageLayout>
   )
@@ -175,6 +177,9 @@ const styles = createThemedStyles((theme) => ({
   },
   field: {
     gap: theme.spacing.xs,
+  },
+  fields: {
+    gap: theme.spacing.xl,
   },
   label: {
     fontFamily: theme.fontFamily.medium,

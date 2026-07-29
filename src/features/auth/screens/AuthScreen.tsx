@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import React, { useMemo, useState } from 'react'
 import {
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -42,17 +43,27 @@ type SubmitError = {
 
 const KEYBOARD_SCROLL_PADDING = 96
 
+function isEmailNotConfirmedError(error: unknown) {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: unknown }).code === 'email_not_confirmed'
+  )
+}
+
 export default function AuthScreen({ initialMode }: AuthScreenProps) {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const largeScreen = useLargeScreenLayout({ maxContentWidth: layout.authContentMaxWidth })
-  const { login, register } = useAuth()
+  const { login, register, resendEmailConfirmation } = useAuth()
   const captureAnalyticsEvent = useAnalyticsCapture()
   const { t } = useTranslation()
 
   const [mode, setMode] = useState<AuthMode>(initialMode)
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [isResendingConfirmation, setIsResendingConfirmation] = useState(false)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -100,6 +111,23 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
   const resetTransientState = () => {
     setError(null)
     setNeedsEmailConfirmation(false)
+    setIsResendingConfirmation(false)
+  }
+
+  const handleResendConfirmation = async () => {
+    setIsResendingConfirmation(true)
+
+    try {
+      await resendEmailConfirmation(email)
+      Alert.alert(t('auth.screen.confirmEmailTitle'), t('auth.screen.confirmEmailResent'))
+    } catch (e) {
+      Alert.alert(
+        t('auth.errors.registrationFailed'),
+        getUserFacingErrorMessage(e, t('auth.errors.generic')),
+      )
+    } finally {
+      setIsResendingConfirmation(false)
+    }
   }
 
   const handleSubmit = async () => {
@@ -164,6 +192,11 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
       // If we have a session, the user is authenticated.
       router.replace('/(auth)/(tabs)')
     } catch (e) {
+      if (isLogin && isEmailNotConfirmedError(e)) {
+        setNeedsEmailConfirmation(true)
+        return
+      }
+
       setError({
         title: isLogin ? t('auth.errors.signInFailed') : t('auth.errors.registrationFailed'),
         message: getUserFacingErrorMessage(e, t('auth.errors.generic')),
@@ -209,10 +242,21 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
           </View>
 
           <Button
+            onPress={handleResendConfirmation}
+            loading={isResendingConfirmation}
+            loadingLabel={t('auth.screen.resendingConfirmation')}
+            size="lg"
+            style={styles.submitButton}
+          >
+            {t('auth.screen.resendConfirmation')}
+          </Button>
+
+          <Button
             onPress={() => {
               setNeedsEmailConfirmation(false)
               setMode('login')
             }}
+            variant="secondary"
             size="lg"
             style={styles.submitButton}
           >

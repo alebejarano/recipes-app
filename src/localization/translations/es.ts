@@ -44,6 +44,9 @@ export const es: TranslationSchema = {
             confirmEmailTitle: 'Revisa tu correo',
             confirmEmailMessage:
                 'Enviamos un enlace de confirmación a %{email}. Ábrelo para terminar de crear tu cuenta. Si la app no se abre automáticamente, vuelve e inicia sesión.',
+            resendConfirmation: 'Reenviar correo de confirmación',
+            resendingConfirmation: 'Enviando...',
+            confirmEmailResent: 'Te hemos enviado un nuevo correo de confirmación.',
             forgotPassword: '¿Has olvidado la contraseña?',
             confirmPasswordLabel: 'Confirmar contraseña',
             toggleToRegisterPrompt: '¿No tienes cuenta? ',
@@ -128,6 +131,7 @@ export const es: TranslationSchema = {
     profile: {
         editAction: 'Editar',
         editProfileA11y: 'Editar perfil',
+        tapToEditProfile: 'Toca para editar el perfil',
         optional: 'Opcional',
         title: 'Perfil',
         environmentLabel: 'entorno %{env}',

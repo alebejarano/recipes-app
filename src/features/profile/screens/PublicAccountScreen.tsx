@@ -91,7 +91,7 @@ export default function PublicAccountScreen() {
     <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
       <ProfileHeader title={t('profile.guest.title')} />
 
-      <ProfileUserCard name={t('profile.guest.name')} email={t('profile.guest.email')} />
+      <ProfileUserCard name={t('profile.guest.name')} subtitle={t('profile.guest.email')} />
 
       <SettingsSection title={t('profile.guest.sections.preferences')} items={preferenceItems} />
 

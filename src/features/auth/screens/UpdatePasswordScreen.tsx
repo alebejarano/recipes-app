@@ -135,7 +135,19 @@ export default function UpdatePasswordScreen() {
             <Text style={styles.subtitle}>{t('auth.updatePassword.subtitle')}</Text>
           </View>
 
-          {!isLoading && !session ? (
+          {saved ? (
+            <View style={styles.noticeCard}>
+              <Text style={styles.successText}>{t('auth.updatePassword.success')}</Text>
+
+              <Button
+                variant="secondary"
+                onPress={() => router.replace('/(public)/login')}
+                style={styles.secondaryButton}
+              >
+                {t('auth.shared.actions.goToSignIn')}
+              </Button>
+            </View>
+          ) : !isLoading && !session ? (
             <View style={styles.noticeCard}>
               <Text style={styles.noticeTitle}>{t('auth.updatePassword.noSessionTitle')}</Text>
               <Text style={styles.noticeText}>{t('auth.updatePassword.noSessionMessage')}</Text>
@@ -238,12 +250,6 @@ export default function UpdatePasswordScreen() {
               </View>
 
               {error ? <Text style={styles.errorText}>{error}</Text> : null}
-              {saved ? (
-                <Text style={styles.successText}>
-                  {t('auth.updatePassword.success')}
-                </Text>
-              ) : null}
-
               <Button
                 onPress={() => {
                   void handleSubmit()
@@ -255,15 +261,6 @@ export default function UpdatePasswordScreen() {
                 {t('auth.updatePassword.update')}
               </Button>
 
-              {saved ? (
-                <Button
-                  variant="secondary"
-                  onPress={() => router.replace('/(public)/login')}
-                  style={styles.secondaryButton}
-                >
-                  {t('auth.shared.actions.goToSignIn')}
-                </Button>
-              ) : null}
             </>
           )}
           </View>

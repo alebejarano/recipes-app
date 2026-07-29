@@ -1,42 +1,44 @@
+import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import { useTranslation } from '@/localization';
 import { createThemedStyles } from '@/styles/createStyles';
 import { layout } from '@/styles/layout';
 
 type Props = {
   name: string;
-  email: string;
+  subtitle: string;
   onPressEdit?: () => void;
 };
 
-export default function ProfileUserCard({ name, email, onPressEdit }: Props) {
-  const { t } = useTranslation();
-
-  return (
-    <View style={styles.card}>
+export default function ProfileUserCard({ name, subtitle, onPressEdit }: Props) {
+  const content = (
+    <>
       <View style={styles.avatar}>
         <Text style={styles.avatarEmoji}>👩‍🍳</Text>
       </View>
 
       <View style={styles.center}>
-        <Text style={styles.name}>{name}</Text>
-        <Text style={styles.email}>{email}</Text>
+        <Text style={styles.name} numberOfLines={1}>{name}</Text>
+        <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>
       </View>
 
-      {onPressEdit ? (
-        <Pressable
-          onPress={onPressEdit}
-          style={({ pressed }) => [styles.editAction, pressed && styles.pressed]}
-          accessibilityRole="button"
-          accessibilityLabel={t('profile.editProfileA11y')}
-        >
-          <Text style={styles.editText}>{t('profile.editAction')}</Text>
-        </Pressable>
-      ) : null}
-    </View>
-  );
+      {onPressEdit ? <Feather name="chevron-right" size={28} style={styles.chevron} /> : null}
+    </>
+  )
+
+  if (!onPressEdit) return <View style={styles.card}>{content}</View>
+
+  return (
+    <Pressable
+      onPress={onPressEdit}
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`${name}. ${subtitle}`}
+    >
+      {content}
+    </Pressable>
+  )
 }
 
 const styles = createThemedStyles((theme) => ({
@@ -58,7 +60,7 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: theme.spacing.md,
+    marginRight: theme.spacing.lg,
   },
   avatarEmoji: {
     fontSize: 24,
@@ -70,19 +72,14 @@ const styles = createThemedStyles((theme) => ({
     ...theme.textVariants.heading,
     color: theme.colors.foreground,
   },
-  email: {
+  subtitle: {
     marginTop: 2,
     ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
   },
-  editAction: {
+  chevron: {
+    color: theme.colors.mutedForeground,
     marginLeft: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
-    paddingHorizontal: theme.spacing.sm,
-  },
-  editText: {
-    ...theme.textVariants.label,
-    color: theme.colors.primary,
   },
   pressed: {
     opacity: 0.8,

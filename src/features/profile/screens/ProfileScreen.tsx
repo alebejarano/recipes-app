@@ -176,7 +176,7 @@ export default function ProfileScreen() {
 
       <ProfileUserCard
         name={displayName}
-        email={user?.new_email ?? user?.email ?? ''}
+        subtitle={t('profile.tapToEditProfile')}
         onPressEdit={user ? () => router.push('/(auth)/account/edit-profile') : undefined}
       />
 

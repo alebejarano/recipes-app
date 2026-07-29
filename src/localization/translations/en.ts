@@ -42,6 +42,9 @@ export const en = {
             confirmEmailTitle: 'Check your email',
             confirmEmailMessage:
                 'We sent a confirmation link to %{email}. Open it to finish creating your account. If the app does not open automatically, come back and sign in.',
+            resendConfirmation: 'Resend confirmation email',
+            resendingConfirmation: 'Sending...',
+            confirmEmailResent: 'A new confirmation email is on its way.',
             forgotPassword: 'Forgot password?',
             confirmPasswordLabel: 'Confirm Password',
             toggleToRegisterPrompt: 'Don\'t have an account? ',
@@ -126,6 +129,7 @@ export const en = {
     profile: {
         editAction: 'Edit',
         editProfileA11y: 'Edit profile',
+        tapToEditProfile: 'Tap to edit profile',
         optional: 'Optional',
         title: 'Profile',
         environmentLabel: '%{env} environment',
