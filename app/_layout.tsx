@@ -20,7 +20,6 @@ import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
 import { setProductionLogCapture } from '@/lib/productionLogger'
 import { LocalizationProvider } from '@/localization'
 import QueryProvider from '@/providers/QueryProvider'
-import { theme } from '@/styles/theme'
 import { useLoadFonts } from '@/styles/useLoadFonts'
 
 export default function RootLayout() {
@@ -73,7 +72,7 @@ export default function RootLayout() {
 
   return (
     <AnalyticsConsentProvider>
-      <StatusBar style="dark" backgroundColor={theme.colors.background} />
+      <StatusBar style="dark" />
       <PostHogGate enabled={posthogEnabled} apiKey={posthogApiKey} host={posthogHost}>
         {content}
       </PostHogGate>

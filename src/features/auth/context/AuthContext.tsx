@@ -5,6 +5,7 @@ import type { AuthResponse, Session, User, UserAttributes } from '@supabase/supa
 import * as Linking from 'expo-linking'
 import { router } from 'expo-router'
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { Alert } from 'react-native'
 import { tagLocalDataAsMigratable } from '@/features/storage/localAccountLinking'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import {
@@ -13,6 +14,7 @@ import {
   getEmailConfirmationRedirectUrl,
   getPasswordRecoveryRedirectUrl,
 } from '@/features/auth/utils/passwordRecovery'
+import { useTranslation } from '@/localization'
 
 type AuthContextValue = {
   session: Session | null
@@ -42,6 +44,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const { t } = useTranslation()
 
   useEffect(() => {
     let isMounted = true
@@ -83,10 +86,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const authLinkParams = getAuthLinkParamsFromUrl(url)
     const isPasswordRecovery =
       authLinkParams.type === 'recovery' || authLinkParams.path === 'update-password'
+    const hasAuthLinkError = Boolean(
+      authLinkParams.error || authLinkParams.errorCode || authLinkParams.errorDescription
+    )
+
+    const showAuthLinkError = () => {
+      Alert.alert(
+        t('auth.errors.authLinkExpiredTitle'),
+        isPasswordRecovery
+          ? t('auth.updatePassword.invalidLink')
+          : t('auth.errors.confirmationLinkInvalid')
+      )
+    }
+
+    if (hasAuthLinkError) {
+      showAuthLinkError()
+      return
+    }
 
     if (authLinkParams.code) {
       const { error } = await supabase.auth.exchangeCodeForSession(authLinkParams.code)
-      if (error) throw error
+      if (error) {
+        showAuthLinkError()
+        return
+      }
 
       router.replace(isPasswordRecovery ? '/(public)/update-password' : '/(auth)/(tabs)')
       return
@@ -105,18 +128,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     router.replace(isPasswordRecovery ? '/(public)/update-password' : '/(auth)/(tabs)')
-  }, [])
+  }, [t])
 
   useEffect(() => {
     void Linking.getInitialURL()
       .then((url) => handleIncomingAuthUrl(url))
       .catch(() => {
-        // Ignore invalid boot URLs and continue app startup.
+        // Ignore malformed boot URLs and continue app startup.
       })
 
     const subscription = Linking.addEventListener('url', ({ url }) => {
       void handleIncomingAuthUrl(url).catch(() => {
-        // Ignore malformed or expired auth links and leave UI to surface next steps.
+        // Ignore malformed auth links and leave the active session unchanged.
       })
     })
 
@@ -209,6 +232,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data, error } = await supabase.auth.updateUser({
       email: normalized,
+    }, {
+      emailRedirectTo: getEmailConfirmationRedirectUrl(),
     })
 
     const pendingEmail = normalizeEmail(data.user?.new_email ?? '')

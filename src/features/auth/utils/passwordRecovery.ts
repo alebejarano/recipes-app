@@ -14,6 +14,9 @@ type AuthLinkParams = {
   code?: string
   type?: string
   path?: string | null
+  error?: string
+  errorCode?: string
+  errorDescription?: string
 }
 
 function getParamValue(value: string | string[] | undefined) {
@@ -51,6 +54,9 @@ export function getAuthLinkParamsFromUrl(url: string): AuthLinkParams {
     code: getParamValue(parsed.queryParams?.code),
     type: getParamValue(parsed.queryParams?.type),
     path: parsed.path,
+    error: getParamValue(parsed.queryParams?.error),
+    errorCode: getParamValue(parsed.queryParams?.error_code),
+    errorDescription: getParamValue(parsed.queryParams?.error_description),
   }
 }
 

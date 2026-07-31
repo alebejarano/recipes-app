@@ -69,6 +69,9 @@ export const en = {
                 'Please agree to the Terms of Service and acknowledge the Privacy Policy before creating an account.',
             signInFailed: 'Sign in failed',
             registrationFailed: 'Registration failed',
+            authLinkExpiredTitle: 'Link expired',
+            confirmationLinkInvalid:
+                'This confirmation link is invalid or has expired. Request a new confirmation email.',
             generic: 'Something went wrong. Please try again.',
         },
         forgotPassword: {
@@ -252,7 +255,8 @@ export const en = {
             invalidEmailTitle: 'Invalid email',
             invalidEmailMessage: 'Please enter a valid email address.',
             emailUpdateRequestedTitle: 'Email update requested',
-            emailUpdateRequestedMessage: 'Check your inbox at %{email} to confirm this email change.',
+            emailUpdateRequestedMessage:
+                'We sent confirmation emails to your current email address and %{email}. Open the link in both inboxes to complete the change.',
             updatedTitle: 'Profile updated',
             updatedMessage: 'Your email has been updated.',
             updatedSnackbar: 'Profile updated',

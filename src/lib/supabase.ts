@@ -78,14 +78,14 @@ function createSupabaseClient() {
   })
 }
 
-export const supabase = global.__recipesapp_supabase_client ?? createSupabaseClient()
+export const supabase = globalThis.__recipesapp_supabase_client ?? createSupabaseClient()
 
-if (!global.__recipesapp_supabase_client) {
-  global.__recipesapp_supabase_client = supabase
+if (!globalThis.__recipesapp_supabase_client) {
+  globalThis.__recipesapp_supabase_client = supabase
 }
 
-if (Platform.OS !== 'web' && !global.__recipesapp_supabase_appstate_bound) {
-  global.__recipesapp_supabase_appstate_bound = true
+if (Platform.OS !== 'web' && !globalThis.__recipesapp_supabase_appstate_bound) {
+  globalThis.__recipesapp_supabase_appstate_bound = true
 
   AppState.addEventListener('change', (state) => {
     if (state === 'active') supabase.auth.startAutoRefresh()

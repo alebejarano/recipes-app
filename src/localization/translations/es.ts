@@ -71,6 +71,9 @@ export const es: TranslationSchema = {
                 'Acepta los Términos del servicio y reconoce la Política de privacidad antes de crear una cuenta.',
             signInFailed: 'No se pudo iniciar sesión',
             registrationFailed: 'No se pudo completar el registro',
+            authLinkExpiredTitle: 'El enlace ha caducado',
+            confirmationLinkInvalid:
+                'Este enlace de confirmación no es válido o ha caducado. Solicita un nuevo correo de confirmación.',
             generic: 'Algo salió mal. Vuelve a intentarlo.',
         },
         forgotPassword: {
@@ -254,7 +257,8 @@ export const es: TranslationSchema = {
             invalidEmailTitle: 'Correo inválido',
             invalidEmailMessage: 'Ingresa un correo electrónico válido.',
             emailUpdateRequestedTitle: 'Cambio de correo solicitado',
-            emailUpdateRequestedMessage: 'Revisa tu bandeja en %{email} para confirmar este cambio.',
+            emailUpdateRequestedMessage:
+                'Enviamos correos de confirmación a tu dirección actual y a %{email}. Abre el enlace en ambas bandejas para completar el cambio.',
             updatedTitle: 'Perfil actualizado',
             updatedMessage: 'Tu correo se actualizó.',
             updatedSnackbar: 'Perfil actualizado',

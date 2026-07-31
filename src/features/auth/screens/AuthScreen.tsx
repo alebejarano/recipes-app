@@ -62,6 +62,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
   const [mode, setMode] = useState<AuthMode>(initialMode)
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [isResendingConfirmation, setIsResendingConfirmation] = useState(false)
 
@@ -401,12 +402,22 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
                 <TextInput
                   placeholder={t('auth.shared.passwordPlaceholder')}
                   placeholderTextColor={theme.colors.warmGray}
-                  secureTextEntry={!showPassword}
+                  secureTextEntry={!showConfirmPassword}
                   style={styles.input}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   editable={!loading}
                 />
+
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword((value) => !value)}
+                  style={styles.eyeButton}
+                  disabled={loading}
+                  accessibilityRole="button"
+                  accessibilityLabel={showConfirmPassword ? t('auth.shared.actions.hidePassword') : t('auth.shared.actions.showPassword')}
+                >
+                  <Feather name={showConfirmPassword ? 'eye-off' : 'eye'} size={18} style={styles.eyeIcon} />
+                </TouchableOpacity>
               </View>
               {confirmPasswordError ? <Text style={styles.fieldError}>{confirmPasswordError}</Text> : null}
             </View>
