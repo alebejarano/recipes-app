@@ -730,6 +730,22 @@ export const es: TranslationSchema = {
             primary: 'Añade tu primera receta',
             secondary: 'Crear una nota',
         },
+        activity: {
+            recipeCtaTitle: 'Añade tu primera receta',
+            recipeCtaBody: 'Tu cocina ya está tomando forma. Añade una receta para empezar a crear tu recetario.',
+            createRecipe: 'Crear receta',
+            importRecipe: 'Importar receta',
+            title: 'Actividad reciente',
+            a11yLabel: 'Actividad reciente',
+            openA11y: 'Abrir %{type}: %{title}',
+            importFallbackTitle: 'Archivo de receta importado',
+            types: {
+                recipe: 'receta',
+                note: 'nota',
+                import: 'archivo importado',
+                'shopping-list': 'lista de compras',
+            },
+        },
         banners: {
             storageUpdateTitle: 'Actualización de almacenamiento',
             storageUpdateBody: 'Este dispositivo no tiene tus datos anteriores. Premium mantiene todo respaldado entre dispositivos.',

@@ -9,6 +9,11 @@ export type AnalyticsEventName =
   | 'note_created'
   | 'upgrade_clicked'
   | 'purchase_succeeded'
+  | 'home_create_recipe_pressed'
+  | 'home_import_recipe_pressed'
+  | 'home_recipe_recommendation_opened'
+  | 'home_recent_activity_opened'
+  | 'home_shopping_list_opened'
 
 export type AnalyticsEventProperties = {
   app_opened: {
@@ -35,6 +40,23 @@ export type AnalyticsEventProperties = {
   purchase_succeeded: {
     plan: 'premium'
     billing_cycle: 'month' | 'year'
+  }
+  home_create_recipe_pressed: {
+    recipe_library_stage: 'empty' | 'starter' | 'established' | 'large'
+  }
+  home_import_recipe_pressed: {
+    recipe_library_stage: 'empty' | 'starter' | 'established' | 'large'
+  }
+  home_recipe_recommendation_opened: {
+    recipe_library_stage: 'empty' | 'starter' | 'established' | 'large'
+    section: 'hero' | 'ideas' | 'recently_added' | 'first_recipes' | 'collection'
+  }
+  home_recent_activity_opened: {
+    recipe_library_stage: 'empty' | 'starter' | 'established' | 'large'
+    item_type: 'recipe' | 'note' | 'import' | 'shopping-list'
+  }
+  home_shopping_list_opened: {
+    recipe_library_stage: 'empty' | 'starter' | 'established' | 'large'
   }
 }
 

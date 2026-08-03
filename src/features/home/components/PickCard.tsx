@@ -119,7 +119,7 @@ const styles = createThemedStyles((theme) => ({
     width: '100%',
     height: '100%',
   },
-  textBlock: { flex: 1 },
+  textBlock: { flex: 1, minWidth: 0 },
   label: {
     ...theme.textVariants.label,
     color: theme.colors.primary,

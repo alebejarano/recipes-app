@@ -23,7 +23,7 @@ export default function SectionHeaderRow({
   if (inlineTitleCta && ctaLabel && onPressCta && !subtitle) {
     return (
       <View style={styles.inlineRow}>
-        <Text style={[styles.title, styles.inlineTitle]} numberOfLines={1}>
+        <Text style={[styles.title, styles.inlineTitle]} numberOfLines={1} accessibilityRole="header">
           {title}
         </Text>
 
@@ -37,7 +37,7 @@ export default function SectionHeaderRow({
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.title} accessibilityRole="header">{title}</Text>
 
       {(subtitle || ctaLabel) ? (
         <View style={styles.row}>

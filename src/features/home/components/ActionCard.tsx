@@ -14,6 +14,7 @@ type Props = {
   variant?: 'default' | 'highlight' | 'shoppingEmpty' | 'shoppingActive' | 'nextAction';
   noTopMargin?: boolean;
   onPress?: () => void;
+  accessibilityLabel?: string;
 };
 
 export default function ActionCard({
@@ -24,6 +25,7 @@ export default function ActionCard({
   variant = 'default',
   noTopMargin = false,
   onPress,
+  accessibilityLabel,
 }: Props) {
   const isHighlight = variant === 'highlight';
   const isShoppingEmpty = variant === 'shoppingEmpty';
@@ -41,7 +43,7 @@ export default function ActionCard({
         isShoppingActive ? styles.shoppingActive : null,
       ]}
       accessibilityRole="button"
-      accessibilityLabel={title}
+      accessibilityLabel={accessibilityLabel ?? title}
     >
       <View style={styles.left}>
         <View
@@ -146,7 +148,7 @@ const styles = createThemedStyles((theme) => ({
     borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.secondary,
   },
-  textBlock: { flex: 1 },
+  textBlock: { flex: 1, minWidth: 0 },
   kicker: {
     ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,

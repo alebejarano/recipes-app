@@ -728,6 +728,22 @@ export const en = {
             primary: 'Add your first recipe',
             secondary: 'Create a note',
         },
+        activity: {
+            recipeCtaTitle: 'Add your first recipe',
+            recipeCtaBody: 'Your kitchen is already taking shape. Add a recipe to start building your cookbook.',
+            createRecipe: 'Create recipe',
+            importRecipe: 'Import recipe',
+            title: 'Recent activity',
+            a11yLabel: 'Recent activity',
+            openA11y: 'Open %{type}: %{title}',
+            importFallbackTitle: 'Imported recipe file',
+            types: {
+                recipe: 'recipe',
+                note: 'note',
+                import: 'imported file',
+                'shopping-list': 'shopping list',
+            },
+        },
         banners: {
             storageUpdateTitle: 'Storage update',
             storageUpdateBody: 'This device doesn\'t have your previous data. Premium keeps everything backed up across devices.',
