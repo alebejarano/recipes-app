@@ -5,7 +5,8 @@
     "paths": {
       "@/*": ["./src/*", "./app/*"],
       "@assets/*": ["./assets/*"]
-    }
+    },
+    "types": ["jest"],
   },
   "include": [
     "**/*.ts",
