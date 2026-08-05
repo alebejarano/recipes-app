@@ -45,15 +45,16 @@ import {
   type OptimizedImageAsset,
 } from '@/features/recipes/utils/optimizeImageAsset'
 import {
-  FREE_PLAN_MAX_IMPORT_FILE_BYTES,
-  FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
+  exceedsImportStorageLimit,
+  isImportFileTooLarge,
+  isRecipeImageUploadTooLarge,
+} from '@/features/recipes/utils/recipeValidation'
+import {
   IMPORT_FILE_TOO_LARGE_MESSAGE,
-  PREMIUM_PLAN_MAX_STORAGE_BYTES,
   RECIPE_IMAGE_MASTER_COMPRESS_QUALITY,
   RECIPE_IMAGE_MASTER_MAX_DIMENSION_PX,
   RECIPE_IMAGE_MASTER_MAX_FILE_BYTES,
   RECIPE_IMAGE_MASTER_TOO_LARGE_MESSAGE,
-  RECIPE_IMAGE_UPLOAD_MAX_FILE_BYTES,
   RECIPE_IMAGE_UPLOAD_TOO_LARGE_MESSAGE,
 } from '@/features/subscription/constants/limits'
 import { createThemedStyles } from '@/styles/createStyles'
@@ -115,6 +116,37 @@ function normalizeFolderName(value?: unknown): string {
 function isPrefilledValue(currentValue: string, initialValue?: string) {
   if (!currentValue.trim()) return false
   return currentValue === (initialValue ?? '')
+}
+
+export function buildRecipeFormSubmitValues(
+  values: RecipeFormValues
+): RecipeFormSubmitValues | null {
+  const title = values.title.trim()
+  if (!title) return null
+
+  const normalizedIngredients = values.ingredientsText
+    .split(/\r?\n/)
+    .map((ingredient) => ingredient.trim())
+    .filter(Boolean)
+  const normalizedSteps = values.steps.map((step) => step.trim()).filter(Boolean)
+  const normalizedFolders = values.folders.map((folder) => folder.trim()).filter(Boolean)
+  const emoji = normalizeOptionalText(values.emoji)
+  const imageUrl = normalizeOptionalText(values.imageUrl)
+
+  return {
+    title,
+    subtitle: normalizeOptionalText(values.subtitle),
+    description: normalizeOptionalText(values.description),
+    emoji,
+    imageUrl: emoji ? null : imageUrl,
+    prepTimeMinutes: parseOptionalInt(values.prepTimeMinutes),
+    cookTimeMinutes: parseOptionalInt(values.cookTimeMinutes),
+    servings: parseOptionalInt(values.servings),
+    ingredients: normalizedIngredients.length ? normalizedIngredients : null,
+    steps: normalizedSteps.length ? normalizedSteps : null,
+    folders: normalizedFolders.length ? normalizedFolders : null,
+    mealTimes: values.mealTimes.length ? values.mealTimes : null,
+  }
 }
 
 export function createEmptyRecipeFormValues(): RecipeFormValues {
@@ -384,37 +416,12 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   }, [])
 
   const buildPayload = useCallback((): RecipeFormSubmitValues | null => {
-    const title = values.title.trim()
-    if (!title) {
+    const payload = buildRecipeFormSubmitValues(values)
+    if (!payload) {
       Alert.alert(t('recipes.form.missingTitleTitle'), t('recipes.form.missingTitleBody'))
       return null
     }
-
-    const normalizedIngredients = values.ingredientsText
-      .split(/\r?\n/)
-      .map((ingredient) => ingredient.trim())
-      .filter(Boolean)
-
-    const normalizedSteps = values.steps.map((step) => step.trim()).filter(Boolean)
-    const normalizedFolders = values.folders.map((folder) => folder.trim()).filter(Boolean)
-
-    const emoji = normalizeOptionalText(values.emoji)
-    const imageUrl = normalizeOptionalText(values.imageUrl)
-
-    return {
-      title,
-      subtitle: normalizeOptionalText(values.subtitle),
-      description: normalizeOptionalText(values.description),
-      emoji,
-      imageUrl: emoji ? null : imageUrl,
-      prepTimeMinutes: parseOptionalInt(values.prepTimeMinutes),
-      cookTimeMinutes: parseOptionalInt(values.cookTimeMinutes),
-      servings: parseOptionalInt(values.servings),
-      ingredients: normalizedIngredients.length ? normalizedIngredients : null,
-      steps: normalizedSteps.length ? normalizedSteps : null,
-      folders: normalizedFolders.length ? normalizedFolders : null,
-      mealTimes: values.mealTimes.length ? values.mealTimes : null,
-    }
+    return payload
   }, [t, values])
 
   const handleSubmit = useCallback(async () => {
@@ -502,7 +509,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       try {
         setIsUploadingImage(true)
         const originalSize = await getPickedImageSizeBytes(asset)
-        if (originalSize > RECIPE_IMAGE_UPLOAD_MAX_FILE_BYTES) {
+        if (isRecipeImageUploadTooLarge(originalSize)) {
           Alert.alert(t('recipes.form.photoTooLargeTitle'), RECIPE_IMAGE_UPLOAD_TOO_LARGE_MESSAGE)
           return
         }
@@ -520,7 +527,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
             }
           }
 
-          if (size > FREE_PLAN_MAX_IMPORT_FILE_BYTES) {
+          if (isImportFileTooLarge(size)) {
             Alert.alert(t('recipes.form.fileTooLargeTitle'), IMPORT_FILE_TOO_LARGE_MESSAGE)
             return
           }
@@ -529,12 +536,12 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
           const replacingBytes = isManagedLocalImportImageUri(values.imageUrl)
             ? await getActiveImportBytesByUri(values.imageUrl ?? '')
             : 0
-          if (
-            usage.totalBytes - replacingBytes + size >
-            (plan === 'premium'
-              ? PREMIUM_PLAN_MAX_STORAGE_BYTES
-              : FREE_PLAN_MAX_IMPORT_TOTAL_BYTES)
-          ) {
+          if (exceedsImportStorageLimit({
+            currentBytes: usage.totalBytes,
+            replacingBytes,
+            nextBytes: size,
+            plan,
+          })) {
             Alert.alert(
               t('recipes.form.storageLimitTitle'),
               plan === 'premium'

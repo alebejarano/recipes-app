@@ -13,7 +13,10 @@
     "db:diff": "supabase db diff",
     "db:status": "supabase migration list",
     "security:edge-auth": "bash scripts/security-edge-functions-auth.sh",
-    "test": "jest --watchAll"
+    "test": "jest --watch --no-watchman",
+    "test:ci": "jest --ci --runInBand --no-watchman",
+    "test:unit": "jest --selectProjects unit --watch --no-watchman",
+    "test:integration": "jest --selectProjects integration --watch --no-watchman"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -29,14 +32,14 @@
     "expo-file-system": "~57.0.0",
     "expo-font": "~57.0.0",
     "expo-haptics": "~57.0.1",
-    "expo-image": "~57.0.1",
+    "expo-image": "~57.0.2",
     "expo-image-manipulator": "~57.0.7",
     "expo-image-picker": "~57.0.7",
     "expo-intent-launcher": "~57.0.1",
     "expo-linear-gradient": "~57.0.1",
-    "expo-linking": "~57.0.4",
+    "expo-linking": "~57.0.5",
     "expo-localization": "~57.0.1",
-    "expo-router": "~57.0.9",
+    "expo-router": "~57.0.10",
     "expo-secure-store": "~57.0.1",
     "expo-sharing": "~57.0.8",
     "expo-splash-screen": "~57.0.5",
@@ -74,9 +77,6 @@
     "jest-expo": "~57.0.3",
     "supabase": "^2.98.2",
     "typescript": "~6.0.3"
-  },
-  "jest": {
-    "preset": "jest-expo"
   },
   "private": true
 }
