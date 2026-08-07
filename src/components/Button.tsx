@@ -32,6 +32,7 @@ interface ButtonProps {
   disabled?: boolean
   loading?: boolean
   loadingLabel?: string
+  testID?: string
 }
 
 export default function Button({
@@ -45,6 +46,7 @@ export default function Button({
   disabled = false,
   loading = false,
   loadingLabel,
+  testID,
 }: ButtonProps) {
   const hasText = children != null && children !== ''
   const isDisabled = disabled || loading
@@ -60,6 +62,7 @@ export default function Button({
       onPress={isDisabled ? undefined : onPress}
       activeOpacity={isDisabled ? 1 : 0.88}
       disabled={isDisabled}
+      testID={testID}
       style={[
         styles.base,
         styles[`radius_${size}`],

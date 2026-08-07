@@ -666,7 +666,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     <View style={styles.form}>
       <View style={styles.primarySection}>
         <View style={styles.fieldCompact}>
-          <Text style={styles.primaryFieldLabel}>{t('recipes.form.title')}</Text>
+          <Text style={styles.primarySectionLabel}>{t('recipes.form.title')}</Text>
           <TextInput
             value={values.title}
             onChangeText={(t) => update('title', t)}
@@ -1176,12 +1176,6 @@ const styles = createThemedStyles((theme) => ({
   fieldCompact: {
     gap: theme.spacing.sm,
   },
-  primaryFieldLabel: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
-    color: theme.colors.foreground,
-  },
   primarySectionLabel: {
     ...theme.textVariants.emphasis,
     color: theme.colors.foreground,
@@ -1212,9 +1206,7 @@ const styles = createThemedStyles((theme) => ({
     borderBottomWidth: 1,
     borderColor: theme.colors.border,
     paddingBottom: theme.spacing.md,
-    fontFamily: theme.fontFamily.regular,
-    fontSize: theme.fontSize.xl,
-    lineHeight: theme.lineHeight.xl,
+    ...theme.textVariants.body,
     color: theme.colors.foreground,
   },
   textareaInput: {

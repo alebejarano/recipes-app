@@ -19,6 +19,17 @@
         "EXPO_PUBLIC_ENABLE_POSTHOG": "0"
       }
     },
+    "e2e-test": {
+      "withoutCredentials": true,
+        "env": {
+          "EXPO_PUBLIC_APP_ENV": "preview",
+          "EXPO_PUBLIC_ENABLE_POSTHOG": "0",
+          "EXPO_PUBLIC_E2E": "1"
+        },
+      "android": {
+        "buildType": "apk"
+      }
+    },
     "production": {
       "autoIncrement": true,
       "environment": "production",

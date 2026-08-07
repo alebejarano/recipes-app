@@ -120,8 +120,9 @@ describe('<HomeScreen /> state rendering', () => {
         mockStorageMode.mockReturnValue({ isStorageModeReady: false });
         mockRecipes.mockReturnValue({ data: undefined, isLoading: true });
 
-        const { getByText } = await render(<HomeScreen mode="auth" />);
+        const { getByText, queryByText } = await render(<HomeScreen mode="auth" />);
         expect(getByText('home.loading')).toBeVisible();
+        expect(queryByText('home.empty.title')).toBeNull();
     });
 
     it('shows the empty state with no user content', async () => {
@@ -137,6 +138,18 @@ describe('<HomeScreen /> state rendering', () => {
         expect(getByText('Shopping ideas')).toBeVisible();
     });
 
+    it('shows the recipe call-to-action and activity for an imports-only library', async () => {
+        mockImports.mockReturnValue({
+            data: [{ id: 'import-1', fileName: 'Pasta.pdf', createdAt: '2026-08-02T12:00:00.000Z' }],
+            isLoading: false,
+        });
+        mockImportUsage.mockReturnValue({ data: { totalCount: 1, totalBytes: 200 } });
+
+        const { getByText } = await render(<HomeScreen mode="auth" />);
+        expect(getByText('home.activity.recipeCtaTitle')).toBeVisible();
+        expect(getByText('Pasta.pdf')).toBeVisible();
+    });
+
     it('shows first recipes for a starter library', async () => {
         mockRecipes.mockReturnValue({ data: [recipe('1')], isLoading: false });
 
@@ -145,11 +158,32 @@ describe('<HomeScreen /> state rendering', () => {
         expect(getAllByText('Recipe 1')).not.toHaveLength(0);
     });
 
+    it('keeps five recipes in the starter-library layout', async () => {
+        mockRecipes.mockReturnValue({ data: Array.from({ length: 5 }, (_, index) => recipe(String(index + 1))), isLoading: false });
+
+        const { getByText } = await render(<HomeScreen mode="auth" />);
+        expect(getByText('home.sections.firstRecipes')).toBeVisible();
+    });
+
     it('shows recently added recipes for an established library', async () => {
         mockRecipes.mockReturnValue({ data: Array.from({ length: 6 }, (_, index) => recipe(String(index + 1))), isLoading: false });
 
         const { getByText } = await render(<HomeScreen mode="auth" />);
         expect(getByText('home.sections.recentlyAdded')).toBeVisible();
+        expect(getByText('Recipe 6')).toBeVisible();
+    });
+
+    it('keeps nineteen recipes in the established-library layout without duplicate recent sections', async () => {
+        mockRecipes.mockReturnValue({ data: Array.from({ length: 19 }, (_, index) => recipe(String(index + 1))), isLoading: false });
+
+        const { getAllByText } = await render(<HomeScreen mode="auth" />);
+        expect(getAllByText('home.sections.recentlyAdded')).toHaveLength(1);
+    });
+
+    it('uses a generic meal-time hero when no recipe matches the current meal', async () => {
+        mockRecipes.mockReturnValue({ data: Array.from({ length: 6 }, (_, index) => recipe(String(index + 1))), isLoading: false });
+
+        const { getByText } = await render(<HomeScreen mode="auth" />);
         expect(getByText('Recipe 6')).toBeVisible();
     });
 

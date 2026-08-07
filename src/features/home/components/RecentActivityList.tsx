@@ -21,13 +21,22 @@ function getIcon(type: HomeActivityItem['type']) {
   return <Feather name="book-open" size={22} color={theme.colors.primaryDark} />
 }
 
+function isSupportedActivity(item: HomeActivityItem) {
+  return item.type === 'recipe'
+    || item.type === 'note'
+    || item.type === 'import'
+    || item.type === 'shopping-list'
+}
+
 export default function RecentActivityList({ items, formatMeta, onPressItem }: Props) {
   const { t } = useTranslation()
-  if (items.length === 0) return null
+  const supportedItems = items.filter(isSupportedActivity)
+
+  if (supportedItems.length === 0) return null
 
   return (
     <View style={styles.list} accessibilityRole="list" accessibilityLabel={t('home.activity.a11yLabel')}>
-      {items.map((item) => (
+      {supportedItems.map((item) => (
         <ActionCard
           key={item.id}
           title={item.title}

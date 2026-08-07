@@ -1,0 +1,26 @@
+name: E2E Android
+
+on:
+  pull_request:
+    branches: ['main']
+  workflow_dispatch: {}
+
+jobs:
+  build_android:
+    name: Build Android E2E APK
+    type: build
+    environment: preview
+    params:
+      platform: android
+      profile: e2e-test
+
+  maestro_test:
+    name: Run Maestro flows
+    needs: [build_android]
+    type: maestro
+    runs_on: linux-large-nested-virtualization
+    environment: preview
+    params:
+      build_id: ${{ needs.build_android.outputs.build_id }}
+      flow_path: .maestro/e2e-android.yml
+      record_screen: true

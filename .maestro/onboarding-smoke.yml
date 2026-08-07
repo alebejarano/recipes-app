@@ -1,0 +1,14 @@
+appId: studio.alpinova.dropsauce
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: 'Start your kitchen'
+    timeout: 60000
+- assertVisible: 'Start your kitchen'
+- tapOn:
+    id: onboarding-welcome-continue
+- extendedWaitUntil:
+    visible: 'What brings you here today?'
+    timeout: 5000
+- assertVisible: 'What brings you here today?'

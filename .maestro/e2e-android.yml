@@ -1,0 +1,5 @@
+appId: studio.alpinova.dropsauce
+---
+- runFlow: onboarding-smoke.yml
+- runFlow: home-empty.yml
+- runFlow: home-fixtures.yml

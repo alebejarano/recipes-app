@@ -1,0 +1,44 @@
+appId: studio.alpinova.dropsauce
+---
+- launchApp:
+    clearState: true
+- openLink: dropsauce://e2e
+- tapOn:
+    id: e2e-home-empty
+- assertVisible: 'Your kitchen is just getting started.'
+- openLink: dropsauce://e2e
+- tapOn:
+    id: e2e-home-notes
+- assertVisible: 'Kitchen note'
+- openLink: dropsauce://e2e
+- tapOn:
+    id: e2e-home-import
+- assertVisible: 'Pasta.pdf'
+- openLink: dropsauce://e2e
+- tapOn:
+    id: e2e-home-one
+- assertVisible: 'Recipe 1'
+- openLink: dropsauce://e2e
+- tapOn:
+    id: e2e-home-five
+- assertVisible: 'Recipe 5'
+- openLink: dropsauce://e2e
+- tapOn:
+    id: e2e-home-six
+- assertVisible: 'Recipe 6'
+- openLink: dropsauce://e2e
+- tapOn:
+    id: e2e-home-nineteen
+- assertVisible: 'Recipe 19'
+- openLink: dropsauce://e2e
+- tapOn:
+    id: e2e-home-twenty
+- assertVisible: 'Recipe 20'
+- openLink: dropsauce://e2e
+- tapOn:
+    id: e2e-home-activity
+- assertVisible: 'Newest note'
+- openLink: dropsauce://e2e
+- tapOn:
+    id: e2e-home-meal-fallback
+- assertVisible: 'Fallback recipe 2'

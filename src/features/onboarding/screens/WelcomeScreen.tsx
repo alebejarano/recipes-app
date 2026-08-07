@@ -36,7 +36,12 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
       </View>
 
       <View style={styles.buttonWrapper}>
-        <Button variant="primary" size="xl" onPress={onContinue}>
+        <Button
+          variant="primary"
+          size="xl"
+          onPress={onContinue}
+          testID="onboarding-welcome-continue"
+        >
           {t('onboarding.welcome.cta')}
         </Button>
       </View>
