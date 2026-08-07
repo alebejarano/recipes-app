@@ -2,43 +2,113 @@ appId: studio.alpinova.dropsauce
 ---
 - launchApp:
     clearState: true
+- launchApp
+- extendedWaitUntil:
+    visible: 'Start your kitchen'
+    timeout: 60000
 - openLink: dropsauce://e2e
+- extendedWaitUntil:
+    visible: 'E2E home scenarios'
+    timeout: 10000
 - tapOn:
     id: e2e-home-empty
 - assertVisible: 'Your kitchen is just getting started.'
 - openLink: dropsauce://e2e
+- extendedWaitUntil:
+    visible: 'E2E home scenarios'
+    timeout: 10000
 - tapOn:
     id: e2e-home-notes
+- scrollUntilVisible:
+    element: 'Kitchen note'
+    direction: DOWN
+    timeout: 10000
 - assertVisible: 'Kitchen note'
 - openLink: dropsauce://e2e
+- extendedWaitUntil:
+    visible: 'E2E home scenarios'
+    timeout: 10000
 - tapOn:
     id: e2e-home-import
+- scrollUntilVisible:
+    element: 'Pasta.pdf'
+    direction: DOWN
+    timeout: 10000
 - assertVisible: 'Pasta.pdf'
 - openLink: dropsauce://e2e
+- extendedWaitUntil:
+    visible: 'E2E home scenarios'
+    timeout: 10000
 - tapOn:
     id: e2e-home-one
+- scrollUntilVisible:
+    element: 'Recipe 1'
+    direction: DOWN
+    timeout: 10000
 - assertVisible: 'Recipe 1'
 - openLink: dropsauce://e2e
+- extendedWaitUntil:
+    visible: 'E2E home scenarios'
+    timeout: 10000
 - tapOn:
     id: e2e-home-five
+- scrollUntilVisible:
+    element: 'Recipe 5'
+    direction: DOWN
+    timeout: 10000
 - assertVisible: 'Recipe 5'
 - openLink: dropsauce://e2e
+- extendedWaitUntil:
+    visible: 'E2E home scenarios'
+    timeout: 10000
 - tapOn:
     id: e2e-home-six
+- scrollUntilVisible:
+    element: 'Recipe 6'
+    direction: DOWN
+    timeout: 10000
 - assertVisible: 'Recipe 6'
 - openLink: dropsauce://e2e
+- extendedWaitUntil:
+    visible: 'E2E home scenarios'
+    timeout: 10000
 - tapOn:
     id: e2e-home-nineteen
+- scrollUntilVisible:
+    element: 'Recipe 19'
+    direction: DOWN
+    timeout: 10000
 - assertVisible: 'Recipe 19'
 - openLink: dropsauce://e2e
+- extendedWaitUntil:
+    visible: 'E2E home scenarios'
+    timeout: 10000
 - tapOn:
     id: e2e-home-twenty
+- scrollUntilVisible:
+    element: 'Recipe 20'
+    direction: DOWN
+    timeout: 10000
 - assertVisible: 'Recipe 20'
 - openLink: dropsauce://e2e
+- extendedWaitUntil:
+    visible: 'E2E home scenarios'
+    timeout: 10000
 - tapOn:
     id: e2e-home-activity
+- scrollUntilVisible:
+    element: 'Newest note'
+    direction: DOWN
+    timeout: 10000
 - assertVisible: 'Newest note'
 - openLink: dropsauce://e2e
+- extendedWaitUntil:
+    visible: 'E2E home scenarios'
+    timeout: 10000
 - tapOn:
     id: e2e-home-meal-fallback
+- scrollUntilVisible:
+    element: 'Fallback recipe 2'
+    direction: DOWN
+    timeout: 10000
 - assertVisible: 'Fallback recipe 2'

@@ -2,6 +2,7 @@ appId: studio.alpinova.dropsauce
 ---
 - launchApp:
     clearState: true
+- launchApp
 - extendedWaitUntil:
     visible: 'Start your kitchen'
     timeout: 60000
