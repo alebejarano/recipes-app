@@ -4,7 +4,7 @@ import { Image as ExpoImage } from 'expo-image';
 import { router, useFocusEffect, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
 
 import Screen from '@/components/Screen';
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
@@ -25,6 +25,7 @@ import ActionCard from '@/features/home/components/ActionCard';
 import EmptyHomeCard from '@/features/home/components/EmptyHomeCard';
 import FolderSpotlightCard from '@/features/home/components/FolderSpotlightCard';
 import HomeHeader from '@/features/home/components/HomeHeader';
+import HomeLoadingSkeleton from '@/features/home/components/HomeLoadingSkeleton';
 import PickCard from '@/features/home/components/PickCard';
 import RecentActivityList from '@/features/home/components/RecentActivityList';
 import RecipeCarousel, { type RecipePreview } from '@/features/home/components/RecipeCarousel';
@@ -56,6 +57,7 @@ import {
   buildHomeActivity,
   getHomeCapabilities,
   getRecipeLibraryStage,
+  type HomeActivityItem,
 } from '@/features/home/utils/homeState';
 
 type HomeProps = {
@@ -531,7 +533,11 @@ export default function HomeScreen({
     }, [refreshRecipeOpenHistory])
   );
 
-  const isInitialLoading = !isStorageModeReady || (recipesQuery.isLoading && !recipesQuery.data);
+  const isInitialLoading =
+    !isStorageModeReady ||
+    recipesQuery.isLoading ||
+    notesQuery.isLoading ||
+    importsQuery.isLoading;
 
   const emptyStateTitle = t('home.empty.title');
   const emptyStateBody = t('home.empty.body');
@@ -715,8 +721,9 @@ export default function HomeScreen({
         })),
         noteFallbackTitle: t('notes.fallbackTitle'),
         importFallbackTitle: t('home.activity.importFallbackTitle'),
+        limit: isStarterLibrary ? 2 : 4,
       }),
-    [importsQuery.data, isRecipeEmptyWithActivity, t, visibleNotes, visibleRecipes]
+    [importsQuery.data, isRecipeEmptyWithActivity, isStarterLibrary, t, visibleNotes, visibleRecipes]
   );
 
   const root = resolvedMode === 'public' ? '(public)' : '(auth)';
@@ -739,6 +746,22 @@ export default function HomeScreen({
     root === '(public)'
       ? '/(public)/(tabs)/collections?segment=recipes&recipesSegment=documents'
       : '/(auth)/(tabs)/collections?segment=recipes&recipesSegment=documents';
+  const openRecentActivityItem = (item: HomeActivityItem) => {
+    captureAnalyticsEvent('home_recent_activity_opened', {
+      recipe_library_stage: homeCapabilities.stage,
+      item_type: item.type,
+    });
+    if (item.destination === 'note') {
+      router.push({
+        pathname: root === '(public)' ? '/(public)/notes/[id]' : '/(auth)/notes/[id]',
+        params: { id: item.id.replace(/^note:/, '') },
+      });
+      return;
+    }
+    if (item.destination === 'imports') {
+      router.push(importsPath);
+    }
+  };
   const openShoppingList = () => {
     captureAnalyticsEvent('home_shopping_list_opened', {
       recipe_library_stage: homeCapabilities.stage,
@@ -769,10 +792,7 @@ export default function HomeScreen({
   if (isInitialLoading) {
     return (
       <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
-        <View style={styles.loadingState}>
-          <ActivityIndicator size="small" color={styles.loadingText.color} />
-          <Text style={styles.loadingText}>{t('home.loading')}</Text>
-        </View>
+        <HomeLoadingSkeleton cardWidth={recipeCardWidth} label={t('home.loading')} />
       </Screen>
     );
   }
@@ -1054,22 +1074,7 @@ export default function HomeScreen({
           <RecentActivityList
             items={recentActivity}
             formatMeta={formatRelativeDay}
-            onPressItem={(item) => {
-              captureAnalyticsEvent('home_recent_activity_opened', {
-                recipe_library_stage: homeCapabilities.stage,
-                item_type: item.type,
-              });
-              if (item.destination === 'note') {
-                router.push({
-                  pathname: root === '(public)' ? '/(public)/notes/[id]' : '/(auth)/notes/[id]',
-                  params: { id: item.id.replace(/^note:/, '') },
-                });
-                return;
-              }
-              if (item.destination === 'imports') {
-                router.push(importsPath);
-              }
-            }}
+            onPressItem={openRecentActivityItem}
           />
         </View>
       ) : null}
@@ -1162,6 +1167,17 @@ export default function HomeScreen({
         </View>
       ) : null}
 
+      {isStarterLibrary && recentActivity.length > 0 ? (
+        <View style={styles.section}>
+          <SectionHeaderRow title={t('home.activity.title')} />
+          <RecentActivityList
+            items={recentActivity}
+            formatMeta={formatRelativeDay}
+            onPressItem={openRecentActivityItem}
+          />
+        </View>
+      ) : null}
+
       {homeCapabilities.hasRecipes && isMediumRecipeLibrary ? (
         <View style={styles.section}>
           {featuredCollection && folderSpotlightRecipes.length > 0 ? (
@@ -1218,16 +1234,6 @@ const styles = createThemedStyles((theme) => ({
   },
   wave: {
     fontSize: theme.fontSize.hero,
-  },
-  loadingState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: layout.listGap,
-    paddingVertical: theme.spacing.xl,
-  },
-  loadingText: {
-    ...theme.textVariants.label,
-    color: theme.colors.mutedForeground,
   },
   contextBannerCard: {
     padding: layout.cardPadding,

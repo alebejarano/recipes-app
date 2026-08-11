@@ -124,7 +124,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
 
     if (error) {
-      throw error
+      showAuthLinkError()
+      return
     }
 
     router.replace(isPasswordRecovery ? '/(public)/update-password' : '/(auth)/(tabs)')

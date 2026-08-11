@@ -24,8 +24,8 @@ export async function seedHomeScenario(scenario: HomeScenario) {
     return
   }
   if (scenario === 'activity') {
-    await createLocalNote({ title: 'Newest note', content: 'Added last.' })
     await registerImport({ kind: 'document', fileName: 'Older import.pdf', fileUri: 'file:///e2e/older.pdf', bytes: 1024 })
+    await createLocalNote({ title: 'Newest note', content: 'Added last.' })
   }
 
   const count = scenario === 'one' ? 1 : scenario === 'five' ? 5 : scenario === 'six' ? 6 : scenario === 'nineteen' ? 19 : scenario === 'twenty' ? 20 : scenario === 'meal-fallback' ? 2 : scenario === 'activity' ? 1 : 0
