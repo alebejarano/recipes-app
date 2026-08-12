@@ -16,6 +16,12 @@ const config: ExpoConfig & { newArchEnabled: boolean } = {
   slug: 'dropsauce',
   owner: 'lejitas',
   version: '1.0.0',
+  updates: {
+    url: 'https://u.expo.dev/915e1a2c-c53f-4768-90d5-6774b0589f7a',
+  },
+  runtimeVersion: {
+    policy: 'appVersion',
+  },
   orientation: 'portrait',
   icon: './assets/images/icon.png',
   scheme: 'dropsauce',

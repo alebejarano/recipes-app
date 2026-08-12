@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 import type { AuthResponse, Session, User, UserAttributes } from '@supabase/supabase-js'
 import * as Linking from 'expo-linking'
 import { router } from 'expo-router'
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Alert } from 'react-native'
 import { tagLocalDataAsMigratable } from '@/features/storage/localAccountLinking'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
@@ -24,6 +24,7 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string) => Promise<AuthResponse['data']>
   resendEmailConfirmation: (email: string) => Promise<void>
+  resendEmailChangeConfirmation: (email: string) => Promise<void>
   updateProfileName: (name: string) => Promise<void>
   updatePushPreferences: (preferences: PushPreferences) => Promise<void>
   updateEmailAddress: (email: string) => Promise<{ pendingEmail: string | null }>
@@ -44,6 +45,8 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const pendingEmailRef = useRef<string | null>(null)
+  const handledAuthUrlsRef = useRef(new Set<string>())
   const { t } = useTranslation()
 
   useEffect(() => {
@@ -80,10 +83,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  useEffect(() => {
+    const pendingEmail = normalizeEmail(session?.user?.new_email ?? '')
+    if (pendingEmail) {
+      pendingEmailRef.current = pendingEmail
+      return
+    }
+
+    const updatedEmail = normalizeEmail(session?.user?.email ?? '')
+    if (pendingEmailRef.current && updatedEmail === pendingEmailRef.current) {
+      pendingEmailRef.current = null
+      Alert.alert(t('profile.editProfile.emailUpdatedTitle'), t('profile.editProfile.emailUpdatedMessage'))
+    }
+  }, [session?.user?.email, session?.user?.new_email, t])
+
   const handleIncomingAuthUrl = useCallback(async (url: string | null) => {
     if (!url) return
+    if (handledAuthUrlsRef.current.has(url)) return
+    handledAuthUrlsRef.current.add(url)
 
     const authLinkParams = getAuthLinkParamsFromUrl(url)
+    const pendingEmailBeforeConfirmation = normalizeEmail(session?.user?.new_email ?? '')
     const isPasswordRecovery =
       authLinkParams.type === 'recovery' || authLinkParams.path === 'update-password'
     const hasAuthLinkError = Boolean(
@@ -99,6 +119,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       )
     }
 
+    const showEmailUpdatedConfirmation = async () => {
+      if (!pendingEmailBeforeConfirmation) return
+
+      const { data, error } = await supabase.auth.getUser()
+      if (error || !data.user) return
+
+      setSession((current) => (current ? { ...current, user: data.user } : current))
+      if (normalizeEmail(data.user.email ?? '') === pendingEmailBeforeConfirmation) {
+        pendingEmailRef.current = null
+        Alert.alert(t('profile.editProfile.emailUpdatedTitle'), t('profile.editProfile.emailUpdatedMessage'))
+      }
+    }
+
     if (hasAuthLinkError) {
       showAuthLinkError()
       return
@@ -111,6 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return
       }
 
+      await showEmailUpdatedConfirmation()
       router.replace(isPasswordRecovery ? '/(public)/update-password' : '/(auth)/(tabs)')
       return
     }
@@ -128,8 +162,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
+    await showEmailUpdatedConfirmation()
     router.replace(isPasswordRecovery ? '/(public)/update-password' : '/(auth)/(tabs)')
-  }, [t])
+  }, [session?.user?.new_email, t])
 
   useEffect(() => {
     void Linking.getInitialURL()
@@ -199,6 +234,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error
   }, [])
 
+  const resendEmailChangeConfirmation = useCallback(async (email: string) => {
+    const normalized = normalizeEmail(email)
+    if (!normalized) throw new Error('Email is required')
+    if (!isValidEmail(normalized)) throw new Error('Please enter a valid email address.')
+
+    const { error } = await supabase.auth.resend({
+      type: 'email_change',
+      email: normalized,
+      options: {
+        emailRedirectTo: getEmailConfirmationRedirectUrl(),
+      },
+    })
+    if (error) throw error
+  }, [])
+
   const updateProfileName = async (name: string) => {
     const trimmed = name.trim()
     if (!trimmed) throw new Error('Name is required')
@@ -237,12 +287,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       emailRedirectTo: getEmailConfirmationRedirectUrl(),
     })
 
-    const pendingEmail = normalizeEmail(data.user?.new_email ?? '')
-    const isRequestedEmailPending = pendingEmail === normalized
     if (error) throw error
 
-    if (data.user) {
-      setSession((prev) => (prev ? { ...prev, user: data.user } : prev))
+    const { data: currentUserData } = await supabase.auth.getUser()
+    const currentUser = currentUserData.user ?? data.user
+    const pendingEmail = normalizeEmail(currentUser?.new_email ?? '')
+    const isRequestedEmailPending = pendingEmail === normalized
+
+    if (currentUser) {
+      setSession((prev) => (prev ? { ...prev, user: currentUser } : prev))
     }
 
     return {
@@ -360,6 +413,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       register,
       resendEmailConfirmation,
+      resendEmailChangeConfirmation,
       updateProfileName,
       updatePushPreferences,
       updateEmailAddress,
@@ -373,6 +427,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session,
       isLoading,
       resendEmailConfirmation,
+      resendEmailChangeConfirmation,
       updatePushPreferences,
       updateEmailAddress,
       sendPasswordResetEmail,

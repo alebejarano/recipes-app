@@ -1,7 +1,8 @@
 import { router } from 'expo-router'
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Alert, Pressable, Text, TextInput, View } from 'react-native'
 
+import Button from '@/components/Button'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
@@ -11,7 +12,7 @@ import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 
 export default function EditProfileScreen() {
-  const { user, updateEmailAddress, updateProfileName } = useAuth()
+  const { user, resendEmailChangeConfirmation, updateEmailAddress, updateProfileName } = useAuth()
   const showSnackbar = useTransientSnackbarStore((state) => state.show)
   const { t } = useTranslation()
   const initialName = useMemo(() => {
@@ -20,12 +21,40 @@ export default function EditProfileScreen() {
     const email = user?.email ?? ''
     return email ? (email.split('@')[0] || '') : ''
   }, [user?.email, user?.user_metadata?.display_name])
-  const initialEmail = useMemo(() => user?.new_email ?? user?.email ?? '', [user?.email, user?.new_email])
+  const initialEmail = useMemo(() => user?.email ?? '', [user?.email])
+  const pendingEmail = useMemo(() => normalizeEmail(user?.new_email ?? ''), [user?.new_email])
 
   const [name, setName] = useState(initialName)
   const [email, setEmail] = useState(initialEmail)
   const [saving, setSaving] = useState(false)
+  const [resendingConfirmation, setResendingConfirmation] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
   const profileRoute = '/(auth)/(tabs)/profile'
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+
+    const timer = setInterval(() => {
+      setResendCooldown((current) => Math.max(0, current - 1))
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [resendCooldown])
+
+  const onResendConfirmation = async () => {
+    if (!pendingEmail || resendingConfirmation || resendCooldown > 0) return
+
+    setResendingConfirmation(true)
+    try {
+      await resendEmailChangeConfirmation(pendingEmail)
+      setResendCooldown(60)
+      showSnackbar(t('profile.editProfile.resendSent'))
+    } catch (error: any) {
+      Alert.alert(t('profile.editProfile.resendFailedTitle'), getUserFacingErrorMessage(error))
+    } finally {
+      setResendingConfirmation(false)
+    }
+  }
 
   const onSave = async () => {
     const trimmedName = name.trim()
@@ -45,7 +74,7 @@ export default function EditProfileScreen() {
     }
 
     const nameChanged = trimmedName !== initialName
-    const emailChanged = normalizedEmail !== normalizeEmail(initialEmail)
+    const emailChanged = normalizedEmail !== normalizeEmail(user?.email ?? '')
     if (!nameChanged && !emailChanged) {
       router.replace(profileRoute)
       return
@@ -53,12 +82,14 @@ export default function EditProfileScreen() {
 
     setSaving(true)
     try {
+      let emailChangePending = false
       if (nameChanged) {
         await updateProfileName(trimmedName)
       }
       if (emailChanged) {
         const { pendingEmail } = await updateEmailAddress(normalizedEmail)
         if (pendingEmail) {
+          emailChangePending = true
           Alert.alert(
             t('profile.editProfile.emailUpdateRequestedTitle'),
             t('profile.editProfile.emailUpdateRequestedMessage', { email: pendingEmail })
@@ -69,7 +100,7 @@ export default function EditProfileScreen() {
       } else {
         showSnackbar(t('profile.editProfile.updatedSnackbar'))
       }
-      router.replace(profileRoute)
+      if (!pendingEmail && !emailChangePending) router.replace(profileRoute)
     } catch (error: any) {
       Alert.alert(t('profile.editProfile.saveFailedTitle'), getUserFacingErrorMessage(error))
     } finally {
@@ -105,6 +136,26 @@ export default function EditProfileScreen() {
       </View>
 
       <View style={styles.fields}>
+        {pendingEmail ? (
+          <View style={styles.pendingCard} accessibilityRole="alert">
+            <Text style={styles.pendingTitle}>{t('profile.editProfile.pendingTitle')}</Text>
+            <Text selectable style={styles.pendingEmail}>{pendingEmail}</Text>
+            <Text style={styles.pendingMessage}>{t('profile.editProfile.pendingMessage')}</Text>
+            <Button
+              onPress={onResendConfirmation}
+              variant="soft"
+              size="md"
+              loading={resendingConfirmation}
+              loadingLabel={t('profile.editProfile.resending')}
+              disabled={resendCooldown > 0}
+            >
+              {resendCooldown > 0
+                ? t('profile.editProfile.resendCooldown', { seconds: resendCooldown })
+                : t('profile.editProfile.resend')}
+            </Button>
+            <Text style={styles.pendingHint}>{t('profile.editProfile.changePendingHint')}</Text>
+          </View>
+        ) : null}
         <View style={styles.field}>
           <Text style={styles.label}>{t('profile.editProfile.nameLabel')}</Text>
           <TextInput
@@ -180,6 +231,31 @@ const styles = createThemedStyles((theme) => ({
   },
   fields: {
     gap: theme.spacing.xl,
+  },
+  pendingCard: {
+    gap: theme.spacing.sm,
+    padding: theme.spacing.lg,
+    borderRadius: theme.radii.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.terracottaLight,
+    backgroundColor: theme.colors.primarySoft,
+  },
+  pendingTitle: {
+    ...theme.textVariants.title,
+    color: theme.colors.foreground,
+  },
+  pendingEmail: {
+    ...theme.textVariants.body,
+    fontFamily: theme.fontFamily.medium,
+    color: theme.colors.foreground,
+  },
+  pendingMessage: {
+    ...theme.textVariants.body,
+    color: theme.colors.mutedForeground,
+  },
+  pendingHint: {
+    ...theme.textVariants.caption,
+    color: theme.colors.mutedForeground,
   },
   label: {
     fontFamily: theme.fontFamily.medium,
