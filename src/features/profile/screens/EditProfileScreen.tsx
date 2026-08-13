@@ -4,6 +4,7 @@ import { Alert, Pressable, Text, TextInput, View } from 'react-native'
 
 import Button from '@/components/Button'
 import { useAuth } from '@/features/auth/context/AuthContext'
+import { OTP_CODE_LENGTH } from '@/features/auth/constants/otp'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
@@ -76,7 +77,7 @@ export default function EditProfileScreen() {
     code: string,
     setVerifying: (value: boolean) => void,
   ) => {
-    if (!pendingEmail || code.length !== 6) return
+    if (!pendingEmail || code.length !== OTP_CODE_LENGTH) return
 
     setVerifying(true)
     try {
@@ -187,7 +188,7 @@ export default function EditProfileScreen() {
                 keyboardType="number-pad"
                 autoComplete="one-time-code"
                 textContentType="oneTimeCode"
-                maxLength={6}
+                maxLength={OTP_CODE_LENGTH}
                 style={styles.input}
                 value={currentEmailCode}
                 onChangeText={(value) => setCurrentEmailCode(value.replace(/\D/g, ''))}
@@ -201,7 +202,7 @@ export default function EditProfileScreen() {
                 size="md"
                 loading={verifyingCurrentEmailCode}
                 loadingLabel={t('profile.editProfile.verifyingCode')}
-                disabled={currentEmailCode.length !== 6}
+                disabled={currentEmailCode.length !== OTP_CODE_LENGTH}
               >
                 {t('profile.editProfile.verifyCode')}
               </Button>
@@ -214,7 +215,7 @@ export default function EditProfileScreen() {
                 keyboardType="number-pad"
                 autoComplete="one-time-code"
                 textContentType="oneTimeCode"
-                maxLength={6}
+                maxLength={OTP_CODE_LENGTH}
                 style={styles.input}
                 value={newEmailCode}
                 onChangeText={(value) => setNewEmailCode(value.replace(/\D/g, ''))}
@@ -228,7 +229,7 @@ export default function EditProfileScreen() {
                 size="md"
                 loading={verifyingNewEmailCode}
                 loadingLabel={t('profile.editProfile.verifyingCode')}
-                disabled={newEmailCode.length !== 6}
+                disabled={newEmailCode.length !== OTP_CODE_LENGTH}
               >
                 {t('profile.editProfile.verifyCode')}
               </Button>

@@ -16,6 +16,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
 import { useAnalyticsCapture } from '@/features/analytics/events'
+import { OTP_CODE_LENGTH } from '@/features/auth/constants/otp'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import {
@@ -153,7 +154,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
   }
 
   const handleVerifyConfirmation = async () => {
-    if (confirmationCode.length !== 6 || isVerifyingConfirmation) return
+    if (confirmationCode.length !== OTP_CODE_LENGTH || isVerifyingConfirmation) return
 
     setIsVerifyingConfirmation(true)
     setError(null)
@@ -299,7 +300,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
                 keyboardType="number-pad"
                 autoComplete="one-time-code"
                 textContentType="oneTimeCode"
-                maxLength={6}
+                maxLength={OTP_CODE_LENGTH}
                 style={styles.input}
                 value={confirmationCode}
                 onChangeText={(value) => {
@@ -315,7 +316,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
             onPress={() => {
               void handleVerifyConfirmation()
             }}
-            disabled={confirmationCode.length !== 6 || isVerifyingConfirmation}
+            disabled={confirmationCode.length !== OTP_CODE_LENGTH || isVerifyingConfirmation}
             loading={isVerifyingConfirmation}
             loadingLabel={t('auth.screen.verifyingConfirmationCode')}
             size="lg"

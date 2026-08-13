@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
+import { OTP_CODE_LENGTH } from '@/features/auth/constants/otp'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import { useLargeScreenLayout } from '@/hooks/useLargeScreenLayout'
@@ -63,7 +64,7 @@ export default function ForgotPasswordScreen() {
     return isValidEmail(normalizedEmail) ? null : t('auth.forgotPassword.invalidEmail')
   }, [normalizedEmail, t, touched])
   const canSubmit = Boolean(normalizedEmail && isValidEmail(normalizedEmail) && !submitting)
-  const canVerifyCode = Boolean(lastSentEmail && verificationCode.length === 6 && !verifyingCode)
+  const canVerifyCode = Boolean(lastSentEmail && verificationCode.length === OTP_CODE_LENGTH && !verifyingCode)
 
   const handleEmailChange = (value: string) => {
     setEmail(value)
@@ -161,7 +162,7 @@ export default function ForgotPasswordScreen() {
                     keyboardType="number-pad"
                     autoComplete="one-time-code"
                     textContentType="oneTimeCode"
-                    maxLength={6}
+                    maxLength={OTP_CODE_LENGTH}
                     style={styles.input}
                     value={verificationCode}
                     onChangeText={(value) => {
