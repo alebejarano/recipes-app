@@ -1,10 +1,24 @@
-export function getUserFacingErrorMessage(error: unknown, fallback = 'Please try again.') {
-  const message =
-    error instanceof Error
+function getErrorMessage(error: unknown) {
+  return error instanceof Error
+    ? error.message
+    : typeof error === 'object' && error && 'message' in error && typeof error.message === 'string'
       ? error.message
-      : typeof error === 'object' && error && 'message' in error && typeof error.message === 'string'
-        ? error.message
-        : ''
+      : ''
+}
+
+export function isRateLimitError(error: unknown) {
+  const normalized = getErrorMessage(error).toLowerCase()
+
+  return (
+    normalized.includes('rate limit') ||
+    normalized.includes('too many requests') ||
+    normalized.includes('too many emails') ||
+    normalized.includes('security purposes')
+  )
+}
+
+export function getUserFacingErrorMessage(error: unknown, fallback = 'Please try again.') {
+  const message = getErrorMessage(error)
   const normalized = message.toLowerCase()
 
   if (!message) return fallback

@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   Alert,
   Image,
@@ -23,7 +23,7 @@ import {
   getPasswordPolicyIssues,
   isPasswordStrong,
 } from '@/features/auth/utils/passwordPolicy'
-import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { getUserFacingErrorMessage, isRateLimitError } from '@/lib/userFacingError'
 import { useLargeScreenLayout } from '@/hooks/useLargeScreenLayout'
 import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
@@ -56,7 +56,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const largeScreen = useLargeScreenLayout({ maxContentWidth: layout.authContentMaxWidth })
-  const { login, register, resendEmailConfirmation } = useAuth()
+  const { login, register, resendEmailConfirmation, verifySignupCode } = useAuth()
   const captureAnalyticsEvent = useAnalyticsCapture()
   const { t } = useTranslation()
 
@@ -65,11 +65,14 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [isResendingConfirmation, setIsResendingConfirmation] = useState(false)
+  const [isVerifyingConfirmation, setIsVerifyingConfirmation] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [acceptedLegalTerms, setAcceptedLegalTerms] = useState(false)
+  const [confirmationCode, setConfirmationCode] = useState('')
 
   const [error, setError] = useState<SubmitError>(null)
   const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false)
@@ -113,21 +116,58 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
     setError(null)
     setNeedsEmailConfirmation(false)
     setIsResendingConfirmation(false)
+    setIsVerifyingConfirmation(false)
+    setResendCooldown(0)
+    setConfirmationCode('')
   }
 
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+
+    const timer = setInterval(() => {
+      setResendCooldown((current) => Math.max(0, current - 1))
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [resendCooldown])
+
   const handleResendConfirmation = async () => {
+    if (isResendingConfirmation || resendCooldown > 0) return
+
     setIsResendingConfirmation(true)
 
     try {
       await resendEmailConfirmation(email)
+      setResendCooldown(60)
       Alert.alert(t('auth.screen.confirmEmailTitle'), t('auth.screen.confirmEmailResent'))
     } catch (e) {
       Alert.alert(
         t('auth.errors.registrationFailed'),
-        getUserFacingErrorMessage(e, t('auth.errors.generic')),
+        isRateLimitError(e)
+          ? t('auth.screen.confirmEmailRateLimit')
+          : getUserFacingErrorMessage(e, t('auth.errors.generic')),
       )
     } finally {
       setIsResendingConfirmation(false)
+    }
+  }
+
+  const handleVerifyConfirmation = async () => {
+    if (confirmationCode.length !== 6 || isVerifyingConfirmation) return
+
+    setIsVerifyingConfirmation(true)
+    setError(null)
+
+    try {
+      await verifySignupCode(normalizeEmail(email), confirmationCode)
+      router.replace('/(auth)/(tabs)')
+    } catch {
+      setError({
+        title: t('auth.errors.registrationFailed'),
+        message: t('auth.screen.confirmEmailCodeInvalid'),
+      })
+    } finally {
+      setIsVerifyingConfirmation(false)
     }
   }
 
@@ -242,14 +282,59 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
             </Text>
           </View>
 
+          {error ? (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorTitle}>{error.title}</Text>
+              <Text style={styles.errorMessage}>{error.message}</Text>
+            </View>
+          ) : null}
+
+          <View style={styles.confirmationCodeField}>
+            <Text style={styles.label}>{t('auth.screen.confirmEmailCodeLabel')}</Text>
+            <View style={[styles.inputWrapper, error && styles.inputWrapperError]}>
+              <Feather name="shield" size={18} style={styles.inputIcon} />
+              <TextInput
+                placeholder={t('auth.screen.confirmEmailCodePlaceholder')}
+                placeholderTextColor={theme.colors.warmGray}
+                keyboardType="number-pad"
+                autoComplete="one-time-code"
+                textContentType="oneTimeCode"
+                maxLength={6}
+                style={styles.input}
+                value={confirmationCode}
+                onChangeText={(value) => {
+                  setConfirmationCode(value.replace(/\D/g, ''))
+                  setError(null)
+                }}
+                editable={!isVerifyingConfirmation}
+              />
+            </View>
+          </View>
+
+          <Button
+            onPress={() => {
+              void handleVerifyConfirmation()
+            }}
+            disabled={confirmationCode.length !== 6 || isVerifyingConfirmation}
+            loading={isVerifyingConfirmation}
+            loadingLabel={t('auth.screen.verifyingConfirmationCode')}
+            size="lg"
+            style={styles.submitButton}
+          >
+            {t('auth.screen.verifyConfirmationCode')}
+          </Button>
+
           <Button
             onPress={handleResendConfirmation}
+            disabled={resendCooldown > 0}
             loading={isResendingConfirmation}
             loadingLabel={t('auth.screen.resendingConfirmation')}
             size="lg"
             style={styles.submitButton}
           >
-            {t('auth.screen.resendConfirmation')}
+            {resendCooldown > 0
+              ? t('auth.screen.resendConfirmationCooldown', { seconds: resendCooldown })
+              : t('auth.screen.resendConfirmation')}
           </Button>
 
           <Button
@@ -509,6 +594,9 @@ const styles = createThemedStyles((theme) => ({
 
   confirmWrap: {
     justifyContent: 'center',
+  },
+  confirmationCodeField: {
+    marginBottom: theme.spacing.md,
   },
 
   /* Header */

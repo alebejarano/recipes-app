@@ -7,12 +7,18 @@ import { useAuth } from '@/features/auth/context/AuthContext'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
-import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { getUserFacingErrorMessage, isRateLimitError } from '@/lib/userFacingError'
 import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 
 export default function EditProfileScreen() {
-  const { user, resendEmailChangeConfirmation, updateEmailAddress, updateProfileName } = useAuth()
+  const {
+    user,
+    resendEmailChangeConfirmation,
+    updateEmailAddress,
+    updateProfileName,
+    verifyEmailChangeCode,
+  } = useAuth()
   const showSnackbar = useTransientSnackbarStore((state) => state.show)
   const { t } = useTranslation()
   const initialName = useMemo(() => {
@@ -29,6 +35,10 @@ export default function EditProfileScreen() {
   const [saving, setSaving] = useState(false)
   const [resendingConfirmation, setResendingConfirmation] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
+  const [currentEmailCode, setCurrentEmailCode] = useState('')
+  const [newEmailCode, setNewEmailCode] = useState('')
+  const [verifyingCurrentEmailCode, setVerifyingCurrentEmailCode] = useState(false)
+  const [verifyingNewEmailCode, setVerifyingNewEmailCode] = useState(false)
   const profileRoute = '/(auth)/(tabs)/profile'
 
   useEffect(() => {
@@ -50,9 +60,37 @@ export default function EditProfileScreen() {
       setResendCooldown(60)
       showSnackbar(t('profile.editProfile.resendSent'))
     } catch (error: any) {
-      Alert.alert(t('profile.editProfile.resendFailedTitle'), getUserFacingErrorMessage(error))
+      Alert.alert(
+        t('profile.editProfile.resendFailedTitle'),
+        isRateLimitError(error)
+          ? t('profile.editProfile.resendRateLimitMessage')
+          : getUserFacingErrorMessage(error)
+      )
     } finally {
       setResendingConfirmation(false)
+    }
+  }
+
+  const onVerifyEmailChangeCode = async (
+    recipientEmail: string,
+    code: string,
+    setVerifying: (value: boolean) => void,
+  ) => {
+    if (!pendingEmail || code.length !== 6) return
+
+    setVerifying(true)
+    try {
+      const { completed } = await verifyEmailChangeCode(recipientEmail, code)
+      if (!completed) {
+        showSnackbar(t('profile.editProfile.codeConfirmed'))
+      }
+    } catch (error: any) {
+      Alert.alert(
+        t('profile.editProfile.codeInvalidTitle'),
+        getUserFacingErrorMessage(error, t('profile.editProfile.codeInvalidMessage'))
+      )
+    } finally {
+      setVerifying(false)
     }
   }
 
@@ -141,6 +179,60 @@ export default function EditProfileScreen() {
             <Text style={styles.pendingTitle}>{t('profile.editProfile.pendingTitle')}</Text>
             <Text selectable style={styles.pendingEmail}>{pendingEmail}</Text>
             <Text style={styles.pendingMessage}>{t('profile.editProfile.pendingMessage')}</Text>
+            <View style={styles.codeField}>
+              <Text style={styles.codeLabel}>{t('profile.editProfile.currentEmailCodeLabel', { email: initialEmail })}</Text>
+              <TextInput
+                placeholder={t('profile.editProfile.codePlaceholder')}
+                placeholderTextColor={styles.placeholder.color}
+                keyboardType="number-pad"
+                autoComplete="one-time-code"
+                textContentType="oneTimeCode"
+                maxLength={6}
+                style={styles.input}
+                value={currentEmailCode}
+                onChangeText={(value) => setCurrentEmailCode(value.replace(/\D/g, ''))}
+                editable={!verifyingCurrentEmailCode}
+              />
+              <Button
+                onPress={() => {
+                  void onVerifyEmailChangeCode(initialEmail, currentEmailCode, setVerifyingCurrentEmailCode)
+                }}
+                variant="secondary"
+                size="md"
+                loading={verifyingCurrentEmailCode}
+                loadingLabel={t('profile.editProfile.verifyingCode')}
+                disabled={currentEmailCode.length !== 6}
+              >
+                {t('profile.editProfile.verifyCode')}
+              </Button>
+            </View>
+            <View style={styles.codeField}>
+              <Text style={styles.codeLabel}>{t('profile.editProfile.newEmailCodeLabel', { email: pendingEmail })}</Text>
+              <TextInput
+                placeholder={t('profile.editProfile.codePlaceholder')}
+                placeholderTextColor={styles.placeholder.color}
+                keyboardType="number-pad"
+                autoComplete="one-time-code"
+                textContentType="oneTimeCode"
+                maxLength={6}
+                style={styles.input}
+                value={newEmailCode}
+                onChangeText={(value) => setNewEmailCode(value.replace(/\D/g, ''))}
+                editable={!verifyingNewEmailCode}
+              />
+              <Button
+                onPress={() => {
+                  void onVerifyEmailChangeCode(pendingEmail, newEmailCode, setVerifyingNewEmailCode)
+                }}
+                variant="secondary"
+                size="md"
+                loading={verifyingNewEmailCode}
+                loadingLabel={t('profile.editProfile.verifyingCode')}
+                disabled={newEmailCode.length !== 6}
+              >
+                {t('profile.editProfile.verifyCode')}
+              </Button>
+            </View>
             <Button
               onPress={onResendConfirmation}
               variant="soft"
@@ -233,6 +325,7 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.xl,
   },
   pendingCard: {
+    marginTop: theme.spacing.sm,
     gap: theme.spacing.sm,
     padding: theme.spacing.lg,
     borderRadius: theme.radii.lg,
@@ -256,6 +349,13 @@ const styles = createThemedStyles((theme) => ({
   pendingHint: {
     ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
+  },
+  codeField: {
+    gap: theme.spacing.xs,
+  },
+  codeLabel: {
+    ...theme.textVariants.labelSmall,
+    color: theme.colors.foreground,
   },
   label: {
     fontFamily: theme.fontFamily.medium,

@@ -17,6 +17,8 @@ jest.mock('@/lib/supabase', () => ({
             signOut: jest.fn(),
             exchangeCodeForSession: jest.fn(),
             setSession: jest.fn(),
+            getUser: jest.fn(),
+            verifyOtp: jest.fn(),
         },
         functions: { invoke: jest.fn() },
     },
@@ -66,6 +68,8 @@ describe('AuthProvider security flows', () => {
         mockAuth.signOut.mockResolvedValue({ error: null });
         mockAuth.exchangeCodeForSession.mockResolvedValue({ error: null });
         mockAuth.setSession.mockResolvedValue({ error: null });
+        mockAuth.getUser.mockResolvedValue({ data: { user: null }, error: null });
+        mockAuth.verifyOtp.mockResolvedValue({ data: { session: { access_token: 'recovery-access-token' } }, error: null });
         mockInvoke.mockResolvedValue({ data: { success: true }, error: null });
         mockGetInitialURL.mockResolvedValue(null);
         mockAddEventListener.mockReturnValue({ remove: jest.fn() });
@@ -77,16 +81,14 @@ describe('AuthProvider security flows', () => {
         jest.clearAllMocks();
     });
 
-    it('sends a password reset request with a recovery redirect', async () => {
+    it('sends a password reset request for the recovery code flow', async () => {
         const { result, unmount } = await renderSecurityAuth();
 
         await act(async () => {
             await result.current.sendPasswordResetEmail('  COOK@EXAMPLE.COM ');
         });
 
-        expect(mockAuth.resetPasswordForEmail).toHaveBeenCalledWith('cook@example.com', {
-            redirectTo: 'recipes://update-password',
-        });
+        expect(mockAuth.resetPasswordForEmail).toHaveBeenCalledWith('cook@example.com');
         unmount();
     });
 
@@ -97,6 +99,39 @@ describe('AuthProvider security flows', () => {
             'Please enter a valid email address.'
         );
         expect(mockAuth.resetPasswordForEmail).not.toHaveBeenCalled();
+        unmount();
+    });
+
+    it('verifies a password reset code and stores its recovery session', async () => {
+        const { result, unmount } = await renderSecurityAuth();
+
+        await act(async () => {
+            await result.current.verifyPasswordResetCode(' COOK@EXAMPLE.COM ', '123456');
+        });
+
+        expect(mockAuth.verifyOtp).toHaveBeenCalledWith({
+            email: 'cook@example.com',
+            token: '123456',
+            type: 'recovery',
+        });
+        expect(result.current.session).toEqual({ access_token: 'recovery-access-token' });
+        unmount();
+    });
+
+    it('verifies a signup code and stores its authenticated session', async () => {
+        mockAuth.verifyOtp.mockResolvedValue({ data: { session: { access_token: 'signup-access-token' } }, error: null });
+        const { result, unmount } = await renderSecurityAuth();
+
+        await act(async () => {
+            await result.current.verifySignupCode(' COOK@EXAMPLE.COM ', '123456');
+        });
+
+        expect(mockAuth.verifyOtp).toHaveBeenCalledWith({
+            email: 'cook@example.com',
+            token: '123456',
+            type: 'signup',
+        });
+        expect(result.current.session).toEqual({ access_token: 'signup-access-token' });
         unmount();
     });
 
@@ -112,10 +147,38 @@ describe('AuthProvider security flows', () => {
             pendingEmail = await result.current.updateEmailAddress(' NEW@EXAMPLE.COM ');
         });
         expect(pendingEmail).toEqual({ pendingEmail: 'new@example.com' });
-        expect(mockAuth.updateUser).toHaveBeenCalledWith(
-            { email: 'new@example.com' },
-            { emailRedirectTo: 'recipes://login' }
-        );
+        expect(mockAuth.updateUser).toHaveBeenCalledWith({ email: 'new@example.com' });
+        unmount();
+    });
+
+    it('verifies an email-change code and refreshes the pending email state', async () => {
+        mockAuth.getSession.mockResolvedValue({
+            data: {
+                session: {
+                    user: { email: 'old@example.com', new_email: 'new@example.com' },
+                },
+            },
+            error: null,
+        });
+        mockAuth.getUser.mockResolvedValue({
+            data: { user: { email: 'new@example.com', new_email: null } },
+            error: null,
+        });
+        mockAuth.verifyOtp.mockResolvedValue({ data: { session: { access_token: 'email-change-token' } }, error: null });
+        const { result, unmount } = await renderSecurityAuth();
+
+        let verification: { completed: boolean } | undefined;
+        await act(async () => {
+            verification = await result.current.verifyEmailChangeCode('new@example.com', '123456');
+        });
+
+        expect(mockAuth.verifyOtp).toHaveBeenCalledWith({
+            email: 'new@example.com',
+            token: '123456',
+            type: 'email_change',
+        });
+        expect(verification).toEqual({ completed: true });
+        expect(result.current.user?.email).toBe('new@example.com');
         unmount();
     });
 
@@ -128,6 +191,34 @@ describe('AuthProvider security flows', () => {
             'auth.errors.authLinkExpiredTitle',
             'auth.errors.confirmationLinkInvalid'
         ));
+        unmount();
+    });
+
+    it('recognizes a completed email change even when its redirect reports an error', async () => {
+        mockAuth.getSession.mockResolvedValue({
+            data: {
+                session: {
+                    user: { email: 'old@example.com', new_email: 'new@example.com' },
+                },
+            },
+            error: null,
+        });
+        mockAuth.getUser.mockResolvedValue({
+            data: { user: { email: 'new@example.com', new_email: null } },
+            error: null,
+        });
+        mockGetInitialURL.mockResolvedValue('recipes://login?error=access_denied&error_code=expired');
+
+        const { unmount } = await renderSecurityAuth();
+
+        await waitFor(() => expect(Alert.alert).toHaveBeenCalledWith(
+            'profile.editProfile.emailUpdatedTitle',
+            'profile.editProfile.emailUpdatedMessage'
+        ));
+        expect(Alert.alert).not.toHaveBeenCalledWith(
+            'auth.errors.authLinkExpiredTitle',
+            'auth.errors.confirmationLinkInvalid'
+        );
         unmount();
     });
 

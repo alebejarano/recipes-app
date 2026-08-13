@@ -11,8 +11,6 @@ import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import {
   getAuthLinkSessionFromUrl,
   getAuthLinkParamsFromUrl,
-  getEmailConfirmationRedirectUrl,
-  getPasswordRecoveryRedirectUrl,
 } from '@/features/auth/utils/passwordRecovery'
 import { useTranslation } from '@/localization'
 
@@ -24,11 +22,14 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string) => Promise<AuthResponse['data']>
   resendEmailConfirmation: (email: string) => Promise<void>
+  verifySignupCode: (email: string, code: string) => Promise<void>
   resendEmailChangeConfirmation: (email: string) => Promise<void>
+  verifyEmailChangeCode: (email: string, code: string) => Promise<{ completed: boolean }>
   updateProfileName: (name: string) => Promise<void>
   updatePushPreferences: (preferences: PushPreferences) => Promise<void>
   updateEmailAddress: (email: string) => Promise<{ pendingEmail: string | null }>
   sendPasswordResetEmail: (email: string) => Promise<void>
+  verifyPasswordResetCode: (email: string, code: string) => Promise<void>
   updatePassword: (password: string) => Promise<void>
   updatePasswordWithCurrentPassword: (currentPassword: string, nextPassword: string) => Promise<void>
   deleteAccount: () => Promise<void>
@@ -119,32 +120,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       )
     }
 
-    const showEmailUpdatedConfirmation = async () => {
-      if (!pendingEmailBeforeConfirmation) return
+    const syncConfirmedEmailChange = async () => {
+      let pendingEmail = pendingEmailBeforeConfirmation
+      let latestSession = session
+
+      if (!pendingEmail) {
+        const { data } = await supabase.auth.getSession()
+        latestSession = data.session
+        pendingEmail = normalizeEmail(data.session?.user?.new_email ?? '')
+      }
+
+      if (!pendingEmail) return false
 
       const { data, error } = await supabase.auth.getUser()
-      if (error || !data.user) return
+      if (error || !data.user) return false
 
-      setSession((current) => (current ? { ...current, user: data.user } : current))
-      if (normalizeEmail(data.user.email ?? '') === pendingEmailBeforeConfirmation) {
+      setSession((current) =>
+        current ? { ...current, user: data.user } : latestSession ? { ...latestSession, user: data.user } : current
+      )
+      if (normalizeEmail(data.user.email ?? '') === pendingEmail) {
         pendingEmailRef.current = null
         Alert.alert(t('profile.editProfile.emailUpdatedTitle'), t('profile.editProfile.emailUpdatedMessage'))
+        return true
       }
+
+      return false
+    }
+
+    const handleFailedEmailChangeConfirmation = async () => {
+      if (!isPasswordRecovery && await syncConfirmedEmailChange()) {
+        router.replace('/(auth)/(tabs)')
+        return
+      }
+
+      showAuthLinkError()
     }
 
     if (hasAuthLinkError) {
-      showAuthLinkError()
+      await handleFailedEmailChangeConfirmation()
       return
     }
 
     if (authLinkParams.code) {
       const { error } = await supabase.auth.exchangeCodeForSession(authLinkParams.code)
       if (error) {
-        showAuthLinkError()
+        await handleFailedEmailChangeConfirmation()
         return
       }
 
-      await showEmailUpdatedConfirmation()
+      await syncConfirmedEmailChange()
       router.replace(isPasswordRecovery ? '/(public)/update-password' : '/(auth)/(tabs)')
       return
     }
@@ -158,13 +182,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
 
     if (error) {
-      showAuthLinkError()
+      await handleFailedEmailChangeConfirmation()
       return
     }
 
-    await showEmailUpdatedConfirmation()
+    await syncConfirmedEmailChange()
     router.replace(isPasswordRecovery ? '/(public)/update-password' : '/(auth)/(tabs)')
-  }, [session?.user?.new_email, t])
+  }, [session, t])
 
   useEffect(() => {
     void Linking.getInitialURL()
@@ -211,9 +235,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data, error } = await supabase.auth.signUp({
       email: normalized,
       password,
-      options: {
-        emailRedirectTo: getEmailConfirmationRedirectUrl(),
-      },
     })
     if (error) throw error
     return data
@@ -227,11 +248,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: normalized,
-      options: {
-        emailRedirectTo: getEmailConfirmationRedirectUrl(),
-      },
     })
     if (error) throw error
+  }, [])
+
+  const verifySignupCode = useCallback(async (email: string, code: string) => {
+    const normalizedEmail = normalizeEmail(email)
+    const normalizedCode = code.trim()
+    if (!normalizedEmail) throw new Error('Email is required')
+    if (!normalizedCode) throw new Error('Verification code is required')
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: normalizedEmail,
+      token: normalizedCode,
+      type: 'signup',
+    })
+    if (error) throw error
+    if (!data.session) throw new Error('Unable to verify the confirmation code.')
+
+    setSession(data.session)
   }, [])
 
   const resendEmailChangeConfirmation = useCallback(async (email: string) => {
@@ -242,12 +277,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.auth.resend({
       type: 'email_change',
       email: normalized,
-      options: {
-        emailRedirectTo: getEmailConfirmationRedirectUrl(),
-      },
     })
     if (error) throw error
   }, [])
+
+  const verifyEmailChangeCode = useCallback(async (email: string, code: string) => {
+    const normalizedEmail = normalizeEmail(email)
+    const normalizedCode = code.trim()
+    const pendingEmail = normalizeEmail(session?.user?.new_email ?? '')
+    if (!normalizedEmail) throw new Error('Email is required')
+    if (!normalizedCode) throw new Error('Verification code is required')
+    if (!pendingEmail) throw new Error('There is no email change to confirm.')
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: normalizedEmail,
+      token: normalizedCode,
+      type: 'email_change',
+    })
+    if (error) throw error
+
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+    if (userError || !userData.user) throw userError ?? new Error('Unable to refresh your profile.')
+
+    setSession((current) =>
+      current ? { ...current, user: userData.user } : data.session ? { ...data.session, user: userData.user } : current
+    )
+
+    return {
+      completed: normalizeEmail(userData.user.email ?? '') === pendingEmail,
+    }
+  }, [session?.user?.new_email])
 
   const updateProfileName = async (name: string) => {
     const trimmed = name.trim()
@@ -281,11 +340,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!normalized) throw new Error('Email is required')
     if (!isValidEmail(normalized)) throw new Error('Please enter a valid email address.')
 
-    const { data, error } = await supabase.auth.updateUser({
-      email: normalized,
-    }, {
-      emailRedirectTo: getEmailConfirmationRedirectUrl(),
-    })
+    const { data, error } = await supabase.auth.updateUser({ email: normalized })
 
     if (error) throw error
 
@@ -308,11 +363,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!normalized) throw new Error('Email is required')
     if (!isValidEmail(normalized)) throw new Error('Please enter a valid email address.')
 
-    const { error } = await supabase.auth.resetPasswordForEmail(normalized, {
-      redirectTo: getPasswordRecoveryRedirectUrl(),
-    })
+    const { error } = await supabase.auth.resetPasswordForEmail(normalized)
 
     if (error) throw error
+  }, [])
+
+  const verifyPasswordResetCode = useCallback(async (email: string, code: string) => {
+    const normalizedEmail = normalizeEmail(email)
+    const normalizedCode = code.trim()
+    if (!normalizedEmail) throw new Error('Email is required')
+    if (!normalizedCode) throw new Error('Verification code is required')
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: normalizedEmail,
+      token: normalizedCode,
+      type: 'recovery',
+    })
+    if (error) throw error
+    if (!data.session) throw new Error('Unable to verify the reset code.')
+
+    setSession(data.session)
   }, [])
 
   const updatePassword = useCallback(async (password: string) => {
@@ -413,11 +483,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       register,
       resendEmailConfirmation,
+      verifySignupCode,
       resendEmailChangeConfirmation,
+      verifyEmailChangeCode,
       updateProfileName,
       updatePushPreferences,
       updateEmailAddress,
       sendPasswordResetEmail,
+      verifyPasswordResetCode,
       updatePassword,
       updatePasswordWithCurrentPassword,
       deleteAccount,
@@ -427,10 +500,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session,
       isLoading,
       resendEmailConfirmation,
+      verifySignupCode,
       resendEmailChangeConfirmation,
+      verifyEmailChangeCode,
       updatePushPreferences,
       updateEmailAddress,
       sendPasswordResetEmail,
+      verifyPasswordResetCode,
       updatePassword,
       updatePasswordWithCurrentPassword,
       deleteAccount,

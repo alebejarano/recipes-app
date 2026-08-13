@@ -47,10 +47,12 @@ export default function ForgotPasswordScreen() {
   const largeScreen = useLargeScreenLayout({ maxContentWidth: layout.authContentMaxWidth })
   const params = useLocalSearchParams<{ email?: string | string[] }>()
   const initialEmail = normalizeEmail(getParamValue(params.email) ?? '')
-  const { sendPasswordResetEmail } = useAuth()
+  const { sendPasswordResetEmail, verifyPasswordResetCode } = useAuth()
   const [email, setEmail] = useState(initialEmail)
+  const [verificationCode, setVerificationCode] = useState('')
   const [lastSentEmail, setLastSentEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [verifyingCode, setVerifyingCode] = useState(false)
   const [sent, setSent] = useState(false)
   const [touched, setTouched] = useState(Boolean(initialEmail))
   const [error, setError] = useState<string | null>(null)
@@ -61,12 +63,30 @@ export default function ForgotPasswordScreen() {
     return isValidEmail(normalizedEmail) ? null : t('auth.forgotPassword.invalidEmail')
   }, [normalizedEmail, t, touched])
   const canSubmit = Boolean(normalizedEmail && isValidEmail(normalizedEmail) && !submitting)
+  const canVerifyCode = Boolean(lastSentEmail && verificationCode.length === 6 && !verifyingCode)
 
   const handleEmailChange = (value: string) => {
     setEmail(value)
     setTouched(true)
     setError(null)
     setSent(false)
+    setVerificationCode('')
+  }
+
+  const handleVerifyCode = async () => {
+    if (!canVerifyCode) return
+
+    setVerifyingCode(true)
+    setError(null)
+
+    try {
+      await verifyPasswordResetCode(lastSentEmail, verificationCode)
+      router.replace('/(public)/update-password')
+    } catch (verifyError: any) {
+      setError(getResetErrorMessage(verifyError, t))
+    } finally {
+      setVerifyingCode(false)
+    }
   }
 
   const handleSubmit = async () => {
@@ -130,6 +150,41 @@ export default function ForgotPasswordScreen() {
               <Text style={styles.successLabel}>{t('auth.forgotPassword.successLabel')}</Text>
               <Text style={styles.sentEmail}>{lastSentEmail}</Text>
               <Text style={styles.successText}>{t('auth.forgotPassword.successMessage')}</Text>
+
+              <View style={styles.codeField}>
+                <Text style={styles.label}>{t('auth.forgotPassword.codeLabel')}</Text>
+                <View style={[styles.inputWrapper, error && styles.inputWrapperError]}>
+                  <Feather name="shield" size={18} style={styles.inputIcon} />
+                  <TextInput
+                    placeholder={t('auth.forgotPassword.codePlaceholder')}
+                    placeholderTextColor={theme.colors.warmGray}
+                    keyboardType="number-pad"
+                    autoComplete="one-time-code"
+                    textContentType="oneTimeCode"
+                    maxLength={6}
+                    style={styles.input}
+                    value={verificationCode}
+                    onChangeText={(value) => {
+                      setVerificationCode(value.replace(/\D/g, ''))
+                      setError(null)
+                    }}
+                    editable={!verifyingCode}
+                  />
+                </View>
+              </View>
+
+              <Button
+                onPress={() => {
+                  void handleVerifyCode()
+                }}
+                disabled={!canVerifyCode}
+                loading={verifyingCode}
+                loadingLabel={t('auth.forgotPassword.verifyingCode')}
+                variant="secondary"
+                size="lg"
+              >
+                {t('auth.forgotPassword.verifyCode')}
+              </Button>
             </View>
           ) : null}
 
@@ -248,6 +303,11 @@ const styles = createThemedStyles(theme => ({
     backgroundColor: theme.colors.card,
     padding: layout.cardPadding,
     gap: theme.spacing.xs,
+  },
+  codeField: {
+    width: '100%',
+    gap: theme.spacing.xs,
+    marginTop: theme.spacing.sm,
   },
   successLabel: {
     ...theme.textVariants.labelSmall,
