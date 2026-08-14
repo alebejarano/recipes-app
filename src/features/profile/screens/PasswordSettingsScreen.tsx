@@ -36,15 +36,33 @@ function getPasswordUpdateErrorMessage(
     return t('profile.passwordSettings.samePassword')
   }
 
+  if (error?.code === 'reauthentication_not_valid' || error?.code === 'otp_expired') {
+    return t('profile.passwordSettings.invalidReauthenticationCode')
+  }
+
   return getUserFacingErrorMessage(error, t('profile.passwordSettings.updateFailed'))
+}
+
+function requiresPasswordReauthentication(error: any) {
+  const code = typeof error?.code === 'string' ? error.code : ''
+  const message = typeof error?.message === 'string' ? error.message.toLowerCase() : ''
+
+  return (
+    code === 'reauth_nonce_missing' ||
+    code === 'reauthentication_needed' ||
+    message.includes('reauthentication required') ||
+    message.includes('reauthentication needed')
+  )
 }
 
 export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScreenProps) {
   const { t } = useTranslation()
-  const { user, updatePasswordWithCurrentPassword, logout } = useAuth()
+  const { user, requestPasswordReauthentication, updatePasswordWithCurrentPassword, logout } = useAuth()
   const [currentPassword, setCurrentPassword] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [reauthenticationCode, setReauthenticationCode] = useState('')
+  const [requiresReauthentication, setRequiresReauthentication] = useState(false)
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -62,6 +80,7 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
       currentPassword &&
       passwordMeetsPolicy &&
       confirmPassword &&
+      (!requiresReauthentication || reauthenticationCode) &&
       !passwordsDoNotMatch &&
       !isSubmitting
   )
@@ -82,6 +101,11 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
     setConfirmPassword(value)
     setError(null)
     setSaved(false)
+  }
+
+  const handleReauthenticationCodeChange = (value: string) => {
+    setReauthenticationCode(value.replace(/\D/g, ''))
+    setError(null)
   }
 
   const handleUpdatePassword = async () => {
@@ -111,13 +135,45 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
     setError(null)
 
     try {
-      await updatePasswordWithCurrentPassword(currentPassword, password)
+      await updatePasswordWithCurrentPassword(
+        currentPassword,
+        password,
+        requiresReauthentication ? reauthenticationCode : undefined
+      )
       setCurrentPassword('')
       setPassword('')
       setConfirmPassword('')
+      setReauthenticationCode('')
       setSaved(true)
     } catch (submitError: any) {
+      if (!requiresReauthentication && requiresPasswordReauthentication(submitError)) {
+        try {
+          await requestPasswordReauthentication()
+          setRequiresReauthentication(true)
+          setReauthenticationCode('')
+          return
+        } catch (reauthenticationError: any) {
+          setError(getPasswordUpdateErrorMessage(reauthenticationError, t))
+          return
+        }
+      }
+
       setError(getPasswordUpdateErrorMessage(submitError, t))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleResendReauthenticationCode = async () => {
+    if (isSubmitting) return
+
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      await requestPasswordReauthentication()
+      setReauthenticationCode('')
+    } catch (reauthenticationError: any) {
+      setError(getPasswordUpdateErrorMessage(reauthenticationError, t))
     } finally {
       setIsSubmitting(false)
     }
@@ -305,6 +361,41 @@ export default function PasswordSettingsScreen({ onBack }: PasswordSettingsScree
             ) : null}
           </View>
 
+          {requiresReauthentication ? (
+            <View style={styles.reauthenticationCard}>
+              <Text style={styles.reauthenticationTitle}>{t('profile.passwordSettings.reauthenticationTitle')}</Text>
+              <Text style={styles.reauthenticationBody}>{t('profile.passwordSettings.reauthenticationBody')}</Text>
+              <View style={styles.field}>
+                <Text style={styles.label}>{t('profile.passwordSettings.reauthenticationCodeLabel')}</Text>
+                <View style={styles.inputWrapper}>
+                  <Feather name="shield" size={18} style={styles.inputIcon} />
+                  <TextInput
+                    placeholder={t('profile.passwordSettings.reauthenticationCodePlaceholder')}
+                    placeholderTextColor={theme.colors.warmGray}
+                    keyboardType="number-pad"
+                    autoComplete="one-time-code"
+                    textContentType="oneTimeCode"
+                    maxLength={8}
+                    style={styles.input}
+                    value={reauthenticationCode}
+                    onChangeText={handleReauthenticationCodeChange}
+                    editable={!isSubmitting}
+                  />
+                </View>
+              </View>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={t('profile.passwordSettings.resendReauthenticationCode')}
+                onPress={() => {
+                  void handleResendReauthenticationCode()
+                }}
+                disabled={isSubmitting}
+              >
+                <Text style={styles.resendCodeText}>{t('profile.passwordSettings.resendReauthenticationCode')}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
           <Button
             onPress={() => {
@@ -413,6 +504,26 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.background,
     padding: theme.spacing.md,
     gap: theme.spacing.xs,
+  },
+  reauthenticationCard: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radii.lg,
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing.md,
+    gap: theme.spacing.sm,
+  },
+  reauthenticationTitle: {
+    ...theme.textVariants.labelSmall,
+    color: theme.colors.foreground,
+  },
+  reauthenticationBody: {
+    ...theme.textVariants.caption,
+    color: theme.colors.mutedForeground,
+  },
+  resendCodeText: {
+    ...theme.textVariants.caption,
+    color: theme.colors.primary,
   },
   requirementsTitle: {
     ...theme.textVariants.labelSmall,

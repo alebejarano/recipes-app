@@ -1,7 +1,7 @@
 // features/auth/context/AuthContext.tsx
 
 import { supabase } from '@/lib/supabase'
-import type { AuthResponse, Session, User, UserAttributes } from '@supabase/supabase-js'
+import type { AuthResponse, Session, User } from '@supabase/supabase-js'
 import * as Linking from 'expo-linking'
 import { router } from 'expo-router'
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
@@ -31,7 +31,8 @@ type AuthContextValue = {
   sendPasswordResetEmail: (email: string) => Promise<void>
   verifyPasswordResetCode: (email: string, code: string) => Promise<void>
   updatePassword: (password: string) => Promise<void>
-  updatePasswordWithCurrentPassword: (currentPassword: string, nextPassword: string) => Promise<void>
+  requestPasswordReauthentication: () => Promise<void>
+  updatePasswordWithCurrentPassword: (currentPassword: string, nextPassword: string, nonce?: string) => Promise<void>
   deleteAccount: () => Promise<void>
   logout: () => Promise<void>
 }
@@ -399,8 +400,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut({ scope: 'local' })
   }, [])
 
+  const requestPasswordReauthentication = useCallback(async () => {
+    const { error } = await supabase.auth.reauthenticate()
+    if (error) throw error
+  }, [])
+
   const updatePasswordWithCurrentPassword = useCallback(
-    async (currentPassword: string, nextPassword: string) => {
+    async (currentPassword: string, nextPassword: string, nonce?: string) => {
       const email = normalizeEmail(session?.user?.email ?? '')
       const current = currentPassword.trim()
       const next = nextPassword.trim()
@@ -412,7 +418,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data, error: updateError } = await supabase.auth.updateUser({
         password: next,
         current_password: current,
-      } as UserAttributes & { current_password: string })
+        ...(nonce ? { nonce: nonce.trim() } : {}),
+      })
       if (updateError) throw updateError
 
       if (data.user) {
@@ -492,6 +499,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       sendPasswordResetEmail,
       verifyPasswordResetCode,
       updatePassword,
+      requestPasswordReauthentication,
       updatePasswordWithCurrentPassword,
       deleteAccount,
       logout,
@@ -508,6 +516,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       sendPasswordResetEmail,
       verifyPasswordResetCode,
       updatePassword,
+      requestPasswordReauthentication,
       updatePasswordWithCurrentPassword,
       deleteAccount,
     ]
