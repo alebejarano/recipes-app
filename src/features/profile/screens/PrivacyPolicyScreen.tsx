@@ -84,7 +84,7 @@ const POLICY_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly PolicySection[]> =
                 heading: 'Technical and security data',
                 paragraphs: [
                     'Our service providers may process IP address, request timestamps, authentication and security logs, app version, operating system, device type, network status, and error categories as needed to operate, secure, and troubleshoot the service.',
-                    'Camera, photo-library, and document access occurs only after the user chooses the relevant feature and grants the operating-system permission. Selected files are stored locally or uploaded to cloud storage according to the user\'s plan and action.',
+                    'Camera access occurs only after the user chooses to take a recipe-cover photo and grants the operating-system permission. Recipe-cover photos and recipe-import files are selected one at a time through the device\'s system photo or file picker; Dropsauce accesses only the item the user selects and does not scan or browse the user\'s photo library or device storage. Selected files are stored locally or uploaded to cloud storage according to the user\'s plan and action.',
                 ],
             },
         ],
@@ -265,7 +265,7 @@ const POLICY_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly PolicySection[]> =
                     heading: 'Datos técnicos y de seguridad',
                     paragraphs: [
                         'Nuestros proveedores de servicio pueden tratar la dirección IP, marcas temporales de solicitudes, registros de autenticación y seguridad, versión de la app, sistema operativo, tipo de dispositivo, estado de la red y categorías de error cuando sea necesario para operar, asegurar y diagnosticar el servicio.',
-                        'El acceso a cámara, fototeca y documentos solo ocurre después de que el usuario elija la función correspondiente y conceda el permiso del sistema operativo. Los archivos seleccionados se almacenan localmente o se suben al almacenamiento en la nube según el plan y la acción del usuario.',
+                        'El acceso a la cámara solo ocurre después de que el usuario elija tomar una foto de portada para una receta y conceda el permiso del sistema operativo. Las fotos de portada y los archivos de recetas se seleccionan de uno en uno mediante el selector de fotos o archivos del dispositivo; Dropsauce solo accede al elemento que el usuario selecciona y no explora ni analiza la fototeca ni el almacenamiento del dispositivo. Los archivos seleccionados se almacenan localmente o se suben al almacenamiento en la nube según el plan y la acción del usuario.',
                     ],
                 },
             ],

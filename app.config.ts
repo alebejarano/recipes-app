@@ -39,8 +39,6 @@ const config: ExpoConfig & { newArchEnabled: boolean } = {
     softwareKeyboardLayoutMode: 'resize',
     permissions: [
       'CAMERA',
-      'READ_MEDIA_IMAGES',
-      'READ_EXTERNAL_STORAGE',
     ],
     adaptiveIcon: {
       backgroundColor: '#F7F1E8',

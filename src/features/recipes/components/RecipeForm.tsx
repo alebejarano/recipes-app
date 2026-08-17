@@ -470,23 +470,6 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     })
   }, [t])
 
-  const ensureLibraryPermission = useCallback(async () => {
-    const existing = await ImagePicker.getMediaLibraryPermissionsAsync()
-    if (existing.status === 'granted') return true
-
-    const shouldContinue = await confirmPermissionPrompt(
-      t('recipes.form.allowPhotoTitle'),
-      t('recipes.form.allowPhotoBody')
-    )
-    if (!shouldContinue) return false
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (status !== 'granted') {
-      Alert.alert(t('recipes.form.permissionNeededTitle'), t('recipes.form.permissionPhotoBody'))
-      return false
-    }
-    return true
-  }, [confirmPermissionPrompt, t])
-
   const ensureCameraPermission = useCallback(async () => {
     const existing = await ImagePicker.getCameraPermissionsAsync()
     if (existing.status === 'granted') return true
@@ -570,9 +553,6 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   )
 
   const handlePickImage = useCallback(async () => {
-    const ok = await ensureLibraryPermission()
-    if (!ok) return
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
@@ -583,7 +563,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     const asset = result.assets?.[0]
     if (!asset) return
     await uploadImageAsset(asset)
-  }, [ensureLibraryPermission, uploadImageAsset])
+  }, [uploadImageAsset])
 
   const handleTakePhoto = useCallback(async () => {
     const ok = await ensureCameraPermission()
