@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image as ExpoImage } from 'expo-image';
 import { router, useFocusEffect, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import { useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
 
@@ -294,6 +295,7 @@ export default function HomeScreen({
 }: HomeProps) {
   const { t } = useTranslation();
   const captureAnalyticsEvent = useAnalyticsCapture();
+  const queryClient = useQueryClient();
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl);
   const segments = useSegments();
   const { user } = useAuth();
@@ -530,7 +532,12 @@ export default function HomeScreen({
   useFocusEffect(
     useCallback(() => {
       void refreshRecipeOpenHistory();
-    }, [refreshRecipeOpenHistory])
+      // Imports can be saved from a different route (or arrive through sync)
+      // while this tab remains mounted. Revalidate the sources that compose
+      // the Home states whenever the user returns to this screen.
+      void queryClient.invalidateQueries({ queryKey: ['recipes'] });
+      void queryClient.invalidateQueries({ queryKey: ['notes'] });
+    }, [queryClient, refreshRecipeOpenHistory])
   );
 
   const isInitialLoading =

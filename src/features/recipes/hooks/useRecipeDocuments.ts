@@ -156,6 +156,9 @@ export function useAddRecipeDocument() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: DOCS_KEY })
       qc.invalidateQueries({ queryKey: USAGE_KEY })
+      // Home's Recently added section reads managed imports rather than recipe
+      // documents, so refresh that cache after saving a local document too.
+      qc.invalidateQueries({ queryKey: MANAGED_IMPORTS_KEY })
       void triggerRecipeSync()
     },
   })

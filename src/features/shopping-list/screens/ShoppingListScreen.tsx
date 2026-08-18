@@ -22,6 +22,7 @@ import { useShoppingListStore } from '@/features/shopping-list/store/useShopping
 
 const QUICK_ADD_ITEM_KEYS = ['milk', 'eggs', 'bread', 'butter', 'cheese', 'chicken', 'rice', 'onions'] as const
 const QUICK_ADD_HISTORY_PREFIX = 'quick-add:'
+const MIN_QUICK_ADD_OCCURRENCES = 3
 
 export default function ShoppingListScreen() {
   const { t } = useTranslation()
@@ -57,15 +58,18 @@ export default function ShoppingListScreen() {
       label: t(`shoppingList.quickAddItems.${key}`),
     }))
     const defaultItemsByKey = new Map(defaultItems.map((item) => [item.key, item]))
-    const personalizedItems = itemHistory.map((item) =>
-      defaultItemsByKey.get(item.key) ?? { key: item.key, label: item.name },
-    )
-    const seenKeys = new Set(personalizedItems.map((item) => item.key))
-    const seenLabels = new Set(personalizedItems.map((item) => item.label.toLowerCase()))
+    const defaultLabels = new Set(defaultItems.map((item) => item.label.toLowerCase()))
+    const frequentCustomItems = itemHistory
+      .filter((item) =>
+        item.count >= MIN_QUICK_ADD_OCCURRENCES &&
+        !defaultItemsByKey.has(item.key) &&
+        !defaultLabels.has(item.name.toLowerCase()),
+      )
+      .map((item) => ({ key: item.key, label: item.name }))
 
     return [
-      ...personalizedItems,
-      ...defaultItems.filter((item) => !seenKeys.has(item.key) && !seenLabels.has(item.label.toLowerCase())),
+      ...frequentCustomItems,
+      ...defaultItems,
     ].slice(0, 8)
   }, [itemHistory, t])
 
