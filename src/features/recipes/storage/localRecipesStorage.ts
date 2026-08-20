@@ -12,6 +12,7 @@ import {
   removeImportByUri,
 } from '@/features/recipes/storage/importsStorage'
 import { FREE_PLAN_MAX_RECIPES } from '@/features/subscription/constants/limits'
+import { getActiveLocalDataOwner, getLocalDataOwnerFilter } from '@/features/storage/localDataScope'
 import {
   normalizeMealTimes,
   resolveMealTimes,
@@ -303,10 +304,12 @@ async function listRecipeRows(params?: LocalRecipeListParams): Promise<LocalReci
   await ensureLocalSqliteMigrationReady()
   const limit = params?.limit ?? 200
   const search = params?.search?.trim()
+  const ownerFilter = getLocalDataOwnerFilter()
   if (search) {
     return getAllAsync<LocalRecipeRow>(
       `SELECT * FROM local_recipes
        WHERE deleted_at IS NULL
+         AND ${ownerFilter.sql}
          AND (
               title LIKE ? COLLATE NOCASE
           OR subtitle LIKE ? COLLATE NOCASE
@@ -314,21 +317,22 @@ async function listRecipeRows(params?: LocalRecipeListParams): Promise<LocalReci
          )
        ORDER BY updated_at DESC
        LIMIT ?;`,
-      [`%${search}%`, `%${search}%`, `%${search}%`, limit]
+      [...ownerFilter.params, `%${search}%`, `%${search}%`, `%${search}%`, limit]
     )
   }
   return getAllAsync<LocalRecipeRow>(
-    'SELECT * FROM local_recipes WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT ?;',
-    [limit]
+    `SELECT * FROM local_recipes WHERE deleted_at IS NULL AND ${ownerFilter.sql} ORDER BY created_at DESC LIMIT ?;`,
+    [...ownerFilter.params, limit]
   )
 }
 
 async function getRecipeRow(id: string, includeDeleted = false): Promise<LocalRecipeRow | null> {
   await ensureLocalSqliteMigrationReady()
   const deletedFilter = includeDeleted ? '' : ' AND deleted_at IS NULL'
+  const ownerFilter = getLocalDataOwnerFilter()
   return getFirstAsync<LocalRecipeRow>(
-    `SELECT * FROM local_recipes WHERE id = ?${deletedFilter} LIMIT 1;`,
-    [id]
+    `SELECT * FROM local_recipes WHERE id = ?${deletedFilter} AND ${ownerFilter.sql} LIMIT 1;`,
+    [id, ...ownerFilter.params]
   )
 }
 
@@ -337,9 +341,10 @@ async function getRecipeRowByIdOrCloudId(id: string, includeDeleted = false): Pr
   if (row) return row
 
   const deletedFilter = includeDeleted ? '' : ' AND deleted_at IS NULL'
+  const ownerFilter = getLocalDataOwnerFilter()
   return getFirstAsync<LocalRecipeRow>(
-    `SELECT * FROM local_recipes WHERE cloud_id = ?${deletedFilter} LIMIT 1;`,
-    [id]
+    `SELECT * FROM local_recipes WHERE cloud_id = ?${deletedFilter} AND ${ownerFilter.sql} LIMIT 1;`,
+    [id, ...ownerFilter.params]
   )
 }
 
@@ -389,7 +394,8 @@ export async function createLocalRecipe(
 
   if (plan === 'free') {
     const countRow = await getFirstAsync<{ count: number }>(
-      'SELECT COUNT(*) as count FROM local_recipes WHERE deleted_at IS NULL;'
+      `SELECT COUNT(*) as count FROM local_recipes WHERE deleted_at IS NULL AND ${getLocalDataOwnerFilter().sql};`,
+      getLocalDataOwnerFilter().params
     )
     if (Number(countRow?.count ?? 0) >= FREE_PLAN_MAX_RECIPES) {
       throw new Error(
@@ -427,7 +433,7 @@ export async function createLocalRecipe(
     created_at: now,
     updated_at: now,
     deleted_at: null,
-    owner_user_id: null,
+    owner_user_id: getActiveLocalDataOwner(),
     cloud_id: null,
     dirty: 1,
     version: 1,
@@ -821,11 +827,13 @@ export async function removeFolderFromLocalRecipesByName(folderName: string): Pr
 
   const normalizedFolderName = normalizeFolderName(folderName)
   if (!normalizedFolderName) return 0
+  const ownerFilter = getLocalDataOwnerFilter()
 
   const rows = await getAllAsync<LocalRecipeFoldersRow>(
     `SELECT id, folders_json, version
       FROM local_recipes
-      WHERE deleted_at IS NULL;`
+      WHERE deleted_at IS NULL AND ${ownerFilter.sql};`,
+    ownerFilter.params
   )
 
   const now = new Date().toISOString()
@@ -865,11 +873,13 @@ export async function renameFolderInLocalRecipesByName(input: {
   if (!normalizedFromName || !normalizedToName || normalizedFromName === normalizedToName) {
     return 0
   }
+  const ownerFilter = getLocalDataOwnerFilter()
 
   const rows = await getAllAsync<LocalRecipeFoldersRow>(
     `SELECT id, folders_json, version
       FROM local_recipes
-      WHERE deleted_at IS NULL;`
+      WHERE deleted_at IS NULL AND ${ownerFilter.sql};`,
+    ownerFilter.params
   )
 
   const now = new Date().toISOString()

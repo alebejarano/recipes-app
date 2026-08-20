@@ -7,6 +7,10 @@ import {
   type ShoppingItemHistory,
 } from '../storage/shoppingListItemHistoryStorage'
 import {
+  getDismissedQuickAddItems,
+  setDismissedQuickAddItems,
+} from '../storage/shoppingListQuickAddStorage'
+import {
     clearShoppingListItems,
     getShoppingListItems,
     setShoppingListItems,
@@ -42,6 +46,7 @@ type ShoppingListState = {
   listId: string | null
   items: ShoppingItem[]
   itemHistory: ShoppingItemHistory[]
+  dismissedQuickAddKeys: Set<string>
 
   // derived
   normalizedNames: Set<string>
@@ -54,6 +59,8 @@ type ShoppingListState = {
   toggleItemByName: (name: string, historyKey?: string) => Promise<void>
   removeItem: (id: string) => Promise<void>
   setChecked: (id: string, checked: boolean) => Promise<void>
+  dismissQuickAddItem: (key: string) => Promise<void>
+  resetForAccountChange: () => void
 
   // optional utilities
   clear: () => Promise<void>
@@ -85,6 +92,7 @@ export const useShoppingListStore = create<ShoppingListState>((set, get) => {
     listId: null,
     items: [],
     itemHistory: [],
+    dismissedQuickAddKeys: new Set(),
     normalizedNames: new Set(),
 
     hydrate: async () => {
@@ -98,15 +106,17 @@ export const useShoppingListStore = create<ShoppingListState>((set, get) => {
         set({ isHydrating: true })
 
         const id = await getShoppingListId()
-        const [items, itemHistory] = await Promise.all([
+        const [items, itemHistory, dismissedQuickAddItems] = await Promise.all([
           id ? getShoppingListItems() : [],
           getShoppingItemHistory(),
+          getDismissedQuickAddItems(),
         ])
 
         set({
           listId: id,
           items,
           itemHistory,
+          dismissedQuickAddKeys: new Set(dismissedQuickAddItems),
           normalizedNames: buildNameSet(items),
           isHydrating: false,
           isHydrated: true,
@@ -231,6 +241,31 @@ export const useShoppingListStore = create<ShoppingListState>((set, get) => {
 
       // names did not change → no need to rebuild normalizedNames
       await commitItems(nextItems, { rebuildNames: false })
+    },
+
+    dismissQuickAddItem: async (key: string) => {
+      const normalizedKey = key.trim()
+      if (!normalizedKey || get().dismissedQuickAddKeys.has(normalizedKey)) return
+
+      const nextDismissedQuickAddKeys = new Set(get().dismissedQuickAddKeys)
+      nextDismissedQuickAddKeys.add(normalizedKey)
+      set({ dismissedQuickAddKeys: nextDismissedQuickAddKeys })
+      await setDismissedQuickAddItems([...nextDismissedQuickAddKeys])
+    },
+
+    resetForAccountChange: () => {
+      hydrationPromise = null
+      set({
+        isHydrated: false,
+        isHydrating: false,
+        isCreating: false,
+        isComplete: false,
+        listId: null,
+        items: [],
+        itemHistory: [],
+        dismissedQuickAddKeys: new Set(),
+        normalizedNames: new Set(),
+      })
     },
 
     clear: async () => {

@@ -40,6 +40,8 @@ export default function EditProfileScreen() {
   const [newEmailCode, setNewEmailCode] = useState('')
   const [verifyingCurrentEmailCode, setVerifyingCurrentEmailCode] = useState(false)
   const [verifyingNewEmailCode, setVerifyingNewEmailCode] = useState(false)
+  const [currentEmailCodeVerified, setCurrentEmailCodeVerified] = useState(false)
+  const [newEmailCodeVerified, setNewEmailCodeVerified] = useState(false)
   const profileRoute = '/(auth)/(tabs)/profile'
 
   useEffect(() => {
@@ -76,6 +78,7 @@ export default function EditProfileScreen() {
     recipientEmail: string,
     code: string,
     setVerifying: (value: boolean) => void,
+    setVerified: (value: boolean) => void,
   ) => {
     if (!pendingEmail || code.length !== OTP_CODE_LENGTH) return
 
@@ -83,6 +86,7 @@ export default function EditProfileScreen() {
     try {
       const { completed } = await verifyEmailChangeCode(recipientEmail, code)
       if (!completed) {
+        setVerified(true)
         showSnackbar(t('profile.editProfile.codeConfirmed'))
       }
     } catch (error: any) {
@@ -192,19 +196,26 @@ export default function EditProfileScreen() {
                 style={styles.input}
                 value={currentEmailCode}
                 onChangeText={(value) => setCurrentEmailCode(value.replace(/\D/g, ''))}
-                editable={!verifyingCurrentEmailCode}
+                editable={!verifyingCurrentEmailCode && !currentEmailCodeVerified}
               />
               <Button
                 onPress={() => {
-                  void onVerifyEmailChangeCode(initialEmail, currentEmailCode, setVerifyingCurrentEmailCode)
+                  void onVerifyEmailChangeCode(
+                    initialEmail,
+                    currentEmailCode,
+                    setVerifyingCurrentEmailCode,
+                    setCurrentEmailCodeVerified,
+                  )
                 }}
                 variant="secondary"
                 size="md"
                 loading={verifyingCurrentEmailCode}
                 loadingLabel={t('profile.editProfile.verifyingCode')}
-                disabled={currentEmailCode.length !== OTP_CODE_LENGTH}
+                disabled={currentEmailCodeVerified || currentEmailCode.length !== OTP_CODE_LENGTH}
               >
-                {t('profile.editProfile.verifyCode')}
+                {currentEmailCodeVerified
+                  ? t('profile.editProfile.verifiedCode')
+                  : t('profile.editProfile.verifyCode')}
               </Button>
             </View>
             <View style={styles.codeField}>
@@ -219,19 +230,26 @@ export default function EditProfileScreen() {
                 style={styles.input}
                 value={newEmailCode}
                 onChangeText={(value) => setNewEmailCode(value.replace(/\D/g, ''))}
-                editable={!verifyingNewEmailCode}
+                editable={!verifyingNewEmailCode && !newEmailCodeVerified}
               />
               <Button
                 onPress={() => {
-                  void onVerifyEmailChangeCode(pendingEmail, newEmailCode, setVerifyingNewEmailCode)
+                  void onVerifyEmailChangeCode(
+                    pendingEmail,
+                    newEmailCode,
+                    setVerifyingNewEmailCode,
+                    setNewEmailCodeVerified,
+                  )
                 }}
                 variant="secondary"
                 size="md"
                 loading={verifyingNewEmailCode}
                 loadingLabel={t('profile.editProfile.verifyingCode')}
-                disabled={newEmailCode.length !== OTP_CODE_LENGTH}
+                disabled={newEmailCodeVerified || newEmailCode.length !== OTP_CODE_LENGTH}
               >
-                {t('profile.editProfile.verifyCode')}
+                {newEmailCodeVerified
+                  ? t('profile.editProfile.verifiedCode')
+                  : t('profile.editProfile.verifyCode')}
               </Button>
             </View>
             <Button

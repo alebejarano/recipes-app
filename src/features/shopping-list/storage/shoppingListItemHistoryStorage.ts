@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
+import { getLocalDataScopeKey } from '@/features/storage/localDataScope'
+
 export type ShoppingItemHistory = {
     key: string
     name: string
@@ -9,6 +11,10 @@ export type ShoppingItemHistory = {
 
 const HISTORY_STORAGE_KEY = 'shopping_list_item_history_v1'
 const MAX_HISTORY_ITEMS = 100
+
+function keyForScope() {
+    return `${HISTORY_STORAGE_KEY}:${getLocalDataScopeKey()}`
+}
 
 function normalizeName(input: string) {
     return input.trim().replace(/\s+/g, ' ').toLowerCase()
@@ -28,7 +34,7 @@ function isShoppingItemHistory(value: unknown): value is ShoppingItemHistory {
 
 export async function getShoppingItemHistory(): Promise<ShoppingItemHistory[]> {
     try {
-        const raw = await AsyncStorage.getItem(HISTORY_STORAGE_KEY)
+        const raw = await AsyncStorage.getItem(keyForScope())
         if (!raw) return []
 
         const parsed = JSON.parse(raw)
@@ -60,6 +66,6 @@ export async function recordShoppingItemAddition(
         .sort((a, b) => b.count - a.count || b.lastAddedAt - a.lastAddedAt)
         .slice(0, MAX_HISTORY_ITEMS)
 
-    await AsyncStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(nextHistory))
+    await AsyncStorage.setItem(keyForScope(), JSON.stringify(nextHistory))
     return nextHistory
 }

@@ -54,6 +54,7 @@ function mapRecipeDocument(row: RecipeDocumentImportRow): RecipeDocument {
 function mapManagedImport(row: RecipeDocumentImportRow): ManagedImport {
   return {
     id: row.id,
+    documentId: row.id,
     kind: 'document',
     title: row.title?.trim() || inferTitleFromFileName(row.original_file_name),
     fileName: row.original_file_name,

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { useAnalyticsCapture } from '@/features/analytics/events'
+import { useAuth } from '@/features/auth/context/AuthContext'
 import type { LocalNote } from '@/features/notes/storage/localNotesStorage'
 import {
   createLocalNote,
@@ -20,16 +21,18 @@ type LocalNotesListParams = {
 }
 
 export function useLocalNotesList(params?: LocalNotesListParams) {
+  const { user } = useAuth()
   return useQuery<LocalNote[]>({
-    queryKey: [...LIST_KEY, params?.limit ?? 200, params?.search ?? ''],
+    queryKey: [...LIST_KEY, user?.id ?? 'guest', params?.limit ?? 200, params?.search ?? ''],
     queryFn: () => listLocalNotes(params),
     enabled: params?.enabled ?? true,
   })
 }
 
 export function useLocalNote(id: string, options?: { enabled?: boolean; matchCloudId?: boolean }) {
+  const { user } = useAuth()
   return useQuery<LocalNote | null>({
-    queryKey: ['notes', 'local', 'detail', options?.matchCloudId ? 'any' : 'id', id],
+    queryKey: ['notes', 'local', 'detail', user?.id ?? 'guest', options?.matchCloudId ? 'any' : 'id', id],
     queryFn: () => options?.matchCloudId ? getLocalNoteByIdOrCloudId(id) : getLocalNote(id),
     enabled: Boolean(id) && (options?.enabled ?? true),
   })

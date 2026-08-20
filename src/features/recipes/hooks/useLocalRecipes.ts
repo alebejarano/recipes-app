@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { useAnalyticsCapture } from '@/features/analytics/events'
+import { useAuth } from '@/features/auth/context/AuthContext'
 import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import type { LocalRecipe } from '@/features/recipes/storage/localRecipesStorage'
@@ -22,16 +23,18 @@ type LocalRecipesListParams = {
 }
 
 export function useLocalRecipesList(params?: LocalRecipesListParams) {
+  const { user } = useAuth()
   return useQuery<LocalRecipe[]>({
-    queryKey: [...LIST_KEY, params?.limit ?? 200, params?.search ?? ''],
+    queryKey: [...LIST_KEY, user?.id ?? 'guest', params?.limit ?? 200, params?.search ?? ''],
     queryFn: () => listLocalRecipes(params),
     enabled: params?.enabled ?? true,
   })
 }
 
 export function useLocalRecipe(id: string, options?: { enabled?: boolean; matchCloudId?: boolean }) {
+  const { user } = useAuth()
   return useQuery<LocalRecipe | null>({
-    queryKey: ['recipes', 'local', 'detail', options?.matchCloudId ? 'any' : 'id', id],
+    queryKey: ['recipes', 'local', 'detail', user?.id ?? 'guest', options?.matchCloudId ? 'any' : 'id', id],
     queryFn: () => options?.matchCloudId ? getLocalRecipeByIdOrCloudId(id) : getLocalRecipe(id),
     enabled: Boolean(id) && (options?.enabled ?? true),
   })

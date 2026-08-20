@@ -540,11 +540,12 @@ const styles = createThemedStyles((theme) => ({
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.sm,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: theme.spacing.xs,
   },
   bulkButton: {
-    flex: 1,
+    flexShrink: 0,
     minHeight: 38,
     borderRadius: theme.radii.full,
     borderWidth: 1,

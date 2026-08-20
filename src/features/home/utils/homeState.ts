@@ -7,10 +7,12 @@ export type HomeActivityItem = {
   subtitle?: string
   timestamp: string
   destination: 'recipe' | 'note' | 'imports' | 'shopping-list'
+  documentId?: string | null
 }
 
 type ActivitySource = {
   id: string
+  documentId?: string | null
   title?: string | null
   createdAt: string
   updatedAt?: string | null
@@ -53,6 +55,7 @@ export function buildHomeActivity(params: {
       title: item.title?.trim() || importFallbackTitle,
       timestamp: item.updatedAt ?? item.createdAt,
       destination: 'imports' as const,
+      documentId: item.documentId ?? null,
     })),
   ]
 

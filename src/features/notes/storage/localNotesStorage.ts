@@ -1,5 +1,6 @@
 import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
 import { getAllAsync, getFirstAsync, runSqlAsync } from '@/lib/sqlite'
+import { getActiveLocalDataOwner, getLocalDataOwnerFilter } from '@/features/storage/localDataScope'
 import type { Note } from '@/features/notes/api/notesRepo'
 
 type LocalNoteRow = {
@@ -51,31 +52,34 @@ async function listNoteRows(params?: LocalNotesListParams): Promise<LocalNoteRow
   await ensureLocalSqliteMigrationReady()
   const limit = params?.limit ?? 200
   const search = params?.search?.trim()
+  const ownerFilter = getLocalDataOwnerFilter()
   if (search) {
     return getAllAsync<LocalNoteRow>(
       `SELECT * FROM local_notes
        WHERE deleted_at IS NULL
+         AND ${ownerFilter.sql}
          AND (
            title LIKE ? COLLATE NOCASE
            OR content LIKE ? COLLATE NOCASE
          )
        ORDER BY (pinned_at IS NOT NULL) DESC, pinned_at DESC, updated_at DESC
        LIMIT ?;`,
-      [`%${search}%`, `%${search}%`, limit]
+      [...ownerFilter.params, `%${search}%`, `%${search}%`, limit]
     )
   }
   return getAllAsync<LocalNoteRow>(
-    'SELECT * FROM local_notes WHERE deleted_at IS NULL ORDER BY (pinned_at IS NOT NULL) DESC, pinned_at DESC, updated_at DESC LIMIT ?;',
-    [limit]
+    `SELECT * FROM local_notes WHERE deleted_at IS NULL AND ${ownerFilter.sql} ORDER BY (pinned_at IS NOT NULL) DESC, pinned_at DESC, updated_at DESC LIMIT ?;`,
+    [...ownerFilter.params, limit]
   )
 }
 
 async function getNoteRow(id: string, includeDeleted = false): Promise<LocalNoteRow | null> {
   await ensureLocalSqliteMigrationReady()
   const deletedFilter = includeDeleted ? '' : ' AND deleted_at IS NULL'
+  const ownerFilter = getLocalDataOwnerFilter()
   return getFirstAsync<LocalNoteRow>(
-    `SELECT * FROM local_notes WHERE id = ?${deletedFilter} LIMIT 1;`,
-    [id]
+    `SELECT * FROM local_notes WHERE id = ?${deletedFilter} AND ${ownerFilter.sql} LIMIT 1;`,
+    [id, ...ownerFilter.params]
   )
 }
 
@@ -84,9 +88,10 @@ async function getNoteRowByIdOrCloudId(id: string, includeDeleted = false): Prom
   if (row) return row
 
   const deletedFilter = includeDeleted ? '' : ' AND deleted_at IS NULL'
+  const ownerFilter = getLocalDataOwnerFilter()
   return getFirstAsync<LocalNoteRow>(
-    `SELECT * FROM local_notes WHERE cloud_id = ?${deletedFilter} LIMIT 1;`,
-    [id]
+    `SELECT * FROM local_notes WHERE cloud_id = ?${deletedFilter} AND ${ownerFilter.sql} LIMIT 1;`,
+    [id, ...ownerFilter.params]
   )
 }
 
@@ -141,6 +146,7 @@ export async function createLocalNote(input: {
     created_at: now,
     updated_at: now,
     deleted_at: null,
+    owner_user_id: getActiveLocalDataOwner(),
     dirty: 1,
     version: 1,
     last_synced_at: null,

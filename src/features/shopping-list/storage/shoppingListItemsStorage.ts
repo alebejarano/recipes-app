@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getShoppingListId } from './shoppingListStorage'
+import { getLocalDataScopeKey } from '@/features/storage/localDataScope'
 
 export type ShoppingItem = {
   id: string
@@ -10,7 +11,7 @@ export type ShoppingItem = {
 const ITEMS_KEY_PREFIX = 'shopping_list_items_v1'
 
 function keyFor(listId: string) {
-  return `${ITEMS_KEY_PREFIX}:${listId}`
+  return `${ITEMS_KEY_PREFIX}:${getLocalDataScopeKey()}:${listId}`
 }
 
 export async function getShoppingListItems(): Promise<ShoppingItem[]> {

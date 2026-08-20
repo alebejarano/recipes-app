@@ -39,12 +39,14 @@ export default function ShoppingListScreen() {
 
   const items = useShoppingListStore((s) => s.items)
   const itemHistory = useShoppingListStore((s) => s.itemHistory)
+  const dismissedQuickAddKeys = useShoppingListStore((s) => s.dismissedQuickAddKeys)
   const normalizedNames = useShoppingListStore((s) => s.normalizedNames)
 
   const addItem = useShoppingListStore((s) => s.addItem)
   const removeItem = useShoppingListStore((s) => s.removeItem)
   const toggleItemByName = useShoppingListStore((s) => s.toggleItemByName)
   const setChecked = useShoppingListStore((s) => s.setChecked)
+  const dismissQuickAddItem = useShoppingListStore((s) => s.dismissQuickAddItem)
 
   useEffect(() => {
     hydrate()
@@ -67,11 +69,27 @@ export default function ShoppingListScreen() {
       )
       .map((item) => ({ key: item.key, label: item.name }))
 
+    const seenKeys = new Set<string>()
+    const seenLabels = new Set<string>()
+
     return [
       ...frequentCustomItems,
       ...defaultItems,
-    ].slice(0, 8)
-  }, [itemHistory, t])
+    ].filter((item) => {
+      const normalizedLabel = item.label.trim().toLowerCase()
+      if (
+        dismissedQuickAddKeys.has(item.key) ||
+        seenKeys.has(item.key) ||
+        seenLabels.has(normalizedLabel)
+      ) {
+        return false
+      }
+
+      seenKeys.add(item.key)
+      seenLabels.add(normalizedLabel)
+      return true
+    }).slice(0, 8)
+  }, [dismissedQuickAddKeys, itemHistory, t])
 
   const onAdd = async (name?: string) => {
     const raw = (name ?? newItem).trim()
@@ -186,22 +204,27 @@ export default function ShoppingListScreen() {
                 const isAdded = normalizedNames.has(label.toLowerCase())
 
                 return (
-                  <Pressable
-                    key={key}
-                    onPress={() => toggleItemByName(label, key)}
-                    accessibilityRole="button"
-                    accessibilityLabel={isAdded ? t('shoppingList.removeA11y', { name: label }) : t('shoppingList.addA11y', { name: label })}
-                    style={({ pressed }) => [
-                      styles.quickChip,
-                      isAdded && styles.quickChipAdded,
-                      pressed && styles.quickChipPressed,
-                    ]}
-                  >
-                    {isAdded ? <Feather name="check" size={14} color={theme.colors.primaryDark} /> : null}
-                    <Text style={[styles.quickChipText, isAdded && styles.quickChipTextAdded]}>
-                      {label}
-                    </Text>
-                  </Pressable>
+                  <View key={key} style={[styles.quickChip, isAdded && styles.quickChipAdded]}>
+                    <Pressable
+                      onPress={() => toggleItemByName(label, key)}
+                      accessibilityRole="button"
+                      accessibilityLabel={isAdded ? t('shoppingList.removeA11y', { name: label }) : t('shoppingList.addA11y', { name: label })}
+                      style={({ pressed }) => [styles.quickChipAction, pressed && styles.quickChipPressed]}
+                    >
+                      <Text style={[styles.quickChipText, isAdded && styles.quickChipTextAdded]}>
+                        {label}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => void dismissQuickAddItem(key)}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('shoppingList.dismissQuickAddA11y', { name: label })}
+                      style={({ pressed }) => [styles.quickChipClose, pressed && styles.quickChipClosePressed]}
+                      hitSlop={6}
+                    >
+                      <Feather name="x" size={16} color={theme.colors.mutedForeground} />
+                    </Pressable>
+                  </View>
                 )
               })}
             </View>
@@ -387,16 +410,28 @@ const styles = createThemedStyles((theme) => ({
   quickChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: 10,
+    paddingLeft: theme.spacing.md,
+    paddingRight: theme.spacing.xs,
+    paddingVertical: theme.spacing.xs,
     borderRadius: 999,
     backgroundColor: theme.colors.muted,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
 
-  quickChipPressed: { opacity: 0.95, transform: [{ scale: 0.99 }] },
+  quickChipAction: { paddingVertical: theme.spacing.xs },
+
+  quickChipPressed: { opacity: 0.65 },
+
+  quickChipClose: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: theme.radii.full,
+  },
+
+  quickChipClosePressed: { backgroundColor: theme.colors.secondary },
 
   quickChipAdded: { backgroundColor: theme.colors.primarySoft, borderColor: theme.colors.primarySoft },
 

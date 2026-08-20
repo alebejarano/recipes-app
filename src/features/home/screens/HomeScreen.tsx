@@ -745,6 +745,10 @@ export default function HomeScreen({
     root === '(public)'
         ? '/(public)/shopping-list'
         : '/(auth)/shopping-list';
+  const recipeDocumentDetailPath =
+    root === '(public)'
+      ? '/(public)/recipes/documents/[id]'
+      : '/(auth)/recipes/documents/[id]';
   const importsPath =
     root === '(public)'
       ? '/(public)/imports/manage'
@@ -762,6 +766,13 @@ export default function HomeScreen({
       router.push({
         pathname: root === '(public)' ? '/(public)/notes/[id]' : '/(auth)/notes/[id]',
         params: { id: item.id.replace(/^note:/, '') },
+      });
+      return;
+    }
+    if (item.destination === 'imports' && item.documentId) {
+      router.push({
+        pathname: recipeDocumentDetailPath,
+        params: { id: item.documentId, returnTo: homePath },
       });
       return;
     }

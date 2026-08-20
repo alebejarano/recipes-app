@@ -2,6 +2,7 @@ import type { Folder } from '@/features/folders/api/foldersCloudRepo'
 import { renameFolderInLocalRecipesByName } from '@/features/recipes/storage/localRecipesStorage'
 import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
 import { getAllAsync, getFirstAsync, runSqlAsync } from '@/lib/sqlite'
+import { getActiveLocalDataOwner, getLocalDataOwnerFilter } from '@/features/storage/localDataScope'
 
 type LocalFolderRow = {
   id: string
@@ -49,28 +50,31 @@ async function readAll(params?: LocalFoldersListParams): Promise<LocalFolderRow[
   await ensureLocalSqliteMigrationReady()
   const limit = params?.limit ?? 200
   const search = params?.search?.trim()
+  const ownerFilter = getLocalDataOwnerFilter()
   if (search) {
     return getAllAsync<LocalFolderRow>(
       `SELECT * FROM local_folders
        WHERE deleted_at IS NULL
+         AND ${ownerFilter.sql}
          AND name LIKE ? COLLATE NOCASE
        ORDER BY name ASC
        LIMIT ?;`,
-      [`%${search}%`, limit]
+      [...ownerFilter.params, `%${search}%`, limit]
     )
   }
   return getAllAsync<LocalFolderRow>(
-    'SELECT * FROM local_folders WHERE deleted_at IS NULL ORDER BY name ASC LIMIT ?;',
-    [limit]
+    `SELECT * FROM local_folders WHERE deleted_at IS NULL AND ${ownerFilter.sql} ORDER BY name ASC LIMIT ?;`,
+    [...ownerFilter.params, limit]
   )
 }
 
 async function getById(id: string, includeDeleted = false): Promise<LocalFolderRow | null> {
   await ensureLocalSqliteMigrationReady()
   const deletedFilter = includeDeleted ? '' : ' AND deleted_at IS NULL'
+  const ownerFilter = getLocalDataOwnerFilter()
   return getFirstAsync<LocalFolderRow>(
-    `SELECT * FROM local_folders WHERE id = ?${deletedFilter} LIMIT 1;`,
-    [id]
+    `SELECT * FROM local_folders WHERE id = ?${deletedFilter} AND ${ownerFilter.sql} LIMIT 1;`,
+    [id, ...ownerFilter.params]
   )
 }
 
@@ -112,6 +116,7 @@ export async function createLocalFolder(input: {
     created_at: now,
     updated_at: now,
     deleted_at: null,
+    owner_user_id: getActiveLocalDataOwner(),
     dirty: 1,
     version: 1,
     last_synced_at: null,

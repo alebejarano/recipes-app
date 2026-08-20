@@ -2,11 +2,15 @@
 
 import { supabase } from '@/lib/supabase'
 import type { AuthResponse, Session, User } from '@supabase/supabase-js'
+import { useQueryClient } from '@tanstack/react-query'
 import * as Linking from 'expo-linking'
 import { router } from 'expo-router'
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Alert } from 'react-native'
 import { tagLocalDataAsMigratable } from '@/features/storage/localAccountLinking'
+import { setActiveLocalDataOwner } from '@/features/storage/localDataScope'
+import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
+import { migrateLegacyShoppingListToAccount } from '@/features/shopping-list/storage/shoppingListStorage'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import {
   getAuthLinkSessionFromUrl,
@@ -50,6 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pendingEmailRef = useRef<string | null>(null)
   const handledAuthUrlsRef = useRef(new Set<string>())
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     let isMounted = true
@@ -60,22 +65,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then(({ data, error }) => {
         if (!isMounted) return
 
-        if (error) {
-          setSession(null)
-        } else {
-          setSession(data.session ?? null)
-        }
+        const nextSession = error ? null : (data.session ?? null)
+        setActiveLocalDataOwner(nextSession?.user.id)
+        useShoppingListStore.getState().resetForAccountChange()
+        setSession(nextSession)
 
         setIsLoading(false)
       })
       .catch(() => {
         if (!isMounted) return
+        setActiveLocalDataOwner(null)
+        useShoppingListStore.getState().resetForAccountChange()
         setSession(null)
         setIsLoading(false)
       })
 
     // Listen for auth changes (sign-in, sign-out, token refresh)
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setActiveLocalDataOwner(newSession?.user.id)
+      useShoppingListStore.getState().resetForAccountChange()
       setSession(newSession)
     })
 
@@ -213,10 +221,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const userId = session?.user?.id
     if (!userId) return
 
-    tagLocalDataAsMigratable(userId).catch(() => {
-      // Keep auth resilient; tagging is best-effort metadata enrichment.
+    Promise.all([
+      tagLocalDataAsMigratable(userId),
+      migrateLegacyShoppingListToAccount(userId),
+    ]).then(() => {
+      useShoppingListStore.getState().resetForAccountChange()
+      void queryClient.invalidateQueries({ queryKey: ['recipes', 'local'] })
+      void queryClient.invalidateQueries({ queryKey: ['notes', 'local'] })
+      void queryClient.invalidateQueries({ queryKey: ['folders', 'local'] })
+    }).catch(() => {
+      // Keep auth resilient; migration is best-effort.
     })
-  }, [session?.user?.id])
+  }, [queryClient, session?.user?.id])
 
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
