@@ -20,35 +20,32 @@ export function useLocalFoldersList() {
 }
 
 export function useCreateLocalFolder() {
-  const { user } = useAuth()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (input: { name: string; emoji?: string | null }) => createLocalFolderRepo(input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [...LIST_KEY, user?.id ?? 'guest'] })
+      qc.invalidateQueries({ queryKey: LIST_KEY })
     },
   })
 }
 
 export function useUpdateLocalFolder() {
-  const { user } = useAuth()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (input: { id: string; name: string; emoji?: string | null }) =>
       updateLocalFolderRepo(input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [...LIST_KEY, user?.id ?? 'guest'] })
+      qc.invalidateQueries({ queryKey: LIST_KEY })
     },
   })
 }
 
 export function useDeleteLocalFolder() {
-  const { user } = useAuth()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteLocalFolderRepo(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [...LIST_KEY, user?.id ?? 'guest'] })
+      qc.invalidateQueries({ queryKey: LIST_KEY })
       qc.invalidateQueries({ queryKey: ['recipes'] })
     },
   })

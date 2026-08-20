@@ -12,6 +12,10 @@ import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyReci
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode';
 
 jest.mock('@expo/vector-icons', () => ({ Feather: () => null, Ionicons: () => null }));
+jest.mock('@tanstack/react-query', () => ({
+    ...jest.requireActual('@tanstack/react-query'),
+    useQueryClient: () => ({ invalidateQueries: jest.fn() }),
+}));
 jest.mock('expo-image', () => ({ Image: { prefetch: jest.fn() } }));
 jest.mock('expo-secure-store', () => ({ getItemAsync: jest.fn().mockResolvedValue(null), setItemAsync: jest.fn() }));
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -120,8 +124,8 @@ describe('<HomeScreen /> state rendering', () => {
         mockStorageMode.mockReturnValue({ isStorageModeReady: false });
         mockRecipes.mockReturnValue({ data: undefined, isLoading: true });
 
-        const { getByText, queryByText } = await render(<HomeScreen mode="auth" />);
-        expect(getByText('home.loading')).toBeVisible();
+        const { getByLabelText, queryByText } = await render(<HomeScreen mode="auth" />);
+        expect(getByLabelText('home.loading')).toBeVisible();
         expect(queryByText('home.empty.title')).toBeNull();
     });
 

@@ -229,6 +229,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       void queryClient.invalidateQueries({ queryKey: ['recipes', 'local'] })
       void queryClient.invalidateQueries({ queryKey: ['notes', 'local'] })
       void queryClient.invalidateQueries({ queryKey: ['folders', 'local'] })
+      void queryClient.invalidateQueries({ queryKey: ['recipes', 'documents'] })
+      void queryClient.invalidateQueries({ queryKey: ['recipes', 'imports', 'managed'] })
     }).catch(() => {
       // Keep auth resilient; migration is best-effort.
     })

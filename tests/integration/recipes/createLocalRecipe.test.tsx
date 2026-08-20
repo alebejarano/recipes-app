@@ -15,6 +15,10 @@ jest.mock('@/features/storage/context/StorageStrategyContext', () => ({
     useStorageStrategy: () => ({ isPremium: false }),
 }));
 
+jest.mock('@/features/auth/context/AuthContext', () => ({
+    useAuth: () => ({ user: null }),
+}));
+
 jest.mock('@/features/recipes/sync/recipeSync', () => ({
     triggerRecipeSync: jest.fn(),
 }));

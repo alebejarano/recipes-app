@@ -6,7 +6,9 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   Text,
   TextInput,
@@ -531,7 +533,10 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
         transparent
         onRequestClose={() => setIsCreateFolderOpen(false)}
       >
-        <View style={styles.modalBackdrop}>
+        <KeyboardAvoidingView
+          style={styles.modalBackdrop}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>{t('collections.createFolder')}</Text>
             <Text style={styles.modalSubtitle}>{t('collections.createModal.subtitle')}</Text>
@@ -588,7 +593,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
               </Pressable>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </Screen>
   )

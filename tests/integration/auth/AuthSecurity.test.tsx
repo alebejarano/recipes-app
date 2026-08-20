@@ -1,4 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';
 import { Alert } from 'react-native';
 import type { PropsWithChildren } from 'react';
@@ -47,7 +48,13 @@ const mockAuth = supabase.auth as unknown as Record<string, jest.Mock>;
 const mockInvoke = supabase.functions.invoke as jest.Mock;
 const mockGetInitialURL = Linking.getInitialURL as jest.Mock;
 const mockAddEventListener = Linking.addEventListener as jest.Mock;
-const wrapper = ({ children }: PropsWithChildren) => <AuthProvider>{children}</AuthProvider>;
+let queryClient: QueryClient;
+
+const wrapper = ({ children }: PropsWithChildren) => (
+    <QueryClientProvider client={queryClient}>
+        <AuthProvider>{children}</AuthProvider>
+    </QueryClientProvider>
+);
 
 async function renderSecurityAuth() {
     const rendered = await renderHook(() => useAuth(), { wrapper });
@@ -57,6 +64,9 @@ async function renderSecurityAuth() {
 
 describe('AuthProvider security flows', () => {
     beforeEach(() => {
+        queryClient = new QueryClient({
+            defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+        });
         mockAuth.getSession.mockResolvedValue({ data: { session: null }, error: null });
         mockAuth.onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: jest.fn() } } });
         mockAuth.resetPasswordForEmail.mockResolvedValue({ error: null });
@@ -77,6 +87,7 @@ describe('AuthProvider security flows', () => {
     });
 
     afterEach(() => {
+        queryClient.clear();
         jest.restoreAllMocks();
         jest.clearAllMocks();
     });

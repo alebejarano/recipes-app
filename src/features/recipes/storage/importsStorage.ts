@@ -3,6 +3,7 @@ import { Platform } from 'react-native'
 
 import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
 import { getAllAsync, getFirstAsync, runSqlAsync, runSqlBatchAsync } from '@/lib/sqlite'
+import { getActiveLocalDataOwner, getLocalDataOwnerFilter } from '@/features/storage/localDataScope'
 import {
   FREE_PLAN_MAX_IMPORT_FILE_BYTES,
   FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
@@ -44,6 +45,7 @@ const MIGRATION_STATEMENTS = [
       file_uri TEXT NOT NULL,
       bytes INTEGER NOT NULL,
       created_at TEXT NOT NULL,
+      owner_user_id TEXT,
       deleted_at TEXT
     );`,
   },
@@ -87,7 +89,12 @@ async function ensureImageImportsDir() {
 
 export function ensureImportsStorageReady() {
   if (!migrationsPromise) {
-    migrationsPromise = runSqlBatchAsync(MIGRATION_STATEMENTS)
+    migrationsPromise = runSqlBatchAsync(MIGRATION_STATEMENTS).then(async () => {
+      const columns = await getAllAsync<{ name: string }>('PRAGMA table_info(imports);')
+      if (!columns.some((column) => column.name === 'owner_user_id')) {
+        await runSqlAsync('ALTER TABLE imports ADD COLUMN owner_user_id TEXT;')
+      }
+    })
   }
   return migrationsPromise
 }
@@ -96,8 +103,8 @@ async function backfillLegacyDocumentImports() {
   await ensureImportsStorageReady()
   try {
     await runSqlAsync(
-      `INSERT INTO imports (id, kind, file_name, file_uri, bytes, created_at, deleted_at)
-       SELECT lower(hex(randomblob(16))), 'document', rd.file_name, rd.file_uri, rd.file_size, rd.created_at, NULL
+      `INSERT INTO imports (id, kind, file_name, file_uri, bytes, created_at, owner_user_id, deleted_at)
+       SELECT lower(hex(randomblob(16))), 'document', rd.file_name, rd.file_uri, rd.file_size, rd.created_at, rd.owner_user_id, NULL
        FROM recipe_documents rd
        WHERE NOT EXISTS (
          SELECT 1
@@ -125,10 +132,12 @@ export function isManagedLocalImportImageUri(uri: string | null | undefined) {
 export async function getImportsUsageSummary(): Promise<ImportsUsageSummary> {
   await ensureImportsStorageReady()
   await ensureDocumentImportsBackfilled()
+  const ownerFilter = getLocalDataOwnerFilter()
   const row = await getFirstAsync<{ totalCount: number; totalBytes: number }>(
     `SELECT COUNT(*) as totalCount, COALESCE(SUM(bytes), 0) as totalBytes
      FROM imports
-     WHERE deleted_at IS NULL;`
+     WHERE deleted_at IS NULL AND ${ownerFilter.sql};`,
+    ownerFilter.params
   )
   return {
     totalCount: Number(row?.totalCount ?? 0),
@@ -198,12 +207,14 @@ export async function registerImport(input: {
   fileName?: string | null
   fileUri: string
   bytes: number
+  ownerUserId?: string | null
 }) {
   await ensureImportsStorageReady()
+  const ownerUserId = input.ownerUserId ?? getActiveLocalDataOwner()
   await runSqlAsync(
-    `INSERT INTO imports (id, kind, file_name, file_uri, bytes, created_at, deleted_at)
-     VALUES (?, ?, ?, ?, ?, ?, NULL);`,
-    [makeId(), input.kind, input.fileName ?? null, input.fileUri, Math.max(0, input.bytes), nowIso()]
+    `INSERT INTO imports (id, kind, file_name, file_uri, bytes, created_at, owner_user_id, deleted_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, NULL);`,
+    [makeId(), input.kind, input.fileName ?? null, input.fileUri, Math.max(0, input.bytes), nowIso(), ownerUserId]
   )
 }
 
@@ -219,13 +230,14 @@ export async function markImportDeletedByUri(fileUri: string): Promise<void> {
 
 export async function getActiveImportBytesByUri(fileUri: string): Promise<number> {
   await ensureImportsStorageReady()
+  const ownerFilter = getLocalDataOwnerFilter()
   const row = await getFirstAsync<{ bytes: number | null }>(
     `SELECT bytes
      FROM imports
-     WHERE file_uri = ? AND deleted_at IS NULL
+     WHERE file_uri = ? AND deleted_at IS NULL AND ${ownerFilter.sql}
      ORDER BY created_at DESC
      LIMIT 1;`,
-    [fileUri]
+    [fileUri, ...ownerFilter.params]
   )
   return Number(row?.bytes ?? 0)
 }
@@ -233,6 +245,7 @@ export async function getActiveImportBytesByUri(fileUri: string): Promise<number
 export async function listManagedImports(): Promise<ManagedImport[]> {
   await ensureImportsStorageReady()
   await ensureDocumentImportsBackfilled()
+  const ownerFilter = getLocalDataOwnerFilter('i.owner_user_id')
   let rows: {
     id: string
     document_id: string | null
@@ -258,8 +271,9 @@ export async function listManagedImports(): Promise<ManagedImport[]> {
       `SELECT i.id, rd.id as document_id, i.kind, rd.title as title, i.file_name, i.file_uri, i.bytes, i.created_at
        FROM imports i
        LEFT JOIN recipe_documents rd ON rd.file_uri = i.file_uri
-       WHERE i.deleted_at IS NULL
-       ORDER BY i.created_at DESC;`
+       WHERE i.deleted_at IS NULL AND ${ownerFilter.sql}
+       ORDER BY i.created_at DESC;`,
+      ownerFilter.params
     )
   } catch {
     rows = await getAllAsync<{
@@ -274,8 +288,9 @@ export async function listManagedImports(): Promise<ManagedImport[]> {
     }>(
       `SELECT id, NULL as document_id, kind, NULL as title, file_name, file_uri, bytes, created_at
        FROM imports
-       WHERE deleted_at IS NULL
-       ORDER BY created_at DESC;`
+       WHERE deleted_at IS NULL AND ${getLocalDataOwnerFilter().sql}
+       ORDER BY created_at DESC;`,
+      getLocalDataOwnerFilter().params
     )
   }
 

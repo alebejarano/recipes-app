@@ -55,13 +55,15 @@ export function useCreateLocalNote() {
 }
 
 export function useUpdateLocalNote(id: string) {
+  const { user } = useAuth()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (input: { title?: string; content?: string; pinnedAt?: string | null }) =>
       updateLocalNote(id, input),
     onSuccess: (note) => {
-      qc.setQueryData(['notes', 'local', 'detail', 'id', id], note)
-      qc.setQueryData(['notes', 'local', 'detail', 'any', id], note)
+      const ownerScope = user?.id ?? 'guest'
+      qc.setQueryData(['notes', 'local', 'detail', ownerScope, 'id', id], note)
+      qc.setQueryData(['notes', 'local', 'detail', ownerScope, 'any', id], note)
       qc.invalidateQueries({ queryKey: LIST_KEY })
       void triggerNoteSync()
     },
@@ -69,10 +71,14 @@ export function useUpdateLocalNote(id: string) {
 }
 
 export function useDeleteLocalNote() {
+  const { user } = useAuth()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteLocalNote(id),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      const ownerScope = user?.id ?? 'guest'
+      qc.removeQueries({ queryKey: ['notes', 'local', 'detail', ownerScope, 'id', id] })
+      qc.removeQueries({ queryKey: ['notes', 'local', 'detail', ownerScope, 'any', id] })
       qc.invalidateQueries({ queryKey: LIST_KEY })
       void triggerNoteSync()
     },

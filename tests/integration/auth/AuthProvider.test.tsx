@@ -1,4 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { PropsWithChildren } from 'react';
 import type { Session } from '@supabase/supabase-js';
 
@@ -42,7 +43,13 @@ const mockSignUp = supabase.auth.signUp as jest.Mock;
 const mockOnAuthStateChange = supabase.auth.onAuthStateChange as jest.Mock;
 const mockUnsubscribe = jest.fn();
 
-const wrapper = ({ children }: PropsWithChildren) => <AuthProvider>{children}</AuthProvider>;
+let queryClient: QueryClient;
+
+const wrapper = ({ children }: PropsWithChildren) => (
+    <QueryClientProvider client={queryClient}>
+        <AuthProvider>{children}</AuthProvider>
+    </QueryClientProvider>
+);
 
 async function renderAuth() {
     const rendered = await renderHook(() => useAuth(), { wrapper });
@@ -52,6 +59,9 @@ async function renderAuth() {
 
 describe('AuthProvider', () => {
     beforeEach(() => {
+        queryClient = new QueryClient({
+            defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+        });
         mockGetSession.mockResolvedValue({ data: { session: null }, error: null });
         mockSignInWithPassword.mockResolvedValue({ error: null });
         mockSignOut.mockResolvedValue({ error: null });
@@ -62,6 +72,7 @@ describe('AuthProvider', () => {
     });
 
     afterEach(() => {
+        queryClient.clear();
         jest.clearAllMocks();
     });
 

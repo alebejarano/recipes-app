@@ -1,5 +1,5 @@
 import { assertCanAddImport } from '../importsStorage';
-import { getFirstAsync } from '@/lib/sqlite';
+import { getFirstAsync, runSqlBatchAsync } from '@/lib/sqlite';
 import {
     FREE_PLAN_MAX_IMPORT_FILE_BYTES,
     FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
@@ -20,9 +20,11 @@ jest.mock('@/lib/sqlite', () => ({
 jest.mock('@/lib/localSqliteMigration', () => ({ ensureLocalSqliteMigrationReady: jest.fn() }));
 
 const mockGetFirst = getFirstAsync as jest.Mock;
+const mockRunSqlBatch = runSqlBatchAsync as jest.Mock;
 
 describe('assertCanAddImport', () => {
     beforeEach(() => {
+        mockRunSqlBatch.mockResolvedValue(undefined);
         mockGetFirst.mockImplementation(async (sql: string) => {
             if (sql.includes('COUNT(*)')) return { totalCount: 1, totalBytes: 0 };
             return { bytes: 0 };

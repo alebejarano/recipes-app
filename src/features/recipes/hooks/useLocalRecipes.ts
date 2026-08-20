@@ -59,14 +59,16 @@ export function useCreateLocalRecipe() {
 }
 
 export function useUpdateLocalRecipe(id: string) {
+  const { user } = useAuth()
   const { isPremium } = useStorageStrategy()
   const plan = isPremium ? 'premium' : 'free'
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (values: RecipeFormSubmitValues) => updateLocalRecipe(id, values, { plan }),
     onSuccess: (recipe) => {
-      qc.setQueryData(['recipes', 'local', 'detail', 'id', id], recipe)
-      qc.setQueryData(['recipes', 'local', 'detail', 'any', id], recipe)
+      const ownerScope = user?.id ?? 'guest'
+      qc.setQueryData(['recipes', 'local', 'detail', ownerScope, 'id', id], recipe)
+      qc.setQueryData(['recipes', 'local', 'detail', ownerScope, 'any', id], recipe)
       qc.invalidateQueries({ queryKey: LIST_KEY })
       void triggerRecipeSync()
     },
@@ -74,11 +76,14 @@ export function useUpdateLocalRecipe(id: string) {
 }
 
 export function useDeleteLocalRecipe() {
+  const { user } = useAuth()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteLocalRecipe(id),
     onSuccess: (_data, id) => {
-      qc.removeQueries({ queryKey: ['recipes', 'local', 'detail', id] })
+      const ownerScope = user?.id ?? 'guest'
+      qc.removeQueries({ queryKey: ['recipes', 'local', 'detail', ownerScope, 'id', id] })
+      qc.removeQueries({ queryKey: ['recipes', 'local', 'detail', ownerScope, 'any', id] })
       qc.invalidateQueries({ queryKey: LIST_KEY })
       void triggerRecipeSync()
     },

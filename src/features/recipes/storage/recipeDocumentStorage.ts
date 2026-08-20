@@ -11,6 +11,7 @@ import {
   resolveImportBytes,
   removeImportByUri,
 } from '@/features/recipes/storage/importsStorage'
+import { getLocalDataOwnerFilter } from '@/features/storage/localDataScope'
 
 export type RecipeDocument = {
   id: string
@@ -223,6 +224,7 @@ export async function findDuplicateRecipeDocumentByFile(input: {
 export async function listRecipeDocuments(): Promise<RecipeDocument[]> {
   await ensureRecipeDocumentStorageReady()
   await ensureLocalRecipeDocumentCleanup()
+  const ownerFilter = getLocalDataOwnerFilter()
   const rows = await getAllAsync<{
     id: string
     title: string | null
@@ -230,7 +232,10 @@ export async function listRecipeDocuments(): Promise<RecipeDocument[]> {
     file_uri: string
     file_size: number
     created_at: string
-  }>('SELECT * FROM recipe_documents ORDER BY created_at DESC;')
+  }>(
+    `SELECT * FROM recipe_documents WHERE ${ownerFilter.sql} ORDER BY created_at DESC;`,
+    ownerFilter.params
+  )
   return rows.map((row) => ({
     id: row.id as string,
     title: row.title ?? null,
@@ -244,6 +249,7 @@ export async function listRecipeDocuments(): Promise<RecipeDocument[]> {
 export async function getRecipeDocument(id: string): Promise<RecipeDocument | null> {
   await ensureRecipeDocumentStorageReady()
   await ensureLocalRecipeDocumentCleanup()
+  const ownerFilter = getLocalDataOwnerFilter()
   const row = await getFirstAsync<{
     id: string
     title: string | null
@@ -251,7 +257,7 @@ export async function getRecipeDocument(id: string): Promise<RecipeDocument | nu
     file_uri: string
     file_size: number
     created_at: string
-  }>('SELECT * FROM recipe_documents WHERE id = ?;', [id])
+  }>(`SELECT * FROM recipe_documents WHERE id = ? AND ${ownerFilter.sql};`, [id, ...ownerFilter.params])
   if (!row) return null
   return {
     id: row.id as string,
