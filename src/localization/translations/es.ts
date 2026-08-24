@@ -129,7 +129,8 @@ export const es: TranslationSchema = {
             hideConfirm: 'Ocultar confirmación de contraseña',
         },
         getStarted: {
-            title: 'Tus recetas, por fin organizadas.',
+            titleLead: 'Tus recetas, ',
+            titleAccent: 'por fin organizadas.',
             subtitle: 'No más capturas de pantalla. No más enlaces olvidados. Tus recetas favoritas, siempre a tu alcance.',
             continueAsGuest: 'Continuar como invitado',
             createAccount: 'Crear una cuenta',

@@ -127,7 +127,8 @@ export const en = {
             hideConfirm: 'Hide confirmed password',
         },
         getStarted: {
-            title: 'Your recipes, finally organized.',
+            titleLead: 'Your recipes, ',
+            titleAccent: 'finally organized.',
             subtitle: 'No more screenshots. No more forgotten links. Just your favorite recipes, always within reach.',
             continueAsGuest: 'Continue as guest',
             createAccount: 'Create an account',

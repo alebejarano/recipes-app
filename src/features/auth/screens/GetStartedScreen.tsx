@@ -6,7 +6,7 @@ import { layout } from '@/styles/layout'
 
 import welcomeKitchenIllustration from '@assets/illustrations/welcome-kitchen.png'
 import { useRouter } from 'expo-router'
-import React, { useCallback } from 'react'
+import { useCallback } from 'react'
 import { ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -59,7 +59,10 @@ function Header() {
         />
       </View>
 
-     <Text style={styles.title}>{t('auth.getStarted.title')}</Text>
+      <Text style={styles.title}>
+        <Text style={styles.titleLead}>{t('auth.getStarted.titleLead')}</Text>
+        <Text style={styles.titleAccent}>{t('auth.getStarted.titleAccent')}</Text>
+      </Text>
 
       <Text style={styles.subtitle}>
         {t('auth.getStarted.subtitle')}
@@ -120,27 +123,34 @@ const styles = createThemedStyles((theme) => ({
   content: {
     flexGrow: 1,
     paddingHorizontal: layout.screenPadding,
-    paddingVertical: theme.spacing.xl,
+    paddingVertical: theme.spacing['3xl'],
+    gap: theme.spacing['2xl'],
   },
 
   header: {
     alignItems: 'center',
-    marginBottom: theme.spacing['2xl'],
+    gap: theme.spacing.lg,
   },
 
   illustrationWrap: {
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
   },
 
   title: {
     textAlign: 'center',
     ...theme.textVariants.display,
     fontFamily: theme.fontFamily.bold,
+  },
+
+  titleLead: {
+    color: theme.colors.foreground,
+  },
+
+  titleAccent: {
     color: theme.colors.primary,
-    marginBottom: theme.spacing.xs,
   },
 
   subtitle: {
@@ -148,13 +158,14 @@ const styles = createThemedStyles((theme) => ({
     ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
     maxWidth: 380,
+    lineHeight: theme.lineHeight.lg,
   },
 
   actions: {
     width: '100%',
     maxWidth: 420,
     alignSelf: 'center',
-    gap: layout.listGap,
+    gap: theme.spacing.md,
   },
 
   primaryButton: {
