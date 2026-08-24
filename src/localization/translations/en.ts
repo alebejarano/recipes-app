@@ -127,17 +127,11 @@ export const en = {
             hideConfirm: 'Hide confirmed password',
         },
         getStarted: {
-            title: 'Set up your account',
-            subtitle: 'Create an account to unlock Premium features like sync and backup when you\'re ready.',
-            cardTitle: 'An account lets you:',
-            benefits: {
-                identity: 'Create your personal account',
-                upgrade: 'Upgrade anytime to enable sync and backup',
-                migration: 'Import your existing recipes when you upgrade',
-            },
+            title: 'Your recipes, finally organized.',
+            subtitle: 'No more screenshots. No more forgotten links. Just your favorite recipes, always within reach.',
+            continueAsGuest: 'Continue as guest',
             createAccount: 'Create an account',
             login: 'I already have an account',
-            microCopy: 'Your recipes stay on this device until you upgrade to Premium.',
         },
     },
     profile: {

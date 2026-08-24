@@ -5,26 +5,13 @@ import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
 
 import welcomeKitchenIllustration from '@assets/illustrations/welcome-kitchen.png'
-import { Feather } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
-import React, { memo, useCallback } from 'react'
+import React, { useCallback } from 'react'
 import { ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-type Benefit = {
-  id: string
-  text: string
-}
-
 export default function GetStartedScreen() {
   const router = useRouter()
-  const { t } = useTranslation()
-
-  const benefits: Benefit[] = [
-    { id: 'identity', text: t('auth.getStarted.benefits.identity') },
-    { id: 'upgrade', text: t('auth.getStarted.benefits.upgrade') },
-    { id: 'migration', text: t('auth.getStarted.benefits.migration') },
-  ]
 
   const goToRegister = useCallback(() => {
     router.push('/(public)/register')
@@ -32,6 +19,10 @@ export default function GetStartedScreen() {
 
   const goToLogin = useCallback(() => {
     router.push('/(public)/login')
+  }, [router])
+
+  const continueAsGuest = useCallback(() => {
+    router.replace('/(public)/(tabs)')
   }, [router])
 
   return (
@@ -43,15 +34,11 @@ export default function GetStartedScreen() {
       >
         <Header />
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>{t('auth.getStarted.cardTitle')}</Text>
-
-          <BenefitList benefits={benefits} />
-
-          <Actions onRegister={goToRegister} onLogin={goToLogin} />
-
-          <Text style={styles.microCopy}>{t('auth.getStarted.microCopy')}</Text>
-        </View>
+        <Actions
+          onContinueAsGuest={continueAsGuest}
+          onRegister={goToRegister}
+          onLogin={goToLogin}
+        />
       </ScrollView>
     </SafeAreaView>
   )
@@ -81,32 +68,12 @@ function Header() {
   )
 }
 
-const BenefitList = memo(function BenefitList({ benefits }: { benefits: Benefit[] }) {
-  return (
-    <View style={styles.benefits}>
-      {benefits.map((b) => (
-        <BenefitRow key={b.id} text={b.text} />
-      ))}
-    </View>
-  )
-})
-
-const BenefitRow = memo(function BenefitRow({ text }: { text: string }) {
-  return (
-    <View style={styles.benefitRow}>
-      <View style={styles.benefitIconWrap}>
-        <Feather name="check" size={16} style={styles.benefitIcon} />
-      </View>
-
-      <Text style={styles.benefitText}>{text}</Text>
-    </View>
-  )
-})
-
 function Actions({
+  onContinueAsGuest,
   onRegister,
   onLogin,
 }: {
+  onContinueAsGuest: () => void
   onRegister: () => void
   onLogin: () => void
 }) {
@@ -115,21 +82,30 @@ function Actions({
   return (
     <View style={styles.actions}>
       <Button
-        onPress={onRegister}
+        onPress={onLogin}
         variant="primary"
         size="lg"
         style={styles.primaryButton}
+      >
+        {t('auth.getStarted.login')}
+      </Button>
+
+      <Button
+        onPress={onRegister}
+        variant="secondary"
+        size="lg"
+        style={styles.secondaryButton}
       >
         {t('auth.getStarted.createAccount')}
       </Button>
 
       <Button
-        onPress={onLogin}
-        variant="secondary"
+        onPress={onContinueAsGuest}
+        variant="ghost"
         size="lg"
         style={styles.secondaryButton}
       >
-        {t('auth.getStarted.login')}
+        {t('auth.getStarted.continueAsGuest')}
       </Button>
     </View>
   )
@@ -149,7 +125,7 @@ const styles = createThemedStyles((theme) => ({
 
   header: {
     alignItems: 'center',
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing['2xl'],
   },
 
   illustrationWrap: {
@@ -162,7 +138,8 @@ const styles = createThemedStyles((theme) => ({
   title: {
     textAlign: 'center',
     ...theme.textVariants.display,
-    color: theme.colors.foreground,
+    fontFamily: theme.fontFamily.bold,
+    color: theme.colors.primary,
     marginBottom: theme.spacing.xs,
   },
 
@@ -173,57 +150,10 @@ const styles = createThemedStyles((theme) => ({
     maxWidth: 380,
   },
 
-  card: {
+  actions: {
     width: '100%',
     maxWidth: 420,
     alignSelf: 'center',
-    padding: theme.spacing.xl,
-    borderRadius: theme.radii.lg,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    ...theme.shadows.soft,
-  },
-
-  cardTitle: {
-    ...theme.textVariants.heading,
-    color: theme.colors.foreground,
-    marginBottom: theme.spacing.md,
-  },
-
-  benefits: {
-    marginBottom: theme.spacing.lg,
-  },
-
-  benefitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-
-  benefitIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: theme.radii.lg,
-    backgroundColor: theme.colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: theme.spacing.md,
-  },
-
-  benefitIcon: {
-    color: theme.colors.primaryDark,
-  },
-
-  benefitText: {
-    flex: 1,
-    ...theme.textVariants.body,
-    color: theme.colors.mutedForeground,
-  },
-
-  actions: {
-    marginTop: theme.spacing.md,
-    marginBottom: theme.spacing.md,
     gap: layout.listGap,
   },
 
@@ -233,12 +163,5 @@ const styles = createThemedStyles((theme) => ({
 
   secondaryButton: {
     width: '100%',
-  },
-
-  microCopy: {
-    textAlign: 'center',
-    ...theme.textVariants.caption,
-    color: theme.colors.mutedForeground,
-    marginTop: theme.spacing.xs,
   },
 }))

@@ -7,7 +7,7 @@ export default function AuthLayout() {
   if (isLoading) return null
 
   if (!session) {
-    return <Redirect href="/(public)/login" />
+    return <Redirect href="/(public)/get-started" />
   }
 
   return <Slot />

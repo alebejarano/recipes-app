@@ -129,17 +129,11 @@ export const es: TranslationSchema = {
             hideConfirm: 'Ocultar confirmación de contraseña',
         },
         getStarted: {
-            title: 'Crea tu cuenta',
-            subtitle: 'Crea una cuenta para desbloquear funciones Premium como sincronización y copia de seguridad cuando quieras.',
-            cardTitle: 'Con una cuenta puedes:',
-            benefits: {
-                identity: 'Crear tu cuenta personal',
-                upgrade: 'Actualizar cuando quieras para activar sincronización y copia de seguridad',
-                migration: 'Importar tus recetas actuales cuando te pases a Premium',
-            },
+            title: 'Tus recetas, por fin organizadas.',
+            subtitle: 'No más capturas de pantalla. No más enlaces olvidados. Tus recetas favoritas, siempre a tu alcance.',
+            continueAsGuest: 'Continuar como invitado',
             createAccount: 'Crear una cuenta',
             login: 'Ya tengo una cuenta',
-            microCopy: 'Tus recetas se quedan en este dispositivo hasta que actualices a Premium.',
         },
     },
     profile: {
