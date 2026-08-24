@@ -27,6 +27,13 @@ export function formatMegabytes(bytes: number) {
   return Math.max(0, Math.round(bytes / MEGABYTE))
 }
 
+// Usage is metered in bytes. Do not round it up for the plan screen: doing so
+// can show "50MB / 50MB" while a small amount of storage is still available.
+export function formatUsageMegabytes(bytes: number) {
+  const safeBytes = Math.max(0, bytes)
+  return Math.floor((safeBytes / MEGABYTE) * 100) / 100
+}
+
 export function getRecipeUsageMessage(recipesSaved: number, usageBand: UsageBand) {
   const recipesRemaining = Math.max(FREE_PLAN_MAX_RECIPES - recipesSaved, 0)
 
@@ -89,7 +96,7 @@ export function buildFreePlanUsageSnapshot(recipesSaved: number, storageBytesUse
     storageUsagePercent,
     storageUsageBand,
     storageUsageMessage,
-    storageMbUsed: formatMegabytes(safeStorageBytesUsed),
+    storageMbUsed: formatUsageMegabytes(safeStorageBytesUsed),
     storageMbLimit: formatMegabytes(FREE_PLAN_MAX_IMPORT_TOTAL_BYTES),
     upgradeUsageBand: getUsageBand(Math.max(recipesUsagePercent, storageUsagePercent)),
   }

@@ -16,6 +16,7 @@ import {
 import { triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
 
 const LIST_KEY = ['recipes', 'local', 'list']
+const DOCUMENT_USAGE_KEY = ['recipes', 'documents', 'usage']
 type LocalRecipesListParams = {
   limit?: number
   search?: string
@@ -53,6 +54,7 @@ export function useCreateLocalRecipe() {
         storage_mode: 'local',
       })
       qc.invalidateQueries({ queryKey: LIST_KEY })
+      qc.invalidateQueries({ queryKey: DOCUMENT_USAGE_KEY })
       void triggerRecipeSync()
     },
   })
@@ -70,6 +72,7 @@ export function useUpdateLocalRecipe(id: string) {
       qc.setQueryData(['recipes', 'local', 'detail', ownerScope, 'id', id], recipe)
       qc.setQueryData(['recipes', 'local', 'detail', ownerScope, 'any', id], recipe)
       qc.invalidateQueries({ queryKey: LIST_KEY })
+      qc.invalidateQueries({ queryKey: DOCUMENT_USAGE_KEY })
       void triggerRecipeSync()
     },
   })
@@ -85,6 +88,7 @@ export function useDeleteLocalRecipe() {
       qc.removeQueries({ queryKey: ['recipes', 'local', 'detail', ownerScope, 'id', id] })
       qc.removeQueries({ queryKey: ['recipes', 'local', 'detail', ownerScope, 'any', id] })
       qc.invalidateQueries({ queryKey: LIST_KEY })
+      qc.invalidateQueries({ queryKey: DOCUMENT_USAGE_KEY })
       void triggerRecipeSync()
     },
   })

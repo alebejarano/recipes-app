@@ -64,4 +64,12 @@ describe('buildFreePlanUsageSnapshot', () => {
         expect(snapshot.storageUsagePercent).toBe(100);
         expect(snapshot.upgradeUsageBand).toBe('atLimit');
     });
+
+    it('does not round usage up to 50MB before the byte limit is reached', () => {
+        const snapshot = buildFreePlanUsageSnapshot(0, (50 * 1024 * 1024) - 1);
+
+        expect(snapshot.storageMbUsed).toBe(49.99);
+        expect(snapshot.storageUsageBand).toBe('between95and99');
+        expect(snapshot.storageUsagePercent).toBeLessThan(100);
+    });
 });
