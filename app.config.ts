@@ -22,7 +22,6 @@ const config: ExpoConfig & { newArchEnabled: boolean } = {
   runtimeVersion: {
     policy: 'appVersion',
   },
-  orientation: 'portrait',
   icon: './assets/images/icon.png',
   scheme: 'dropsauce',
   userInterfaceStyle: 'automatic',
