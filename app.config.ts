@@ -38,6 +38,7 @@ const config: ExpoConfig & { newArchEnabled: boolean } = {
     softwareKeyboardLayoutMode: 'resize',
     permissions: [
       'CAMERA',
+      'com.android.vending.BILLING',
     ],
     adaptiveIcon: {
       backgroundColor: '#F7F1E8',
