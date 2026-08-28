@@ -13,6 +13,7 @@ import {
   type CloudRecipeDocumentsPage,
 } from '@/features/recipes/api/recipeDocumentsCloudRepo'
 import { triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
+import { useAuth } from '@/features/auth/context/AuthContext'
 import { useStorageDataMode, type StorageScreenMode } from '@/features/storage/hooks/useStorageDataMode'
 
 const IMPORTS_KEY = ['recipes', 'imports', 'managed']
@@ -45,6 +46,7 @@ function isConnectivityError(error: unknown) {
 
 export function useManagedImports(mode: StorageScreenMode = 'auth') {
   const { isStorageModeReady, shouldUseLocalData } = useStorageDataMode(mode)
+  const { user } = useAuth()
   const query = useInfiniteQuery<
     CloudRecipeDocumentsPage<ManagedImport>,
     Error,
@@ -52,7 +54,7 @@ export function useManagedImports(mode: StorageScreenMode = 'auth') {
     string[],
     CloudRecipeDocumentsCursor | null
   >({
-    queryKey: [...IMPORTS_KEY, shouldUseLocalData ? 'local' : 'cloud'],
+    queryKey: [...IMPORTS_KEY, shouldUseLocalData ? 'local' : 'cloud', user?.id ?? 'guest'],
     initialPageParam: null,
     enabled: isStorageModeReady,
     queryFn: async ({ pageParam }) => {

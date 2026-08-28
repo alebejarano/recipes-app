@@ -11,7 +11,7 @@ import {
   resolveImportBytes,
   removeImportByUri,
 } from '@/features/recipes/storage/importsStorage'
-import { getLocalDataOwnerFilter } from '@/features/storage/localDataScope'
+import { getActiveLocalDataOwner, getLocalDataOwnerFilter } from '@/features/storage/localDataScope'
 
 export type RecipeDocument = {
   id: string
@@ -107,8 +107,8 @@ async function backfillLegacyDocumentImports() {
   await ensureRecipeDocumentStorageReady()
   await ensureImportsStorageReady()
   await runSqlAsync(
-    `INSERT INTO imports (id, kind, file_name, file_uri, bytes, created_at, deleted_at)
-     SELECT lower(hex(randomblob(16))), 'document', rd.file_name, rd.file_uri, rd.file_size, rd.created_at, NULL
+    `INSERT INTO imports (id, kind, file_name, file_uri, bytes, created_at, owner_user_id, deleted_at)
+     SELECT lower(hex(randomblob(16))), 'document', rd.file_name, rd.file_uri, rd.file_size, rd.created_at, rd.owner_user_id, NULL
      FROM recipe_documents rd
      WHERE NOT EXISTS (
        SELECT 1
@@ -206,7 +206,13 @@ export async function findDuplicateRecipeDocumentByFile(input: {
     title: string | null
     file_uri: string
     created_at: string
-  }>('SELECT id, title, file_uri, created_at FROM recipe_documents ORDER BY created_at DESC;')
+  }>(
+    `SELECT id, title, file_uri, created_at
+     FROM recipe_documents
+     WHERE ${getLocalDataOwnerFilter().sql}
+     ORDER BY created_at DESC;`,
+    getLocalDataOwnerFilter().params
+  )
 
   for (const row of rows) {
     const existingFingerprint = await resolveFileFingerprint(row.file_uri)
@@ -347,6 +353,8 @@ export async function addRecipeDocument(input: {
   const fileUri = Platform.OS === 'web' ? input.uri : destination
   const fileSize = resolvedSize
 
+  const ownerUserId = input.ownerUserId ?? getActiveLocalDataOwner()
+
   await runSqlAsync(
     `INSERT INTO recipe_documents
       (id, title, file_name, file_uri, file_size, created_at, owner_user_id, cloud_id, dirty, last_synced_at)
@@ -358,7 +366,7 @@ export async function addRecipeDocument(input: {
       fileUri,
       fileSize,
       createdAt,
-      input.ownerUserId ?? null,
+      ownerUserId,
       input.cloudId ?? null,
       input.synced ? 0 : 1,
       input.synced ? createdAt : null,
@@ -369,6 +377,7 @@ export async function addRecipeDocument(input: {
     fileName: input.name,
     fileUri,
     bytes: fileSize,
+    ownerUserId,
   })
 
   return {

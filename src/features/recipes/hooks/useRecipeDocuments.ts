@@ -24,6 +24,7 @@ import {
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { useStorageDataMode, type StorageScreenMode } from '@/features/storage/hooks/useStorageDataMode'
 import { triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
+import { useAuth } from '@/features/auth/context/AuthContext'
 
 const DOCS_KEY = ['recipes', 'documents']
 const USAGE_KEY = ['recipes', 'documents', 'usage']
@@ -55,6 +56,7 @@ function isConnectivityError(error: unknown) {
 
 export function useRecipeDocuments(mode: StorageScreenMode = 'auth') {
   const { isStorageModeReady, shouldUseLocalData } = useStorageDataMode(mode)
+  const { user } = useAuth()
   const query = useInfiniteQuery<
     CloudRecipeDocumentsPage<RecipeDocument>,
     Error,
@@ -62,7 +64,7 @@ export function useRecipeDocuments(mode: StorageScreenMode = 'auth') {
     string[],
     CloudRecipeDocumentsCursor | null
   >({
-    queryKey: [...DOCS_KEY, shouldUseLocalData ? 'local' : 'cloud'],
+    queryKey: [...DOCS_KEY, shouldUseLocalData ? 'local' : 'cloud', user?.id ?? 'guest'],
     initialPageParam: null,
     enabled: isStorageModeReady,
     queryFn: async ({ pageParam }) => {
@@ -97,8 +99,9 @@ export function useRecipeDocuments(mode: StorageScreenMode = 'auth') {
 
 export function useRecipeDocument(id: string, mode: StorageScreenMode = 'auth') {
   const { isStorageModeReady, shouldUseLocalData } = useStorageDataMode(mode)
+  const { user } = useAuth()
   return useQuery<RecipeDocument | null>({
-    queryKey: [...DOCS_KEY, shouldUseLocalData ? 'local' : 'cloud', id],
+    queryKey: [...DOCS_KEY, shouldUseLocalData ? 'local' : 'cloud', user?.id ?? 'guest', id],
     queryFn: async () => {
       if (shouldUseLocalData) return getRecipeDocument(id)
       try {

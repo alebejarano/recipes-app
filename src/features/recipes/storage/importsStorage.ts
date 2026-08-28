@@ -62,6 +62,7 @@ const MIGRATION_STATEMENTS = [
 
 let migrationsPromise: Promise<void> | null = null
 let documentsBackfillPromise: Promise<void> | null = null
+let documentImportsReconciliationPromise: Promise<void> | null = null
 
 function makeId() {
   return `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
@@ -124,6 +125,60 @@ async function ensureDocumentImportsBackfilled() {
   await documentsBackfillPromise
 }
 
+/**
+ * `imports` is an asset registry, while `recipe_documents` is the source of
+ * truth for document imports. Older builds could leave registry rows behind
+ * after their document was removed, and some backfills did not carry over the
+ * document owner. Those rows must not appear on Home or count toward storage.
+ */
+async function reconcileDocumentImports() {
+  await ensureImportsStorageReady()
+
+  try {
+    await runSqlAsync(
+      `UPDATE imports
+       SET owner_user_id = (
+         SELECT rd.owner_user_id
+         FROM recipe_documents rd
+         WHERE rd.file_uri = imports.file_uri
+         LIMIT 1
+       )
+       WHERE kind = 'document'
+         AND deleted_at IS NULL
+         AND EXISTS (
+           SELECT 1
+           FROM recipe_documents rd
+           WHERE rd.file_uri = imports.file_uri
+         );`
+    )
+
+    await runSqlAsync(
+      `UPDATE imports
+       SET deleted_at = ?
+       WHERE kind = 'document'
+         AND deleted_at IS NULL
+         AND NOT EXISTS (
+           SELECT 1
+           FROM recipe_documents rd
+           WHERE rd.file_uri = imports.file_uri
+         );`,
+      [nowIso()]
+    )
+  } catch {
+    // recipe_documents may not exist in a fresh installation yet.
+  }
+}
+
+async function ensureDocumentImportsReconciled() {
+  if (!documentImportsReconciliationPromise) {
+    documentImportsReconciliationPromise = reconcileDocumentImports().catch((error) => {
+      documentImportsReconciliationPromise = null
+      throw error
+    })
+  }
+  await documentImportsReconciliationPromise
+}
+
 export function isManagedLocalImportImageUri(uri: string | null | undefined) {
   if (!uri) return false
   return uri.startsWith(IMPORT_IMAGES_BASE_URI)
@@ -132,6 +187,7 @@ export function isManagedLocalImportImageUri(uri: string | null | undefined) {
 export async function getImportsUsageSummary(): Promise<ImportsUsageSummary> {
   await ensureImportsStorageReady()
   await ensureDocumentImportsBackfilled()
+  await ensureDocumentImportsReconciled()
   const ownerFilter = getLocalDataOwnerFilter()
   const row = await getFirstAsync<{ totalCount: number; totalBytes: number }>(
     `SELECT COUNT(*) as totalCount, COALESCE(SUM(bytes), 0) as totalBytes
@@ -245,6 +301,7 @@ export async function getActiveImportBytesByUri(fileUri: string): Promise<number
 export async function listManagedImports(): Promise<ManagedImport[]> {
   await ensureImportsStorageReady()
   await ensureDocumentImportsBackfilled()
+  await ensureDocumentImportsReconciled()
   const ownerFilter = getLocalDataOwnerFilter('i.owner_user_id')
   let rows: {
     id: string
@@ -271,7 +328,9 @@ export async function listManagedImports(): Promise<ManagedImport[]> {
       `SELECT i.id, rd.id as document_id, i.kind, rd.title as title, i.file_name, i.file_uri, i.bytes, i.created_at
        FROM imports i
        LEFT JOIN recipe_documents rd ON rd.file_uri = i.file_uri
-       WHERE i.deleted_at IS NULL AND ${ownerFilter.sql}
+       WHERE i.deleted_at IS NULL
+         AND ${ownerFilter.sql}
+         AND (i.kind != 'document' OR rd.id IS NOT NULL)
        ORDER BY i.created_at DESC;`,
       ownerFilter.params
     )

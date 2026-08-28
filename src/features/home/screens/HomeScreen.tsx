@@ -728,9 +728,9 @@ export default function HomeScreen({
         })),
         noteFallbackTitle: t('notes.fallbackTitle'),
         importFallbackTitle: t('home.activity.importFallbackTitle'),
-        limit: isStarterLibrary ? 2 : 4,
+        limit: 3,
       }),
-    [importsQuery.data, isRecipeEmptyWithActivity, isStarterLibrary, t, visibleNotes, visibleRecipes]
+    [importsQuery.data, isRecipeEmptyWithActivity, t, visibleNotes, visibleRecipes]
   );
 
   const root = resolvedMode === 'public' ? '(public)' : '(auth)';
