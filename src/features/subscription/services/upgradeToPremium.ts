@@ -17,6 +17,9 @@ type UpgradeToPremiumArgs = {
   setUpgradeStatus: (nextStatus: UpgradeStatus) => Promise<void>
 }
 
+export const PREMIUM_UPGRADE_MIGRATION_KEY_PREFIX = 'premium:upgrade-migration:completed:'
+let premiumUpgradeInFlight: Promise<void> | null = null
+
 type PremiumUpgradeSyncPayload = {
   billingCycle: BillingCycle
   idempotencyKey: string
@@ -395,7 +398,25 @@ async function reconcileUpgradeCanonicalMappings(params: {
   })
 }
 
+export async function hasCompletedPremiumUpgradeMigration(userId: string): Promise<boolean> {
+  const normalizedUserId = userId.trim()
+  if (!normalizedUserId) return false
+  return (await AsyncStorage.getItem(`${PREMIUM_UPGRADE_MIGRATION_KEY_PREFIX}${normalizedUserId}`)) === '1'
+}
+
 export async function upgradeToPremium(args: UpgradeToPremiumArgs): Promise<void> {
+  if (premiumUpgradeInFlight) return premiumUpgradeInFlight
+
+  const operation = runPremiumUpgrade(args)
+  premiumUpgradeInFlight = operation
+  try {
+    await operation
+  } finally {
+    premiumUpgradeInFlight = null
+  }
+}
+
+async function runPremiumUpgrade(args: UpgradeToPremiumArgs): Promise<void> {
   const userId = args.userId.trim()
   if (!userId) throw new Error('Missing user id for premium upgrade')
 
@@ -454,6 +475,7 @@ export async function upgradeToPremium(args: UpgradeToPremiumArgs): Promise<void
       triggerNoteSync(),
       triggerFolderSync(),
     ])
+    await AsyncStorage.setItem(`${PREMIUM_UPGRADE_MIGRATION_KEY_PREFIX}${userId}`, '1')
     await args.setUpgradeStatus('idle')
   } catch (error) {
     await args.setUpgradeStatus('failed')

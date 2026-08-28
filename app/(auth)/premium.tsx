@@ -10,6 +10,7 @@ import { SubscriptionContext } from '@/features/subscription/context/Subscriptio
 import PremiumScreen from '@/features/subscription/screens/PremiumScreen'
 import PremiumSuccessModal from '@/features/subscription/components/PremiumSuccessModal'
 import { REVENUECAT_ENTITLEMENT_ID } from '@/features/subscription/constants/revenueCat'
+import { upgradeToPremium } from '@/features/subscription/services/upgradeToPremium'
 import { createThemedStyles } from '@/styles/createStyles'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
@@ -54,6 +55,8 @@ export default function PremiumRoute() {
     purchasePackageForBillingCycle,
     presentPaywall,
     refreshCustomerInfo,
+    setPlan,
+    setUpgradeStatus,
     upgradeStatus,
   } = useContext(SubscriptionContext)
   const isUpgrading = upgradeStatus === 'running'
@@ -121,6 +124,13 @@ export default function PremiumRoute() {
         shouldHoldRedirectRef.current = false
         return
       }
+
+      await upgradeToPremium({
+        userId: user.id,
+        billingCycle: selectedBillingCycle,
+        setPlan,
+        setUpgradeStatus,
+      })
 
       captureAnalyticsEvent('purchase_succeeded', {
         plan: 'premium',

@@ -441,7 +441,6 @@ export const en = {
             manage: 'Manage Subscription',
             upgrading: 'Upgrading...',
             unlock: 'Unlock Premium',
-            trust: 'It\'s EUR 5. Not 4.99. Yes, we rounded it. We cook honestly.',
             authRequiredTitle: 'Create account first',
             authRequiredMessage: 'Sign in or create an account to upgrade to Premium.',
             upgradeFailedTitle: 'Upgrade failed',

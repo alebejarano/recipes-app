@@ -443,7 +443,6 @@ export const es: TranslationSchema = {
             manage: 'Gestionar suscripción',
             upgrading: 'Actualizando...',
             unlock: 'Desbloquear Premium',
-            trust: 'Son 5 EUR. No 4.99. Sí, redondeamos. Cocinamos con honestidad.',
             authRequiredTitle: 'Crea una cuenta primero',
             authRequiredMessage: 'Inicia sesión o crea una cuenta para pasarte a Premium.',
             upgradeFailedTitle: 'No se pudo actualizar',

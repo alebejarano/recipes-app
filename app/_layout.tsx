@@ -14,6 +14,7 @@ import { OnboardingProvider } from '@/features/onboarding/context/OnboardingCont
 import { ensureRecipePdfStorageReady } from '@/features/recipes/storage/recipePdfStorage'
 import RecipeSyncBootstrap from '@/features/recipes/sync/RecipeSyncBootstrap'
 import { StorageStrategyProvider } from '@/features/storage/context/StorageStrategyContext'
+import PremiumUpgradeMigrationBootstrap from '@/features/subscription/components/PremiumUpgradeMigrationBootstrap'
 import { SubscriptionProvider } from '@/features/subscription/context/SubscriptionContext'
 import { runLocalMigrations } from '@/lib/localMigrations'
 import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
@@ -58,6 +59,7 @@ export default function RootLayout() {
         <AuthProvider>
           <SubscriptionProvider>
             <StorageStrategyProvider>
+              <PremiumUpgradeMigrationBootstrap />
               <RecipeSyncBootstrap />
               <OnboardingProvider>
                 <Slot />

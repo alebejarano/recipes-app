@@ -30,14 +30,15 @@ const StorageStrategyContext = createContext<StorageStrategyContextValue>({
 
 export function StorageStrategyProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
-  const { isLoaded, plan } = useContext(SubscriptionContext)
+  const { isLoaded, plan, upgradeStatus } = useContext(SubscriptionContext)
 
   const value = useMemo<StorageStrategyContextValue>(() => {
     const isAuthenticated = Boolean(user)
     const isPremium = isAuthenticated && plan === 'premium'
+    const shouldKeepUsingLocalData = upgradeStatus === 'running' || upgradeStatus === 'failed'
     const strategy: StorageStrategy = !isAuthenticated
       ? 'anonymous-local'
-      : isPremium
+      : isPremium && !shouldKeepUsingLocalData
         ? 'cloud-sync-offline-cache'
         : 'account-local-migratable'
 
@@ -50,7 +51,7 @@ export function StorageStrategyProvider({ children }: { children: React.ReactNod
       localFirst: strategy !== 'cloud-sync-offline-cache',
       cloudSyncEnabled: strategy === 'cloud-sync-offline-cache',
     }
-  }, [isLoaded, plan, user])
+  }, [isLoaded, plan, upgradeStatus, user])
 
   return <StorageStrategyContext.Provider value={value}>{children}</StorageStrategyContext.Provider>
 }

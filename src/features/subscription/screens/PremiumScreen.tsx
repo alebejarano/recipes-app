@@ -150,12 +150,6 @@ export default function PremiumScreen({
           {isUpgrading ? t('subscription.premium.upgrading') : t('subscription.premium.unlock')}
         </Button>
       )}
-      {!isActive ? (
-        <Text style={styles.trustText}>
-          {t('subscription.premium.trust')}
-        </Text>
-      ) : null}
-
     </Screen>
   )
 }
@@ -298,12 +292,5 @@ const styles = createThemedStyles((theme) => ({
     width: '100%',
     maxWidth: 320,
     marginTop: theme.spacing['2xl'],
-  },
-  trustText: {
-    marginTop: theme.spacing.md,
-    textAlign: 'center',
-    maxWidth: 320,
-    ...theme.textVariants.caption,
-    color: theme.colors.mutedForeground,
   },
 }))

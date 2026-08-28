@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Platform } from 'react-native'
 import Purchases, {
   CustomerInfo,
@@ -54,6 +55,7 @@ type SubscriptionContextValue = {
 }
 
 const IS_REVENUECAT_NATIVE_PLATFORM = Platform.OS === 'ios' || Platform.OS === 'android'
+const PLAN_KEY_PREFIX = 'subscription:plan:user:'
 let hasConfiguredRevenueCat = false
 
 function getRevenueCatApiKey() {
@@ -404,13 +406,19 @@ export function SubscriptionProvider({
     await RevenueCatUI.presentCustomerCenter()
   }, [])
 
-  const setPlan = useCallback(async () => {
-    // RevenueCat is the source of truth for entitlement state.
-  }, [])
-
   const activeEntitlement = getActiveEntitlement(customerInfo)
   const plan: Plan = activeEntitlement ? 'premium' : 'free'
   const billingCycle = inferBillingCycle(customerInfo, currentOffering)
+
+  const setPlan = useCallback(async (nextPlan: Plan) => {
+    if (!user?.id) return
+    await AsyncStorage.setItem(`${PLAN_KEY_PREFIX}${user.id}`, nextPlan)
+  }, [user])
+
+  useEffect(() => {
+    if (!isLoaded || !user?.id) return
+    void AsyncStorage.setItem(`${PLAN_KEY_PREFIX}${user.id}`, plan)
+  }, [isLoaded, plan, user])
 
   const value = useMemo(
     () => ({
