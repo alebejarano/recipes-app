@@ -690,14 +690,18 @@ export async function mergeCloudRecipesIntoLocal(params: {
   )
 
   const byCloudId = new Map<string, LocalRecipeRow>()
+  const byLocalId = new Map<string, LocalRecipeRow>()
   for (const row of existingRows) {
+    byLocalId.set(row.id, row)
     if (row.cloud_id) {
       byCloudId.set(row.cloud_id, row)
     }
   }
 
   for (const cloudRecipe of cloudRecipes) {
-    const existing = byCloudId.get(cloudRecipe.id)
+    const existing =
+      byCloudId.get(cloudRecipe.id) ??
+      (cloudRecipe.clientId ? byLocalId.get(cloudRecipe.clientId) : undefined)
     if (existing) {
       if (existing.dirty === 1) continue
 
@@ -747,6 +751,7 @@ export async function mergeCloudRecipesIntoLocal(params: {
           existing.id,
         ]
       )
+      byCloudId.set(cloudRecipe.id, existing)
       continue
     }
 

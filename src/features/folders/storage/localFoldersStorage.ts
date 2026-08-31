@@ -257,14 +257,18 @@ export async function mergeCloudFoldersIntoLocal(params: {
   )
 
   const byCloudId = new Map<string, LocalFolderRow>()
+  const byLocalId = new Map<string, LocalFolderRow>()
   for (const row of existingRows) {
+    byLocalId.set(row.id, row)
     if (row.cloud_id) {
       byCloudId.set(row.cloud_id, row)
     }
   }
 
   for (const cloudFolder of cloudFolders) {
-    const existing = byCloudId.get(cloudFolder.id)
+    const existing =
+      byCloudId.get(cloudFolder.id) ??
+      (cloudFolder.clientId ? byLocalId.get(cloudFolder.clientId) : undefined)
     if (existing) {
       if (existing.dirty === 1) continue
 
@@ -292,6 +296,7 @@ export async function mergeCloudFoldersIntoLocal(params: {
           existing.id,
         ]
       )
+      byCloudId.set(cloudFolder.id, existing)
       continue
     }
 

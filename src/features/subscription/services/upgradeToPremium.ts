@@ -7,7 +7,6 @@ import { triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
 import { markLocalFolderSynced } from '@/features/folders/storage/localFoldersStorage'
 import { markLocalNoteSynced } from '@/features/notes/storage/localNotesStorage'
 import { markLocalRecipeSynced } from '@/features/recipes/storage/localRecipesStorage'
-import { migrateLocalDataToCloudOnPremium } from '@/features/sync/premiumMigration'
 import type { BillingCycle, Plan, UpgradeStatus } from '@/features/subscription/context/SubscriptionContext'
 import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
 import { getAllAsync, runSqlAsync } from '@/lib/sqlite'
@@ -454,16 +453,20 @@ async function runPremiumUpgrade(args: UpgradeToPremiumArgs): Promise<void> {
     })
 
     if (error) {
-      // Temporary fallback while premium-upgrade-sync is being introduced.
       const details = await extractInvokeErrorDetails(error)
-      if (!isFunctionMissingError(error) && !isBackendRolloutMismatch(error, details)) {
-        const normalizedMessage =
-          details ||
-          String((error as { message?: unknown })?.message ?? '') ||
-          'Premium upgrade sync failed'
-        throw new Error(normalizedMessage)
+      if (isFunctionMissingError(error) || isBackendRolloutMismatch(error, details)) {
+        // Do not fall back to one-by-one creates here. That path cannot atomically
+        // attach each local record to its cloud record, so retrying it can duplicate
+        // a user's recipes or folders. A later retry of the idempotent function is safe.
+        throw new Error(
+          'Your subscription is active, but your kitchen could not be backed up yet. Please try again in a moment.'
+        )
       }
-      await migrateLocalDataToCloudOnPremium(userId)
+      const normalizedMessage =
+        details ||
+        String((error as { message?: unknown })?.message ?? '') ||
+        'Premium upgrade sync failed'
+      throw new Error(normalizedMessage)
     } else {
       await reconcileUpgradeCanonicalMappings({
         userId,

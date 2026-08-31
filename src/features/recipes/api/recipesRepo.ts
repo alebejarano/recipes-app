@@ -22,6 +22,7 @@ async function requireAuth() {
 export type Recipe = {
   id: string
   userId: string
+  clientId: string | null
 
   title: string
   subtitle: string | null
@@ -61,6 +62,7 @@ export type RecipeFolder = {
 type RecipeRow = {
   id: string
   user_id: string
+  client_id: string | null
   title: string
   subtitle: string | null
   description: string | null
@@ -185,6 +187,7 @@ function mapRecipe(row: RecipeRow): Recipe {
   return {
     id: row.id,
     userId: row.user_id,
+    clientId: row.client_id ?? null,
     title: row.title,
     subtitle: row.subtitle,
     description: row.description,
@@ -298,6 +301,7 @@ export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
       `
       id,
       user_id,
+      client_id,
       title,
       subtitle,
       description,
@@ -357,6 +361,7 @@ export async function getRecipeById(id: string): Promise<Recipe> {
       `
         id,
         user_id,
+        client_id,
         title,
         subtitle,
         description,
@@ -415,6 +420,7 @@ export async function listRecipes(params?: {
       `
       id,
       user_id,
+      client_id,
       title,
       subtitle,
       description,

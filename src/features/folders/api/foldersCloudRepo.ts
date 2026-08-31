@@ -13,6 +13,7 @@ async function requireAuth() {
 
 export type Folder = {
   id: string
+  clientId: string | null
   name: string
   emoji: string
   createdAt: string
@@ -20,6 +21,7 @@ export type Folder = {
 
 type FolderRow = {
   id: string
+  client_id: string | null
   name: string
   emoji: string | null
   created_at: string
@@ -28,6 +30,7 @@ type FolderRow = {
 function mapFolder(row: FolderRow): Folder {
   return {
     id: row.id,
+    clientId: row.client_id ?? null,
     name: row.name,
     emoji: row.emoji ?? '📁',
     createdAt: row.created_at,
@@ -42,7 +45,7 @@ function isFavoritesFolderName(name: string) {
 export async function listFolders(): Promise<Folder[]> {
   const { data, error } = await supabase
     .from('folders')
-    .select('id,name,emoji,created_at')
+    .select('id,client_id,name,emoji,created_at')
     .order('name', { ascending: true })
 
   if (error) throw error
@@ -59,7 +62,7 @@ export async function createFolder(input: { name: string; emoji?: string | null 
   const { data, error } = await supabase
     .from('folders')
     .insert({ user_id: user.id, name, emoji })
-    .select('id,name,emoji,created_at')
+    .select('id,client_id,name,emoji,created_at')
     .single()
 
   if (error) throw error
@@ -89,7 +92,7 @@ export async function updateFolder(input: {
     .from('folders')
     .update({ name, emoji })
     .eq('id', input.id)
-    .select('id,name,emoji,created_at')
+    .select('id,client_id,name,emoji,created_at')
     .single()
 
   if (error) throw error
