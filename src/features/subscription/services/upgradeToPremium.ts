@@ -1,3 +1,5 @@
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
 import { supabase } from '@/lib/supabase'
 import { triggerFolderSync } from '@/features/folders/sync/folderSync'
 import { triggerNoteSync } from '@/features/notes/sync/noteSync'
