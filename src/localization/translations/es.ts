@@ -508,7 +508,7 @@ export const es: TranslationSchema = {
             premium: 'Premium',
             recommended: 'Recomendado',
             unlockPremium: 'Desbloquear Premium',
-            pricing: '€5/mes · €36/año',
+            pricing: '%{monthly}/mes · %{yearly}/año',
             backupNote: 'Tus recetas se guardarán de forma segura en la nube.',
             nothingDeleted: 'No se eliminará nada.',
             cancelAnytime: 'Cancela cuando quieras.',

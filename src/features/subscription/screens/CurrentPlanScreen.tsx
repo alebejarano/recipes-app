@@ -26,6 +26,7 @@ type CurrentPlanScreenProps = {
   onManageSubscription?: () => void
   premiumPlanLabel?: string
   premiumNextRenewalLabel?: string
+  premiumPricingLabel?: string | null
 }
 
 type FeatureItem = {
@@ -172,6 +173,7 @@ export default function CurrentPlanScreen({
   onManageSubscription,
   premiumPlanLabel = '€5/month',
   premiumNextRenewalLabel = i18n.t('subscription.premium.renewsOn', { date: 'Mar 27, 2026' }),
+  premiumPricingLabel,
 }: CurrentPlanScreenProps) {
   const recipesQuery = useStrategyRecipesList({ limit: 2000 }, mode)
   const storageUsageQuery = useRecipeDocumentUsageSummary()
@@ -325,7 +327,9 @@ export default function CurrentPlanScreen({
         <Button onPress={onUpgrade} variant="premium" size="xl" style={styles.ctaButton}>
           {i18n.t('subscription.currentPlan.unlockPremium')}
         </Button>
-        <Text style={styles.pricingText}>{i18n.t('subscription.currentPlan.pricing')}</Text>
+        {premiumPricingLabel ? (
+          <Text style={styles.pricingText}>{premiumPricingLabel}</Text>
+        ) : null}
 
         <View style={styles.ctaNotes}>
           <Text style={styles.ctaNote}>{i18n.t('subscription.currentPlan.backupNote')}</Text>

@@ -27,12 +27,21 @@ export default function AuthCurrentPlanRoute() {
   const activeEntitlement =
     customerInfo?.entitlements.active[REVENUECAT_ENTITLEMENT_ID] ?? null
   const activePackage = getPackageForBillingCycle(billingCycle)
+  const monthlyPackage = getPackageForBillingCycle('month')
+  const yearlyPackage = getPackageForBillingCycle('year')
   const premiumPlanLabel = activePackage?.product.priceString
     ? `${activePackage.product.priceString}${billingCycle === 'year' ? '/year' : '/month'}`
     : billingCycle === 'year'
       ? '€36/year'
       : '€5/month'
   const premiumNextRenewalLabel = formatRenewalLabel(activeEntitlement?.expirationDate ?? null)
+  const premiumPricingLabel =
+    monthlyPackage?.product.priceString && yearlyPackage?.product.priceString
+      ? i18n.t('subscription.currentPlan.pricing', {
+          monthly: monthlyPackage.product.priceString,
+          yearly: yearlyPackage.product.priceString,
+        })
+      : null
 
   return (
     <CurrentPlanScreen
@@ -46,6 +55,7 @@ export default function AuthCurrentPlanRoute() {
       }}
       premiumPlanLabel={premiumPlanLabel}
       premiumNextRenewalLabel={premiumNextRenewalLabel}
+      premiumPricingLabel={premiumPricingLabel}
     />
   )
 }

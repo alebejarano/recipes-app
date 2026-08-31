@@ -506,7 +506,7 @@ export const en = {
             premium: 'Premium',
             recommended: 'Recommended',
             unlockPremium: 'Unlock Premium',
-            pricing: '€5/month · €36/year',
+            pricing: '%{monthly}/month · %{yearly}/year',
             backupNote: 'Your recipes will be safely backed up to the cloud.',
             nothingDeleted: 'Nothing will be deleted.',
             cancelAnytime: 'Cancel anytime.',
