@@ -7,7 +7,7 @@ import React, {
   useState,
 } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { Platform } from 'react-native'
+import { AppState, Platform } from 'react-native'
 import Purchases, {
   CustomerInfo,
   LOG_LEVEL,
@@ -217,6 +217,20 @@ export function SubscriptionProvider({
     setCustomerInfo(nextCustomerInfo)
     return nextCustomerInfo
   }, [])
+
+  useEffect(() => {
+    if (!IS_REVENUECAT_NATIVE_PLATFORM || !isLoaded || !hasConfiguredRevenueCat) return
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        void refreshCustomerInfo().catch(() => {
+          // Keep the last known entitlement until RevenueCat can be reached.
+        })
+      }
+    })
+
+    return () => subscription.remove()
+  }, [isLoaded, refreshCustomerInfo])
 
   useEffect(() => {
     if (!IS_REVENUECAT_NATIVE_PLATFORM) {

@@ -76,10 +76,19 @@ export function useRecipeDocuments(mode: StorageScreenMode = 'auth') {
       }
 
       try {
-        return await listCloudRecipeDocumentsPage({
+        const cloudPage = await listCloudRecipeDocumentsPage({
           cursor: pageParam,
           limit: CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
         })
+
+        // Retain access to device-local imports while their initial Premium
+        // upload is still pending or being retried.
+        if (pageParam || cloudPage.items.length > 0) return cloudPage
+
+        return {
+          items: await listRecipeDocuments(),
+          nextCursor: null,
+        }
       } catch (error) {
         if (!isConnectivityError(error)) throw error
         return {
@@ -104,6 +113,13 @@ export function useRecipeDocument(id: string, mode: StorageScreenMode = 'auth') 
     queryKey: [...DOCS_KEY, shouldUseLocalData ? 'local' : 'cloud', user?.id ?? 'guest', id],
     queryFn: async () => {
       if (shouldUseLocalData) return getRecipeDocument(id)
+
+      // Cloud and local documents use different IDs. When the list falls back
+      // to locally retained imports, resolve that record before asking the
+      // cloud API for the same ID.
+      const localDocument = await getRecipeDocument(id)
+      if (localDocument) return localDocument
+
       try {
         return await getCloudRecipeDocument(id)
       } catch (error) {
@@ -129,7 +145,11 @@ export function useRecipeDocumentUsageSummary(options?: {
     queryFn: async () => {
       if (!useCloudUsage) return getRecipeDocumentUsageSummary()
       try {
-        return await getCloudRecipeDocumentUsageSummary()
+        const cloudUsage = await getCloudRecipeDocumentUsageSummary()
+        if (cloudUsage.totalCount > 0) return cloudUsage
+
+        const localUsage = await getRecipeDocumentUsageSummary()
+        return localUsage.totalCount > 0 ? localUsage : cloudUsage
       } catch (error) {
         if (!isConnectivityError(error)) throw error
         return getRecipeDocumentUsageSummary()
@@ -171,8 +191,12 @@ export function useDeleteRecipeDocument(mode: StorageScreenMode = 'auth') {
   const qc = useQueryClient()
   const { shouldUseLocalData } = useStorageDataMode(mode)
   return useMutation({
-    mutationFn: (id: string) =>
-      shouldUseLocalData ? deleteRecipeDocument(id) : deleteCloudRecipeDocument(id),
+    mutationFn: async (id: string) => {
+      if (shouldUseLocalData || await getRecipeDocument(id)) {
+        return deleteRecipeDocument(id)
+      }
+      return deleteCloudRecipeDocument(id)
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: DOCS_KEY })
       qc.invalidateQueries({ queryKey: USAGE_KEY })
@@ -185,10 +209,12 @@ export function useUpdateRecipeDocumentTitle(mode: StorageScreenMode = 'auth') {
   const { shouldUseLocalData } = useStorageDataMode(mode)
 
   return useMutation({
-    mutationFn: (input: { id: string; title: string }) =>
-      shouldUseLocalData
-        ? updateRecipeDocumentTitle(input)
-        : updateCloudRecipeDocumentTitle(input),
+    mutationFn: async (input: { id: string; title: string }) => {
+      if (shouldUseLocalData || await getRecipeDocument(input.id)) {
+        return updateRecipeDocumentTitle(input)
+      }
+      return updateCloudRecipeDocumentTitle(input)
+    },
     onSuccess: (_, input) => {
       qc.invalidateQueries({ queryKey: DOCS_KEY })
       qc.invalidateQueries({ queryKey: MANAGED_IMPORTS_KEY })

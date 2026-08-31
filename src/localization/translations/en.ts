@@ -306,6 +306,7 @@ export const en = {
             sectionTitle: 'Email Updates',
             updated: 'Email settings updated',
             failedTitle: 'Unable to save email settings',
+            unavailable: 'Email settings are temporarily unavailable. Please try again later.',
             noAccount: 'Create an account to receive emails',
             weeklyTitle: 'Weekly digest',
             weeklySubtitle: 'Recipes and curated collections',

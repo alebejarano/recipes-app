@@ -59,5 +59,8 @@ export function getUserFacingErrorMessage(error: unknown, fallback = 'Please try
     return message
   }
 
-  return message.length <= 140 ? message : fallback
+  // Unexpected backend, database, and SDK errors can expose implementation
+  // details (for example table names or schema-cache messages). Only return
+  // messages that have been explicitly identified as useful to customers.
+  return fallback
 }

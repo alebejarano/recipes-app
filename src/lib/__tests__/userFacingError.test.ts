@@ -15,4 +15,13 @@ describe('getUserFacingErrorMessage', () => {
             'Try again later.'
         );
     });
+
+    it('does not expose unexpected database errors', () => {
+        expect(
+            getUserFacingErrorMessage(
+                new Error("Could not find the table 'public.email_preferences' in the schema cache."),
+                'Email settings are temporarily unavailable. Please try again later.'
+            )
+        ).toBe('Email settings are temporarily unavailable. Please try again later.');
+    });
 });

@@ -308,6 +308,7 @@ export const es: TranslationSchema = {
             sectionTitle: 'Actualizaciones por correo',
             updated: 'Configuración de correo actualizada',
             failedTitle: 'No se pudo guardar la configuración de correo',
+            unavailable: 'La configuración de correo no está disponible temporalmente. Inténtalo de nuevo más tarde.',
             noAccount: 'Crea una cuenta para recibir correos',
             weeklyTitle: 'Resumen semanal',
             weeklySubtitle: 'Recetas y colecciones seleccionadas',

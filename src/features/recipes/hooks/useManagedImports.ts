@@ -66,10 +66,20 @@ export function useManagedImports(mode: StorageScreenMode = 'auth') {
       }
 
       try {
-        return await listCloudManagedImportsPage({
+        const cloudPage = await listCloudManagedImportsPage({
           cursor: pageParam,
           limit: CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
         })
+
+        // A user can regain Premium before their device's local imports have
+        // completed their first cloud upload. Keep those files visible rather
+        // than replacing them with an empty cloud list while sync retries.
+        if (pageParam || cloudPage.items.length > 0) return cloudPage
+
+        return {
+          items: await listManagedImports(),
+          nextCursor: null,
+        }
       } catch (error) {
         if (!isConnectivityError(error)) throw error
         return {

@@ -12,6 +12,7 @@ import {
 } from '@/features/profile/api/emailPreferencesRepo'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
 import SettingsSection from '@/features/profile/components/SettingsSection'
+import { getErrorCategory, logOperationalEvent } from '@/lib/productionLogger'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { useTranslation } from '@/localization'
 
@@ -39,7 +40,15 @@ export default function EmailSettingsScreen({ onBack }: EmailSettingsScreenProps
       })
       .catch((error) => {
         if (isMounted) {
-          Alert.alert(t('profile.emailSettings.failedTitle'), getUserFacingErrorMessage(error))
+          logOperationalEvent('request_failed', {
+            operation: 'load_email_preferences',
+            entity: 'email_preferences',
+            category: getErrorCategory(error),
+          })
+          Alert.alert(
+            t('profile.emailSettings.failedTitle'),
+            getUserFacingErrorMessage(error, t('profile.emailSettings.unavailable'))
+          )
         }
       })
       .finally(() => {
@@ -76,7 +85,15 @@ export default function EmailSettingsScreen({ onBack }: EmailSettingsScreenProps
         })
         .catch((e: any) => {
           setPreferences(previousPreferences)
-          Alert.alert(t('profile.emailSettings.failedTitle'), getUserFacingErrorMessage(e))
+          logOperationalEvent('request_failed', {
+            operation: 'update_email_preference',
+            entity: 'email_preferences',
+            category: getErrorCategory(e),
+          })
+          Alert.alert(
+            t('profile.emailSettings.failedTitle'),
+            getUserFacingErrorMessage(e, t('profile.emailSettings.unavailable'))
+          )
         })
         .finally(() => {
           setIsSaving(false)
