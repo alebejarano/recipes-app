@@ -1,7 +1,6 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { PAYWALL_RESULT } from 'react-native-purchases-ui'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { useAnalyticsCapture } from '@/features/analytics/events'
@@ -50,11 +49,8 @@ export default function PremiumRoute() {
     plan,
     billingCycle,
     customerInfo,
-    currentOffering,
     getPackageForBillingCycle,
     purchasePackageForBillingCycle,
-    presentPaywall,
-    refreshCustomerInfo,
     setPlan,
     setUpgradeStatus,
     upgradeStatus,
@@ -95,30 +91,10 @@ export default function PremiumRoute() {
     shouldHoldRedirectRef.current = true
 
     try {
-      let premiumActivated = false
-
-      if (currentOffering) {
-        const paywallResult = await presentPaywall({ offering: currentOffering })
-
-        if (paywallResult === PAYWALL_RESULT.CANCELLED) {
-          shouldHoldRedirectRef.current = false
-          return
-        }
-
-        if (paywallResult === PAYWALL_RESULT.ERROR) {
-          throw new Error('RevenueCat paywall failed to complete the purchase.')
-        }
-
-        const nextCustomerInfo = await refreshCustomerInfo()
-        premiumActivated = Boolean(
-          nextCustomerInfo?.entitlements.active[REVENUECAT_ENTITLEMENT_ID]
-        )
-      } else {
-        const nextCustomerInfo = await purchasePackageForBillingCycle(selectedBillingCycle)
-        premiumActivated = Boolean(
-          nextCustomerInfo.entitlements.active[REVENUECAT_ENTITLEMENT_ID]
-        )
-      }
+      const nextCustomerInfo = await purchasePackageForBillingCycle(selectedBillingCycle)
+      const premiumActivated = Boolean(
+        nextCustomerInfo.entitlements.active[REVENUECAT_ENTITLEMENT_ID]
+      )
 
       if (!premiumActivated) {
         shouldHoldRedirectRef.current = false

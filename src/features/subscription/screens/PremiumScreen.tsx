@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons'
 import React from 'react'
-import { Image, Text, TouchableOpacity, View } from 'react-native'
+import { Text, TouchableOpacity, View } from 'react-native'
 
 import Button from '@/components/Button'
 import { useAnalyticsCapture } from '@/features/analytics/events'
@@ -8,8 +8,11 @@ import Screen from '@/components/Screen'
 import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 
+type BillingCycle = 'month' | 'year'
+type FeatherIconName = React.ComponentProps<typeof Feather>['name']
+
 type PremiumScreenProps = {
-  onUpgrade?: (billingCycle: 'month' | 'year') => void
+  onUpgrade?: (billingCycle: BillingCycle) => void
   onMaybeLater?: () => void
   isActive?: boolean
   isUpgrading?: boolean
@@ -27,24 +30,16 @@ export default function PremiumScreen({
   onManageSubscription,
   monthlyPriceLabel = '€5',
   yearlyPriceLabel = '€36',
-  yearlyMonthlyEquivalentLabel,
 }: PremiumScreenProps) {
   const captureAnalyticsEvent = useAnalyticsCapture()
   const { t } = useTranslation()
-  const [billingCycle, setBillingCycle] = React.useState<'month' | 'year'>('month')
-  const priceValue = billingCycle === 'month' ? monthlyPriceLabel : yearlyPriceLabel
-  const pricePeriod = billingCycle === 'month' ? t('subscription.premium.perMonth') : t('subscription.premium.perYear')
-  const checklistItems = [
-    t('subscription.premium.checklist.neverLose'),
-    t('subscription.premium.checklist.syncDevices'),
-    t('subscription.premium.checklist.unlimited'),
-    t('subscription.premium.checklist.backup'),
-  ]
-  const supportingLines = [
-    t('subscription.premium.supporting.backup'),
-    t('subscription.premium.supporting.access'),
-    t('subscription.premium.supporting.unlimited'),
-    t('subscription.premium.supporting.storage'),
+  const [billingCycle, setBillingCycle] = React.useState<BillingCycle>('year')
+  const benefits: { title: string; description: string; icon: FeatherIconName }[] = [
+    { title: t('subscription.premium.checklist.neverLose'), description: t('subscription.premium.benefitDescriptions.neverLose'), icon: 'bookmark' },
+    { title: t('subscription.premium.checklist.syncDevices'), description: t('subscription.premium.benefitDescriptions.syncDevices'), icon: 'refresh-cw' },
+    { title: t('subscription.premium.checklist.unlimited'), description: t('subscription.premium.benefitDescriptions.unlimited'), icon: 'repeat' },
+    { title: t('subscription.premium.benefitDescriptions.organizedTitle'), description: t('subscription.premium.benefitDescriptions.organized'), icon: 'folder' },
+    { title: t('subscription.premium.benefitDescriptions.storageTitle'), description: t('subscription.premium.benefitDescriptions.storage'), icon: 'database' },
   ]
 
   return (
@@ -56,241 +51,115 @@ export default function PremiumScreen({
         </TouchableOpacity>
       )}
 
-      <Image
-        source={require('@assets/illustrations/hero-kitchen.jpg')}
-        style={styles.heroImage}
-        resizeMode="cover"
-      />
+      <Text style={styles.title}>{t('subscription.premium.includedTitle')}</Text>
 
-      <Text style={styles.title}>{t('subscription.premium.title')}</Text>
-
-      <Text style={styles.subtitle}>
-        {isActive
-          ? t('subscription.premium.subtitleActive')
-          : t('subscription.premium.subtitleInactive')}
-      </Text>
+      <View style={styles.benefitsCard}>
+        {benefits.map((benefit, index) => (
+          <React.Fragment key={benefit.title}>
+            <View style={styles.benefitRow}>
+              <View style={styles.benefitIcon}>
+                <Feather name={benefit.icon} size={24} color={styles.benefitIconGlyph.color} />
+              </View>
+              <View style={styles.benefitCopy}>
+                <Text style={styles.benefitTitle}>{benefit.title}</Text>
+                <Text style={styles.benefitDescription}>{benefit.description}</Text>
+              </View>
+            </View>
+            {index < benefits.length - 1 ? <View style={styles.benefitDivider} /> : null}
+          </React.Fragment>
+        ))}
+      </View>
 
       {!isActive ? (
-        <>
-          <View style={styles.billingToggle}>
-            <TouchableOpacity
-              style={[styles.billingOption, billingCycle === 'month' && styles.billingOptionActive]}
-              onPress={() => setBillingCycle('month')}
-              activeOpacity={0.85}
-            >
-              <Text style={[styles.billingOptionText, billingCycle === 'month' && styles.billingOptionTextActive]}>
-                {t('subscription.premium.monthly')}
-              </Text>
-            </TouchableOpacity>
+        <View style={styles.plansRow}>
+          <TouchableOpacity
+            style={[styles.planCard, billingCycle === 'month' && styles.planCardSelected]}
+            onPress={() => setBillingCycle('month')}
+            activeOpacity={0.85}
+          >
+            <View style={styles.planHeader}>
+              <Text style={[styles.planName, billingCycle === 'month' && styles.planTextSelected]}>{t('subscription.premium.monthly')}</Text>
+              <View style={[styles.selectionIndicator, billingCycle === 'month' && styles.selectionIndicatorSelected]}>
+                {billingCycle === 'month' ? <Feather name="check" size={16} color={styles.selectionCheck.color} /> : null}
+              </View>
+            </View>
+            <View style={styles.planPriceRow}>
+              <Text style={[styles.planPrice, billingCycle === 'month' && styles.planTextSelected]}>{monthlyPriceLabel}</Text>
+              <Text style={[styles.planPeriod, billingCycle === 'month' && styles.planTextSelected]}>{t('subscription.premium.perMonth')}</Text>
+            </View>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.billingOption, billingCycle === 'year' && styles.billingOptionActive]}
-              onPress={() => setBillingCycle('year')}
-              activeOpacity={0.85}
-            >
-              <Text style={[styles.billingOptionText, billingCycle === 'year' && styles.billingOptionTextActive]}>
-                {t('subscription.premium.yearly')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.priceRow}>
-            <Text style={styles.priceValue}>{priceValue}</Text>
-            <Text style={styles.pricePeriod}>{pricePeriod}</Text>
-          </View>
-          {billingCycle === 'year' && yearlyMonthlyEquivalentLabel ? (
-            <Text style={styles.yearlyNote}>{t('subscription.premium.yearlyNote', { price: yearlyMonthlyEquivalentLabel })}</Text>
-          ) : null}
-        </>
+          <TouchableOpacity
+            style={[styles.planCard, styles.yearlyPlanCard, billingCycle === 'year' && styles.planCardSelected]}
+            onPress={() => setBillingCycle('year')}
+            activeOpacity={0.85}
+          >
+            <View style={styles.bestValueBadge}><Text style={styles.bestValueText}>{t('subscription.premium.bestValue')}</Text></View>
+            <View style={styles.planHeader}>
+              <Text style={[styles.planName, styles.yearlyPlanText]}>{t('subscription.premium.yearly')}</Text>
+              <View style={[styles.selectionIndicator, billingCycle === 'year' && styles.selectionIndicatorSelected]}>
+                {billingCycle === 'year' ? <Feather name="check" size={16} color={styles.selectionCheck.color} /> : null}
+              </View>
+            </View>
+            <View style={styles.planPriceRow}>
+              <Text style={[styles.planPrice, styles.yearlyPlanText]}>{yearlyPriceLabel}</Text>
+              <Text style={[styles.planPeriod, styles.yearlyPlanText]}>{t('subscription.premium.perYear')}</Text>
+            </View>
+            <View style={styles.freeMonthsBadge}>
+              <Feather name="gift" size={16} color={styles.freeMonthsText.color} />
+              <Text style={styles.freeMonthsText}>{t('subscription.premium.yearlyFreeMonths')}</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       ) : null}
 
-      <Text style={styles.includedTitle}>{t('subscription.premium.includedTitle')}</Text>
-
-      <View style={styles.featuresList}>
-        {checklistItems.map((item) => (
-          <View key={item} style={styles.featureRow}>
-            <View style={styles.featureLeft}>
-              <Text style={styles.featureCheck}>✔</Text>
-              <Text style={styles.featureTitle}>{item}</Text>
-            </View>
-          </View>
-        ))}
-      </View>
-      <View style={styles.supportingLines}>
-        {supportingLines.map((line) => (
-          <Text key={line} style={styles.featureSubtitle}>
-            {line}
-          </Text>
-        ))}
-      </View>
-
-      {isActive ? (
-        <Button
-          onPress={onManageSubscription ?? (() => {})}
-          variant="secondary"
-          size="xl"
-          style={styles.ctaButton}
-        >
-          {t('subscription.premium.manage')}
-        </Button>
-      ) : (
-        <Button
-          onPress={() => {
-            captureAnalyticsEvent('upgrade_clicked', {
-              surface: 'premium_screen',
-              billing_cycle: billingCycle,
-            })
-            onUpgrade?.(billingCycle)
-          }}
-          variant="premium"
-          size="xl"
-          style={styles.ctaButton}
-          disabled={!onUpgrade || isUpgrading}
-        >
-          {isUpgrading ? t('subscription.premium.upgrading') : t('subscription.premium.unlock')}
-        </Button>
-      )}
+      <Button
+        onPress={isActive ? onManageSubscription ?? (() => {}) : () => {
+          captureAnalyticsEvent('upgrade_clicked', { surface: 'premium_screen', billing_cycle: billingCycle })
+          onUpgrade?.(billingCycle)
+        }}
+        variant={isActive ? "secondary" : "premium"}
+        size="xl"
+        style={styles.ctaButton}
+        disabled={!isActive && (!onUpgrade || isUpgrading)}
+      >
+        {isActive ? t('subscription.premium.manage') : isUpgrading ? t('subscription.premium.upgrading') : t('subscription.premium.unlock')}
+      </Button>
     </Screen>
   )
 }
 
 const styles = createThemedStyles((theme) => ({
-  content: {
-    paddingTop: theme.spacing.sm,
-    paddingBottom: theme.spacing['3xl'],
-    alignItems: 'center',
-    gap: theme.spacing.md,
-  },
-  backRow: {
-    width: '100%',
-    minHeight: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: theme.spacing.sm,
-  },
-  backIcon: {
-    color: theme.colors.mutedForeground,
-  },
-  backText: {
-    marginLeft: theme.spacing.xs,
-    ...theme.textVariants.body,
-    color: theme.colors.mutedForeground,
-  },
-  heroImage: {
-    width: '100%',
-    maxWidth: 390,
-    height: 270,
-    borderRadius: theme.radii.xl,
-  },
-  title: {
-    marginTop: theme.spacing.sm,
-    textAlign: 'center',
-    ...theme.textVariants.hero,
-    color: theme.colors.foreground,
-    maxWidth: 340,
-  },
-  subtitle: {
-    marginTop: theme.spacing.xs,
-    textAlign: 'center',
-    ...theme.textVariants.subtitle,
-    color: theme.colors.mutedForeground,
-    maxWidth: 360,
-  },
-  billingToggle: {
-    marginTop: theme.spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.creamDark,
-    borderRadius: theme.radii.full,
-    padding: theme.spacing.xxs,
-  },
-  billingOption: {
-    minWidth: 116,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.radii.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  billingOptionActive: {
-    backgroundColor: theme.colors.background,
-  },
-  billingOptionText: {
-    ...theme.textVariants.heading,
-    color: theme.colors.mutedForeground,
-  },
-  billingOptionTextActive: {
-    color: theme.colors.foreground,
-  },
-  priceRow: {
-    marginTop: theme.spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  yearlyNote: {
-    marginTop: -theme.spacing.xxs,
-    ...theme.textVariants.body,
-    color: theme.colors.mutedForeground,
-    textAlign: 'center',
-  },
-  priceValue: {
-    fontFamily: theme.fontFamily.bold,
-    fontSize: 64,
-    lineHeight: 72,
-    color: theme.colors.foreground,
-  },
-  pricePeriod: {
-    marginLeft: theme.spacing.sm,
-    marginBottom: theme.spacing.sm,
-    ...theme.textVariants.title,
-    color: theme.colors.mutedForeground,
-  },
-  includedTitle: {
-    marginTop: theme.spacing.xl,
-    textAlign: 'center',
-    ...theme.textVariants.heading,
-    color: theme.colors.foreground,
-  },
-  featuresList: {
-    width: '100%',
-    maxWidth: 320,
-    marginTop: theme.spacing.md,
-    gap: theme.spacing.sm,
-  },
-  featureRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  featureLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: theme.spacing.sm,
-  },
-  featureCheck: {
-    color: theme.colors.primary,
-    ...theme.textVariants.emphasis,
-  },
-  featureTitle: {
-    fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize.base,
-    lineHeight: theme.lineHeight.sm,
-    color: theme.colors.foreground,
-  },
-  supportingLines: {
-    width: '100%',
-    maxWidth: 320,
-    marginTop: theme.spacing.md,
-    gap: theme.spacing.xs,
-  },
-  featureSubtitle: {
-    ...theme.textVariants.caption,
-    color: theme.colors.mutedForeground,
-  },
-  ctaButton: {
-    width: '100%',
-    maxWidth: 320,
-    marginTop: theme.spacing['2xl'],
-  },
+  content: { paddingTop: theme.spacing.md, paddingBottom: theme.spacing['3xl'], alignItems: 'center', gap: theme.spacing.xl },
+  backRow: { alignSelf: 'stretch', minHeight: 44, flexDirection: 'row', alignItems: 'center' },
+  backIcon: { color: theme.colors.mutedForeground },
+  backText: { marginLeft: theme.spacing.xs, ...theme.textVariants.body, color: theme.colors.mutedForeground },
+  title: { textAlign: 'center', ...theme.textVariants.hero, color: theme.colors.foreground },
+  benefitsCard: { width: '100%', maxWidth: 480 },
+  benefitRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.lg, paddingVertical: theme.spacing.lg },
+  benefitIcon: { width: 56, height: 56, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: theme.radii.full, backgroundColor: theme.colors.accent10 },
+  benefitIconGlyph: { color: theme.colors.accent },
+  benefitCopy: { flex: 1, gap: theme.spacing.xs },
+  benefitTitle: { ...theme.textVariants.heading, color: theme.colors.foreground },
+  benefitDescription: { ...theme.textVariants.body, color: theme.colors.mutedForeground },
+  benefitDivider: { height: 1, backgroundColor: theme.colors.border },
+  plansRow: { width: '100%', maxWidth: 480, flexDirection: 'row', alignItems: 'stretch', gap: theme.spacing.md },
+  planCard: { flex: 1, minHeight: 178, padding: theme.spacing.lg, justifyContent: 'space-between', borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.xl, backgroundColor: theme.colors.card },
+  planCardSelected: { borderWidth: 2, borderColor: theme.colors.accent },
+  yearlyPlanCard: { paddingTop: theme.spacing['2xl'] },
+  planHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: theme.spacing.sm },
+  planName: { ...theme.textVariants.heading, color: theme.colors.foreground },
+  planTextSelected: { color: theme.colors.accent },
+  yearlyPlanText: { color: theme.colors.accent },
+  selectionIndicator: { width: 28, height: 28, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: theme.colors.mutedForeground, borderRadius: theme.radii.full },
+  selectionIndicatorSelected: { borderColor: theme.colors.accent, backgroundColor: theme.colors.accent },
+  selectionCheck: { color: theme.colors.accentForeground },
+  planPriceRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', gap: theme.spacing.xs },
+  planPrice: { fontFamily: theme.fontFamily.bold, fontSize: theme.fontSize.display, lineHeight: theme.lineHeight.display, color: theme.colors.foreground },
+  planPeriod: { ...theme.textVariants.body, color: theme.colors.mutedForeground },
+  bestValueBadge: { position: 'absolute', zIndex: 1, top: -theme.spacing.md, alignSelf: 'center', paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.xs, borderRadius: theme.radii.full, backgroundColor: theme.colors.accentLight },
+  bestValueText: { ...theme.textVariants.labelSmall, color: theme.colors.accent },
+  freeMonthsBadge: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
+  freeMonthsText: { ...theme.textVariants.label, color: theme.colors.primary },
+  ctaButton: { width: '100%', maxWidth: 480, marginTop: theme.spacing.xs },
 }))
