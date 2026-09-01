@@ -252,7 +252,7 @@ export async function mergeCloudFoldersIntoLocal(params: {
   const now = new Date().toISOString()
   const cloudIds = new Set(cloudFolders.map((folder) => folder.id))
   const existingRows = await getAllAsync<LocalFolderRow>(
-    'SELECT * FROM local_folders WHERE owner_user_id = ? OR owner_user_id IS NULL;',
+    'SELECT * FROM local_folders WHERE owner_user_id = ?;',
     [ownerUserId]
   )
 
@@ -341,6 +341,36 @@ export async function mergeCloudFoldersIntoLocal(params: {
     if (!cloudIds.has(existing.cloud_id)) {
       await runSqlAsync('DELETE FROM local_folders WHERE id = ?;', [existing.id])
     }
+  }
+}
+
+export async function dedupeLocalFoldersByName(ownerUserId: string) {
+  await ensureLocalSqliteMigrationReady()
+  const owner = ownerUserId.trim()
+  if (!owner) return
+
+  const rows = await getAllAsync<Pick<LocalFolderRow, 'id' | 'name' | 'cloud_id' | 'created_at'>>(
+    `SELECT id, name, cloud_id, created_at
+     FROM local_folders
+     WHERE owner_user_id = ? AND deleted_at IS NULL
+     ORDER BY created_at ASC;`,
+    [owner]
+  )
+  const keeperByName = new Map<string, Pick<LocalFolderRow, 'id' | 'name' | 'cloud_id' | 'created_at'>>()
+
+  for (const row of rows) {
+    const key = row.name.trim().toLocaleLowerCase()
+    if (!key) continue
+    const existing = keeperByName.get(key)
+    if (!existing) {
+      keeperByName.set(key, row)
+      continue
+    }
+
+    const keeper = !existing.cloud_id && row.cloud_id ? row : existing
+    const duplicate = keeper === row ? existing : row
+    keeperByName.set(key, keeper)
+    await runSqlAsync('DELETE FROM local_folders WHERE id = ?;', [duplicate.id])
   }
 }
 

@@ -16,6 +16,7 @@ import {
   deleteRecipeDocument,
   getRecipeDocument,
   getRecipeDocumentUsageSummary,
+  listPendingLocalRecipeDocuments,
   listRecipeDocuments,
   updateRecipeDocumentTitle,
   type PendingRecipeDocument,
@@ -81,13 +82,14 @@ export function useRecipeDocuments(mode: StorageScreenMode = 'auth') {
           limit: CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
         })
 
-        // Retain access to device-local imports while their initial Premium
-        // upload is still pending or being retried.
-        if (pageParam || cloudPage.items.length > 0) return cloudPage
-
+        // Cloud results are authoritative. The only local records allowed in
+        // a Premium list are this account's unsynced offline uploads.
+        if (pageParam) return cloudPage
+        const pendingLocal = await listPendingLocalRecipeDocuments()
+        const cloudIds = new Set(cloudPage.items.map((item) => item.id))
         return {
-          items: await listRecipeDocuments(),
-          nextCursor: null,
+          ...cloudPage,
+          items: [...pendingLocal.filter((item) => !cloudIds.has(item.id)), ...cloudPage.items],
         }
       } catch (error) {
         if (!isConnectivityError(error)) throw error
@@ -114,14 +116,12 @@ export function useRecipeDocument(id: string, mode: StorageScreenMode = 'auth') 
     queryFn: async () => {
       if (shouldUseLocalData) return getRecipeDocument(id)
 
-      // Cloud and local documents use different IDs. When the list falls back
-      // to locally retained imports, resolve that record before asking the
-      // cloud API for the same ID.
-      const localDocument = await getRecipeDocument(id)
-      if (localDocument) return localDocument
-
       try {
-        return await getCloudRecipeDocument(id)
+        const cloudDocument = await getCloudRecipeDocument(id)
+        if (cloudDocument) return cloudDocument
+        // A locally queued import has no cloud ID yet. It remains available on
+        // this device, but never takes precedence over a cloud record.
+        return getRecipeDocument(id)
       } catch (error) {
         if (!isConnectivityError(error)) throw error
         return getRecipeDocument(id)
@@ -146,10 +146,7 @@ export function useRecipeDocumentUsageSummary(options?: {
       if (!useCloudUsage) return getRecipeDocumentUsageSummary()
       try {
         const cloudUsage = await getCloudRecipeDocumentUsageSummary()
-        if (cloudUsage.totalCount > 0) return cloudUsage
-
-        const localUsage = await getRecipeDocumentUsageSummary()
-        return localUsage.totalCount > 0 ? localUsage : cloudUsage
+        return cloudUsage
       } catch (error) {
         if (!isConnectivityError(error)) throw error
         return getRecipeDocumentUsageSummary()

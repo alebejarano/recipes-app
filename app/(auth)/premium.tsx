@@ -55,7 +55,8 @@ export default function PremiumRoute() {
     setUpgradeStatus,
     upgradeStatus,
   } = useContext(SubscriptionContext)
-  const isUpgrading = upgradeStatus === 'running'
+  const [isPurchaseFlowRunning, setIsPurchaseFlowRunning] = useState(false)
+  const isUpgrading = upgradeStatus === 'running' || isPurchaseFlowRunning
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const shouldHoldRedirectRef = useRef(false)
 
@@ -89,6 +90,7 @@ export default function PremiumRoute() {
     if (!user?.id || isUpgrading) return
 
     shouldHoldRedirectRef.current = true
+    setIsPurchaseFlowRunning(true)
 
     try {
       const nextCustomerInfo = await purchasePackageForBillingCycle(selectedBillingCycle)
@@ -98,6 +100,7 @@ export default function PremiumRoute() {
 
       if (!premiumActivated) {
         shouldHoldRedirectRef.current = false
+        setIsPurchaseFlowRunning(false)
         return
       }
 
@@ -113,8 +116,10 @@ export default function PremiumRoute() {
         billing_cycle: selectedBillingCycle,
       })
       setShowSuccessModal(true)
+      setIsPurchaseFlowRunning(false)
     } catch (error) {
       shouldHoldRedirectRef.current = false
+      setIsPurchaseFlowRunning(false)
       if (isPurchaseCancelledError(error)) return
 
       Alert.alert(

@@ -72,7 +72,7 @@ async function runNoteSync() {
   }
 
   for (const row of dirtyRows) {
-    if (row.ownerUserId && row.ownerUserId !== userId) continue
+    if (row.ownerUserId !== userId) continue
 
     try {
       if (row.deletedAt) {

@@ -276,11 +276,12 @@ export async function registerImport(input: {
 
 export async function markImportDeletedByUri(fileUri: string): Promise<void> {
   await ensureImportsStorageReady()
+  const ownerFilter = getLocalDataOwnerFilter()
   await runSqlAsync(
     `UPDATE imports
      SET deleted_at = ?
-     WHERE file_uri = ? AND deleted_at IS NULL;`,
-    [nowIso(), fileUri]
+     WHERE file_uri = ? AND deleted_at IS NULL AND ${ownerFilter.sql};`,
+    [nowIso(), fileUri, ...ownerFilter.params]
   )
 }
 
@@ -367,12 +368,13 @@ export async function listManagedImports(): Promise<ManagedImport[]> {
 
 export async function deleteManagedImport(importId: string): Promise<void> {
   await ensureImportsStorageReady()
+  const ownerFilter = getLocalDataOwnerFilter()
   const row = await getFirstAsync<{ kind: ImportKind; fileUri: string | null }>(
     `SELECT kind, file_uri as fileUri
      FROM imports
-     WHERE id = ? AND deleted_at IS NULL
+     WHERE id = ? AND deleted_at IS NULL AND ${ownerFilter.sql}
      LIMIT 1;`,
-    [importId]
+    [importId, ...ownerFilter.params]
   )
 
   const fileUri = row?.fileUri?.trim() ?? ''
@@ -380,7 +382,10 @@ export async function deleteManagedImport(importId: string): Promise<void> {
 
   if (row?.kind === 'document') {
     try {
-      await runSqlAsync('DELETE FROM recipe_documents WHERE file_uri = ?;', [fileUri])
+      await runSqlAsync(
+        `DELETE FROM recipe_documents WHERE file_uri = ? AND ${ownerFilter.sql};`,
+        [fileUri, ...ownerFilter.params]
+      )
     } catch {
       // recipe_documents may not exist yet in fresh installs.
     }
@@ -390,8 +395,8 @@ export async function deleteManagedImport(importId: string): Promise<void> {
     await runSqlAsync(
       `UPDATE local_recipes
        SET image_url = NULL, updated_at = ?, dirty = 1, version = version + 1
-       WHERE image_url = ? AND deleted_at IS NULL;`,
-      [now, fileUri]
+       WHERE image_url = ? AND deleted_at IS NULL AND ${ownerFilter.sql};`,
+      [now, fileUri, ...ownerFilter.params]
     )
   }
 
@@ -439,7 +444,22 @@ export async function importLocalImage(input: {
 
 export async function removeImportByUri(fileUri: string): Promise<void> {
   await ensureImportsStorageReady()
-  if (fileUri && !isRemoteUri(fileUri)) {
+  const activeOwner = getActiveLocalDataOwner()
+  const otherOwnerFilter = activeOwner
+    ? '(owner_user_id IS NULL OR owner_user_id = \'\' OR owner_user_id != ?)'
+    : '(owner_user_id IS NOT NULL AND owner_user_id != \'\')'
+  const otherOwnerParams = activeOwner ? [activeOwner] : []
+  const otherOwnerReference = await getFirstAsync<{ id: string }>(
+    `SELECT id FROM imports
+     WHERE file_uri = ? AND deleted_at IS NULL AND ${otherOwnerFilter}
+     LIMIT 1;`,
+    [fileUri, ...otherOwnerParams]
+  )
+
+  // A shared device can contain the same copied asset under two account
+  // records. Removing it for one account must not break the other account's
+  // local cache.
+  if (fileUri && !otherOwnerReference && !isRemoteUri(fileUri)) {
     try {
       const file = new File(fileUri)
       if (file.exists) {

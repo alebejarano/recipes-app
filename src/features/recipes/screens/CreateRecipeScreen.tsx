@@ -119,6 +119,17 @@ function isConnectivityError(error: unknown) {
   )
 }
 
+function isCloudEntitlementPendingError(error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message.toLowerCase()
+      : typeof error === 'object' && error && 'message' in error && typeof error.message === 'string'
+        ? error.message.toLowerCase()
+        : ''
+
+  return message.includes('premium plan required for cloud imports')
+}
+
 function normalizeRequestedFolder(value?: string | string[]) {
   const raw = Array.isArray(value) ? value[0] : value
   if (typeof raw !== 'string') return null
@@ -316,7 +327,9 @@ export default function CreateRecipeScreen({
             timeoutMs: FOREGROUND_IMPORT_UPLOAD_TIMEOUT_MS,
           })
         } catch (uploadError) {
-          if (!isConnectivityError(uploadError)) throw uploadError
+          if (!isConnectivityError(uploadError) && !isCloudEntitlementPendingError(uploadError)) {
+            throw uploadError
+          }
           await documentMutation.mutateAsync({
             title: values.title,
             file: normalizedFile,

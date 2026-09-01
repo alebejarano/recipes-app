@@ -4,10 +4,12 @@ import {
   createFolder,
   deleteFolderWithRecipes,
   listFolders,
+  reconcileDuplicateFavoriteFolders,
   updateFolder,
 } from '@/features/folders/api/foldersCloudRepo'
 import {
   listDirtyLocalFolderRowsForSync,
+  dedupeLocalFoldersByName,
   markLocalFolderSynced,
   mergeCloudFoldersIntoLocal,
   purgeLocalFolderRow,
@@ -55,6 +57,10 @@ function isDeleteAlreadyAppliedError(error: unknown) {
   return message.includes('not found') || message.includes('no rows')
 }
 
+function normalizeFolderName(name: string) {
+  return name.trim().toLocaleLowerCase()
+}
+
 async function runFolderSync() {
   const { data, error } = await supabase.auth.getSession()
   if (error) throw error
@@ -64,10 +70,14 @@ async function runFolderSync() {
   const plan = await AsyncStorage.getItem(`${PLAN_KEY_PREFIX}${userId}`)
   if (plan !== 'premium') return
 
+  let cloudFolders = await reconcileDuplicateFavoriteFolders(await listFolders())
+  const cloudFolderByName = new Map(
+    cloudFolders.map((folder) => [normalizeFolderName(folder.name), folder])
+  )
   const dirtyRows = await listDirtyLocalFolderRowsForSync()
 
   for (const row of dirtyRows) {
-    if (row.ownerUserId && row.ownerUserId !== userId) continue
+    if (row.ownerUserId !== userId) continue
 
     try {
       if (row.deletedAt) {
@@ -95,6 +105,15 @@ async function runFolderSync() {
           cloudId: row.cloudId,
         })
       } else {
+        const matchingCloudFolder = cloudFolderByName.get(normalizeFolderName(input.name))
+        if (matchingCloudFolder) {
+          await markLocalFolderSynced({
+            localId: row.id,
+            ownerUserId: userId,
+            cloudId: matchingCloudFolder.id,
+          })
+          continue
+        }
         const created = await createFolder({
           name: input.name,
           emoji: input.emoji,
@@ -104,6 +123,7 @@ async function runFolderSync() {
           ownerUserId: userId,
           cloudId: created.id,
         })
+        cloudFolderByName.set(normalizeFolderName(created.name), created)
       }
     } catch (rowError) {
       if (isConnectivityError(rowError)) return
@@ -112,11 +132,12 @@ async function runFolderSync() {
   }
 
   try {
-    const cloudFolders = await listFolders()
+    cloudFolders = await reconcileDuplicateFavoriteFolders(await listFolders())
     await mergeCloudFoldersIntoLocal({
       ownerUserId: userId,
       cloudFolders,
     })
+    await dedupeLocalFoldersByName(userId)
   } catch (pullError) {
     if (isConnectivityError(pullError)) return
     throw pullError

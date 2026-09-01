@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons'
 import React from 'react'
-import { Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Modal, Text, TouchableOpacity, View } from 'react-native'
 
 import Button from '@/components/Button'
 import { useAnalyticsCapture } from '@/features/analytics/events'
@@ -43,7 +43,8 @@ export default function PremiumScreen({
   ]
 
   return (
-    <Screen scroll contentStyle={styles.content}>
+    <>
+      <Screen scroll contentStyle={styles.content}>
       {!!onMaybeLater && (
         <TouchableOpacity style={styles.backRow} onPress={onMaybeLater} activeOpacity={0.75}>
           <Feather name="chevron-left" size={18} style={styles.backIcon} />
@@ -125,7 +126,18 @@ export default function PremiumScreen({
       >
         {isActive ? t('subscription.premium.manage') : isUpgrading ? t('subscription.premium.upgrading') : t('subscription.premium.unlock')}
       </Button>
-    </Screen>
+      </Screen>
+
+      <Modal visible={isUpgrading} transparent animationType="fade" statusBarTranslucent>
+        <View style={styles.loadingBackdrop}>
+          <View style={styles.loadingCard}>
+            <ActivityIndicator size="large" color={styles.loadingSpinner.color} />
+            <Text style={styles.loadingTitle}>{t('subscription.premium.activatingTitle')}</Text>
+            <Text style={styles.loadingBody}>{t('subscription.premium.activatingBody')}</Text>
+          </View>
+        </View>
+      </Modal>
+    </>
   )
 }
 
@@ -162,4 +174,9 @@ const styles = createThemedStyles((theme) => ({
   freeMonthsBadge: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
   freeMonthsText: { ...theme.textVariants.label, color: theme.colors.primary },
   ctaButton: { width: '100%', maxWidth: 480, marginTop: theme.spacing.xs },
+  loadingBackdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: theme.spacing['2xl'], backgroundColor: theme.colors.overlay },
+  loadingCard: { width: '100%', maxWidth: 320, alignItems: 'center', gap: theme.spacing.md, padding: theme.spacing['2xl'], borderRadius: theme.radii.xl, backgroundColor: theme.colors.card },
+  loadingSpinner: { color: theme.colors.accent },
+  loadingTitle: { textAlign: 'center', ...theme.textVariants.heading, color: theme.colors.foreground },
+  loadingBody: { textAlign: 'center', ...theme.textVariants.body, color: theme.colors.mutedForeground },
 }))

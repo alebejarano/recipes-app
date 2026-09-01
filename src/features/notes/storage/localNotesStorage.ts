@@ -282,7 +282,7 @@ export async function mergeCloudNotesIntoLocal(params: {
   const now = new Date().toISOString()
   const cloudIds = new Set(cloudNotes.map((note) => note.id))
   const existingRows = await getAllAsync<LocalNoteRow>(
-    'SELECT * FROM local_notes WHERE owner_user_id = ? OR owner_user_id IS NULL;',
+    'SELECT * FROM local_notes WHERE owner_user_id = ?;',
     [ownerUserId]
   )
 

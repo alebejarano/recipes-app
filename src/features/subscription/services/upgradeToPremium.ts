@@ -228,12 +228,14 @@ function isBackendRolloutMismatch(error: unknown, details: string): boolean {
   )
 }
 
-async function buildSnapshotEntities() {
+async function buildSnapshotEntities(ownerUserId: string) {
   await ensureLocalSqliteMigrationReady()
+  const owner = ownerUserId.trim()
+  if (!owner) return { recipes: [], notes: [], folders: [] }
   const [recipeRows, noteRows, folderRows] = await Promise.all([
-    getAllAsync<RecipeLocalRow>('SELECT * FROM local_recipes ORDER BY updated_at ASC;'),
-    getAllAsync<NoteLocalRow>('SELECT * FROM local_notes ORDER BY updated_at ASC;'),
-    getAllAsync<FolderLocalRow>('SELECT * FROM local_folders ORDER BY updated_at ASC;'),
+    getAllAsync<RecipeLocalRow>('SELECT * FROM local_recipes WHERE owner_user_id = ? ORDER BY updated_at ASC;', [owner]),
+    getAllAsync<NoteLocalRow>('SELECT * FROM local_notes WHERE owner_user_id = ? ORDER BY updated_at ASC;', [owner]),
+    getAllAsync<FolderLocalRow>('SELECT * FROM local_folders WHERE owner_user_id = ? ORDER BY updated_at ASC;', [owner]),
   ])
 
   const recipes: RecipeUpgradeSnapshotRow[] = recipeRows.map((row) => ({
@@ -423,7 +425,7 @@ async function runPremiumUpgrade(args: UpgradeToPremiumArgs): Promise<void> {
 
   await args.setUpgradeStatus('running')
 
-  const entities = await buildSnapshotEntities()
+  const entities = await buildSnapshotEntities(userId)
   const payload: PremiumUpgradeSyncPayload = {
     billingCycle: args.billingCycle,
     idempotencyKey: createIdempotencyKey(),

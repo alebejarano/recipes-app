@@ -284,11 +284,12 @@ export async function updateRecipeDocumentTitle(input: {
   if (!title) throw new Error('Import name is required.')
   if (title.length > 120) throw new Error('Import name must be 120 characters or fewer.')
 
+  const ownerFilter = getLocalDataOwnerFilter()
   await runSqlAsync(
     `UPDATE recipe_documents
      SET title = ?
-     WHERE id = ?;`,
-    [title, input.id]
+     WHERE id = ? AND ${ownerFilter.sql};`,
+    [title, input.id, ...ownerFilter.params]
   )
 }
 
@@ -420,6 +421,39 @@ export async function listDirtyLocalRecipeDocumentRowsForSync(): Promise<LocalRe
   }))
 }
 
+/**
+ * Premium screens may show only this account's locally queued uploads beside
+ * cloud imports. Synced cache rows are intentionally excluded: cloud remains
+ * the source of truth whenever it is reachable.
+ */
+export async function listPendingLocalRecipeDocuments(): Promise<RecipeDocument[]> {
+  await ensureRecipeDocumentStorageReady()
+  await ensureLocalRecipeDocumentCleanup()
+  const ownerFilter = getLocalDataOwnerFilter()
+  const rows = await getAllAsync<{
+    id: string
+    title: string | null
+    file_name: string
+    file_uri: string
+    file_size: number
+    created_at: string
+  }>(
+    `SELECT id, title, file_name, file_uri, file_size, created_at
+     FROM recipe_documents
+     WHERE COALESCE(dirty, 1) = 1 AND ${ownerFilter.sql}
+     ORDER BY created_at DESC;`,
+    ownerFilter.params
+  )
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title ?? null,
+    fileName: row.file_name,
+    fileUri: row.file_uri,
+    fileSize: Number(row.file_size),
+    createdAt: row.created_at,
+  }))
+}
+
 export async function markLocalRecipeDocumentSynced(input: {
   localId: string
   ownerUserId: string
@@ -437,12 +471,16 @@ export async function markLocalRecipeDocumentSynced(input: {
 export async function deleteRecipeDocument(id: string): Promise<void> {
   await ensureRecipeDocumentStorageReady()
   await ensureLocalRecipeDocumentCleanup()
+  const ownerFilter = getLocalDataOwnerFilter()
   const row = await getFirstAsync<{ fileUri: string | null }>(
-    'SELECT file_uri as fileUri FROM recipe_documents WHERE id = ?;',
-    [id]
+    `SELECT file_uri as fileUri FROM recipe_documents WHERE id = ? AND ${ownerFilter.sql};`,
+    [id, ...ownerFilter.params]
   )
   if (row?.fileUri) {
     await removeImportByUri(row.fileUri)
   }
-  await runSqlAsync('DELETE FROM recipe_documents WHERE id = ?;', [id])
+  await runSqlAsync(
+    `DELETE FROM recipe_documents WHERE id = ? AND ${ownerFilter.sql};`,
+    [id, ...ownerFilter.params]
+  )
 }

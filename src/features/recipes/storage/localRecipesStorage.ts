@@ -279,8 +279,10 @@ async function buildFolders(values: RecipeFormSubmitValues): Promise<LocalRecipe
 
   if (normalizedFolderNames.length === 0) return []
 
+  const ownerFilter = getLocalDataOwnerFilter()
   const localFolders = await getAllAsync<LocalFolderLookupRow>(
-    'SELECT id, name, emoji FROM local_folders;'
+    `SELECT id, name, emoji FROM local_folders WHERE ${ownerFilter.sql};`,
+    ownerFilter.params
   )
 
   const folderByName = new Map<string, LocalFolderLookupRow>()
@@ -627,7 +629,7 @@ export async function listLocalRecipeRowsForImageRepair(ownerUserId: string): Pr
         AND cloud_id IS NOT NULL
         AND image_url IS NOT NULL
         AND image_url != ''
-        AND (owner_user_id = ? OR owner_user_id IS NULL)
+        AND owner_user_id = ?
       ORDER BY updated_at ASC;`,
     [ownerUserId]
   )
@@ -685,7 +687,7 @@ export async function mergeCloudRecipesIntoLocal(params: {
   const now = new Date().toISOString()
   const cloudIds = new Set(cloudRecipes.map((recipe) => recipe.id))
   const existingRows = await getAllAsync<LocalRecipeRow>(
-    'SELECT * FROM local_recipes WHERE owner_user_id = ? OR owner_user_id IS NULL;',
+    'SELECT * FROM local_recipes WHERE owner_user_id = ?;',
     [ownerUserId]
   )
 

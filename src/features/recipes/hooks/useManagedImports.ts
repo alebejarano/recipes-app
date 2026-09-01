@@ -12,6 +12,7 @@ import {
   type CloudRecipeDocumentsCursor,
   type CloudRecipeDocumentsPage,
 } from '@/features/recipes/api/recipeDocumentsCloudRepo'
+import { listPendingLocalRecipeDocuments } from '@/features/recipes/storage/recipeDocumentStorage'
 import { triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { useStorageDataMode, type StorageScreenMode } from '@/features/storage/hooks/useStorageDataMode'
@@ -71,14 +72,20 @@ export function useManagedImports(mode: StorageScreenMode = 'auth') {
           limit: CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
         })
 
-        // A user can regain Premium before their device's local imports have
-        // completed their first cloud upload. Keep those files visible rather
-        // than replacing them with an empty cloud list while sync retries.
-        if (pageParam || cloudPage.items.length > 0) return cloudPage
-
+        // Only include this account's unsynced document uploads from the
+        // device. All synced items must come from the cloud response.
+        if (pageParam) return cloudPage
+        const pendingDocumentIds = new Set(
+          (await listPendingLocalRecipeDocuments()).map((document) => document.id)
+        )
+        if (pendingDocumentIds.size === 0) return cloudPage
+        const localPending = (await listManagedImports()).filter(
+          (item) => item.documentId && pendingDocumentIds.has(item.documentId)
+        )
+        const cloudIds = new Set(cloudPage.items.map((item) => item.id))
         return {
-          items: await listManagedImports(),
-          nextCursor: null,
+          ...cloudPage,
+          items: [...localPending.filter((item) => !cloudIds.has(item.id)), ...cloudPage.items],
         }
       } catch (error) {
         if (!isConnectivityError(error)) throw error

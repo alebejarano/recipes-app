@@ -4,7 +4,6 @@ import type { PropsWithChildren } from 'react';
 import type { Session } from '@supabase/supabase-js';
 
 import { AuthProvider, useAuth } from '@/features/auth/context/AuthContext';
-import { tagLocalDataAsMigratable } from '@/features/storage/localAccountLinking';
 import { supabase } from '@/lib/supabase';
 
 jest.mock('@/lib/supabase', () => ({
@@ -26,10 +25,6 @@ jest.mock('expo-linking', () => ({
 
 jest.mock('expo-router', () => ({
     router: { replace: jest.fn() },
-}));
-
-jest.mock('@/features/storage/localAccountLinking', () => ({
-    tagLocalDataAsMigratable: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('@/localization', () => ({
@@ -122,7 +117,6 @@ describe('AuthProvider', () => {
 
         expect(result.current.session).toBe(restoredSession);
         expect(result.current.user?.id).toBe('user-1');
-        expect(tagLocalDataAsMigratable).toHaveBeenCalledWith('user-1');
         unmount();
     });
 });

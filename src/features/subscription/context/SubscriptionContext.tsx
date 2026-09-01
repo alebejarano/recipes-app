@@ -198,8 +198,10 @@ export function SubscriptionProvider({
   const [isLoaded, setIsLoaded] = useState(
     () => !IS_REVENUECAT_NATIVE_PLATFORM || !getRevenueCatApiKey()
   )
+  const [isRevenueCatConfigured, setIsRevenueCatConfigured] = useState(false)
   const activeUserIdRef = useRef<string | null>(null)
   const listenerRef = useRef<((info: CustomerInfo) => void) | null>(null)
+  const identitySyncIdRef = useRef(0)
 
   const refreshOfferings = useCallback(async () => {
     if (!IS_REVENUECAT_NATIVE_PLATFORM) return null
@@ -264,25 +266,14 @@ export function SubscriptionProvider({
         listenerRef.current = listener
         Purchases.addCustomerInfoUpdateListener(listener)
 
-        const [nextCustomerInfo, nextOfferings] = await Promise.all([
-          Purchases.getCustomerInfo(),
-          Purchases.getOfferings(),
-        ])
-
         if (!isMounted) return
-
-        setCustomerInfo(nextCustomerInfo)
-        setOfferings(nextOfferings)
-        setCurrentOffering(nextOfferings.current ?? null)
+        setIsRevenueCatConfigured(true)
       } catch {
         if (!isMounted) return
         setCustomerInfo(null)
         setOfferings(null)
         setCurrentOffering(null)
-      } finally {
-        if (isMounted) {
-          setIsLoaded(true)
-        }
+        setIsLoaded(true)
       }
     }
 
@@ -298,14 +289,22 @@ export function SubscriptionProvider({
   }, [])
 
   useEffect(() => {
-    if (!IS_REVENUECAT_NATIVE_PLATFORM || !hasConfiguredRevenueCat || isAuthLoading) return
+    if (!IS_REVENUECAT_NATIVE_PLATFORM || !isRevenueCatConfigured || isAuthLoading) return
 
     let isMounted = true
+    const syncId = ++identitySyncIdRef.current
 
     async function syncRevenueCatIdentity() {
+      setIsLoaded(false)
       try {
         if (user?.id) {
           if (activeUserIdRef.current !== user.id) {
+            // RevenueCat persists its current app-user ID on the device. A
+            // direct logIn from account A to account B can therefore carry A's
+            // aliases/entitlement into B. Always reset to a fresh anonymous
+            // identity before identifying a different signed-in account.
+            await Purchases.logOut()
+            if (!isMounted || syncId !== identitySyncIdRef.current) return
             const loginResult = await Purchases.logIn(user.id)
             if (!isMounted) return
             setCustomerInfo(loginResult.customerInfo)
@@ -320,13 +319,22 @@ export function SubscriptionProvider({
           activeUserIdRef.current = null
         }
 
-        const nextOfferings = await Purchases.getOfferings()
-        if (!isMounted) return
+        const [nextCustomerInfo, nextOfferings] = await Promise.all([
+          Purchases.getCustomerInfo(),
+          Purchases.getOfferings(),
+        ])
+        if (!isMounted || syncId !== identitySyncIdRef.current) return
+        setCustomerInfo(nextCustomerInfo)
         setOfferings(nextOfferings)
         setCurrentOffering(nextOfferings.current ?? null)
       } catch {
-        if (!isMounted) return
+        if (!isMounted || syncId !== identitySyncIdRef.current) return
         activeUserIdRef.current = user?.id ?? null
+        setCustomerInfo(null)
+      } finally {
+        if (isMounted && syncId === identitySyncIdRef.current) {
+          setIsLoaded(true)
+        }
       }
     }
 
@@ -335,7 +343,7 @@ export function SubscriptionProvider({
     return () => {
       isMounted = false
     }
-  }, [isAuthLoading, user])
+  }, [isAuthLoading, isRevenueCatConfigured, user])
 
   const getPackageForBillingCycle = useCallback(
     (billingCycle: BillingCycle) => findPackageForBillingCycle(currentOffering, billingCycle),

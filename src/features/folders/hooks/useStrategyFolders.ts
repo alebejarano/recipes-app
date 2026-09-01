@@ -10,6 +10,7 @@ import {
   updateFolderForStrategy,
 } from '@/features/folders/services/foldersService'
 import { useEntitlements } from '@/features/subscription/hooks/useEntitlements'
+import { useAuth } from '@/features/auth/context/AuthContext'
 import type { StorageScreenMode } from '@/features/storage/hooks/useStorageDataMode'
 import { useLocalFoldersList, useCreateLocalFolder, useUpdateLocalFolder, useDeleteLocalFolder } from '@/features/folders/hooks/useLocalFolders'
 
@@ -41,10 +42,11 @@ export function useStrategyFoldersList(
   mode: StorageScreenMode = 'auth',
   params?: { limit?: number; search?: string }
 ) {
+  const { user } = useAuth()
   const { canUseCloudSync } = useEntitlements()
   const target = resolveFolderStorageTarget({ mode, canUseCloudSync })
   const cloudQuery = useQuery<Folder[]>({
-    queryKey: ['folders', target, 'list', params?.limit ?? 200, params?.search ?? ''],
+    queryKey: ['folders', target, 'list', user?.id ?? 'guest', params?.limit ?? 200, params?.search ?? ''],
     queryFn: () => listFoldersForStrategy({ mode, canUseCloudSync }, params),
   })
   const localQuery = useLocalFoldersList()

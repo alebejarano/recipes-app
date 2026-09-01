@@ -7,7 +7,6 @@ import * as Linking from 'expo-linking'
 import { router } from 'expo-router'
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Alert } from 'react-native'
-import { tagLocalDataAsMigratable } from '@/features/storage/localAccountLinking'
 import { setActiveLocalDataOwner } from '@/features/storage/localDataScope'
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
 import { migrateLegacyShoppingListToAccount } from '@/features/shopping-list/storage/shoppingListStorage'
@@ -53,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const pendingEmailRef = useRef<string | null>(null)
   const handledAuthUrlsRef = useRef(new Set<string>())
+  const queryOwnerRef = useRef<string | null | undefined>(undefined)
   const { t } = useTranslation()
   const queryClient = useQueryClient()
 
@@ -219,12 +219,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const userId = session?.user?.id
+
+    // React Query is process-wide. Clear it before allowing a different
+    // account (or a signed-out guest) to render, otherwise cached cloud
+    // results from the previous account can briefly appear on this device.
+    if (queryOwnerRef.current !== userId) {
+      queryOwnerRef.current = userId ?? null
+      queryClient.clear()
+    }
     if (!userId) return
 
-    Promise.all([
-      tagLocalDataAsMigratable(userId),
-      migrateLegacyShoppingListToAccount(userId),
-    ]).then(() => {
+    // Guest data must never be silently adopted by the next account that signs
+    // in on a shared device. Account-owned data is created with its owner ID;
+    // a future guest-to-account import should be an explicit user action.
+    migrateLegacyShoppingListToAccount(userId).then(() => {
       useShoppingListStore.getState().resetForAccountChange()
       void queryClient.invalidateQueries({ queryKey: ['recipes', 'local'] })
       void queryClient.invalidateQueries({ queryKey: ['notes', 'local'] })

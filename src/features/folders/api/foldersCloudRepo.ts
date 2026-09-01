@@ -52,6 +52,53 @@ export async function listFolders(): Promise<Folder[]> {
   return (data ?? []).map((row) => mapFolder(row as FolderRow))
 }
 
+/**
+ * Favorites is a system folder. Older local-first syncs could create a second
+ * cloud row for it, so merge its recipe links into the oldest row and remove
+ * the duplicate safely.
+ */
+export async function reconcileDuplicateFavoriteFolders(folders: Folder[]): Promise<Folder[]> {
+  const favorites = folders
+    .filter((folder) => isFavoritesFolderName(folder.name))
+    .sort((left, right) => left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id))
+
+  if (favorites.length < 2) return folders
+
+  const canonical = favorites[0]
+  const duplicateIds = favorites.slice(1).map((folder) => folder.id)
+
+  for (const duplicateId of duplicateIds) {
+    const { data: links, error: linksError } = await supabase
+      .from('recipe_folders')
+      .select('recipe_id')
+      .eq('folder_id', duplicateId)
+    if (linksError) throw linksError
+
+    const canonicalLinks = (links ?? [])
+      .map((link) => link.recipe_id)
+      .filter((recipeId): recipeId is string => typeof recipeId === 'string' && recipeId.length > 0)
+      .map((recipeId) => ({ recipe_id: recipeId, folder_id: canonical.id }))
+
+    if (canonicalLinks.length > 0) {
+      const { error: insertError } = await supabase
+        .from('recipe_folders')
+        .upsert(canonicalLinks, { onConflict: 'recipe_id,folder_id', ignoreDuplicates: true })
+      if (insertError) throw insertError
+    }
+
+    const { error: unlinkError } = await supabase
+      .from('recipe_folders')
+      .delete()
+      .eq('folder_id', duplicateId)
+    if (unlinkError) throw unlinkError
+
+    const { error: deleteError } = await supabase.from('folders').delete().eq('id', duplicateId)
+    if (deleteError) throw deleteError
+  }
+
+  return folders.filter((folder) => !duplicateIds.includes(folder.id))
+}
+
 export async function createFolder(input: { name: string; emoji?: string | null }) {
   const user = await requireAuth()
   const name = input.name.trim()

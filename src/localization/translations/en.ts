@@ -452,6 +452,8 @@ export const en = {
             },
             manage: 'Manage Subscription',
             upgrading: 'Upgrading...',
+            activatingTitle: 'Activating Premium',
+            activatingBody: 'Your subscription is confirmed. We are setting up your Premium kitchen.',
             unlock: 'Unlock Premium',
             authRequiredTitle: 'Create account first',
             authRequiredMessage: 'Sign in or create an account to upgrade to Premium.',

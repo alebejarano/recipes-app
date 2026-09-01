@@ -454,6 +454,8 @@ export const es: TranslationSchema = {
             },
             manage: 'Gestionar suscripción',
             upgrading: 'Actualizando...',
+            activatingTitle: 'Activando Premium',
+            activatingBody: 'Tu suscripción está confirmada. Estamos preparando tu cocina Premium.',
             unlock: 'Desbloquear Premium',
             authRequiredTitle: 'Crea una cuenta primero',
             authRequiredMessage: 'Inicia sesión o crea una cuenta para pasarte a Premium.',

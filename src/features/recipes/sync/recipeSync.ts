@@ -125,7 +125,7 @@ async function runRecipeSync() {
     })
   }
   for (const document of dirtyDocuments) {
-    if (document.ownerUserId && document.ownerUserId !== userId) continue
+    if (document.ownerUserId !== userId) continue
 
     try {
       const result = await uploadPremiumImport({
@@ -193,7 +193,7 @@ async function runRecipeSync() {
   }
 
   for (const row of dirtyRows) {
-    if (row.ownerUserId && row.ownerUserId !== userId) continue
+    if (row.ownerUserId !== userId) continue
 
     try {
       if (row.deletedAt) {
