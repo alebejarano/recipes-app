@@ -44,6 +44,7 @@ Recommended workflow:
 
 1. Keep your current Supabase project as development.
 2. Put its values in `.env.development.local`.
+   Include the matching RevenueCat public SDK key for the platform you are testing.
 3. Put future production Supabase values in `.env.production.local`.
 4. Run `npx expo start` for normal local development. Expo resolves development env files for that workflow.
 5. Use production env values only for release builds or explicit production validation.
@@ -73,10 +74,14 @@ Minimal mapping:
   `EXPO_PUBLIC_APP_ENV=development` or `preview`
   `EXPO_PUBLIC_SUPABASE_URL=https://<dev-project>.supabase.co`
   `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<dev-publishable-key>`
+  `EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY=appl_<development-public-sdk-key>`
+  `EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY=goog_<development-public-sdk-key>`
 - `production`
   `EXPO_PUBLIC_APP_ENV=production`
   `EXPO_PUBLIC_SUPABASE_URL=https://<prod-project>.supabase.co`
   `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<prod-publishable-key>`
+  `EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY=appl_<production-public-sdk-key>`
+  `EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY=goog_<production-public-sdk-key>`
 
 Useful commands later:
 

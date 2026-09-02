@@ -22,6 +22,9 @@ export function getUserFacingErrorMessage(error: unknown, fallback = 'Please try
   const normalized = message.toLowerCase()
 
   if (!message) return fallback
+  if (normalized.includes('revenuecat is not configured')) {
+    return 'Premium purchases are not configured in this build. Please install a current development build and try again.'
+  }
   if (
     normalized.includes('network') ||
     normalized.includes('failed to fetch') ||

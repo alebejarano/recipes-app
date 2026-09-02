@@ -142,6 +142,12 @@ function createUnavailableError() {
   )
 }
 
+function createUnconfiguredError() {
+  return new Error(
+    'RevenueCat is not configured in this build. Add the platform RevenueCat public SDK key and rebuild the app.'
+  )
+}
+
 async function setRevenueCatSubscriberAttributes(user: NonNullable<ReturnType<typeof useAuth>['user']>) {
   const displayName = user.user_metadata?.display_name
 
@@ -165,7 +171,7 @@ export const SubscriptionContext = createContext<SubscriptionContextValue>({
   offerings: null,
   currentOffering: null,
   activeEntitlement: null,
-  isRevenueCatAvailable: IS_REVENUECAT_NATIVE_PLATFORM,
+  isRevenueCatAvailable: IS_REVENUECAT_NATIVE_PLATFORM && Boolean(getRevenueCatApiKey()),
   getPackageForBillingCycle: () => null,
   refreshCustomerInfo: async () => null,
   refreshOfferings: async () => null,
@@ -359,6 +365,7 @@ export function SubscriptionProvider({
   const purchasePackageForBillingCycle = useCallback(
     async (billingCycle: BillingCycle) => {
       if (!IS_REVENUECAT_NATIVE_PLATFORM) throw createUnavailableError()
+      if (!isRevenueCatConfigured) throw createUnconfiguredError()
 
       const pkg = findPackageForBillingCycle(currentOffering, billingCycle)
       if (!pkg) {
@@ -379,11 +386,12 @@ export function SubscriptionProvider({
         throw error
       }
     },
-    [currentOffering]
+    [currentOffering, isRevenueCatConfigured]
   )
 
   const restorePurchases = useCallback(async () => {
     if (!IS_REVENUECAT_NATIVE_PLATFORM) throw createUnavailableError()
+    if (!isRevenueCatConfigured) throw createUnconfiguredError()
 
     setUpgradeStatusState('running')
 
@@ -396,11 +404,12 @@ export function SubscriptionProvider({
       setUpgradeStatusState('failed')
       throw error
     }
-  }, [])
+  }, [isRevenueCatConfigured])
 
   const presentPaywall = useCallback(
     async (options?: { offering?: PurchasesOffering | null }) => {
       if (!IS_REVENUECAT_NATIVE_PLATFORM) throw createUnavailableError()
+      if (!isRevenueCatConfigured) throw createUnconfiguredError()
 
       setUpgradeStatusState('running')
 
@@ -419,14 +428,15 @@ export function SubscriptionProvider({
         throw error
       }
     },
-    [currentOffering, refreshCustomerInfo, refreshOfferings]
+    [currentOffering, isRevenueCatConfigured, refreshCustomerInfo, refreshOfferings]
   )
 
   const presentCustomerCenter = useCallback(async () => {
     if (!IS_REVENUECAT_NATIVE_PLATFORM) throw createUnavailableError()
+    if (!isRevenueCatConfigured) throw createUnconfiguredError()
 
     await RevenueCatUI.presentCustomerCenter()
-  }, [])
+  }, [isRevenueCatConfigured])
 
   const activeEntitlement = getActiveEntitlement(customerInfo)
   const plan: Plan = activeEntitlement ? 'premium' : 'free'
@@ -454,7 +464,7 @@ export function SubscriptionProvider({
       offerings,
       currentOffering,
       activeEntitlement,
-      isRevenueCatAvailable: IS_REVENUECAT_NATIVE_PLATFORM,
+      isRevenueCatAvailable: IS_REVENUECAT_NATIVE_PLATFORM && Boolean(getRevenueCatApiKey()),
       getPackageForBillingCycle,
       refreshCustomerInfo,
       refreshOfferings,
