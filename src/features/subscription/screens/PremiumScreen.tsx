@@ -16,6 +16,7 @@ type PremiumScreenProps = {
   onMaybeLater?: () => void
   isActive?: boolean
   isUpgrading?: boolean
+  isPurchaseReady?: boolean
   onManageSubscription?: () => void
   monthlyPriceLabel?: string
   yearlyPriceLabel?: string
@@ -27,6 +28,7 @@ export default function PremiumScreen({
   onMaybeLater,
   isActive = false,
   isUpgrading = false,
+  isPurchaseReady = true,
   onManageSubscription,
   monthlyPriceLabel = '€5',
   yearlyPriceLabel = '€36',
@@ -122,9 +124,15 @@ export default function PremiumScreen({
         variant={isActive ? "secondary" : "premium"}
         size="xl"
         style={styles.ctaButton}
-        disabled={!isActive && (!onUpgrade || isUpgrading)}
+        disabled={!isActive && (!onUpgrade || isUpgrading || !isPurchaseReady)}
       >
-        {isActive ? t('subscription.premium.manage') : isUpgrading ? t('subscription.premium.upgrading') : t('subscription.premium.unlock')}
+        {isActive
+          ? t('subscription.premium.manage')
+          : isUpgrading
+            ? t('subscription.premium.upgrading')
+            : !isPurchaseReady
+              ? t('subscription.premium.loadingPlans')
+              : t('subscription.premium.unlock')}
       </Button>
       </Screen>
 

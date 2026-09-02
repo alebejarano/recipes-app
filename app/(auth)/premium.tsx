@@ -54,6 +54,7 @@ export default function PremiumRoute() {
     setPlan,
     setUpgradeStatus,
     upgradeStatus,
+    isLoaded,
   } = useContext(SubscriptionContext)
   const [isPurchaseFlowRunning, setIsPurchaseFlowRunning] = useState(false)
   const isUpgrading = upgradeStatus === 'running' || isPurchaseFlowRunning
@@ -166,6 +167,7 @@ export default function PremiumRoute() {
           onUpgrade={handleUpgrade}
           onMaybeLater={handleMaybeLater}
           isUpgrading={isUpgrading}
+          isPurchaseReady={isLoaded}
           monthlyPriceLabel={monthlyPriceLabel}
           yearlyPriceLabel={yearlyPriceLabel}
           yearlyMonthlyEquivalentLabel={yearlyMonthlyEquivalentLabel}

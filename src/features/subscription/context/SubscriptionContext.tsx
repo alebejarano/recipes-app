@@ -148,6 +148,36 @@ function createUnconfiguredError() {
   )
 }
 
+function isAlreadyOwnedPurchaseError(error: unknown) {
+  if (!error || typeof error !== 'object') return false
+
+  const candidate = error as {
+    code?: unknown
+    readableErrorCode?: unknown
+    readable_error_code?: unknown
+    message?: unknown
+    underlyingErrorMessage?: unknown
+  }
+  const text = [
+    candidate.code,
+    candidate.readableErrorCode,
+    candidate.readable_error_code,
+    candidate.message,
+    candidate.underlyingErrorMessage,
+  ]
+    .filter((value): value is string | number => typeof value === 'string' || typeof value === 'number')
+    .join(' ')
+    .toLowerCase()
+
+  return (
+    candidate.code === 6 ||
+    text.includes('productalreadypurchased') ||
+    text.includes('product already purchased') ||
+    text.includes('item_already_owned') ||
+    text.includes('item already owned')
+  )
+}
+
 async function setRevenueCatSubscriberAttributes(user: NonNullable<ReturnType<typeof useAuth>['user']>) {
   const displayName = user.user_metadata?.display_name
 
@@ -241,7 +271,7 @@ export function SubscriptionProvider({
   }, [isLoaded, refreshCustomerInfo])
 
   useEffect(() => {
-    if (!IS_REVENUECAT_NATIVE_PLATFORM) {
+    if (!IS_REVENUECAT_NATIVE_PLATFORM || isAuthLoading) {
       return
     }
 
@@ -260,8 +290,12 @@ export function SubscriptionProvider({
         )
 
         if (!hasConfiguredRevenueCat) {
-          Purchases.configure({ apiKey: configuredApiKey })
+          Purchases.configure({
+            apiKey: configuredApiKey,
+            appUserID: user?.id ?? undefined,
+          })
           hasConfiguredRevenueCat = true
+          activeUserIdRef.current = user?.id ?? null
         }
 
         const listener = (info: CustomerInfo) => {
@@ -292,7 +326,7 @@ export function SubscriptionProvider({
         listenerRef.current = null
       }
     }
-  }, [])
+  }, [isAuthLoading, user?.id])
 
   useEffect(() => {
     if (!IS_REVENUECAT_NATIVE_PLATFORM || !isRevenueCatConfigured || isAuthLoading) return
@@ -305,12 +339,13 @@ export function SubscriptionProvider({
       try {
         if (user?.id) {
           if (activeUserIdRef.current !== user.id) {
-            // RevenueCat persists its current app-user ID on the device. A
-            // direct logIn from account A to account B can therefore carry A's
-            // aliases/entitlement into B. Always reset to a fresh anonymous
-            // identity before identifying a different signed-in account.
-            await Purchases.logOut()
-            if (!isMounted || syncId !== identitySyncIdRef.current) return
+            // Reset only when replacing a known account. Logging out an
+            // anonymous customer first would strand a just-created purchase
+            // on that identity instead of associating it with this account.
+            if (activeUserIdRef.current) {
+              await Purchases.logOut()
+              if (!isMounted || syncId !== identitySyncIdRef.current) return
+            }
             const loginResult = await Purchases.logIn(user.id)
             if (!isMounted) return
             setCustomerInfo(loginResult.customerInfo)
@@ -335,7 +370,7 @@ export function SubscriptionProvider({
         setCurrentOffering(nextOfferings.current ?? null)
       } catch {
         if (!isMounted || syncId !== identitySyncIdRef.current) return
-        activeUserIdRef.current = user?.id ?? null
+        activeUserIdRef.current = null
         setCustomerInfo(null)
       } finally {
         if (isMounted && syncId === identitySyncIdRef.current) {
@@ -382,6 +417,17 @@ export function SubscriptionProvider({
         setUpgradeStatusState('idle')
         return result.customerInfo
       } catch (error) {
+        if (isAlreadyOwnedPurchaseError(error)) {
+          try {
+            const nextCustomerInfo = await Purchases.restorePurchases()
+            setCustomerInfo(nextCustomerInfo)
+            setUpgradeStatusState('idle')
+            return nextCustomerInfo
+          } catch (restoreError) {
+            setUpgradeStatusState('failed')
+            throw restoreError
+          }
+        }
         setUpgradeStatusState('failed')
         throw error
       }

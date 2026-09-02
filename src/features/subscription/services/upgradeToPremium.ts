@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { triggerFolderSync } from '@/features/folders/sync/folderSync'
 import { triggerNoteSync } from '@/features/notes/sync/noteSync'
 import { triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
+import { tagLocalDataAsMigratable } from '@/features/storage/localAccountLinking'
 import { markLocalFolderSynced } from '@/features/folders/storage/localFoldersStorage'
 import { markLocalNoteSynced } from '@/features/notes/storage/localNotesStorage'
 import { markLocalRecipeSynced } from '@/features/recipes/storage/localRecipesStorage'
@@ -425,6 +426,9 @@ async function runPremiumUpgrade(args: UpgradeToPremiumArgs): Promise<void> {
 
   await args.setUpgradeStatus('running')
 
+  // Premium is the explicit opt-in to back up this device's existing local
+  // kitchen. Claim only unowned legacy rows; other accounts' rows stay scoped.
+  await tagLocalDataAsMigratable(userId)
   const entities = await buildSnapshotEntities(userId)
   const payload: PremiumUpgradeSyncPayload = {
     billingCycle: args.billingCycle,

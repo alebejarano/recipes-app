@@ -452,6 +452,7 @@ export const en = {
             },
             manage: 'Manage Subscription',
             upgrading: 'Upgrading...',
+            loadingPlans: 'Loading plans...',
             activatingTitle: 'Activating Premium',
             activatingBody: 'Your subscription is confirmed. We are setting up your Premium kitchen.',
             unlock: 'Unlock Premium',

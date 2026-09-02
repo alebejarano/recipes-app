@@ -6,6 +6,7 @@ import {
   hasCompletedPremiumUpgradeMigration,
   upgradeToPremium,
 } from '@/features/subscription/services/upgradeToPremium'
+import { tagLocalDataAsMigratable } from '@/features/storage/localAccountLinking'
 import { logOperationalEvent, getErrorCategory } from '@/lib/productionLogger'
 
 /**
@@ -26,9 +27,11 @@ export default function PremiumUpgradeMigrationBootstrap() {
     attemptedUserIdRef.current = userId
 
     async function recoverPremiumUpgrade() {
-      if (await hasCompletedPremiumUpgradeMigration(userId)) return
-
       try {
+        const claimedLegacyData = await tagLocalDataAsMigratable(userId)
+        const hasClaimedLegacyData = Object.values(claimedLegacyData).some((count) => count > 0)
+        if (!hasClaimedLegacyData && await hasCompletedPremiumUpgradeMigration(userId)) return
+
         await upgradeToPremium({
           userId,
           billingCycle,

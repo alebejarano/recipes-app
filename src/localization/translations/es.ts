@@ -454,6 +454,7 @@ export const es: TranslationSchema = {
             },
             manage: 'Gestionar suscripción',
             upgrading: 'Actualizando...',
+            loadingPlans: 'Cargando planes...',
             activatingTitle: 'Activando Premium',
             activatingBody: 'Tu suscripción está confirmada. Estamos preparando tu cocina Premium.',
             unlock: 'Desbloquear Premium',
