@@ -3,7 +3,6 @@ import { supabase } from '@/lib/supabase'
 import type { ManagedImport } from '@/features/recipes/storage/importsStorage'
 import type { RecipeDocument, RecipeDocumentUsageSummary } from '@/features/recipes/storage/recipeDocumentStorage'
 
-const SIGNED_URL_TTL_SECONDS = 60 * 60
 export const CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE = 50
 const VISIBLE_IMPORT_STATUSES = ['uploading', 'uploaded', 'processing', 'ready']
 
@@ -205,15 +204,19 @@ export async function getCloudRecipeDocument(id: string): Promise<RecipeDocument
   const row = await fetchCloudRecipeDocumentDirect(id)
   if (!row) return null
 
-  const { data: signedData, error: signedError } = await supabase.storage
-    .from(row.storage_bucket)
-    .createSignedUrl(row.storage_path, SIGNED_URL_TTL_SECONDS)
+  const { data, error } = await supabase.functions.invoke('get-import-download-url', {
+    body: { documentId: row.id },
+  })
 
-  if (signedError) throw signedError
+  if (error) throw error
+  const signedUrl = (data as { signedUrl?: unknown } | null)?.signedUrl
+  if (typeof signedUrl !== 'string' || !signedUrl) {
+    throw new Error('The stored import is unavailable')
+  }
 
   return {
     ...mapRecipeDocument(row),
-    fileUri: signedData?.signedUrl ?? row.storage_path,
+    fileUri: signedUrl,
   }
 }
 

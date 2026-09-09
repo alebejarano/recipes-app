@@ -10,9 +10,11 @@ import PremiumScreen from '@/features/subscription/screens/PremiumScreen'
 import PremiumSuccessModal from '@/features/subscription/components/PremiumSuccessModal'
 import { REVENUECAT_ENTITLEMENT_ID } from '@/features/subscription/constants/revenueCat'
 import { upgradeToPremium } from '@/features/subscription/services/upgradeToPremium'
+import { triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
 import { createThemedStyles } from '@/styles/createStyles'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { getErrorCategory, logOperationalEvent } from '@/lib/productionLogger'
 import { i18n } from '@/localization/i18n'
 
 function isPurchaseCancelledError(error: unknown) {
@@ -92,6 +94,7 @@ export default function PremiumRoute() {
 
     shouldHoldRedirectRef.current = true
     setIsPurchaseFlowRunning(true)
+    let purchaseConfirmed = false
 
     try {
       const nextCustomerInfo = await purchasePackageForBillingCycle(selectedBillingCycle)
@@ -104,6 +107,13 @@ export default function PremiumRoute() {
         setIsPurchaseFlowRunning(false)
         return
       }
+      purchaseConfirmed = true
+
+      // The sync worker uses this account-scoped value to decide whether it
+      // may upload locally queued imports. Store it as soon as the store has
+      // confirmed the entitlement, rather than waiting for the optional
+      // migration of older local data to finish.
+      await setPlan('premium', { billingCycle: selectedBillingCycle })
 
       await upgradeToPremium({
         userId: user.id,
@@ -122,6 +132,30 @@ export default function PremiumRoute() {
       shouldHoldRedirectRef.current = false
       setIsPurchaseFlowRunning(false)
       if (isPurchaseCancelledError(error)) return
+
+      if (purchaseConfirmed) {
+        // Google Play has already confirmed the purchase. A problem copying
+        // existing on-device data to Supabase must not turn that successful
+        // purchase into a failure for the customer. The bootstrap retries the
+        // idempotent migration on a later active app session.
+        logOperationalEvent('sync_retry_failed', {
+          operation: 'premium_upgrade_migration_after_purchase',
+          entity: 'supabase',
+          category: getErrorCategory(error),
+        })
+        await setUpgradeStatus('idle')
+        // Upload any imports that were saved locally before (or while)
+        // Premium was being activated. This is idempotent; the regular sync
+        // bootstrap continues retrying if the server entitlement is still
+        // propagating from RevenueCat.
+        await triggerRecipeSync()
+        captureAnalyticsEvent('purchase_succeeded', {
+          plan: 'premium',
+          billing_cycle: selectedBillingCycle,
+        })
+        setShowSuccessModal(true)
+        return
+      }
 
       Alert.alert(
         i18n.t('subscription.premium.upgradeFailedTitle'),

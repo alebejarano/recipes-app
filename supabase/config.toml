@@ -9,5 +9,8 @@ verify_jwt = false
 [functions.validate-and-upload-import]
 verify_jwt = false
 
+[functions.get-import-download-url]
+verify_jwt = false
+
 [functions.revenuecat-webhook]
 verify_jwt = false

@@ -1,10 +1,10 @@
 import { Feather } from '@expo/vector-icons'
 import { router } from 'expo-router'
-import React, { useMemo } from 'react'
-import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native'
+import React, { useMemo, useState } from 'react'
+import { ActivityIndicator, Alert, FlatList, Pressable, Text, View } from 'react-native'
 
 import { formatRelativeDay } from '@/features/home/utils/homeFormatters'
-import { useRecipeDocuments } from '@/features/recipes/hooks/useRecipeDocuments'
+import { useDeleteRecipeDocument, useRecipeDocuments } from '@/features/recipes/hooks/useRecipeDocuments'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { useTranslation } from '@/localization'
@@ -25,6 +25,9 @@ export default function RecipeDocumentsSegment({
   const createPath = isPublic ? '/(public)/recipes/create' : '/(auth)/recipes/create'
   const documentDetailPath = isPublic ? '/(public)/recipes/documents/[id]' : '/(auth)/recipes/documents/[id]'
   const docsQuery = useRecipeDocuments(mode)
+  const deleteDocumentMutation = useDeleteRecipeDocument(mode)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
   const returnTo = getSafeReturnTo(
     mode === 'public'
         ? '/(public)/(tabs)/collections?segment=recipes&recipesSegment=documents'
@@ -56,10 +59,96 @@ export default function RecipeDocumentsSegment({
     next.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     return next
   }, [data, sortBy])
+  const isSelectionMode = selectedIds.length > 0
+
+  const toggleSelection = (id: string) => {
+    if (isBulkDeleting) return
+    setSelectedIds((current) =>
+      current.includes(id) ? current.filter((selectedId) => selectedId !== id) : [...current, id]
+    )
+  }
+
+  const handleDeleteSelected = () => {
+    if (selectedIds.length === 0 || isBulkDeleting) return
+
+    const count = selectedIds.length
+    Alert.alert(
+      count === 1
+        ? t('recipes.importsManage.deleteOneTitle')
+        : t('recipes.importsManage.deleteManyTitle', { count }),
+      count === 1
+        ? t('recipes.importsManage.deleteOneBody')
+        : t('recipes.importsManage.deleteManyBody', { count }),
+      [
+        { text: t('recipes.importsManage.cancel'), style: 'cancel' },
+        {
+          text: count === 1
+            ? t('recipes.importsManage.deleteOneCta')
+            : t('recipes.importsManage.deleteManyCta', { count }),
+          style: 'destructive',
+          onPress: async () => {
+            const idsToDelete = [...selectedIds]
+            setIsBulkDeleting(true)
+            try {
+              const results = await Promise.allSettled(
+                idsToDelete.map((id) => deleteDocumentMutation.mutateAsync(id))
+              )
+              const failedIds = results
+                .map((result, index) => ({ result, id: idsToDelete[index] }))
+                .filter((entry) => entry.result.status === 'rejected')
+                .map((entry) => entry.id)
+
+              setSelectedIds(failedIds)
+              if (failedIds.length > 0) {
+                Alert.alert(
+                  t('recipes.importsManage.someFailedTitle'),
+                  t('recipes.importsManage.someFailedBody', {
+                    deleted: idsToDelete.length - failedIds.length,
+                    failed: failedIds.length,
+                  })
+                )
+              }
+            } finally {
+              setIsBulkDeleting(false)
+            }
+          },
+        },
+      ]
+    )
+  }
 
   return (
     <View style={styles.wrap}>
       <Text style={styles.helper}>{t('collections.documentsSegment.helper')}</Text>
+
+      {isSelectionMode ? (
+        <View style={styles.selectionBar}>
+          <Text style={styles.selectionText}>
+            {selectedIds.length === 1
+              ? t('recipes.importsManage.selectedOne')
+              : t('recipes.importsManage.selectedMany', { count: selectedIds.length })}
+          </Text>
+          <Pressable
+            onPress={() => setSelectedIds([])}
+            disabled={isBulkDeleting}
+            accessibilityRole="button"
+            accessibilityLabel={t('recipes.importsManage.cancelSelectionA11y')}
+            style={styles.selectionAction}
+          >
+            <Text style={styles.selectionActionText}>{t('recipes.importsManage.cancel')}</Text>
+          </Pressable>
+          <Pressable
+            onPress={handleDeleteSelected}
+            disabled={isBulkDeleting}
+            accessibilityRole="button"
+            accessibilityLabel={t('recipes.importsManage.deleteSelectedA11y', { count: selectedIds.length })}
+            style={[styles.selectionAction, styles.deleteAction, isBulkDeleting && styles.selectionActionDisabled]}
+          >
+            <Feather name="trash-2" size={16} color={theme.colors.destructiveForeground} />
+            <Text style={styles.deleteActionText}>{t('recipes.importsManage.deleteSelected', { count: selectedIds.length })}</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       {docsQuery.isLoading ? (
         <View style={styles.loadingState}>
@@ -113,15 +202,25 @@ export default function RecipeDocumentsSegment({
           ItemSeparatorComponent={() => <View style={{ height: theme.spacing.md }} />}
           renderItem={({ item }) => (
             <Pressable
-              onPress={() =>
+              onPress={() => {
+                if (isSelectionMode) {
+                  toggleSelection(item.id)
+                  return
+                }
                 router.push({
                   pathname: documentDetailPath,
                   params: { id: item.id, returnTo: returnToParam },
                 })
-              }
-              style={styles.row}
+              }}
+              onLongPress={() => toggleSelection(item.id)}
+              disabled={isBulkDeleting}
+              style={[styles.row, selectedIds.includes(item.id) && styles.rowSelected]}
               accessibilityRole="button"
-              accessibilityLabel={t('collections.documentsSegment.openA11y', { title: item.title })}
+              accessibilityLabel={
+                isSelectionMode
+                  ? t('recipes.importsManage.selectItemA11y', { title: item.title })
+                  : t('collections.documentsSegment.openA11y', { title: item.title })
+              }
             >
               <View style={styles.iconWrap}>
                 <Feather name="file-text" size={18} color={theme.colors.mutedForeground} />
@@ -133,6 +232,9 @@ export default function RecipeDocumentsSegment({
                 </Text>
                 <Text style={styles.rowDate}>{item.relativeDate}</Text>
               </View>
+              {selectedIds.includes(item.id) ? (
+                <Feather name="check-circle" size={20} color={theme.colors.primary} />
+              ) : null}
             </Pressable>
           )}
           ListFooterComponent={
@@ -174,6 +276,41 @@ const styles = createThemedStyles((theme) => ({
     ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
     maxWidth: 320,
+  },
+  selectionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
+    padding: theme.spacing.sm,
+    borderRadius: theme.radii.lg,
+    backgroundColor: theme.colors.secondary,
+  },
+  selectionText: {
+    flex: 1,
+    ...theme.textVariants.label,
+    color: theme.colors.foreground,
+  },
+  selectionAction: {
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingHorizontal: theme.spacing.sm,
+  },
+  selectionActionText: {
+    ...theme.textVariants.label,
+    color: theme.colors.foreground,
+  },
+  deleteAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    borderRadius: theme.radii.md,
+    backgroundColor: theme.colors.destructive,
+  },
+  deleteActionDisabled: { opacity: 0.6 },
+  deleteActionText: {
+    ...theme.textVariants.label,
+    color: theme.colors.destructiveForeground,
   },
 
   listContent: { paddingTop: 0 },
@@ -242,6 +379,10 @@ const styles = createThemedStyles((theme) => ({
     borderRadius: theme.radii.lg,
     padding: theme.spacing.lg,
     ...theme.shadows.soft,
+  },
+  rowSelected: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.secondary,
   },
 
   iconWrap: {
