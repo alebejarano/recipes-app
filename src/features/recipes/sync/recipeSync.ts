@@ -19,6 +19,7 @@ import {
 import {
   listDirtyLocalRecipeDocumentRowsForSync,
   markLocalRecipeDocumentSynced,
+  recordLocalRecipeDocumentSyncFailure,
 } from '@/features/recipes/storage/recipeDocumentStorage'
 import { normalizeMealTimes } from '@/features/recipes/types/mealTimes'
 import { supabase } from '@/lib/supabase'
@@ -105,18 +106,27 @@ function isDeleteAlreadyAppliedError(error: unknown) {
   return message.includes('not found') || message.includes('no rows')
 }
 
-async function runRecipeSync() {
-  const { data, error } = await supabase.auth.getSession()
-  if (error) throw error
+export type PendingImportSyncResult = {
+  pendingCount: number
+  syncedCount: number
+  failedCount: number
+}
 
-  const userId = data.session?.user?.id
-  if (!userId) return
-  const plan = await AsyncStorage.getItem(`${PLAN_KEY_PREFIX}${userId}`)
-  if (plan !== 'premium') return
+/**
+ * Uploads the actual bytes for locally queued imports. The strict mode is
+ * used during a Premium upgrade so it cannot be reported as backed up until
+ * every import has a cloud record and storage object.
+ */
+export async function syncPendingRecipeDocuments(
+  userId: string,
+  options: { throwOnFailure?: boolean } = {}
+): Promise<PendingImportSyncResult> {
+  const dirtyDocuments = (await listDirtyLocalRecipeDocumentRowsForSync()).filter(
+    (document) => document.ownerUserId === userId
+  )
+  let syncedCount = 0
+  let failedCount = 0
 
-  const dirtyDocuments = await listDirtyLocalRecipeDocumentRowsForSync()
-  let documentSyncSuccessCount = 0
-  let documentSyncFailureCount = 0
   if (dirtyDocuments.length > 0) {
     logOperationalEvent('sync_retry_started', {
       operation: 'sync_imports',
@@ -124,9 +134,8 @@ async function runRecipeSync() {
       pending_count: dirtyDocuments.length,
     })
   }
-  for (const document of dirtyDocuments) {
-    if (document.ownerUserId !== userId) continue
 
+  for (const document of dirtyDocuments) {
     try {
       const result = await uploadPremiumImport({
         uri: document.fileUri,
@@ -134,16 +143,16 @@ async function runRecipeSync() {
         mimeType: inferImportMimeType(document.fileName),
         title: document.title,
       })
-      if (result.document?.id) {
-        await markLocalRecipeDocumentSynced({
-          localId: document.id,
-          ownerUserId: userId,
-          cloudId: result.document.id,
-        })
-        documentSyncSuccessCount += 1
-      }
-    } catch (documentError) {
-      const duplicate = documentError as Error & {
+      if (!result.document?.id) throw new Error('Import upload completed without a cloud document id.')
+
+      await markLocalRecipeDocumentSynced({
+        localId: document.id,
+        ownerUserId: userId,
+        cloudId: result.document.id,
+      })
+      syncedCount += 1
+    } catch (error) {
+      const duplicate = error as Error & {
         code?: string
         duplicate?: { id: string | null } | null
       }
@@ -153,33 +162,56 @@ async function runRecipeSync() {
           ownerUserId: userId,
           cloudId: duplicate.duplicate.id,
         })
-        documentSyncSuccessCount += 1
+        syncedCount += 1
         continue
       }
-      documentSyncFailureCount += 1
-      if (isConnectivityError(documentError)) {
-        logOperationalEvent('sync_retry_failed', {
-          operation: 'sync_imports',
-          entity: 'import',
-          category: getErrorCategory(documentError),
-          pending_count: dirtyDocuments.length,
-          success_count: documentSyncSuccessCount,
-          failure_count: documentSyncFailureCount,
-        })
-        return
-      }
-      continue
+
+      failedCount += 1
+      await recordLocalRecipeDocumentSyncFailure({
+        localId: document.id,
+        message: getErrorMessage(error) || 'Import upload failed. Keep this file on this device and retry.',
+      })
+      if (isConnectivityError(error)) break
     }
   }
-  if (dirtyDocuments.length > 0) {
+
+  const result = { pendingCount: dirtyDocuments.length, syncedCount, failedCount }
+  if (failedCount > 0) {
+    logOperationalEvent('sync_retry_failed', {
+      operation: 'sync_imports',
+      entity: 'import',
+      pending_count: result.pendingCount,
+      success_count: result.syncedCount,
+      failure_count: result.failedCount,
+    })
+    if (options.throwOnFailure) {
+      throw new Error(
+        `${failedCount} import${failedCount === 1 ? '' : 's'} could not be backed up. Keep the file on this device and try again.`
+      )
+    }
+  } else if (dirtyDocuments.length > 0) {
     logOperationalEvent('sync_retry_succeeded', {
       operation: 'sync_imports',
       entity: 'import',
-      pending_count: dirtyDocuments.length,
-      success_count: documentSyncSuccessCount,
-      failure_count: documentSyncFailureCount,
+      pending_count: result.pendingCount,
+      success_count: result.syncedCount,
+      failure_count: 0,
     })
   }
+
+  return result
+}
+
+async function runRecipeSync() {
+  const { data, error } = await supabase.auth.getSession()
+  if (error) throw error
+
+  const userId = data.session?.user?.id
+  if (!userId) return
+  const plan = await AsyncStorage.getItem(`${PLAN_KEY_PREFIX}${userId}`)
+  if (plan !== 'premium') return
+
+  await syncPendingRecipeDocuments(userId)
 
   const dirtyRows = await listDirtyLocalRecipeRowsForSync()
   let recipeSyncSuccessCount = 0

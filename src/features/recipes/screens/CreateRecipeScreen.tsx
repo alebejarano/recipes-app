@@ -98,7 +98,7 @@ function isOptimizableImportImage(fileName: string) {
   return mimeType === 'image/jpeg' || mimeType === 'image/png'
 }
 
-function isConnectivityError(error: unknown) {
+function isImportValidationError(error: unknown) {
   const message =
     error instanceof Error
       ? error.message.toLowerCase()
@@ -107,27 +107,13 @@ function isConnectivityError(error: unknown) {
         : ''
 
   return (
-    message.includes('network') ||
-    message.includes('failed to fetch') ||
-    message.includes('timed out') ||
-    message.includes('timeout') ||
-    message.includes('socket') ||
-    message.includes('abort') ||
-    message.includes('unknownhost') ||
-    message.includes('unable to resolve host') ||
-    message.includes('no address associated with hostname')
+    message.includes('already been imported') ||
+    message.includes('storage limit reached') ||
+    message.includes('too large') ||
+    message.includes('unsupported file type') ||
+    message.includes('password-protected') ||
+    message.includes('encrypted pdf')
   )
-}
-
-function isCloudEntitlementPendingError(error: unknown) {
-  const message =
-    error instanceof Error
-      ? error.message.toLowerCase()
-      : typeof error === 'object' && error && 'message' in error && typeof error.message === 'string'
-        ? error.message.toLowerCase()
-        : ''
-
-  return message.includes('premium plan required for cloud imports')
 }
 
 function normalizeRequestedFolder(value?: string | string[]) {
@@ -327,7 +313,11 @@ export default function CreateRecipeScreen({
             timeoutMs: FOREGROUND_IMPORT_UPLOAD_TIMEOUT_MS,
           })
         } catch (uploadError) {
-          if (!isConnectivityError(uploadError) && !isCloudEntitlementPendingError(uploadError)) {
+          // Cloud is the canonical Premium destination, but a selected file
+          // must never be lost just because its first upload fails. Preserve
+          // it locally and let the durable sync queue retry later. Validation
+          // failures are the exception: retrying those cannot succeed.
+          if (isImportValidationError(uploadError)) {
             throw uploadError
           }
           await documentMutation.mutateAsync({

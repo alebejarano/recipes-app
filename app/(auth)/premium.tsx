@@ -134,10 +134,9 @@ export default function PremiumRoute() {
       if (isPurchaseCancelledError(error)) return
 
       if (purchaseConfirmed) {
-        // Google Play has already confirmed the purchase. A problem copying
-        // existing on-device data to Supabase must not turn that successful
-        // purchase into a failure for the customer. The bootstrap retries the
-        // idempotent migration on a later active app session.
+        // The store purchase remains valid even if the durable migration
+        // (including import bytes) needs a retry. Its completion marker is
+        // deliberately not written, so the bootstrap resumes it later.
         logOperationalEvent('sync_retry_failed', {
           operation: 'premium_upgrade_migration_after_purchase',
           entity: 'supabase',

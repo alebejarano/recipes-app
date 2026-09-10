@@ -69,7 +69,9 @@ const MIGRATION_STATEMENTS = [
       owner_user_id TEXT,
       cloud_id TEXT,
       dirty INTEGER,
-      last_synced_at TEXT
+      last_synced_at TEXT,
+      last_sync_error TEXT,
+      sync_attempt_count INTEGER NOT NULL DEFAULT 0
     );`,
   },
   {
@@ -97,6 +99,14 @@ export function ensureRecipeDocumentStorageReady() {
       }
       if (!names.has('last_synced_at')) {
         await runSqlAsync('ALTER TABLE recipe_documents ADD COLUMN last_synced_at TEXT;')
+      }
+      if (!names.has('last_sync_error')) {
+        await runSqlAsync('ALTER TABLE recipe_documents ADD COLUMN last_sync_error TEXT;')
+      }
+      if (!names.has('sync_attempt_count')) {
+        await runSqlAsync(
+          'ALTER TABLE recipe_documents ADD COLUMN sync_attempt_count INTEGER NOT NULL DEFAULT 0;'
+        )
       }
     })
   }
@@ -132,10 +142,14 @@ async function purgeOrphanedLocalRecipeDocuments() {
   const rows = await getAllAsync<{
     id: string
     file_uri: string
-  }>('SELECT id, file_uri FROM recipe_documents;')
+    dirty: number | null
+  }>('SELECT id, file_uri, dirty FROM recipe_documents;')
 
   for (const row of rows) {
     const fileUri = row.file_uri?.trim() ?? ''
+    // A pending file is the only copy until its cloud upload completes. Never
+    // turn a temporary provider/cache problem into permanent data loss.
+    if (Number(row.dirty ?? 1) === 1) continue
     if (!fileUri) {
       await runSqlAsync('DELETE FROM recipe_documents WHERE id = ?;', [row.id])
       continue
@@ -462,9 +476,25 @@ export async function markLocalRecipeDocumentSynced(input: {
   await ensureRecipeDocumentStorageReady()
   await runSqlAsync(
     `UPDATE recipe_documents
-     SET owner_user_id = ?, cloud_id = ?, dirty = 0, last_synced_at = ?
+     SET owner_user_id = ?, cloud_id = ?, dirty = 0, last_synced_at = ?,
+         last_sync_error = NULL
      WHERE id = ?;`,
     [input.ownerUserId, input.cloudId, new Date().toISOString(), input.localId]
+  )
+}
+
+export async function recordLocalRecipeDocumentSyncFailure(input: {
+  localId: string
+  message: string
+}) {
+  await ensureRecipeDocumentStorageReady()
+  await runSqlAsync(
+    `UPDATE recipe_documents
+     SET dirty = 1,
+         last_sync_error = ?,
+         sync_attempt_count = COALESCE(sync_attempt_count, 0) + 1
+     WHERE id = ?;`,
+    [input.message.slice(0, 500), input.localId]
   )
 }
 

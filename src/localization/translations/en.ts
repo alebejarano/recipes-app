@@ -887,7 +887,7 @@ export const en = {
             folderDeleted: 'Folder deleted',
         },
         alerts: {
-            importQueued: 'Saved offline. This file will upload when your connection is back.',
+            importQueued: 'Saved on this device. Cloud backup will retry automatically.',
             importUploaded: 'Your recipe file has been successfully uploaded.',
             storageLeft: 'About %{count} MB left on Free.',
         },

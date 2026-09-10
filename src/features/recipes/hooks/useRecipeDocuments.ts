@@ -91,8 +91,9 @@ export function useRecipeDocuments(mode: StorageScreenMode = 'auth') {
           ...cloudPage,
           items: [...pendingLocal.filter((item) => !cloudIds.has(item.id)), ...cloudPage.items],
         }
-      } catch (error) {
-        if (!isConnectivityError(error)) throw error
+      } catch {
+        // Imports already staged on this device remain usable when the cloud
+        // endpoint is temporarily unavailable or being rolled out.
         return {
           items: await listRecipeDocuments(),
           nextCursor: null,
@@ -114,7 +115,21 @@ export function useRecipeDocument(id: string, mode: StorageScreenMode = 'auth') 
   return useQuery<RecipeDocument | null>({
     queryKey: [...DOCS_KEY, shouldUseLocalData ? 'local' : 'cloud', user?.id ?? 'guest', id],
     queryFn: async () => {
-      if (shouldUseLocalData) return getRecipeDocument(id)
+      if (shouldUseLocalData) {
+        const localDocument = await getRecipeDocument(id)
+        if (localDocument || !user?.id) return localDocument
+
+        // A Premium migration can temporarily use the local strategy while a
+        // document is queued. Existing cloud documents must still be
+        // reachable by their route id; otherwise the detail screen attempts
+        // to resolve a cloud UUID from SQLite and reports a false load error.
+        try {
+          return await getCloudRecipeDocument(id)
+        } catch (error) {
+          if (!isConnectivityError(error)) throw error
+          return null
+        }
+      }
 
       try {
         const cloudDocument = await getCloudRecipeDocument(id)
@@ -122,8 +137,7 @@ export function useRecipeDocument(id: string, mode: StorageScreenMode = 'auth') 
         // A locally queued import has no cloud ID yet. It remains available on
         // this device, but never takes precedence over a cloud record.
         return getRecipeDocument(id)
-      } catch (error) {
-        if (!isConnectivityError(error)) throw error
+      } catch {
         return getRecipeDocument(id)
       }
     },

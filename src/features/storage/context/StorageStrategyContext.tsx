@@ -35,7 +35,10 @@ export function StorageStrategyProvider({ children }: { children: React.ReactNod
   const value = useMemo<StorageStrategyContextValue>(() => {
     const isAuthenticated = Boolean(user)
     const isPremium = isAuthenticated && plan === 'premium'
-    const shouldKeepUsingLocalData = upgradeStatus === 'running' || upgradeStatus === 'failed'
+    // A failed migration means some local assets are queued for retry, not
+    // that an already-Premium account should lose access to its cloud data.
+    // Pending documents are merged into cloud lists by the document hooks.
+    const shouldKeepUsingLocalData = upgradeStatus === 'running'
     const strategy: StorageStrategy = !isAuthenticated
       ? 'anonymous-local'
       : isPremium && !shouldKeepUsingLocalData

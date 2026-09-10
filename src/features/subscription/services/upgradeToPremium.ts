@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '@/lib/supabase'
 import { triggerFolderSync } from '@/features/folders/sync/folderSync'
 import { triggerNoteSync } from '@/features/notes/sync/noteSync'
-import { triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
+import { syncPendingRecipeDocuments, triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
 import { tagLocalDataAsMigratable } from '@/features/storage/localAccountLinking'
 import { markLocalFolderSynced } from '@/features/folders/storage/localFoldersStorage'
 import { markLocalNoteSynced } from '@/features/notes/storage/localNotesStorage'
@@ -481,6 +481,10 @@ async function runPremiumUpgrade(args: UpgradeToPremiumArgs): Promise<void> {
     }
 
     await args.setPlan('premium', { billingCycle: args.billingCycle })
+    // Documents are binary assets, so they are intentionally not included in
+    // the JSON upgrade snapshot above. Upload them explicitly and make their
+    // successful cloud persistence a requirement for completing the upgrade.
+    await syncPendingRecipeDocuments(userId, { throwOnFailure: true })
     await Promise.all([
       triggerRecipeSync(),
       triggerNoteSync(),

@@ -889,7 +889,7 @@ export const es: TranslationSchema = {
             folderDeleted: 'Carpeta eliminada',
         },
         alerts: {
-            importQueued: 'Guardado sin conexión. Este archivo se subirá cuando vuelva tu conexión.',
+            importQueued: 'Guardado en este dispositivo. La copia en la nube se reintentará automáticamente.',
             importUploaded: 'Tu archivo de receta se ha subido correctamente.',
             storageLeft: 'Quedan unos %{count} MB en Free.',
         },
