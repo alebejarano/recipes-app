@@ -1,5 +1,6 @@
 import { Platform } from 'react-native'
 
+import { File } from '@/lib/fileSystem'
 import { supabase } from '@/lib/supabase'
 import { fetchWithTimeout, FILE_READ_TIMEOUT_MS, UPLOAD_REQUEST_TIMEOUT_MS } from '@/lib/network'
 
@@ -121,11 +122,10 @@ async function buildUploadFormData(input: UploadPremiumImportInput) {
     const blob = await response.blob()
     formData.append('file', blob, input.fileName.trim() || 'import')
   } else {
-    formData.append('file', {
-      uri: input.uri,
-      name: input.fileName.trim() || 'import',
-      type: input.mimeType,
-    } as any)
+    // Expo's File implements Blob, which expo/fetch can serialize as a
+    // multipart part. React Native's legacy { uri, name, type } object is not
+    // supported by the Expo fetch implementation used by this app.
+    formData.append('file', new File(input.uri) as Blob, input.fileName.trim() || 'import')
   }
 
   if (input.title?.trim()) {
