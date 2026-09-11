@@ -887,7 +887,8 @@ export const en = {
             folderDeleted: 'Folder deleted',
         },
         alerts: {
-            importQueued: 'Saved on this device. Cloud backup will retry automatically.',
+            importQueued: 'Saved on this device. Cloud backup failed: %{error}. It will retry automatically.',
+            importUnknownError: 'Unknown upload error',
             importUploaded: 'Your recipe file has been successfully uploaded.',
             storageLeft: 'About %{count} MB left on Free.',
         },

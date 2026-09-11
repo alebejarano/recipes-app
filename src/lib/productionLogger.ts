@@ -16,6 +16,7 @@ type OperationalEventProperties = {
   failure_count?: number
   timeout_ms?: number
   queued?: boolean
+  error_message?: string
 }
 
 type CaptureFn = (event: string, properties: OperationalEventProperties) => void
@@ -92,6 +93,7 @@ export function logOperationalEvent(
     failure_count: properties.failure_count,
     timeout_ms: properties.timeout_ms,
     queued: properties.queued,
+    error_message: properties.error_message,
   }
 
   try {

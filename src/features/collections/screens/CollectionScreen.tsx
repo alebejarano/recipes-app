@@ -59,11 +59,12 @@ type CollectionsScreenProps = {
 
 export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   const { t } = useTranslation()
-  const { segment: segmentParam, recipesSegment, docSuccess, docQueued, sort } = useLocalSearchParams<{
+  const { segment: segmentParam, recipesSegment, docSuccess, docQueued, docQueueError: routeDocQueueError, sort } = useLocalSearchParams<{
     segment?: SegmentKey
     recipesSegment?: RecipeSegmentKey
     docSuccess?: string
     docQueued?: string
+    docQueueError?: string
     sort?: 'recent' | 'largest' | 'oldest'
   }>()
   const segments = useSegments()
@@ -79,6 +80,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   const [recipeSegment, setRecipeSegment] = useState<RecipeSegmentKey>('folders')
   const [showDocSuccess, setShowDocSuccess] = useState(false)
   const [showDocQueued, setShowDocQueued] = useState(false)
+  const [docQueueError, setDocQueueError] = useState<string | null>(null)
   const [queueStorageReminderAfterSuccess, setQueueStorageReminderAfterSuccess] = useState(false)
   const [showStorageReminder, setShowStorageReminder] = useState(false)
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false)
@@ -141,18 +143,20 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
         setSegment('recipes')
         setRecipeSegment('documents')
         setShowDocQueued(true)
+        setDocQueueError(typeof routeDocQueueError === 'string' ? routeDocQueueError.slice(0, 500) : null)
         setShowDocSuccess(false)
         setShowStorageReminder(false)
       }, 0)
       return () => clearTimeout(timeout)
     }
-  }, [docQueued])
+  }, [docQueued, routeDocQueueError])
 
   useEffect(() => {
     if (!showDocSuccess && !showDocQueued) return
     const timeout = setTimeout(() => {
       setShowDocSuccess(false)
-      setShowDocQueued(false)
+        setShowDocQueued(false)
+        setDocQueueError(null)
     }, showDocQueued ? 4200 : 2400)
     return () => clearTimeout(timeout)
   }, [showDocQueued, showDocSuccess])
@@ -382,7 +386,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
             />
             <Text style={styles.successText}>
               {showDocQueued
-                ? t('collections.alerts.importQueued')
+                ? t('collections.alerts.importQueued', { error: docQueueError ?? t('collections.alerts.importUnknownError') })
                 : t('collections.alerts.importUploaded')}
             </Text>
           </View>
@@ -390,6 +394,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
             onPress={() => {
               setShowDocSuccess(false)
               setShowDocQueued(false)
+              setDocQueueError(null)
             }}
             style={styles.successClose}
             accessibilityRole="button"

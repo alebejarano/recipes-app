@@ -116,6 +116,14 @@ function isImportValidationError(error: unknown) {
   )
 }
 
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'object' && error && 'message' in error && typeof error.message === 'string') {
+    return error.message
+  }
+  return ''
+}
+
 function normalizeRequestedFolder(value?: string | string[]) {
   const raw = Array.isArray(value) ? value[0] : value
   if (typeof raw !== 'string') return null
@@ -304,6 +312,7 @@ export default function CreateRecipeScreen({
 
       if (!shouldUseLocalData) {
         setIsUploadingPremiumImport(true)
+        let queuedUploadErrorMessage: string | null = null
         try {
           await uploadPremiumImport({
             uri: normalizedFile.uri,
@@ -320,6 +329,14 @@ export default function CreateRecipeScreen({
           if (isImportValidationError(uploadError)) {
             throw uploadError
           }
+          const uploadErrorMessage = getErrorMessage(uploadError) || 'Unknown upload error'
+          queuedUploadErrorMessage = uploadErrorMessage
+          console.warn('[import upload failed]', {
+            message: uploadErrorMessage,
+            category: getErrorCategory(uploadError),
+            fileName: normalizedFile.name,
+            bytes: normalizedFile.size,
+          })
           await documentMutation.mutateAsync({
             title: values.title,
             file: normalizedFile,
@@ -332,6 +349,7 @@ export default function CreateRecipeScreen({
             category: getErrorCategory(uploadError),
             count: 1,
             queued: true,
+            error_message: uploadErrorMessage.slice(0, 500),
           })
           queuedForUpload = true
           void triggerRecipeSync()
@@ -345,7 +363,9 @@ export default function CreateRecipeScreen({
           params: {
             segment: 'recipes',
             recipesSegment: 'documents',
-            ...(queuedForUpload ? { docQueued: '1' } : { docSuccess: '1' }),
+            ...(queuedForUpload
+              ? { docQueued: '1', docQueueError: queuedUploadErrorMessage ?? 'Unknown upload error' }
+              : { docSuccess: '1' }),
           },
         })
         return

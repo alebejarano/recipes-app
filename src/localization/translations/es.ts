@@ -889,7 +889,8 @@ export const es: TranslationSchema = {
             folderDeleted: 'Carpeta eliminada',
         },
         alerts: {
-            importQueued: 'Guardado en este dispositivo. La copia en la nube se reintentará automáticamente.',
+            importQueued: 'Guardado en este dispositivo. Error de la copia en la nube: %{error}. Se reintentará automáticamente.',
+            importUnknownError: 'Error de subida desconocido',
             importUploaded: 'Tu archivo de receta se ha subido correctamente.',
             storageLeft: 'Quedan unos %{count} MB en Free.',
         },
