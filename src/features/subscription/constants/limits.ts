@@ -1,5 +1,5 @@
 export const FREE_PLAN_MAX_RECIPES = 100
-export const FREE_PLAN_MAX_IMPORT_FILE_BYTES = 10 * 1024 * 1024
+export const FREE_PLAN_MAX_IMPORT_FILE_BYTES = 6 * 1024 * 1024
 export const FREE_PLAN_MAX_IMPORT_TOTAL_BYTES = 50 * 1024 * 1024
 export const PREMIUM_PLAN_MAX_STORAGE_BYTES = 5 * 1024 * 1024 * 1024
 export const RECIPE_IMAGE_UPLOAD_MAX_FILE_BYTES = 10 * 1024 * 1024
@@ -16,6 +16,6 @@ export const IMPORT_IMAGE_COMPRESS_QUALITY = 0.82
 export const IMPORT_IMAGE_TOO_LARGE_MESSAGE =
   'This image is still too large after optimization. Please choose another image.'
 export const IMPORT_FILE_TOO_LARGE_MESSAGE =
-  'This file is larger than 10MB. Please choose a smaller file.'
+  'This file is larger than 6MB. Please choose a smaller file.'
 export const IMPORT_ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png'] as const
 export const IMPORT_ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png'] as const

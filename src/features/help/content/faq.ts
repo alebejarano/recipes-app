@@ -61,7 +61,7 @@ const FAQ_SECTIONS_BY_LOCALE: Record<'en' | 'es', FaqSection[]> = {
           answers: [
             'The Free plan includes:',
             '• Up to 100 recipes',
-            '• Up to 10MB per import file (PDF or image)',
+            '• Up to 6MB per import file (PDF or image)',
             '• Up to 50MB total storage for imports and images',
             '• Unlimited notes',
             '• Full offline access on this device',
@@ -162,7 +162,7 @@ const FAQ_SECTIONS_BY_LOCALE: Record<'en' | 'es', FaqSection[]> = {
           question: 'Is there a storage limit with Premium?',
           answers: [
             'Premium includes:',
-            '• Up to 10MB per file (PDF or image)',
+            '• Up to 6MB per file (PDF or image)',
             '• 5GB total storage for your library',
             '• Unlimited recipes and notes',
             "If you ever approach the limit, we'll let you know.",
@@ -300,7 +300,7 @@ const FAQ_SECTIONS_BY_LOCALE: Record<'en' | 'es', FaqSection[]> = {
           answers: [
             'El plan gratuito incluye:',
             '• Hasta 100 recetas',
-            '• Hasta 10 MB por archivo importado (PDF o imagen)',
+            '• Hasta 6 MB por archivo importado (PDF o imagen)',
             '• Hasta 50 MB de almacenamiento total para importaciones e imágenes',
             '• Notas ilimitadas',
             '• Acceso completo sin conexión en este dispositivo',
@@ -401,7 +401,7 @@ const FAQ_SECTIONS_BY_LOCALE: Record<'en' | 'es', FaqSection[]> = {
           question: '¿Hay un límite de almacenamiento con Premium?',
           answers: [
             'Premium incluye:',
-            '• Hasta 10 MB por archivo (PDF o imagen)',
+            '• Hasta 6 MB por archivo (PDF o imagen)',
             '• 5 GB de almacenamiento total para tu biblioteca',
             '• Recetas y notas ilimitadas',
             'Si alguna vez te acercas al límite, te avisaremos.',

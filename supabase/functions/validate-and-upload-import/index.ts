@@ -1,7 +1,7 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
-const MAX_FILE_BYTES = 10 * 1024 * 1024
+const MAX_FILE_BYTES = 6 * 1024 * 1024
 const IMPORTS_BUCKET = Deno.env.get('IMPORTS_BUCKET') ?? 'recipe-imports'
 const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png'])
 
@@ -121,7 +121,7 @@ serve(async (req) => {
     return json({ error: 'Invalid file size.' }, 400, origin)
   }
   if (bytes.byteLength > MAX_FILE_BYTES) {
-    return json({ error: 'This file is too large. Max 10 MB per file.' }, 400, origin)
+    return json({ error: 'This file is too large. Max 6 MB per file.' }, 400, origin)
   }
 
   if (mimeType === 'application/pdf' && isEncryptedPdf(bytes)) {

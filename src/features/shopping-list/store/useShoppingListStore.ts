@@ -16,6 +16,8 @@ import {
     setShoppingListItems,
 } from '../storage/shoppingListItemsStorage'
 import { ensureShoppingList, getShoppingListId } from '../storage/shoppingListStorage'
+import { markShoppingListDirty } from '../storage/shoppingListSyncStorage'
+import { triggerShoppingListSync } from '../sync/shoppingListSync'
 
 function normalizeName(input: string) {
   return input.trim().replace(/\s+/g, ' ')
@@ -61,6 +63,7 @@ type ShoppingListState = {
   setChecked: (id: string, checked: boolean) => Promise<void>
   dismissQuickAddItem: (key: string) => Promise<void>
   resetForAccountChange: () => void
+  refreshFromStorage: () => Promise<void>
 
   // optional utilities
   clear: () => Promise<void>
@@ -80,6 +83,14 @@ export const useShoppingListStore = create<ShoppingListState>((set, get) => {
     }))
 
     await setShoppingListItems(nextItems)
+    await markShoppingListDirty()
+    void triggerShoppingListSync().then(async () => {
+      const syncedItems = await getShoppingListItems()
+      set({
+        items: syncedItems,
+        normalizedNames: buildNameSet(syncedItems),
+      })
+    })
   }
 
   return {
@@ -137,6 +148,7 @@ export const useShoppingListStore = create<ShoppingListState>((set, get) => {
       set({ isCreating: true })
 
       const id = await ensureShoppingList()
+      await markShoppingListDirty()
       const items = await getShoppingListItems()
 
       set({
@@ -268,9 +280,23 @@ export const useShoppingListStore = create<ShoppingListState>((set, get) => {
       })
     },
 
+    refreshFromStorage: async () => {
+      const [listId, items] = await Promise.all([
+        getShoppingListId(),
+        getShoppingListItems(),
+      ])
+      set({
+        listId,
+        items,
+        normalizedNames: buildNameSet(items),
+      })
+    },
+
     clear: async () => {
       set({ items: [], normalizedNames: new Set() })
       await clearShoppingListItems()
+      await markShoppingListDirty()
+      void triggerShoppingListSync()
     },
 
     setCompleteTemporarily: (ms = 900) => {

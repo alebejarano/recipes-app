@@ -35,7 +35,7 @@ describe('assertCanAddImport', () => {
 
     it('rejects invalid and oversized files before storage checks', async () => {
         await expect(assertCanAddImport({ plan: 'free', incomingBytes: 0 })).rejects.toThrow('Invalid file size.');
-        await expect(assertCanAddImport({ plan: 'free', incomingBytes: FREE_PLAN_MAX_IMPORT_FILE_BYTES + 1 })).rejects.toThrow('larger than 10MB');
+        await expect(assertCanAddImport({ plan: 'free', incomingBytes: FREE_PLAN_MAX_IMPORT_FILE_BYTES + 1 })).rejects.toThrow('larger than 6MB');
         expect(mockGetFirst).not.toHaveBeenCalled();
     });
 
