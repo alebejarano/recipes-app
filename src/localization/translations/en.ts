@@ -234,6 +234,8 @@ export const en = {
             },
             items: {
                 languageTitle: 'Language',
+                signInTitle: 'Sign in',
+                signInSubtitle: 'Access your existing account',
                 createAccountTitle: 'Create an account',
                 createAccountSubtitle: 'Upgrade to sync and back up your recipes',
                 currentPlanTitle: 'Current plan',

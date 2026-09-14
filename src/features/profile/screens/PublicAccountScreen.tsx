@@ -20,6 +20,14 @@ export default function PublicAccountScreen() {
   const accountItems = useMemo(
     () => [
       {
+        id: 'sign-in',
+        type: 'link' as const,
+        title: t('profile.guest.items.signInTitle'),
+        subtitle: t('profile.guest.items.signInSubtitle'),
+        icon: 'log-in' as const,
+        onPress: () => router.push('/(public)/login'),
+      },
+      {
         id: 'create-account',
         type: 'link' as const,
         title: t('profile.guest.items.createAccountTitle'),
@@ -95,9 +103,9 @@ export default function PublicAccountScreen() {
 
       <SettingsSection title={t('profile.guest.sections.preferences')} items={preferenceItems} />
 
-      <SettingsSection title={t('profile.guest.sections.notifications')} items={notificationsItems} />
-
       <SettingsSection title={t('profile.guest.sections.account')} items={accountItems} />
+
+      <SettingsSection title={t('profile.guest.sections.notifications')} items={notificationsItems} />
 
       <SettingsSection
         title={t('profile.guest.sections.support')}

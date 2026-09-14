@@ -236,6 +236,8 @@ export const es: TranslationSchema = {
             },
             items: {
                 languageTitle: 'Idioma',
+                signInTitle: 'Iniciar sesión',
+                signInSubtitle: 'Accede a tu cuenta existente',
                 createAccountTitle: 'Crear una cuenta',
                 createAccountSubtitle: 'Pásate a una cuenta para sincronizar y guardar copia de tus recetas',
                 currentPlanTitle: 'Plan actual',
