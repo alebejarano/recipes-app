@@ -22,6 +22,8 @@ import { isFavoritesFolderName } from '@/features/collections/utils/collections'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
 import { recordRecipeOpen } from '@/features/home/utils/recipeOpenHistory'
 import IngredientImportSheet from '@/features/recipes/components/IngredientImportSheet'
+import RecipeActionsSheet from '@/features/recipes/components/RecipeActionsSheet'
+import RecipeShareSheet from '@/features/recipes/components/RecipeShareSheet'
 import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
 import { useDeleteLocalRecipe, useLocalRecipe, useUpdateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
 import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
@@ -85,6 +87,8 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
   const [isIngredientImportOpen, setIsIngredientImportOpen] = useState(false)
   const [isImportingIngredients, setIsImportingIngredients] = useState(false)
   const [favoriteOverride, setFavoriteOverride] = useState<boolean | null>(null)
+  const [isActionsSheetOpen, setIsActionsSheetOpen] = useState(false)
+  const [isShareSheetOpen, setIsShareSheetOpen] = useState(false)
 
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
@@ -130,36 +134,26 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
     })
   }
 
-  const handleMore = () => {
-    Alert.alert(t('recipes.detail.actionsTitle'), undefined, [
-      { text: t('recipes.detail.edit'), onPress: handleEdit },
+  const handleDelete = () => {
+    Alert.alert(t('recipes.detail.deletePromptTitle'), t('recipes.detail.deletePromptBody'), [
+      { text: t('recipes.detail.cancel'), style: 'cancel' },
       {
         text: t('recipes.detail.delete'),
         style: 'destructive',
-        onPress: () => {
-          Alert.alert(t('recipes.detail.deletePromptTitle'), t('recipes.detail.deletePromptBody'), [
-            { text: t('recipes.detail.cancel'), style: 'cancel' },
-            {
-              text: t('recipes.detail.delete'),
-              style: 'destructive',
-              onPress: async () => {
-                try {
-                  await deleteMutation.mutateAsync(recipeId)
-                  showSnackbar(t('recipes.detail.deleted'))
-                  if (safeReturnTo) {
-                    router.replace(safeReturnTo)
-                  } else {
-                    router.back()
-                  }
-                } catch (error: any) {
-                  Alert.alert(t('recipes.detail.deleteFailed'), getUserFacingErrorMessage(error))
-                }
-              },
-            },
-          ])
+        onPress: async () => {
+          try {
+            await deleteMutation.mutateAsync(recipeId)
+            showSnackbar(t('recipes.detail.deleted'))
+            if (safeReturnTo) {
+              router.replace(safeReturnTo)
+            } else {
+              router.back()
+            }
+          } catch (error: any) {
+            Alert.alert(t('recipes.detail.deleteFailed'), getUserFacingErrorMessage(error))
+          }
         },
       },
-      { text: t('recipes.detail.cancel'), style: 'cancel' },
     ])
   }
 
@@ -205,11 +199,7 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
   }
 
   const handleShare = () => {
-    Alert.alert(t('recipes.detail.shareTitle'), t('recipes.detail.shareBody'), [
-      { text: t('recipes.detail.shareText'), onPress: () => { void handleShareAsText() } },
-      { text: t('recipes.detail.shareFile'), onPress: () => { void handleShareAsFile() } },
-      { text: t('recipes.detail.cancel'), style: 'cancel' },
-    ])
+    setIsShareSheetOpen(true)
   }
 
   const handleToggleFavorite = async () => {
@@ -369,7 +359,7 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
               <Feather name="share-2" size={18} style={styles.icon} />
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={handleMore}
+              onPress={() => setIsActionsSheetOpen(true)}
               accessibilityRole="button"
               accessibilityLabel={t('recipes.detail.moreA11y')}
               style={styles.iconButton}
@@ -512,6 +502,39 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
         onClose={() => setIsIngredientImportOpen(false)}
         onAddAll={() => { void importIngredients(ingredientLines) }}
         onAddSelected={(selectedIngredients) => { void importIngredients(selectedIngredients) }}
+      />
+      <RecipeActionsSheet
+        visible={isActionsSheetOpen}
+        title={t('recipes.detail.actionsTitle')}
+        editLabel={t('recipes.detail.edit')}
+        deleteLabel={t('recipes.detail.delete')}
+        cancelLabel={t('recipes.detail.cancel')}
+        onClose={() => setIsActionsSheetOpen(false)}
+        onEdit={() => {
+          setIsActionsSheetOpen(false)
+          handleEdit()
+        }}
+        onDelete={() => {
+          setIsActionsSheetOpen(false)
+          handleDelete()
+        }}
+      />
+      <RecipeShareSheet
+        visible={isShareSheetOpen}
+        title={t('recipes.detail.shareTitle')}
+        body={t('recipes.detail.shareBody')}
+        shareTextLabel={t('recipes.detail.shareText')}
+        shareFileLabel={t('recipes.detail.shareFile')}
+        cancelLabel={t('recipes.detail.cancel')}
+        onClose={() => setIsShareSheetOpen(false)}
+        onShareText={() => {
+          setIsShareSheetOpen(false)
+          void handleShareAsText()
+        }}
+        onShareFile={() => {
+          setIsShareSheetOpen(false)
+          void handleShareAsFile()
+        }}
       />
     </SafeAreaView>
   )

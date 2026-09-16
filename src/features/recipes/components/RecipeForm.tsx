@@ -231,6 +231,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   const [folderInput, setFolderInput] = useState('')
   const [isFolderInputFocused, setIsFolderInputFocused] = useState(false)
   const [isEmojiModalOpen, setIsEmojiModalOpen] = useState(false)
+  const [isCoverOptionsModalOpen, setIsCoverOptionsModalOpen] = useState(false)
   const [isPhotoOptionsModalOpen, setIsPhotoOptionsModalOpen] = useState(false)
   const [emojiDraft, setEmojiDraft] = useState('')
   const [emojiKeyboardInset, setEmojiKeyboardInset] = useState(0)
@@ -543,22 +544,8 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   }, [ensureCameraPermission, uploadImageAsset])
 
   const openCoverOptions = useCallback(() => {
-    const options: {
-      text: string
-      onPress?: () => void
-      style?: 'default' | 'cancel' | 'destructive'
-    }[] = [
-      { text: t('recipes.form.coverPickEmoji'), onPress: openEmojiModal },
-      { text: t('recipes.form.coverUploadPhoto'), onPress: handlePickImage },
-      { text: t('recipes.form.coverTakePhoto'), onPress: handleTakePhoto },
-    ]
-    if (values.emoji || values.imageUrl) {
-      options.push({ text: t('recipes.form.coverRemove'), style: 'destructive', onPress: clearCover })
-    }
-    options.push({ text: t('recipes.form.coverCancel'), style: 'cancel' })
-
-    Alert.alert(t('recipes.form.coverOptionsTitle'), t('recipes.form.coverOptionsBody'), options)
-  }, [clearCover, handlePickImage, handleTakePhoto, openEmojiModal, t, values])
+    setIsCoverOptionsModalOpen(true)
+  }, [])
 
   const moreDetailsSummary = useMemo(() => {
     const filledCount = [
@@ -1042,6 +1029,79 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       ) : null}
 
       <Modal
+        visible={isCoverOptionsModalOpen}
+        animationType="fade"
+        transparent
+        statusBarTranslucent
+        onRequestClose={() => setIsCoverOptionsModalOpen(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <Pressable
+            style={styles.modalDismissArea}
+            onPress={() => setIsCoverOptionsModalOpen(false)}
+            accessibilityRole="button"
+            accessibilityLabel={t('recipes.form.coverCancel')}
+          />
+          <View style={[styles.modalCard, { paddingBottom: Math.max(insets.bottom, 24) + 16 }]}>
+            <Text style={styles.modalTitle}>{t('recipes.form.coverOptionsTitle')}</Text>
+            <Text style={styles.modalSubtitle}>{t('recipes.form.coverOptionsBody')}</Text>
+            <View style={styles.photoOptionsActions}>
+              <Button
+                variant="secondary"
+                size="md"
+                onPress={() => {
+                  setIsCoverOptionsModalOpen(false)
+                  void handleTakePhoto()
+                }}
+              >
+                {t('recipes.form.coverTakePhoto')}
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
+                onPress={() => {
+                  setIsCoverOptionsModalOpen(false)
+                  void handlePickImage()
+                }}
+              >
+                {t('recipes.form.coverUploadPhoto')}
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
+                onPress={() => {
+                  setIsCoverOptionsModalOpen(false)
+                  openEmojiModal()
+                }}
+              >
+                {t('recipes.form.coverPickEmoji')}
+              </Button>
+              {values.emoji || values.imageUrl ? (
+                <Button
+                  variant="ghost"
+                  size="md"
+                  onPress={() => {
+                    clearCover()
+                    setIsCoverOptionsModalOpen(false)
+                  }}
+                  textStyle={styles.removeCoverText}
+                >
+                  {t('recipes.form.coverRemove')}
+                </Button>
+              ) : null}
+              <Button
+                variant="ghost"
+                size="md"
+                onPress={() => setIsCoverOptionsModalOpen(false)}
+              >
+                {t('recipes.form.coverCancel')}
+              </Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
         visible={isPhotoOptionsModalOpen}
         animationType="fade"
         transparent
@@ -1275,6 +1335,9 @@ const styles = createThemedStyles((theme) => ({
   photoOptionsActions: {
     gap: theme.spacing.sm,
     width: '100%',
+  },
+  removeCoverText: {
+    color: theme.colors.destructive,
   },
   modalActionButton: {
     flex: 1,
