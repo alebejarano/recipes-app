@@ -414,14 +414,12 @@ export function SubscriptionProvider({
       try {
         const result = await Purchases.purchasePackage(pkg)
         setCustomerInfo(result.customerInfo)
-        setUpgradeStatusState('idle')
         return result.customerInfo
       } catch (error) {
         if (isAlreadyOwnedPurchaseError(error)) {
           try {
             const nextCustomerInfo = await Purchases.restorePurchases()
             setCustomerInfo(nextCustomerInfo)
-            setUpgradeStatusState('idle')
             return nextCustomerInfo
           } catch (restoreError) {
             setUpgradeStatusState('failed')

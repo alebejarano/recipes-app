@@ -20,6 +20,7 @@ import {
   useStrategyNote,
   useStrategyUpdateNote,
 } from '@/features/notes/hooks/useStrategyNotes'
+import RecipeActionsSheet from '@/features/recipes/components/RecipeActionsSheet'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { useTranslation } from '@/localization'
@@ -43,12 +44,14 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
   const deleteMutation = useStrategyDeleteNote(routeMode)
   const updateMutation = useStrategyUpdateNote(noteId, routeMode)
   const [pinnedOverride, setPinnedOverride] = useState<boolean | null>(null)
+  const [isActionsOpen, setIsActionsOpen] = useState(false)
   const isPinned = pinnedOverride ?? Boolean(note?.pinnedAt)
 
   const title = useMemo(() => note?.title?.trim() || t('notes.fallbackTitle'), [note?.title, t])
   const content = useMemo(() => note?.content?.trim() ?? '', [note?.content])
 
   const handleEdit = () => {
+    setIsActionsOpen(false)
     router.push({
       pathname:
         routeMode === 'public'
@@ -58,36 +61,27 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
     })
   }
 
-  const handleMore = () => {
-    Alert.alert(t('notes.detail.actionsTitle'), undefined, [
-      { text: t('notes.detail.edit'), onPress: handleEdit },
+  const handleDelete = () => {
+    setIsActionsOpen(false)
+    Alert.alert(t('notes.editor.deleteAlertTitle'), t('notes.editor.deleteAlertMessage'), [
+      { text: t('notes.detail.cancel'), style: 'cancel' },
       {
         text: t('notes.detail.delete'),
         style: 'destructive',
-        onPress: () => {
-          Alert.alert(t('notes.editor.deleteAlertTitle'), t('notes.editor.deleteAlertMessage'), [
-            { text: t('notes.detail.cancel'), style: 'cancel' },
-            {
-              text: t('notes.detail.delete'),
-              style: 'destructive',
-              onPress: async () => {
-                try {
-                  await deleteMutation.mutateAsync(noteId)
-                  showSnackbar(t('notes.editor.deleted'))
-                  if (safeReturnTo) {
-                    router.replace(safeReturnTo)
-                  } else {
-                    router.back()
-                  }
-                } catch (error: any) {
-                  Alert.alert(t('notes.editor.deleteFailedTitle'), getUserFacingErrorMessage(error))
-                }
-              },
-            },
-          ])
+        onPress: async () => {
+          try {
+            await deleteMutation.mutateAsync(noteId)
+            showSnackbar(t('notes.editor.deleted'))
+            if (safeReturnTo) {
+              router.replace(safeReturnTo)
+            } else {
+              router.back()
+            }
+          } catch (error: any) {
+            Alert.alert(t('notes.editor.deleteFailedTitle'), getUserFacingErrorMessage(error))
+          }
         },
       },
-      { text: t('notes.detail.cancel'), style: 'cancel' },
     ])
   }
 
@@ -166,7 +160,7 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
               />
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={handleMore}
+              onPress={() => setIsActionsOpen(true)}
               accessibilityRole="button"
               accessibilityLabel={t('notes.detail.moreA11y')}
               style={styles.iconButton}
@@ -190,6 +184,17 @@ export default function NoteDetailScreen({ noteId }: NoteDetailScreenProps) {
           )}
         </View>
       </ScrollView>
+
+      <RecipeActionsSheet
+        visible={isActionsOpen}
+        title={t('notes.detail.actionsTitle')}
+        editLabel={t('notes.detail.edit')}
+        deleteLabel={t('notes.detail.delete')}
+        cancelLabel={t('notes.detail.cancel')}
+        onClose={() => setIsActionsOpen(false)}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
     </SafeAreaView>
   )
 }

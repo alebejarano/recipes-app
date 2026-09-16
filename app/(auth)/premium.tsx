@@ -105,15 +105,10 @@ export default function PremiumRoute() {
       if (!premiumActivated) {
         shouldHoldRedirectRef.current = false
         setIsPurchaseFlowRunning(false)
+        await setUpgradeStatus('idle')
         return
       }
       purchaseConfirmed = true
-
-      // The sync worker uses this account-scoped value to decide whether it
-      // may upload locally queued imports. Store it as soon as the store has
-      // confirmed the entitlement, rather than waiting for the optional
-      // migration of older local data to finish.
-      await setPlan('premium', { billingCycle: selectedBillingCycle })
 
       await upgradeToPremium({
         userId: user.id,
