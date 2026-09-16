@@ -51,7 +51,7 @@ export default function IngredientImportSheet({
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType="fade"
       transparent
       onRequestClose={onClose}
     >
@@ -59,7 +59,6 @@ export default function IngredientImportSheet({
         <Pressable style={styles.backdrop} onPress={onClose} />
 
         <View style={styles.sheet}>
-          <View style={styles.handle} />
           <Text style={styles.title}>{t('recipes.ingredientImportSheet.title')}</Text>
           <Text style={styles.subtitle}>{t('recipes.ingredientImportSheet.subtitle')}</Text>
 
@@ -137,7 +136,9 @@ export default function IngredientImportSheet({
 const styles = createThemedStyles((theme) => ({
   modalRoot: {
     flex: 1,
-    justifyContent: 'flex-end',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: theme.spacing.lg,
   },
   backdrop: {
     position: 'absolute',
@@ -148,25 +149,17 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.overlay,
   },
   sheet: {
-    borderTopLeftRadius: theme.radii.xxl,
-    borderTopRightRadius: theme.radii.xxl,
+    width: '100%',
+    maxWidth: 420,
+    borderRadius: theme.radii.xxl,
     backgroundColor: theme.colors.background,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderBottomWidth: 0,
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.sm,
     paddingBottom: theme.spacing.xl,
     gap: theme.spacing.sm,
     maxHeight: '80%',
-  },
-  handle: {
-    alignSelf: 'center',
-    width: 44,
-    height: 4,
-    borderRadius: theme.radii.full,
-    backgroundColor: theme.colors.border,
-    marginBottom: theme.spacing.xs,
   },
   title: {
     ...theme.textVariants.heading,

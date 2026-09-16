@@ -25,7 +25,6 @@ import {
   TextInput,
   View,
 } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
 import TagChip from '@/components/TagChip'
@@ -224,7 +223,6 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   ref
 ) {
   const { t } = useTranslation()
-  const insets = useSafeAreaInsets()
   const [values, setValues] = useState<RecipeFormValues>(
     initialValues ?? createEmptyRecipeFormValues()
   )
@@ -1035,14 +1033,14 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         statusBarTranslucent
         onRequestClose={() => setIsCoverOptionsModalOpen(false)}
       >
-        <View style={styles.modalBackdrop}>
+        <View style={styles.centeredModalBackdrop}>
           <Pressable
             style={styles.modalDismissArea}
             onPress={() => setIsCoverOptionsModalOpen(false)}
             accessibilityRole="button"
             accessibilityLabel={t('recipes.form.coverCancel')}
           />
-          <View style={[styles.modalCard, { paddingBottom: Math.max(insets.bottom, 24) + 16 }]}>
+          <View style={styles.centeredModalCard}>
             <Text style={styles.modalTitle}>{t('recipes.form.coverOptionsTitle')}</Text>
             <Text style={styles.modalSubtitle}>{t('recipes.form.coverOptionsBody')}</Text>
             <View style={styles.photoOptionsActions}>
@@ -1108,14 +1106,14 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         statusBarTranslucent
         onRequestClose={() => setIsPhotoOptionsModalOpen(false)}
       >
-        <View style={styles.modalBackdrop}>
+        <View style={styles.centeredModalBackdrop}>
           <Pressable
             style={styles.modalDismissArea}
             onPress={() => setIsPhotoOptionsModalOpen(false)}
             accessibilityRole="button"
             accessibilityLabel={t('recipes.form.coverCancel')}
           />
-          <View style={[styles.modalCard, { paddingBottom: Math.max(insets.bottom, 24) + 16 }]}>
+          <View style={styles.centeredModalCard}>
             <Text style={styles.modalTitle}>{t('recipes.form.photoOptionsTitle')}</Text>
             <Text style={styles.modalSubtitle}>{t('recipes.form.photoOptionsBody')}</Text>
             <View style={styles.photoOptionsActions}>
@@ -1153,13 +1151,13 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
 
       <Modal
         visible={isEmojiModalOpen}
-        animationType="slide"
+        animationType="fade"
         transparent
         statusBarTranslucent
         onRequestClose={() => setIsEmojiModalOpen(false)}
       >
         <KeyboardAvoidingView
-          style={styles.modalBackdrop}
+          style={styles.centeredModalBackdrop}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <Pressable
@@ -1170,9 +1168,8 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
           />
           <View
             style={[
-              styles.modalCard,
+              styles.centeredModalCard,
               {
-                paddingBottom: Math.max(insets.bottom, 24) + 16,
                 marginBottom: Platform.OS === 'android' ? emojiKeyboardInset : 0,
               },
             ]}
@@ -1289,10 +1286,12 @@ const styles = createThemedStyles((theme) => ({
   row: { flexDirection: 'row', gap: theme.spacing.sm },
   flex1: { flex: 1 },
   flex2: { flex: 2 },
-  modalBackdrop: {
+  centeredModalBackdrop: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: theme.spacing.lg,
     backgroundColor: theme.colors.overlay,
-    justifyContent: 'flex-end',
   },
   modalDismissArea: {
     position: 'absolute',
@@ -1301,12 +1300,13 @@ const styles = createThemedStyles((theme) => ({
     bottom: 0,
     left: 0,
   },
-  modalCard: {
-    backgroundColor: theme.colors.card,
-    borderTopLeftRadius: theme.radii.xxl,
-    borderTopRightRadius: theme.radii.xxl,
-    padding: theme.spacing.lg,
+  centeredModalCard: {
+    width: '100%',
+    maxWidth: 420,
     gap: theme.spacing.sm,
+    padding: theme.spacing.lg,
+    borderRadius: theme.radii.xxl,
+    backgroundColor: theme.colors.card,
   },
   modalTitle: {
     ...theme.textVariants.subtitle,

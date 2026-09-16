@@ -46,14 +46,21 @@ export default function RecipeActionsSheet({
 }
 
 const styles = createThemedStyles((theme) => ({
-  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: theme.colors.overlay },
+  backdrop: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: theme.spacing.lg,
+    backgroundColor: theme.colors.overlay,
+  },
   dismissArea: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
   card: {
     gap: theme.spacing.sm,
     padding: theme.spacing.lg,
-    paddingBottom: theme.spacing['2xl'],
-    borderTopLeftRadius: theme.radii.xxl,
-    borderTopRightRadius: theme.radii.xxl,
+    width: '100%',
+    maxWidth: 420,
+    paddingBottom: theme.spacing.lg,
+    borderRadius: theme.radii.xxl,
     backgroundColor: theme.colors.card,
   },
   title: { ...theme.textVariants.subtitle, color: theme.colors.foreground, marginBottom: theme.spacing.xs },
