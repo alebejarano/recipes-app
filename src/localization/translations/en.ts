@@ -960,6 +960,8 @@ export const en = {
             uploadFailedTitle: 'Upload failed',
             coverOptionsTitle: 'Add cover',
             coverOptionsBody: 'Choose an emoji or a photo.',
+            photoOptionsTitle: 'Add photo',
+            photoOptionsBody: 'Choose how you want to add a photo.',
             coverPickEmoji: 'Pick emoji',
             coverUploadPhoto: 'Upload photo',
             coverTakePhoto: 'Take photo',

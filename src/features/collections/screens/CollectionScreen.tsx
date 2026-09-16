@@ -548,6 +548,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
           style={styles.modalBackdrop}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
+          <Pressable style={styles.modalDismissArea} onPress={() => setIsCreateFolderOpen(false)} />
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>{t('collections.createFolder')}</Text>
             <Text style={styles.modalSubtitle}>{t('collections.createModal.subtitle')}</Text>
@@ -764,6 +765,13 @@ const styles = createThemedStyles((theme) => ({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: theme.spacing.lg,
+  },
+  modalDismissArea: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
   },
   modalCard: {
     width: '100%',

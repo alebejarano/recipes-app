@@ -231,6 +231,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   const [folderInput, setFolderInput] = useState('')
   const [isFolderInputFocused, setIsFolderInputFocused] = useState(false)
   const [isEmojiModalOpen, setIsEmojiModalOpen] = useState(false)
+  const [isPhotoOptionsModalOpen, setIsPhotoOptionsModalOpen] = useState(false)
   const [emojiDraft, setEmojiDraft] = useState('')
   const [emojiKeyboardInset, setEmojiKeyboardInset] = useState(0)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
@@ -775,7 +776,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
                   <Button
                     variant="secondary"
                     size="md"
-                    onPress={handlePickImage}
+                    onPress={() => setIsPhotoOptionsModalOpen(true)}
                     disabled={isSubmitting || isUploadingImage}
                     style={styles.coverActionButton}
                     icon={<Feather name="camera" size={18} color={styles.coverActionIcon.color} />}
@@ -1041,6 +1042,56 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       ) : null}
 
       <Modal
+        visible={isPhotoOptionsModalOpen}
+        animationType="fade"
+        transparent
+        statusBarTranslucent
+        onRequestClose={() => setIsPhotoOptionsModalOpen(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <Pressable
+            style={styles.modalDismissArea}
+            onPress={() => setIsPhotoOptionsModalOpen(false)}
+            accessibilityRole="button"
+            accessibilityLabel={t('recipes.form.coverCancel')}
+          />
+          <View style={[styles.modalCard, { paddingBottom: Math.max(insets.bottom, 24) + 16 }]}>
+            <Text style={styles.modalTitle}>{t('recipes.form.photoOptionsTitle')}</Text>
+            <Text style={styles.modalSubtitle}>{t('recipes.form.photoOptionsBody')}</Text>
+            <View style={styles.photoOptionsActions}>
+              <Button
+                variant="secondary"
+                size="md"
+                onPress={() => {
+                  setIsPhotoOptionsModalOpen(false)
+                  void handleTakePhoto()
+                }}
+              >
+                {t('recipes.form.coverTakePhoto')}
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
+                onPress={() => {
+                  setIsPhotoOptionsModalOpen(false)
+                  void handlePickImage()
+                }}
+              >
+                {t('recipes.form.coverUploadPhoto')}
+              </Button>
+              <Button
+                variant="ghost"
+                size="md"
+                onPress={() => setIsPhotoOptionsModalOpen(false)}
+              >
+                {t('recipes.form.coverCancel')}
+              </Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
         visible={isEmojiModalOpen}
         animationType="slide"
         transparent
@@ -1051,6 +1102,12 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
           style={styles.modalBackdrop}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
+          <Pressable
+            style={styles.modalDismissArea}
+            onPress={() => setIsEmojiModalOpen(false)}
+            accessibilityRole="button"
+            accessibilityLabel={t('recipes.form.cancel')}
+          />
           <View
             style={[
               styles.modalCard,
@@ -1177,6 +1234,13 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.overlay,
     justifyContent: 'flex-end',
   },
+  modalDismissArea: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  },
   modalCard: {
     backgroundColor: theme.colors.card,
     borderTopLeftRadius: theme.radii.xxl,
@@ -1205,6 +1269,10 @@ const styles = createThemedStyles((theme) => ({
   },
   modalActions: {
     flexDirection: 'row',
+    gap: theme.spacing.sm,
+    width: '100%',
+  },
+  photoOptionsActions: {
     gap: theme.spacing.sm,
     width: '100%',
   },

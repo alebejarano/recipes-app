@@ -110,6 +110,7 @@ export default function PremiumSuccessModal({ visible, onClose }: PremiumSuccess
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
+        <Pressable style={styles.dismissArea} onPress={onClose} />
         <View style={styles.card} onLayout={(event) => setCardHeight(event.nativeEvent.layout.height)}>
           <View pointerEvents="none" style={styles.confettiLayer}>
             {confettiPieces.map((piece, index) => {
@@ -192,6 +193,13 @@ const styles = createThemedStyles((theme) => ({
     alignItems: 'center',
     justifyContent: 'center',
     padding: theme.spacing.md,
+  },
+  dismissArea: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
   },
   card: {
     width: '100%',

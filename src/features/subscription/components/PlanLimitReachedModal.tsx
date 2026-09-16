@@ -27,6 +27,7 @@ export default function PlanLimitReachedModal({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
+        <Pressable style={styles.dismissArea} onPress={onClose} />
         <View style={styles.card}>
           <Pressable
             onPress={onClose}
@@ -80,6 +81,13 @@ const styles = createThemedStyles((theme) => ({
     alignItems: 'center',
     justifyContent: 'center',
     padding: theme.spacing.lg,
+  },
+  dismissArea: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
   },
   card: {
     width: '100%',

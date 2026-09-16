@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
+  Pressable,
   ScrollView,
   Text,
   TextInput,
@@ -412,6 +413,7 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.modalBackdrop}
         >
+          <Pressable style={styles.modalDismissArea} onPress={handleCloseRename} />
           <View style={styles.renameCard}>
             <Text style={styles.renameTitle}>{t('recipes.documentDetail.renameTitle')}</Text>
             <Text style={styles.renameDescription}>{t('recipes.documentDetail.renameDescription')}</Text>
@@ -604,6 +606,13 @@ const styles = createThemedStyles((theme) => ({
     justifyContent: 'center',
     padding: theme.spacing.lg,
     backgroundColor: theme.colors.overlay,
+  },
+  modalDismissArea: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
   },
   renameCard: {
     width: '100%',

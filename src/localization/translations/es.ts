@@ -962,6 +962,8 @@ export const es: TranslationSchema = {
             uploadFailedTitle: 'No se pudo subir',
             coverOptionsTitle: 'Añadir portada',
             coverOptionsBody: 'Elige un emoji o una foto.',
+            photoOptionsTitle: 'Añadir foto',
+            photoOptionsBody: 'Elige cómo quieres añadir una foto.',
             coverPickEmoji: 'Elegir emoji',
             coverUploadPhoto: 'Subir foto',
             coverTakePhoto: 'Hacer foto',
