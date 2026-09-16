@@ -20,6 +20,7 @@ import { useAnalyticsCapture } from '@/features/analytics/events';
 import {
   buildCollectionsForSegment,
   getCategorizingFolders,
+  isFavoritesFolderName,
   recipeMatchesCollection,
 } from '@/features/collections/utils/collections';
 import ActionCard from '@/features/home/components/ActionCard';
@@ -653,7 +654,7 @@ export default function HomeScreen({
         hasShoppingList: Boolean(isShoppingHydrated && !isShoppingHydrating && shoppingListId),
         hasCollections: recipeCollections.length > 0,
         hasFavorites: visibleRecipes.some((recipe) =>
-          recipe.folders?.some((folder) => folder.name.trim().toLowerCase() === 'favorites')
+          recipe.folders?.some((folder) => isFavoritesFolderName(folder.name))
         ),
       }),
     [importsCount, isShoppingHydrated, isShoppingHydrating, recipeCollections.length, recipeCount, shoppingListId, visibleNotes.length, visibleRecipes]

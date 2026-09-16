@@ -38,6 +38,7 @@ import type { CollectionItem, RecipeSegmentKey, SegmentKey } from '@/features/co
 import {
   buildCollectionsForSegment,
   getCategorizingFolders,
+  isFavoritesFolderName,
 } from '@/features/collections/utils/collections'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
 import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments'
@@ -278,7 +279,12 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
       })
     }
 
-    items.sort((a, b) => a.label.localeCompare(b.label))
+    items.sort((a, b) => {
+      const aIsFavorites = isFavoritesFolderName(a.label)
+      const bIsFavorites = isFavoritesFolderName(b.label)
+      if (aIsFavorites !== bIsFavorites) return aIsFavorites ? -1 : 1
+      return a.label.localeCompare(b.label)
+    })
     items.push({ key: 'new', label: t('collections.createFolder'), count: 0, kind: 'new' })
 
     return items

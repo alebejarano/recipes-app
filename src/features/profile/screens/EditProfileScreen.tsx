@@ -8,7 +8,11 @@ import { OTP_CODE_LENGTH } from '@/features/auth/constants/otp'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
-import { getUserFacingErrorMessage, isRateLimitError } from '@/lib/userFacingError'
+import {
+  getUserFacingErrorMessage,
+  isEmailAlreadyInUseError,
+  isRateLimitError,
+} from '@/lib/userFacingError'
 import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 
@@ -145,7 +149,14 @@ export default function EditProfileScreen() {
       }
       if (!pendingEmail && !emailChangePending) router.replace(profileRoute)
     } catch (error: any) {
-      Alert.alert(t('profile.editProfile.saveFailedTitle'), getUserFacingErrorMessage(error))
+      Alert.alert(
+        isEmailAlreadyInUseError(error)
+          ? t('profile.editProfile.emailAlreadyInUseTitle')
+          : t('profile.editProfile.saveFailedTitle'),
+        isEmailAlreadyInUseError(error)
+          ? t('profile.editProfile.emailAlreadyInUseMessage')
+          : getUserFacingErrorMessage(error)
+      )
     } finally {
       setSaving(false)
     }

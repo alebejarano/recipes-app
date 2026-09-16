@@ -21,6 +21,7 @@ import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
+import { isFavoritesFolderName } from '@/features/collections/utils/collections'
 import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
 import IngredientImportSheet from '@/features/recipes/components/IngredientImportSheet'
@@ -50,7 +51,6 @@ import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 const FALLBACK_FOLDERS: string[] = []
-const FAVORITES_FOLDER_NAME = 'Favorites'
 
 type RecipeDetailScreenProps = {
   recipeId: string
@@ -70,10 +70,6 @@ type FavoriteToggleRecipe = {
   folders: { name: string }[]
   mealTimes?: RecipeMealTime[]
   mealTimesInferred?: boolean
-}
-
-function isFavoritesFolder(name: string) {
-  return name.trim().toLowerCase() === FAVORITES_FOLDER_NAME.toLowerCase()
 }
 
 function buildFavoriteTogglePayload(
@@ -148,9 +144,10 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
     () => recipe?.folders?.map((folder) => folder.name) ?? FALLBACK_FOLDERS,
     [recipe?.folders]
   )
-  const isFavorited = favoriteOverride ?? (recipe?.folders ?? []).some((folder) => isFavoritesFolder(folder.name))
+  const favoritesFolderName = t('recipes.detail.favoritesFolderName')
+  const isFavorited = favoriteOverride ?? (recipe?.folders ?? []).some((folder) => isFavoritesFolderName(folder.name))
   const favoritesFolderExists = useMemo(
-    () => (foldersQuery.data ?? []).some((folder) => isFavoritesFolder(folder.name)),
+    () => (foldersQuery.data ?? []).some((folder) => isFavoritesFolderName(folder.name)),
     [foldersQuery.data]
   )
 
@@ -345,9 +342,9 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
     if (!recipe) return
     const nextIsFavorited = !isFavorited
     const currentFolderNames = (recipe.folders ?? []).map((folder) => folder.name.trim()).filter(Boolean)
-    const withoutFavorites = currentFolderNames.filter((name) => !isFavoritesFolder(name))
+    const withoutFavorites = currentFolderNames.filter((name) => !isFavoritesFolderName(name))
     const nextFolderNames = nextIsFavorited
-      ? [...withoutFavorites, FAVORITES_FOLDER_NAME]
+      ? [...withoutFavorites, favoritesFolderName]
       : withoutFavorites
 
     setFavoriteOverride(nextIsFavorited)
@@ -356,7 +353,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
       if (!isFavorited && !favoritesFolderExists) {
         try {
           await createFolderMutation.mutateAsync({
-            name: FAVORITES_FOLDER_NAME,
+            name: favoritesFolderName,
             emoji: '❤️',
           })
         } catch (folderError: any) {

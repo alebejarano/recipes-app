@@ -330,8 +330,9 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
             disabled={resendCooldown > 0}
             loading={isResendingConfirmation}
             loadingLabel={t('auth.screen.resendingConfirmation')}
+            variant="ghost"
             size="lg"
-            style={styles.submitButton}
+            style={[styles.submitButton, styles.resendConfirmationButton]}
           >
             {resendCooldown > 0
               ? t('auth.screen.resendConfirmationCooldown', { seconds: resendCooldown })
@@ -819,6 +820,12 @@ const styles = createThemedStyles((theme) => ({
   submitButton: {
     width: '100%',
     marginTop: theme.spacing.md,
+  },
+
+  resendConfirmationButton: {
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    backgroundColor: 'transparent',
   },
 
   submitButtonDisabled: {

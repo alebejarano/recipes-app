@@ -39,7 +39,7 @@ function mapFolder(row: FolderRow): Folder {
 
 function isFavoritesFolderName(name: string) {
   const normalized = name.trim().toLowerCase()
-  return normalized === 'favorites' || normalized === 'favourites'
+  return normalized === 'favorites' || normalized === 'favourites' || normalized === 'favoritos'
 }
 
 export async function listFolders(): Promise<Folder[]> {

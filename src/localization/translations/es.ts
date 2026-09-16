@@ -291,6 +291,8 @@ export const es: TranslationSchema = {
             updatedMessage: 'Tu correo se actualizó.',
             updatedSnackbar: 'Perfil actualizado',
             saveFailedTitle: 'No se pudo guardar el perfil',
+            emailAlreadyInUseTitle: 'Correo electrónico ya en uso',
+            emailAlreadyInUseMessage: 'Ya existe una cuenta que usa esta dirección de correo. Prueba con otra dirección o inicia sesión en esa cuenta.',
         },
         exportData: {
             title: 'Exportar recetas y datos',
@@ -1076,6 +1078,7 @@ export const es: TranslationSchema = {
             shareFile: 'Compartir como archivo',
             removedFavorite: 'Se quitó de favoritos',
             addedFavorite: 'Se añadió a favoritos',
+            favoritesFolderName: 'Favoritos',
             favoriteFailed: 'No se pudieron actualizar los favoritos',
             favoriteFailedBody: 'Vuelve a intentarlo.',
             noIngredientsTitle: 'No hay ingredientes',

@@ -289,6 +289,8 @@ export const en = {
             updatedMessage: 'Your email has been updated.',
             updatedSnackbar: 'Profile updated',
             saveFailedTitle: 'Unable to save profile',
+            emailAlreadyInUseTitle: 'Email already in use',
+            emailAlreadyInUseMessage: 'An account already uses this email address. Try a different email or sign in to that account.',
         },
         exportData: {
             title: 'Export recipes & data',
@@ -1074,6 +1076,7 @@ export const en = {
             shareFile: 'Share as file',
             removedFavorite: 'Removed from favorites',
             addedFavorite: 'Added to favorites',
+            favoritesFolderName: 'Favorites',
             favoriteFailed: 'Unable to update favorites',
             favoriteFailedBody: 'Please try again.',
             noIngredientsTitle: 'No ingredients',

@@ -2,7 +2,7 @@ import type { CollectionItem, Recipe, SegmentKey } from '../types';
 
 export function isFavoritesFolderName(name: string) {
   const normalized = name.trim().toLowerCase();
-  return normalized === 'favorites' || normalized === 'favourites';
+  return normalized === 'favorites' || normalized === 'favourites' || normalized === 'favoritos';
 }
 
 export function getCategorizingFolders<T extends { name: string }>(folders: T[] | null | undefined): T[] {

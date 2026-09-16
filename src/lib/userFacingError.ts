@@ -6,6 +6,24 @@ function getErrorMessage(error: unknown) {
       : ''
 }
 
+export function isEmailAlreadyInUseError(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase()
+  const code =
+    typeof error === 'object' && error && 'code' in error && typeof error.code === 'string'
+      ? error.code.toLowerCase()
+      : ''
+
+  return (
+    code === 'email_exists' ||
+    code === 'user_already_exists' ||
+    message.includes('user already registered') ||
+    message.includes('email already registered') ||
+    message.includes('email already exists') ||
+    message.includes('email address already in use') ||
+    message.includes('email already in use')
+  )
+}
+
 export function isRateLimitError(error: unknown) {
   const normalized = getErrorMessage(error).toLowerCase()
 

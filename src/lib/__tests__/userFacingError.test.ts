@@ -1,4 +1,4 @@
-import { getUserFacingErrorMessage } from '../userFacingError';
+import { getUserFacingErrorMessage, isEmailAlreadyInUseError } from '../userFacingError';
 
 describe('getUserFacingErrorMessage', () => {
     it.each([
@@ -23,5 +23,19 @@ describe('getUserFacingErrorMessage', () => {
                 'Email settings are temporarily unavailable. Please try again later.'
             )
         ).toBe('Email settings are temporarily unavailable. Please try again later.');
+    });
+});
+
+describe('isEmailAlreadyInUseError', () => {
+    it.each([
+        new Error('User already registered'),
+        new Error('Email address already in use'),
+        { message: 'Request failed', code: 'email_exists' },
+    ])('identifies a registered email', (error) => {
+        expect(isEmailAlreadyInUseError(error)).toBe(true);
+    });
+
+    it('does not misclassify unrelated errors', () => {
+        expect(isEmailAlreadyInUseError(new Error('Network request failed'))).toBe(false);
     });
 });

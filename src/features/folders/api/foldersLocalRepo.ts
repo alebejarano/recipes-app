@@ -11,7 +11,7 @@ import { removeFolderFromLocalRecipesByName } from '@/features/recipes/storage/l
 
 function isFavoritesFolderName(name: string) {
   const normalized = name.trim().toLowerCase()
-  return normalized === 'favorites' || normalized === 'favourites'
+  return normalized === 'favorites' || normalized === 'favourites' || normalized === 'favoritos'
 }
 
 function toFolderShape(input: {
