@@ -1,16 +1,19 @@
 import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
 import { getAllAsync, getFirstAsync, runSqlAsync, runSqlBatchAsync } from '@/lib/sqlite'
-import { File } from '@/lib/fileSystem'
 
 import type { Recipe } from '@/features/recipes/api/recipesRepo'
 import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
 import { deleteRecipePdfAttachmentsForRecipe } from '@/features/recipes/storage/recipePdfStorage'
 import {
-  importLocalImage,
   type ImportPlan,
   isManagedLocalImportImageUri,
   removeImportByUri,
 } from '@/features/recipes/storage/importsStorage'
+import {
+  copyLocalRecipeCover,
+  isManagedLocalRecipeCoverUri,
+  removeLocalRecipeCover,
+} from '@/features/recipes/storage/recipeCoverStorage'
 import { FREE_PLAN_MAX_RECIPES } from '@/features/subscription/constants/limits'
 import { getActiveLocalDataOwner, getLocalDataOwnerFilter } from '@/features/storage/localDataScope'
 import {
@@ -160,35 +163,22 @@ function inferNameFromUri(uri: string) {
   return cleaned || 'recipe.jpg'
 }
 
-async function getLocalFileSize(uri: string): Promise<number> {
-  try {
-    const info = await new File(uri).info()
-    return info.exists && 'size' in info && typeof info.size === 'number' ? info.size : 0
-  } catch {
-    return 0
-  }
-}
-
 async function resolveLocalRecipeImageUrl(params: {
   imageUrl: string | null | undefined
-  plan: ImportPlan
-  replacingFileUri?: string | null
 }): Promise<string | null> {
-  const { imageUrl, plan, replacingFileUri } = params
+  const { imageUrl } = params
   const nextImageUrl = imageUrl?.trim() ?? ''
   if (!nextImageUrl) return null
   if (isRemoteUri(nextImageUrl)) return nextImageUrl
+  if (isManagedLocalRecipeCoverUri(nextImageUrl)) return nextImageUrl
+  // Covers saved by older releases were stored in the imports directory. Keep
+  // those URIs valid, but never create another import registry entry for a cover.
   if (isManagedLocalImportImageUri(nextImageUrl)) return nextImageUrl
 
-  const size = await getLocalFileSize(nextImageUrl)
-  const imported = await importLocalImage({
-    plan,
+  return copyLocalRecipeCover({
     uri: nextImageUrl,
     name: inferNameFromUri(nextImageUrl),
-    size,
-    replacingFileUri: replacingFileUri ?? null,
   })
-  return imported.uri
 }
 
 function toRecipeView(row: LocalRecipeRow): LocalRecipe {
@@ -409,7 +399,6 @@ export async function createLocalRecipe(
   const now = new Date().toISOString()
   const resolvedImageUrl = await resolveLocalRecipeImageUrl({
     imageUrl: values.imageUrl ?? null,
-    plan,
   })
   const row: LocalRecipeRow = {
     id: makeId(),
@@ -482,11 +471,9 @@ export async function createLocalRecipe(
 export async function updateLocalRecipe(
   id: string,
   values: RecipeFormSubmitValues,
-  options?: { plan?: ImportPlan }
+  _options?: { plan?: ImportPlan }
 ): Promise<LocalRecipe> {
   await ensureLocalSqliteMigrationReady()
-  const plan = options?.plan ?? 'free'
-
   const existing = await getRecipeRowByIdOrCloudId(id)
   if (!existing) throw new Error('Recipe not found')
   const localId = existing.id
@@ -495,19 +482,14 @@ export async function updateLocalRecipe(
   const nextVersion = (existing.version ?? 1) + 1
   const resolvedImageUrl = await resolveLocalRecipeImageUrl({
     imageUrl: values.imageUrl ?? null,
-    plan,
-    replacingFileUri:
-      existing.image_url && isManagedLocalImportImageUri(existing.image_url)
-        ? existing.image_url
-        : null,
   })
 
-  if (
-    existing.image_url &&
-    isManagedLocalImportImageUri(existing.image_url) &&
-    existing.image_url !== resolvedImageUrl
-  ) {
-    await removeImportByUri(existing.image_url)
+  if (existing.image_url && existing.image_url !== resolvedImageUrl) {
+    if (isManagedLocalRecipeCoverUri(existing.image_url)) {
+      await removeLocalRecipeCover(existing.image_url)
+    } else if (isManagedLocalImportImageUri(existing.image_url)) {
+      await removeImportByUri(existing.image_url)
+    }
   }
 
   await runSqlAsync(
@@ -568,8 +550,12 @@ export async function deleteLocalRecipe(id: string): Promise<void> {
   if (!existing) return
   const localId = existing.id
 
-  if (existing?.image_url && isManagedLocalImportImageUri(existing.image_url)) {
-    await removeImportByUri(existing.image_url)
+  if (existing?.image_url) {
+    if (isManagedLocalRecipeCoverUri(existing.image_url)) {
+      await removeLocalRecipeCover(existing.image_url)
+    } else if (isManagedLocalImportImageUri(existing.image_url)) {
+      await removeImportByUri(existing.image_url)
+    }
   }
 
   const shouldSoftDeleteForSync = Boolean(existing.cloud_id || existing.owner_user_id)

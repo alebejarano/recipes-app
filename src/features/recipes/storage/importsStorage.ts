@@ -1,7 +1,6 @@
 import { Directory, File, Paths } from '@/lib/fileSystem'
 import { Platform } from 'react-native'
 
-import { ensureLocalSqliteMigrationReady } from '@/lib/localSqliteMigration'
 import { getAllAsync, getFirstAsync, runSqlAsync, runSqlBatchAsync } from '@/lib/sqlite'
 import { getActiveLocalDataOwner, getLocalDataOwnerFilter } from '@/features/storage/localDataScope'
 import {
@@ -332,6 +331,13 @@ export async function listManagedImports(): Promise<ManagedImport[]> {
        WHERE i.deleted_at IS NULL
          AND ${ownerFilter.sql}
          AND (i.kind != 'document' OR rd.id IS NOT NULL)
+         -- Older app versions stored recipe covers as image imports. They are
+         -- recipe assets, not user-managed imports, so keep them out of this
+         -- list while their recipe still references them.
+         AND (i.kind != 'image' OR NOT EXISTS (
+           SELECT 1 FROM local_recipes lr
+           WHERE lr.image_url = i.file_uri AND lr.deleted_at IS NULL
+         ))
        ORDER BY i.created_at DESC;`,
       ownerFilter.params
     )
@@ -380,6 +386,17 @@ export async function deleteManagedImport(importId: string): Promise<void> {
   const fileUri = row?.fileUri?.trim() ?? ''
   if (!fileUri) return
 
+  if (row?.kind === 'image') {
+    const recipeUsingImage = await getFirstAsync<{ id: string }>(
+      `SELECT id FROM local_recipes
+       WHERE image_url = ? AND deleted_at IS NULL
+       LIMIT 1;`,
+      [fileUri]
+    ).catch(() => null)
+    // Never allow the import manager to delete a legacy cover photo.
+    if (recipeUsingImage) return
+  }
+
   if (row?.kind === 'document') {
     try {
       await runSqlAsync(
@@ -389,15 +406,6 @@ export async function deleteManagedImport(importId: string): Promise<void> {
     } catch {
       // recipe_documents may not exist yet in fresh installs.
     }
-  } else if (row?.kind === 'image') {
-    await ensureLocalSqliteMigrationReady()
-    const now = nowIso()
-    await runSqlAsync(
-      `UPDATE local_recipes
-       SET image_url = NULL, updated_at = ?, dirty = 1, version = version + 1
-       WHERE image_url = ? AND deleted_at IS NULL AND ${ownerFilter.sql};`,
-      [now, fileUri, ...ownerFilter.params]
-    )
   }
 
   await removeImportByUri(fileUri)

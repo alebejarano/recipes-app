@@ -2,14 +2,20 @@
 
 import { supabase } from '@/lib/supabase'
 import type { AuthResponse, Session, User } from '@supabase/supabase-js'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useQueryClient } from '@tanstack/react-query'
 import * as Linking from 'expo-linking'
 import { router } from 'expo-router'
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Alert } from 'react-native'
-import { setActiveLocalDataOwner } from '@/features/storage/localDataScope'
+import { getActiveLocalDataOwner, setActiveLocalDataOwner } from '@/features/storage/localDataScope'
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
-import { migrateLegacyShoppingListToAccount } from '@/features/shopping-list/storage/shoppingListStorage'
+import {
+  migrateGuestShoppingListToAccount,
+  migrateLegacyShoppingListToAccount,
+} from '@/features/shopping-list/storage/shoppingListStorage'
+import { tagLocalDataAsMigratable } from '@/features/storage/localAccountLinking'
+import { getErrorCategory, logOperationalEvent } from '@/lib/productionLogger'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
 import {
   getAuthLinkSessionFromUrl,
@@ -46,6 +52,7 @@ export type PushPreferences = {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
+const PENDING_GUEST_DATA_CLAIM_KEY = 'pending_guest_data_claim_user_id_v1'
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
@@ -55,6 +62,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryOwnerRef = useRef<string | null | undefined>(undefined)
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+
+  const refreshClaimedLocalData = useCallback(() => {
+    useShoppingListStore.getState().resetForAccountChange()
+    void queryClient.invalidateQueries({ queryKey: ['recipes', 'local'] })
+    void queryClient.invalidateQueries({ queryKey: ['notes', 'local'] })
+    void queryClient.invalidateQueries({ queryKey: ['folders', 'local'] })
+    void queryClient.invalidateQueries({ queryKey: ['recipes', 'documents'] })
+    void queryClient.invalidateQueries({ queryKey: ['recipes', 'imports', 'managed'] })
+  }, [queryClient])
+
+  const claimPendingGuestData = useCallback(async (userId: string) => {
+    const pendingUserId = await AsyncStorage.getItem(PENDING_GUEST_DATA_CLAIM_KEY)
+    if (pendingUserId !== userId) return false
+
+    await tagLocalDataAsMigratable(userId)
+    await migrateGuestShoppingListToAccount(userId)
+    await AsyncStorage.removeItem(PENDING_GUEST_DATA_CLAIM_KEY)
+    refreshClaimedLocalData()
+    return true
+  }, [refreshClaimedLocalData])
 
   useEffect(() => {
     let isMounted = true
@@ -229,20 +256,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     if (!userId) return
 
-    // Guest data must never be silently adopted by the next account that signs
-    // in on a shared device. Account-owned data is created with its owner ID;
-    // a future guest-to-account import should be an explicit user action.
-    migrateLegacyShoppingListToAccount(userId).then(() => {
-      useShoppingListStore.getState().resetForAccountChange()
-      void queryClient.invalidateQueries({ queryKey: ['recipes', 'local'] })
-      void queryClient.invalidateQueries({ queryKey: ['notes', 'local'] })
-      void queryClient.invalidateQueries({ queryKey: ['folders', 'local'] })
-      void queryClient.invalidateQueries({ queryKey: ['recipes', 'documents'] })
-      void queryClient.invalidateQueries({ queryKey: ['recipes', 'imports', 'managed'] })
-    }).catch(() => {
-      // Keep auth resilient; migration is best-effort.
+    // Guest data is adopted only when this exact account was created from the
+    // guest session. A normal sign-in cannot consume another person's data on
+    // a shared device.
+    Promise.all([
+      migrateLegacyShoppingListToAccount(userId),
+      claimPendingGuestData(userId),
+    ]).then(() => {
+      refreshClaimedLocalData()
+    }).catch((error) => {
+      logOperationalEvent('sync_retry_failed', {
+        operation: 'claim_guest_data_after_account_creation',
+        entity: 'supabase',
+        category: getErrorCategory(error),
+      })
     })
-  }, [queryClient, session?.user?.id])
+  }, [claimPendingGuestData, queryClient, refreshClaimedLocalData, session?.user?.id])
 
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
@@ -254,18 +283,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * - If email confirmations are enabled, data.session may be null -> show "Check your email"
    * - If data.session exists, user is signed in -> redirect to app
    */
-  const register = async (email: string, password: string) => {
+  const register = useCallback(async (email: string, password: string) => {
     const normalized = normalizeEmail(email)
     if (!normalized) throw new Error('Email is required')
     if (!isValidEmail(normalized)) throw new Error('Please enter a valid email address.')
 
+    const startedAsGuest = !getActiveLocalDataOwner()
     const { data, error } = await supabase.auth.signUp({
       email: normalized,
       password,
     })
     if (error) throw error
+
+    if (startedAsGuest && data.user?.id) {
+      try {
+        await AsyncStorage.setItem(PENDING_GUEST_DATA_CLAIM_KEY, data.user.id)
+      } catch (markerError) {
+        // The account already exists at this point; storage trouble must not
+        // turn a successful registration into an apparent failure.
+        logOperationalEvent('sync_retry_failed', {
+          operation: 'mark_guest_data_for_account_claim',
+          entity: 'supabase',
+          category: getErrorCategory(markerError),
+        })
+        return data
+      }
+      if (data.session) {
+        try {
+          await claimPendingGuestData(data.user.id)
+        } catch (claimError) {
+          // The marker remains for a later authenticated retry. Account
+          // creation itself must not be reported as failed after Supabase has
+          // already created the account.
+          logOperationalEvent('sync_retry_failed', {
+            operation: 'claim_guest_data_after_account_creation',
+            entity: 'supabase',
+            category: getErrorCategory(claimError),
+          })
+        }
+      }
+    }
     return data
-  }
+  }, [claimPendingGuestData])
 
   const resendEmailConfirmation = useCallback(async (email: string) => {
     const normalized = normalizeEmail(email)
@@ -533,6 +592,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [
       session,
       isLoading,
+      register,
       resendEmailConfirmation,
       verifySignupCode,
       resendEmailChangeConfirmation,

@@ -22,6 +22,7 @@ function toFolderShape(input: {
 }): Folder {
   return {
     id: input.id,
+    clientId: null,
     name: input.name,
     emoji: input.emoji ?? '📁',
     createdAt: input.createdAt,

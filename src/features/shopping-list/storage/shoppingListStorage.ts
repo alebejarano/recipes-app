@@ -87,3 +87,35 @@ export async function migrateLegacyShoppingListToAccount(userId: string): Promis
     // Storage scoping still protects new data if a legacy migration cannot complete.
   }
 }
+
+/**
+ * Copies the current device's guest shopping-list scope to a newly created
+ * account. Unlike the unscoped legacy migration, this is only called from the
+ * explicit guest-to-account handoff, never during a normal sign-in.
+ */
+export async function migrateGuestShoppingListToAccount(userId: string): Promise<void> {
+  const normalizedUserId = userId.trim()
+  if (!normalizedUserId) return
+
+  const guestListId = await AsyncStorage.getItem(`${STORAGE_KEY}:guest`)
+  if (!guestListId) return
+
+  const accountListKey = `${STORAGE_KEY}:${normalizedUserId}`
+  const accountListId = await AsyncStorage.getItem(accountListKey)
+  if (accountListId) return
+
+  await AsyncStorage.setItem(accountListKey, guestListId)
+
+  const guestItemsKey = `shopping_list_items_v1:guest:${guestListId}`
+  const accountItemsKey = `shopping_list_items_v1:${normalizedUserId}:${guestListId}`
+  const guestItems = await AsyncStorage.getItem(guestItemsKey)
+  if (guestItems) await AsyncStorage.setItem(accountItemsKey, guestItems)
+
+  for (const storageKey of [
+    'shopping_list_item_history_v1',
+    'shopping_list_dismissed_quick_add_items_v1',
+  ]) {
+    const guestValue = await AsyncStorage.getItem(`${storageKey}:guest`)
+    if (guestValue) await AsyncStorage.setItem(`${storageKey}:${normalizedUserId}`, guestValue)
+  }
+}

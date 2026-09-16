@@ -6,11 +6,6 @@ import {
 jest.mock('expo-image', () => ({ Image: () => null }));
 jest.mock('@/localization', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 jest.mock('@/features/recipes/api/recipesRepo', () => ({ uploadRecipeImage: jest.fn() }));
-jest.mock('@/features/recipes/storage/importsStorage', () => ({
-    getActiveImportBytesByUri: jest.fn().mockResolvedValue(0),
-    getImportsUsageSummary: jest.fn().mockResolvedValue({ totalCount: 0, totalBytes: 0 }),
-    isManagedLocalImportImageUri: jest.fn().mockReturnValue(false),
-}));
 
 describe('buildRecipeFormSubmitValues', () => {
     it('requires a non-empty title', () => {

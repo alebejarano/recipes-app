@@ -1,5 +1,6 @@
 import { createLocalRecipe } from '../localRecipesStorage'
 import { getFirstAsync, runSqlAsync } from '@/lib/sqlite'
+import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
 import { FREE_PLAN_MAX_RECIPES } from '@/features/subscription/constants/limits'
 
 jest.mock('@/lib/sqlite', () => ({
@@ -19,6 +20,11 @@ jest.mock('@/features/recipes/storage/importsStorage', () => ({
     isManagedLocalImportImageUri: jest.fn(),
     removeImportByUri: jest.fn(),
 }))
+jest.mock('@/features/recipes/storage/recipeCoverStorage', () => ({
+    copyLocalRecipeCover: jest.fn(),
+    isManagedLocalRecipeCoverUri: jest.fn(),
+    removeLocalRecipeCover: jest.fn(),
+}))
 jest.mock('@/features/recipes/storage/recipePdfStorage', () => ({
     deleteRecipePdfAttachmentsForRecipe: jest.fn(),
 }))
@@ -26,11 +32,19 @@ jest.mock('@/features/recipes/storage/recipePdfStorage', () => ({
 const mockGetFirst = getFirstAsync as jest.Mock
 const mockRunSql = runSqlAsync as jest.Mock
 
-const recipe = {
+const recipe: RecipeFormSubmitValues = {
     title: 'Boundary recipe',
+    subtitle: null,
+    description: null,
+    emoji: null,
+    imageUrl: null,
+    prepTimeMinutes: null,
+    cookTimeMinutes: null,
+    servings: null,
     ingredients: [],
     folders: [],
     steps: [],
+    mealTimes: null,
 }
 
 describe('createLocalRecipe free-plan limit', () => {

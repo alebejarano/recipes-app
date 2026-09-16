@@ -33,24 +33,14 @@ import { useTranslation } from '@/localization'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { uploadRecipeImage } from '@/features/recipes/api/recipesRepo'
 import MealTimeChip from '@/features/recipes/components/MealTimeChip'
-import {
-  getActiveImportBytesByUri,
-  getImportsUsageSummary,
-  isManagedLocalImportImageUri,
-  type ImportPlan,
-} from '@/features/recipes/storage/importsStorage'
+import type { ImportPlan } from '@/features/recipes/storage/importsStorage'
 import { RECIPE_MEAL_TIMES, type RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import {
   optimizePickerImageAsset,
   type OptimizedImageAsset,
 } from '@/features/recipes/utils/optimizeImageAsset'
+import { isRecipeImageUploadTooLarge } from '@/features/recipes/utils/recipeValidation'
 import {
-  exceedsImportStorageLimit,
-  isImportFileTooLarge,
-  isRecipeImageUploadTooLarge,
-} from '@/features/recipes/utils/recipeValidation'
-import {
-  IMPORT_FILE_TOO_LARGE_MESSAGE,
   RECIPE_IMAGE_MASTER_COMPRESS_QUALITY,
   RECIPE_IMAGE_MASTER_MAX_DIMENSION_PX,
   RECIPE_IMAGE_MASTER_MAX_FILE_BYTES,
@@ -229,7 +219,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     suggestedFolders = [],
     folderContextMessage,
     imageUploadMode = 'cloud',
-    plan = 'free',
+    plan: _plan = 'free',
   },
   ref
 ) {
@@ -500,39 +490,9 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         const optimized = await optimizeRecipeImageAsset(asset)
         let url = optimized.uri
         if (imageUploadMode === 'local') {
-          let size = optimized.fileSize
-          if (!size) {
-            try {
-              const info = await new File(optimized.uri).info()
-              size = info.exists && 'size' in info && typeof info.size === 'number' ? info.size : 0
-            } catch {
-              size = 0
-            }
-          }
-
-          if (isImportFileTooLarge(size)) {
-            Alert.alert(t('recipes.form.fileTooLargeTitle'), IMPORT_FILE_TOO_LARGE_MESSAGE)
-            return
-          }
-
-          const usage = await getImportsUsageSummary()
-          const replacingBytes = isManagedLocalImportImageUri(values.imageUrl)
-            ? await getActiveImportBytesByUri(values.imageUrl ?? '')
-            : 0
-          if (exceedsImportStorageLimit({
-            currentBytes: usage.totalBytes,
-            replacingBytes,
-            nextBytes: size,
-            plan,
-          })) {
-            Alert.alert(
-              t('recipes.form.storageLimitTitle'),
-              plan === 'premium'
-                ? t('recipes.form.storageLimitPremium')
-                : t('recipes.form.storageLimitFree')
-            )
-            return
-          }
+          // Local cover photos are recipe assets, not imported recipe files.
+          // They are copied when the recipe is saved and must not consume the
+          // import quota or appear in import management.
         } else {
           url = await uploadRecipeImage({
             uri: optimized.uri,
@@ -549,7 +509,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         setIsUploadingImage(false)
       }
     },
-    [imageUploadMode, plan, t, update, values.imageUrl]
+    [imageUploadMode, t, update]
   )
 
   const handlePickImage = useCallback(async () => {

@@ -8,7 +8,7 @@ export type OperationalEventName =
 
 type OperationalEventProperties = {
   operation: string
-  entity?: 'recipe' | 'note' | 'folder' | 'import' | 'file' | 'shopping_list' | 'supabase'
+  entity?: 'recipe' | 'note' | 'folder' | 'import' | 'file' | 'shopping_list' | 'supabase' | 'email_preferences'
   category?: string
   count?: number
   pending_count?: number

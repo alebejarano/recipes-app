@@ -142,7 +142,7 @@ export default function RecipeDocumentsSegment({
             disabled={isBulkDeleting}
             accessibilityRole="button"
             accessibilityLabel={t('recipes.importsManage.deleteSelectedA11y', { count: selectedIds.length })}
-            style={[styles.selectionAction, styles.deleteAction, isBulkDeleting && styles.selectionActionDisabled]}
+            style={[styles.selectionAction, styles.deleteAction, isBulkDeleting && styles.deleteActionDisabled]}
           >
             <Feather name="trash-2" size={16} color={theme.colors.destructiveForeground} />
             <Text style={styles.deleteActionText}>{t('recipes.importsManage.deleteSelected', { count: selectedIds.length })}</Text>
