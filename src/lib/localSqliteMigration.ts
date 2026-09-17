@@ -210,13 +210,38 @@ async function ensureLocalRecipesMealTimesColumn() {
   }
 }
 
+async function ensureUniqueLocalFolderNames() {
+  await runSqlAsync(
+    `DELETE FROM local_folders
+      WHERE id IN (
+        SELECT id FROM (
+          SELECT id,
+            ROW_NUMBER() OVER (
+              PARTITION BY COALESCE(owner_user_id, ''), lower(trim(name))
+              ORDER BY created_at ASC, id ASC
+            ) AS duplicate_position
+          FROM local_folders
+          WHERE deleted_at IS NULL
+        ) WHERE duplicate_position > 1
+      );`
+  )
+  await runSqlAsync(
+    `CREATE UNIQUE INDEX IF NOT EXISTS local_folders_owner_normalized_name_unique
+      ON local_folders(COALESCE(owner_user_id, ''), lower(trim(name)))
+      WHERE deleted_at IS NULL;`
+  )
+}
+
 export async function migrateLocalAsyncStorageToSqlite() {
   await runSqlBatchAsync(TABLE_SETUP_STATEMENTS)
   await ensureLocalNotesPinnedColumn()
   await ensureLocalRecipesMealTimesColumn()
 
   const alreadyDone = await AsyncStorage.getItem(MIGRATION_DONE_KEY)
-  if (alreadyDone === '1') return
+  if (alreadyDone === '1') {
+    await ensureUniqueLocalFolderNames()
+    return
+  }
 
   const [recipesRaw, notesRaw, foldersRaw] = await Promise.all([
     AsyncStorage.getItem(RECIPES_KEY),
@@ -313,6 +338,7 @@ export async function migrateLocalAsyncStorageToSqlite() {
   }
 
   await AsyncStorage.setItem(MIGRATION_DONE_KEY, '1')
+  await ensureUniqueLocalFolderNames()
 }
 
 export function ensureLocalSqliteMigrationReady() {

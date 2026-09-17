@@ -40,6 +40,17 @@ type LocalFoldersListParams = {
   search?: string
 }
 
+export const FOLDER_ALREADY_EXISTS_CODE = '23505'
+
+export class FolderAlreadyExistsError extends Error {
+  code = FOLDER_ALREADY_EXISTS_CODE
+
+  constructor() {
+    super('A folder with this name already exists')
+    this.name = 'FolderAlreadyExistsError'
+  }
+}
+
 function makeId() {
   const randomUuid = globalThis.crypto?.randomUUID?.()
   if (randomUuid) return randomUuid
@@ -78,6 +89,23 @@ async function getById(id: string, includeDeleted = false): Promise<LocalFolderR
   )
 }
 
+async function getFolderByNormalizedName(name: string, excludeId?: string): Promise<LocalFolderRow | null> {
+  await ensureLocalSqliteMigrationReady()
+  const ownerFilter = getLocalDataOwnerFilter()
+  const excludeFilter = excludeId ? ' AND id <> ?' : ''
+  const params: (string | null)[] = [...ownerFilter.params, name.trim()]
+  if (excludeId) params.push(excludeId)
+
+  return getFirstAsync<LocalFolderRow>(
+    `SELECT * FROM local_folders
+      WHERE deleted_at IS NULL
+        AND ${ownerFilter.sql}
+        AND lower(trim(name)) = lower(trim(?))${excludeFilter}
+      LIMIT 1;`,
+    params
+  )
+}
+
 function toFolderView(row: LocalFolderRow): LocalFolder {
   const legacyCreatedAt =
     typeof (row as any).createdAt === 'string' ? ((row as any).createdAt as string) : null
@@ -108,10 +136,14 @@ export async function createLocalFolder(input: {
   emoji?: string | null
 }): Promise<LocalFolder> {
   await ensureLocalSqliteMigrationReady()
+  const name = input.name.trim()
+  if (!name) throw new Error('Folder name is required')
+  if (await getFolderByNormalizedName(name)) throw new FolderAlreadyExistsError()
+
   const now = new Date().toISOString()
   const row: LocalFolderRow = {
     id: makeId(),
-    name: input.name.trim(),
+    name,
     emoji: input.emoji ?? null,
     created_at: now,
     updated_at: now,
@@ -122,27 +154,32 @@ export async function createLocalFolder(input: {
     last_synced_at: null,
   }
 
-  await runSqlAsync(
-    `INSERT INTO local_folders
+  try {
+    await runSqlAsync(
+      `INSERT INTO local_folders
       (
         id, name, emoji, created_at, updated_at, deleted_at,
         owner_user_id, cloud_id, dirty, version, last_synced_at
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-    [
-      row.id,
-      row.name,
-      row.emoji ?? null,
-      row.created_at,
-      row.updated_at,
-      row.deleted_at ?? null,
-      row.owner_user_id ?? null,
-      row.cloud_id ?? null,
-      row.dirty ?? 1,
-      row.version ?? 1,
-      row.last_synced_at ?? null,
-    ]
-  )
+      [
+        row.id,
+        row.name,
+        row.emoji ?? null,
+        row.created_at,
+        row.updated_at,
+        row.deleted_at ?? null,
+        row.owner_user_id ?? null,
+        row.cloud_id ?? null,
+        row.dirty ?? 1,
+        row.version ?? 1,
+        row.last_synced_at ?? null,
+      ]
+    )
+  } catch (error) {
+    if (await getFolderByNormalizedName(name)) throw new FolderAlreadyExistsError()
+    throw error
+  }
 
   return toFolderView(row)
 }
@@ -157,20 +194,29 @@ export async function updateLocalFolder(input: {
   const existing = await getById(input.id)
   if (!existing) throw new Error('Folder not found')
 
+  const name = input.name.trim()
+  if (!name) throw new Error('Folder name is required')
+  if (await getFolderByNormalizedName(name, input.id)) throw new FolderAlreadyExistsError()
+
   const updatedAt = new Date().toISOString()
   const nextVersion = (existing.version ?? 1) + 1
 
-  await runSqlAsync(
-    `UPDATE local_folders
+  try {
+    await runSqlAsync(
+      `UPDATE local_folders
       SET name = ?, emoji = ?, updated_at = ?, dirty = ?, version = ?
       WHERE id = ?;`,
-    [input.name.trim(), input.emoji ?? null, updatedAt, 1, nextVersion, input.id]
-  )
+      [name, input.emoji ?? null, updatedAt, 1, nextVersion, input.id]
+    )
+  } catch (error) {
+    if (await getFolderByNormalizedName(name, input.id)) throw new FolderAlreadyExistsError()
+    throw error
+  }
 
-  if (existing.name.trim().toLowerCase() !== input.name.trim().toLowerCase()) {
+  if (existing.name.trim().toLowerCase() !== name.toLowerCase()) {
     await renameFolderInLocalRecipesByName({
       fromName: existing.name,
-      toName: input.name.trim(),
+      toName: name,
       emoji: input.emoji ?? existing.emoji ?? '📁',
     })
   }

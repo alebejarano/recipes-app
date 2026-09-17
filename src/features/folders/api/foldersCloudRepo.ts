@@ -42,6 +42,12 @@ function isFavoritesFolderName(name: string) {
   return normalized === 'favorites' || normalized === 'favourites' || normalized === 'favoritos'
 }
 
+function throwFolderAlreadyExistsError(): never {
+  const error = new Error('A folder with this name already exists') as Error & { code: string }
+  error.code = '23505'
+  throw error
+}
+
 export async function listFolders(): Promise<Folder[]> {
   const { data, error } = await supabase
     .from('folders')
@@ -104,6 +110,17 @@ export async function createFolder(input: { name: string; emoji?: string | null 
   const name = input.name.trim()
   if (!name) throw new Error('Folder name is required')
 
+  const { data: existing, error: existingError } = await supabase
+    .from('folders')
+    .select('id,name')
+    .eq('user_id', user.id)
+    .ilike('name', name)
+    .limit(1)
+  if (existingError) throw existingError
+  if (existing?.some((folder) => folder.name.trim().toLowerCase() === name.toLowerCase())) {
+    throwFolderAlreadyExistsError()
+  }
+
   const emoji = input.emoji?.trim() || '📁'
 
   const { data, error } = await supabase
@@ -123,6 +140,7 @@ export async function updateFolder(input: {
   name: string
   emoji?: string | null
 }): Promise<Folder> {
+  const user = await requireAuth()
   const name = input.name.trim()
   if (!name) throw new Error('Folder name is required')
 
@@ -134,6 +152,18 @@ export async function updateFolder(input: {
     .maybeSingle()
 
   if (existingError) throw existingError
+
+  const { data: matchingFolder, error: matchingFolderError } = await supabase
+    .from('folders')
+    .select('id,name')
+    .eq('user_id', user.id)
+    .ilike('name', name)
+    .neq('id', input.id)
+    .limit(1)
+  if (matchingFolderError) throw matchingFolderError
+  if (matchingFolder?.some((folder) => folder.name.trim().toLowerCase() === name.toLowerCase())) {
+    throwFolderAlreadyExistsError()
+  }
 
   const { data, error } = await supabase
     .from('folders')
