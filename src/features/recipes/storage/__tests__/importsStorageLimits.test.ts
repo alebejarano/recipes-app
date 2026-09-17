@@ -33,13 +33,29 @@ describe('assertCanAddImport', () => {
 
     afterEach(() => jest.clearAllMocks());
 
+    it('allows a Free import exactly at the per-file limit', async () => {
+        await expect(assertCanAddImport({
+            plan: 'free',
+            incomingBytes: FREE_PLAN_MAX_IMPORT_FILE_BYTES,
+        })).resolves.toBeUndefined();
+    });
+
     it('rejects invalid and oversized files before storage checks', async () => {
         await expect(assertCanAddImport({ plan: 'free', incomingBytes: 0 })).rejects.toThrow('Invalid file size.');
         await expect(assertCanAddImport({ plan: 'free', incomingBytes: FREE_PLAN_MAX_IMPORT_FILE_BYTES + 1 })).rejects.toThrow('larger than 6MB');
         expect(mockGetFirst).not.toHaveBeenCalled();
     });
 
-    it('enforces the free total storage limit', async () => {
+    it('allows a Free import that brings total storage exactly to the limit', async () => {
+        mockGetFirst.mockResolvedValue({
+            totalCount: 1,
+            totalBytes: FREE_PLAN_MAX_IMPORT_TOTAL_BYTES - 1,
+        });
+
+        await expect(assertCanAddImport({ plan: 'free', incomingBytes: 1 })).resolves.toBeUndefined();
+    });
+
+    it('rejects a Free import one byte beyond the total storage limit', async () => {
         mockGetFirst.mockResolvedValue({ totalCount: 1, totalBytes: FREE_PLAN_MAX_IMPORT_TOTAL_BYTES });
 
         await expect(assertCanAddImport({ plan: 'free', incomingBytes: 1 })).rejects.toThrow('Import limit reached');
