@@ -11,6 +11,8 @@ import {
 } from '@/features/folders/services/foldersService'
 import { useEntitlements } from '@/features/subscription/hooks/useEntitlements'
 import { useAuth } from '@/features/auth/context/AuthContext'
+import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
+import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
 import type { StorageScreenMode } from '@/features/storage/hooks/useStorageDataMode'
 import { useLocalFoldersList, useCreateLocalFolder, useUpdateLocalFolder, useDeleteLocalFolder } from '@/features/folders/hooks/useLocalFolders'
 
@@ -44,16 +46,25 @@ export function useStrategyFoldersList(
 ) {
   const { user } = useAuth()
   const { canUseCloudSync } = useEntitlements()
+  const { cloudSyncEnabled } = useStorageStrategy()
+  const { isStorageModeReady, shouldUseLocalData } = useStorageDataMode(mode)
   const target = resolveFolderStorageTarget({ mode, canUseCloudSync })
   const cloudQuery = useQuery<Folder[]>({
     queryKey: ['folders', target, 'list', user?.id ?? 'guest', params?.limit ?? 200, params?.search ?? ''],
     queryFn: () => listFoldersForStrategy({ mode, canUseCloudSync }, params),
+    enabled: isStorageModeReady && !shouldUseLocalData,
   })
   const localQuery = useLocalFoldersList()
-  const shouldFallbackToLocal = target === 'cloud' && canUseCloudSync && isConnectivityError(cloudQuery.error)
+  const shouldFallbackToLocal = cloudSyncEnabled && isConnectivityError(cloudQuery.error)
+  const shouldReadLocal = shouldUseLocalData || shouldFallbackToLocal
 
-  if (shouldFallbackToLocal) return localQuery
-  return cloudQuery
+  // Keep the on-device folder cache visible while a cloud list is loading or
+  // failing. This matches recipes and notes, and prevents a remount offline
+  // from temporarily replacing folders with an empty cloud response.
+  if (!shouldUseLocalData && cloudSyncEnabled && !cloudQuery.data && (localQuery.data?.length ?? 0) > 0) {
+    return localQuery
+  }
+  return shouldReadLocal ? localQuery : cloudQuery
 }
 
 export function useStrategyCreateFolder(mode: StorageScreenMode = 'auth') {
