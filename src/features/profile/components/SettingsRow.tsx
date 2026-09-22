@@ -3,6 +3,7 @@ import React from 'react'
 import { Switch, Text, TouchableOpacity, View } from 'react-native'
 
 import { createThemedStyles } from '@/styles/createStyles'
+import { theme } from '@/styles/theme'
 
 type RowBase = {
   id: string
@@ -96,7 +97,18 @@ export default function SettingsRow({
       </View>
 
       {item.type === 'toggle' ? (
-        <Switch value={item.value} onValueChange={item.onValueChange} disabled={isDisabled} />
+        <Switch
+          value={item.value}
+          onValueChange={item.onValueChange}
+          disabled={isDisabled}
+          trackColor={{
+            false: theme.colors.border,
+            true: theme.colors.primary,
+          }}
+          thumbColor={item.value ? theme.colors.primaryForeground : theme.colors.card}
+          ios_backgroundColor={theme.colors.border}
+          style={styles.toggle}
+        />
       ) : (
         <View style={styles.right}>
           {!!item.rightText && <Text style={styles.rightText}>{item.rightText}</Text>}
@@ -201,5 +213,9 @@ const styles = createThemedStyles((theme) => ({
   },
   chevron: {
     color: theme.colors.mutedForeground,
+  },
+  toggle: {
+    marginHorizontal: theme.spacing.xs,
+    transform: [{ scaleX: 1.18 }],
   },
 }))

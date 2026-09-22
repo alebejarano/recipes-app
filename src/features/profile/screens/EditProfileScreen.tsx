@@ -218,7 +218,7 @@ export default function EditProfileScreen() {
                     setCurrentEmailCodeVerified,
                   )
                 }}
-                variant="secondary"
+                variant={currentEmailCodeVerified ? 'secondary' : 'primary'}
                 size="md"
                 loading={verifyingCurrentEmailCode}
                 loadingLabel={t('profile.editProfile.verifyingCode')}
@@ -252,7 +252,7 @@ export default function EditProfileScreen() {
                     setNewEmailCodeVerified,
                   )
                 }}
-                variant="secondary"
+                variant={newEmailCodeVerified ? 'secondary' : 'primary'}
                 size="md"
                 loading={verifyingNewEmailCode}
                 loadingLabel={t('profile.editProfile.verifyingCode')}

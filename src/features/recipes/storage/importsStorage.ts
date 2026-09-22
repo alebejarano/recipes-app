@@ -22,6 +22,7 @@ type ImportKind = 'document' | 'image'
 export type ManagedImport = {
   id: string
   documentId: string | null
+  cloudId: string | null
   kind: ImportKind
   title: string | null
   fileName: string | null
@@ -306,6 +307,7 @@ export async function listManagedImports(): Promise<ManagedImport[]> {
   let rows: {
     id: string
     document_id: string | null
+    cloud_id: string | null
     kind: ImportKind
     title: string | null
     file_name: string | null
@@ -318,6 +320,7 @@ export async function listManagedImports(): Promise<ManagedImport[]> {
     rows = await getAllAsync<{
       id: string
       document_id: string | null
+      cloud_id: string | null
       kind: ImportKind
       title: string | null
       file_name: string | null
@@ -325,7 +328,7 @@ export async function listManagedImports(): Promise<ManagedImport[]> {
       bytes: number
       created_at: string
     }>(
-      `SELECT i.id, rd.id as document_id, i.kind, rd.title as title, i.file_name, i.file_uri, i.bytes, i.created_at
+      `SELECT i.id, rd.id as document_id, rd.cloud_id as cloud_id, i.kind, rd.title as title, i.file_name, i.file_uri, i.bytes, i.created_at
        FROM imports i
        LEFT JOIN recipe_documents rd ON rd.file_uri = i.file_uri
        WHERE i.deleted_at IS NULL
@@ -345,6 +348,7 @@ export async function listManagedImports(): Promise<ManagedImport[]> {
     rows = await getAllAsync<{
       id: string
       document_id: string | null
+      cloud_id: string | null
       kind: ImportKind
       title: string | null
       file_name: string | null
@@ -352,7 +356,7 @@ export async function listManagedImports(): Promise<ManagedImport[]> {
       bytes: number
       created_at: string
     }>(
-      `SELECT id, NULL as document_id, kind, NULL as title, file_name, file_uri, bytes, created_at
+      `SELECT id, NULL as document_id, NULL as cloud_id, kind, NULL as title, file_name, file_uri, bytes, created_at
        FROM imports
        WHERE deleted_at IS NULL AND ${getLocalDataOwnerFilter().sql}
        ORDER BY created_at DESC;`,
@@ -363,6 +367,7 @@ export async function listManagedImports(): Promise<ManagedImport[]> {
   return rows.map((row) => ({
     id: row.id,
     documentId: row.document_id ?? null,
+    cloudId: row.cloud_id ?? null,
     kind: row.kind,
     title: row.title ?? null,
     fileName: row.file_name ?? null,

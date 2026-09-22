@@ -4,7 +4,6 @@ import { Feather } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { router, useLocalSearchParams, useSegments } from 'expo-router'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
 import {
   Alert,
   KeyboardAvoidingView,
@@ -21,7 +20,6 @@ import { createThemedStyles } from '@/styles/createStyles'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
-import { uploadPremiumImport } from '@/features/recipes/api/importsRepo'
 import RecipeDocumentForm, {
   type RecipeDocumentFormHandle,
   type RecipeDocumentFormValues,
@@ -33,7 +31,6 @@ import RecipeForm, {
 } from '@/features/recipes/components/RecipeForm'
 import { useAddRecipeDocument } from '@/features/recipes/hooks/useRecipeDocuments'
 import { useStrategyCreateRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
-import { triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
 import {
   DUPLICATE_RECIPE_DOCUMENT_CODE,
   findDuplicateRecipeDocumentByFile,
@@ -52,7 +49,6 @@ import {
 import { getPlanLimitTypeFromError } from '@/features/subscription/utils/limitErrors'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { layout } from '@/styles/layout'
-import { getErrorCategory, logOperationalEvent } from '@/lib/productionLogger'
 
 export type CreateRecipeVariant = 'onboarding' | 'app'
 export type CreateRecipeEntry = 'scratch' | 'pdf'
@@ -66,7 +62,6 @@ interface CreateRecipeScreenProps {
 
 const FOOTER_HEIGHT = 72
 const FOOTER_EXTRA_BOTTOM_PADDING = 16
-const FOREGROUND_IMPORT_UPLOAD_TIMEOUT_MS = 12_000
 const PENDING_LIMIT_RETRY_PREFIX = 'recipes:create:pending-retry:'
 const IMPORT_IMAGE_QUALITY_STEPS = [
   IMPORT_IMAGE_COMPRESS_QUALITY,
@@ -98,32 +93,6 @@ function isOptimizableImportImage(fileName: string) {
   return mimeType === 'image/jpeg' || mimeType === 'image/png'
 }
 
-function isImportValidationError(error: unknown) {
-  const message =
-    error instanceof Error
-      ? error.message.toLowerCase()
-      : typeof error === 'object' && error && 'message' in error && typeof error.message === 'string'
-        ? error.message.toLowerCase()
-        : ''
-
-  return (
-    message.includes('already been imported') ||
-    message.includes('storage limit reached') ||
-    message.includes('too large') ||
-    message.includes('unsupported file type') ||
-    message.includes('password-protected') ||
-    message.includes('encrypted pdf')
-  )
-}
-
-function getErrorMessage(error: unknown) {
-  if (error instanceof Error) return error.message
-  if (typeof error === 'object' && error && 'message' in error && typeof error.message === 'string') {
-    return error.message
-  }
-  return ''
-}
-
 function normalizeRequestedFolder(value?: string | string[]) {
   const raw = Array.isArray(value) ? value[0] : value
   if (typeof raw !== 'string') return null
@@ -140,7 +109,6 @@ export default function CreateRecipeScreen({
   const { locale, t } = useTranslation()
   const insets = useSafeAreaInsets()
   const largeScreen = useLargeScreenLayout({ maxContentWidth: layout.formContentMaxWidth })
-  const queryClient = useQueryClient()
   const { user } = useAuth()
   const { retryAfterUpgrade, folder } = useLocalSearchParams<{
     retryAfterUpgrade?: string
@@ -156,7 +124,6 @@ export default function CreateRecipeScreen({
   const [entryMode, setEntryMode] = useState<CreateRecipeEntry | null>(
     isOnboarding ? 'scratch' : entry ?? null
   )
-  const [isUploadingPremiumImport, setIsUploadingPremiumImport] = useState(false)
   const [limitModalType, setLimitModalType] = useState<PlanLimitReachedType | null>(null)
   const [pendingRetry, setPendingRetry] = useState<PendingLimitRetry | null>(null)
   const hasTriedAutoRetryRef = useRef(false)
@@ -193,7 +160,7 @@ export default function CreateRecipeScreen({
   )
 
   const isSaving = entryMode === 'pdf'
-    ? documentMutation.isPending || isUploadingPremiumImport
+    ? documentMutation.isPending
     : createMutation.isPending
 
   const premiumPath = routeMode === 'public' ? '/(public)/premium' : '/(auth)/premium'
@@ -261,7 +228,6 @@ export default function CreateRecipeScreen({
 
   const saveDocument = useCallback(
     async (values: RecipeDocumentFormValues, file: { uri: string; name: string; size: number }) => {
-      let queuedForUpload = false
       const optimizedFile = isOptimizableImportImage(file.name)
         ? await optimizeImageUri(
             {
@@ -284,9 +250,10 @@ export default function CreateRecipeScreen({
             size: optimizedFile.fileSize,
           }
         : file
-      const duplicate = shouldUseLocalData
-        ? await findDuplicateRecipeDocumentByFile({ uri: normalizedFile.uri })
-        : null
+      // Every import is staged in the app document directory before it is
+      // synced. This gives Premium imports the same offline lifetime as Free
+      // imports, including after a customer later downgrades.
+      const duplicate = await findDuplicateRecipeDocumentByFile({ uri: normalizedFile.uri })
       if (duplicate) {
         const duplicateTitle = duplicate.title?.trim() || t('recipes.documentForm.untitled')
         const duplicateDate = new Date(duplicate.createdAt).toLocaleDateString(locale)
@@ -310,66 +277,6 @@ export default function CreateRecipeScreen({
         return
       }
 
-      if (!shouldUseLocalData) {
-        setIsUploadingPremiumImport(true)
-        let queuedUploadErrorMessage: string | null = null
-        try {
-          await uploadPremiumImport({
-            uri: normalizedFile.uri,
-            fileName: normalizedFile.name,
-            mimeType: inferImportMimeType(normalizedFile.name),
-            title: values.title,
-            timeoutMs: FOREGROUND_IMPORT_UPLOAD_TIMEOUT_MS,
-          })
-        } catch (uploadError) {
-          // Cloud is the canonical Premium destination, but a selected file
-          // must never be lost just because its first upload fails. Preserve
-          // it locally and let the durable sync queue retry later. Validation
-          // failures are the exception: retrying those cannot succeed.
-          if (isImportValidationError(uploadError)) {
-            throw uploadError
-          }
-          const uploadErrorMessage = getErrorMessage(uploadError) || 'Unknown upload error'
-          queuedUploadErrorMessage = uploadErrorMessage
-          console.warn('[import upload failed]', {
-            message: uploadErrorMessage,
-            category: getErrorCategory(uploadError),
-            fileName: normalizedFile.name,
-            bytes: normalizedFile.size,
-          })
-          await documentMutation.mutateAsync({
-            title: values.title,
-            file: normalizedFile,
-            plan: importPlan,
-            ownerUserId: user?.id ?? null,
-          })
-          logOperationalEvent('offline_fallback_saved', {
-            operation: 'import_upload',
-            entity: 'import',
-            category: getErrorCategory(uploadError),
-            count: 1,
-            queued: true,
-            error_message: uploadErrorMessage.slice(0, 500),
-          })
-          queuedForUpload = true
-          void triggerRecipeSync()
-        }
-        await queryClient.invalidateQueries({ queryKey: ['recipes', 'documents'] })
-        await queryClient.invalidateQueries({ queryKey: ['recipes', 'documents', 'usage'] })
-        await queryClient.invalidateQueries({ queryKey: ['recipes', 'imports', 'managed'] })
-        await clearPendingRetry()
-        router.replace({
-          pathname: collectionsPath as any,
-          params: {
-            segment: 'recipes',
-            recipesSegment: 'documents',
-            ...(queuedForUpload
-              ? { docQueued: '1', docQueueError: queuedUploadErrorMessage ?? 'Unknown upload error' }
-              : { docSuccess: '1' }),
-          },
-        })
-        return
-      }
       await documentMutation.mutateAsync({
         title: values.title,
         file: normalizedFile,
@@ -386,7 +293,7 @@ export default function CreateRecipeScreen({
         },
       })
     },
-    [clearPendingRetry, collectionsPath, documentMutation, importPlan, locale, manageImportsPath, queryClient, shouldUseLocalData, t, user?.id]
+    [clearPendingRetry, collectionsPath, documentMutation, importPlan, locale, manageImportsPath, t, user?.id]
   )
 
   const handleSubmit = useCallback(
@@ -453,8 +360,6 @@ export default function CreateRecipeScreen({
           return
         }
         Alert.alert(t('recipes.create.saveFailedTitle'), getUserFacingErrorMessage(error))
-      } finally {
-        setIsUploadingPremiumImport(false)
       }
     },
     [collectionsPath, locale, manageImportsPath, pendingRetryKey, saveDocument, shouldUseLocalData, t]
@@ -523,8 +428,6 @@ export default function CreateRecipeScreen({
             { text: t('recipes.create.saveNow'), onPress: triggerSave },
           ]
         )
-      } finally {
-        setIsUploadingPremiumImport(false)
       }
     }
     void runAutoRetry()
