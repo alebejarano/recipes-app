@@ -134,6 +134,7 @@ export default function PremiumScreen({
               ? t('subscription.premium.loadingPlans')
               : t('subscription.premium.unlock')}
       </Button>
+
       </Screen>
 
       <Modal visible={isUpgrading} transparent animationType="fade" statusBarTranslucent>

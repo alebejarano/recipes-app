@@ -24,6 +24,8 @@ type CurrentPlanScreenProps = {
   onUpgrade: () => void
   onManageExistingRecipes?: () => void
   onManageSubscription?: () => void
+  onRestorePurchases?: () => void
+  isRestoring?: boolean
   premiumPlanLabel?: string
   premiumNextRenewalLabel?: string
   premiumPricingLabel?: string | null
@@ -171,6 +173,8 @@ export default function CurrentPlanScreen({
   onUpgrade,
   onManageExistingRecipes,
   onManageSubscription,
+  onRestorePurchases,
+  isRestoring = false,
   premiumPlanLabel = '€5/month',
   premiumNextRenewalLabel = i18n.t('subscription.premium.renewsOn', { date: 'Mar 27, 2026' }),
   premiumPricingLabel,
@@ -324,9 +328,16 @@ export default function CurrentPlanScreen({
       </View>
 
       <View style={styles.ctaBlock}>
-        <Button onPress={onUpgrade} variant="premium" size="xl" style={styles.ctaButton}>
+        <Button onPress={onUpgrade} variant="premium" size="xl" style={styles.ctaButton} disabled={isRestoring}>
           {i18n.t('subscription.currentPlan.unlockPremium')}
         </Button>
+        {onRestorePurchases ? (
+          <Button onPress={onRestorePurchases} variant="secondary" size="md" disabled={isRestoring}>
+            {isRestoring
+              ? i18n.t('subscription.manage.restoring')
+              : i18n.t('subscription.manage.restorePurchases')}
+          </Button>
+        ) : null}
         {premiumPricingLabel ? (
           <Text style={styles.pricingText}>{premiumPricingLabel}</Text>
         ) : null}
