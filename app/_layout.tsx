@@ -2,6 +2,7 @@
 import { Slot } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
+import * as SystemUI from 'expo-system-ui'
 import { PostHogProvider, usePostHog } from 'posthog-react-native'
 import React, { useEffect, useRef } from 'react'
 import { AppState, LogBox } from 'react-native'
@@ -21,6 +22,7 @@ import { setProductionLogCapture } from '@/lib/productionLogger'
 import { LocalizationProvider } from '@/localization'
 import QueryProvider from '@/providers/QueryProvider'
 import { useLoadFonts } from '@/styles/useLoadFonts'
+import { ThemeProvider, useTheme } from '@/styles/ThemeProvider'
 
 export default function RootLayout() {
   const fontsLoaded = useLoadFonts()
@@ -72,12 +74,23 @@ export default function RootLayout() {
 
   return (
     <AnalyticsConsentProvider>
-      <StatusBar style="dark" />
       <PostHogGate enabled={posthogEnabled} apiKey={posthogApiKey} host={posthogHost}>
-        {content}
+        <ThemeProvider>
+          <ThemedApp>{content}</ThemedApp>
+        </ThemeProvider>
       </PostHogGate>
     </AnalyticsConsentProvider>
   )
+}
+
+function ThemedApp({ children }: { children: React.ReactNode }) {
+  const { mode, theme } = useTheme()
+
+  useEffect(() => {
+    void SystemUI.setBackgroundColorAsync(theme.colors.background)
+  }, [theme.colors.background])
+
+  return <><StatusBar style={mode === 'dark' ? 'light' : 'dark'} />{children}</>
 }
 
 function PostHogGate({

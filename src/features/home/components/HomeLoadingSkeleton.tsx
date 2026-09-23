@@ -118,7 +118,7 @@ const styles = createThemedStyles((theme) => ({
     minHeight: 156,
     padding: layout.cardPadding,
     borderRadius: theme.radii.lg,
-    backgroundColor: theme.colors.cream,
+    backgroundColor: theme.colors.card,
     gap: theme.spacing.md,
   },
   recipeImage: {

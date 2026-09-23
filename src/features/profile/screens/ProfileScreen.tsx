@@ -8,6 +8,7 @@ import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
 import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles';
 import { theme } from '@/styles/theme';
+import { useTheme } from '@/styles/ThemeProvider'
 
 import ProfileHeader from '@/features/profile/components/ProfileHeader';
 import ProfileUserCard from '@/features/profile/components/ProfileUserCard';
@@ -32,6 +33,7 @@ import { SubscriptionContext } from '@/features/subscription/context/Subscriptio
 export default function ProfileScreen() {
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
   const { languagePreference, locale, t } = useTranslation()
+  const { preference: themePreference, mode } = useTheme()
 
   const { user, logout } = useAuth()
   const { plan } = useContext(SubscriptionContext)
@@ -119,8 +121,19 @@ export default function ProfileScreen() {
             : t(`profile.language.labels.${locale}`),
         onPress: () => router.push('/(auth)/settings/language' as any),
       },
+      {
+        id: 'appearance',
+        type: 'link' as const,
+        icon: 'moon' as const,
+        title: t('profile.appearanceSummary'),
+        subtitle:
+          themePreference === 'system'
+            ? t('profile.appearance.labels.system', { mode: t(`profile.appearance.labels.${mode}`) })
+            : t(`profile.appearance.labels.${themePreference}`),
+        onPress: () => router.push('/(auth)/settings/theme' as any),
+      },
     ],
-    [languagePreference, locale, t]
+    [languagePreference, locale, mode, t, themePreference]
   )
 
   const privacyItems = useMemo(

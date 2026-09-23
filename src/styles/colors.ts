@@ -35,6 +35,8 @@ export const lightColors = {
     border: 'hsl(35 20% 88%)',
     input: 'hsl(35 20% 88%)',
     inputBackground: 'hsl(35 25% 90%)',
+    switchTrackInactive: 'hsl(35 20% 82%)',
+    switchThumb: 'hsl(45 30% 98%)',
     ring: 'hsl(142 25% 45%)',
 
     cream: 'hsla(36, 43%, 92%, 1.00)',
@@ -85,6 +87,10 @@ export const darkColors = {
     border: 'hsl(30 15% 22%)',
     input: 'hsl(30 15% 22%)',
     inputBackground: 'hsl(30 15% 18%)',
+    // Deliberately lighter than the surrounding surfaces so inactive switches
+    // remain easy to identify in dark mode.
+    switchTrackInactive: 'hsl(30 12% 32%)',
+    switchThumb: 'hsl(30 10% 72%)',
     ring: 'hsl(142 25% 55%)',
 
     cream: 'hsl(30 15% 10%)',

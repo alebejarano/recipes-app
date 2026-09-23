@@ -145,6 +145,7 @@ export const es: TranslationSchema = {
         title: 'Perfil',
         environmentLabel: 'entorno %{env}',
         languageSummary: 'Idioma',
+        appearanceSummary: 'Apariencia',
         back: 'Volver',
         environments: {
             development: 'desarrollo',
@@ -182,6 +183,16 @@ export const es: TranslationSchema = {
                 en: 'Inglés',
                 es: 'Español',
             },
+        },
+        appearance: {
+            screenTitle: 'Apariencia',
+            intro: 'Elige si la app sigue la apariencia del dispositivo o si siempre usa un tema concreto.',
+            options: {
+                system: { title: 'Usar ajuste del dispositivo', subtitle: 'Ahora mismo %{mode}' },
+                light: { title: 'Claro', subtitle: 'Usar siempre el tema claro' },
+                dark: { title: 'Oscuro', subtitle: 'Usar siempre el tema oscuro' },
+            },
+            labels: { system: 'Predeterminado del dispositivo', light: 'Claro', dark: 'Oscuro' },
         },
         membershipStatus: {
             premium: 'Premium activo',

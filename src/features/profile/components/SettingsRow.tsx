@@ -102,11 +102,11 @@ export default function SettingsRow({
           onValueChange={item.onValueChange}
           disabled={isDisabled}
           trackColor={{
-            false: theme.colors.border,
+            false: theme.colors.switchTrackInactive,
             true: theme.colors.primary,
           }}
-          thumbColor={item.value ? theme.colors.primaryForeground : theme.colors.card}
-          ios_backgroundColor={theme.colors.border}
+          thumbColor={theme.colors.switchThumb}
+          ios_backgroundColor={theme.colors.switchTrackInactive}
           style={styles.toggle}
         />
       ) : (

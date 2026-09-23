@@ -143,6 +143,7 @@ export const en = {
         title: 'Profile',
         environmentLabel: '%{env} environment',
         languageSummary: 'Language',
+        appearanceSummary: 'Appearance',
         back: 'Back',
         environments: {
             development: 'development',
@@ -180,6 +181,16 @@ export const en = {
                 en: 'English',
                 es: 'Spanish',
             },
+        },
+        appearance: {
+            screenTitle: 'Appearance',
+            intro: 'Choose whether the app follows your device appearance or always uses a specific theme.',
+            options: {
+                system: { title: 'Use device setting', subtitle: 'Currently %{mode}' },
+                light: { title: 'Light', subtitle: 'Always use the light theme' },
+                dark: { title: 'Dark', subtitle: 'Always use the dark theme' },
+            },
+            labels: { system: 'Device default', light: 'Light', dark: 'Dark' },
         },
         membershipStatus: {
             premium: 'Premium Active',

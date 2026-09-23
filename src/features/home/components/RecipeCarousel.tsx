@@ -125,7 +125,7 @@ const styles = createThemedStyles((theme) => ({
   card: {
     padding: layout.cardPadding,
     borderRadius: theme.radii.lg,
-    backgroundColor: theme.colors.cream,
+    backgroundColor: theme.colors.card,
     ...theme.shadows.soft,
   },
   cardCompact: {

@@ -53,5 +53,14 @@ export const darkTheme: Theme = {
     shadows,
 };
 
-// For now, export light as default
-export const theme = lightTheme;
+// Keep this object stable because existing components import it directly. Its
+// values are updated by ThemeProvider whenever the active appearance changes.
+export const theme: Theme = {
+    ...lightTheme,
+    colors: { ...lightColors },
+};
+
+export function setActiveTheme(nextTheme: Theme) {
+    theme.mode = nextTheme.mode;
+    Object.assign(theme.colors, nextTheme.colors);
+}
