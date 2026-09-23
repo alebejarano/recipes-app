@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useWindowDimensions, type ViewStyle } from 'react-native'
 
-import { layout } from '@/styles/layout'
+import { getResponsiveScreenPadding, layout } from '@/styles/layout'
 
 type Options = {
   maxContentWidth?: number
@@ -14,7 +14,7 @@ export function useLargeScreenLayout(options: Options = {}) {
 
   return useMemo(() => {
     const pagePaddingStyle: ViewStyle = {
-      paddingHorizontal: isLargeScreen ? layout.largeScreenPadding : layout.screenPadding,
+      paddingHorizontal: getResponsiveScreenPadding(width),
     }
 
     const contentWidthStyle: ViewStyle = {
@@ -28,5 +28,5 @@ export function useLargeScreenLayout(options: Options = {}) {
       pagePaddingStyle,
       contentWidthStyle,
     }
-  }, [isLargeScreen, maxContentWidth])
+  }, [isLargeScreen, maxContentWidth, width])
 }

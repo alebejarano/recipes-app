@@ -1,5 +1,5 @@
 import { theme } from '@/styles/theme';
-import { layout } from '@/styles/layout';
+import { getResponsiveScreenPadding } from '@/styles/layout';
 import { useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -15,8 +15,7 @@ export function useScreenPadding(options: Options = {}) {
 
   const topExtra = options.top ?? theme.spacing.xl;
   const bottomExtra = options.bottom ?? 0;
-  const defaultHorizontal =
-    width >= layout.largeScreenMinWidth ? layout.largeScreenPadding : layout.screenPadding;
+  const defaultHorizontal = getResponsiveScreenPadding(width);
   const horizontal = options.horizontal ?? defaultHorizontal;
 
   return {

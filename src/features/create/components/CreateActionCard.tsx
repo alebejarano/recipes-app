@@ -52,10 +52,10 @@ export default function CreateActionCard({
       <View style={[styles.iconTile, iconTone]}>{icon}</View>
 
       <View style={styles.textBlock}>
-        <Text style={styles.title} numberOfLines={1}>
+        <Text style={styles.title}>
           {title}
         </Text>
-        <Text style={styles.subtitle} numberOfLines={1}>
+        <Text style={styles.subtitle}>
           {subtitle}
         </Text>
       </View>
@@ -125,6 +125,7 @@ const styles = createThemedStyles((theme) => ({
 
   textBlock: {
     flex: 1,
+    flexShrink: 1,
     marginRight: theme.spacing.sm,
   },
 

@@ -111,7 +111,6 @@ export default function TabsLayout() {
           ),
           tabBarButton: (props) => {
             const {
-              accessibilityLabel,
               accessibilityState,
               accessibilityRole,
               testID,
@@ -127,7 +126,7 @@ export default function TabsLayout() {
                     e.preventDefault?.()
                     router.push('/create')
                   }}
-                  accessibilityLabel={accessibilityLabel}
+                  accessibilityLabel={t('createNew.addContentA11y')}
                   accessibilityState={accessibilityState}
                   accessibilityRole={accessibilityRole}
                   testID={testID}

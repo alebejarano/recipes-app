@@ -721,6 +721,8 @@ export const en = {
     },
     createNew: {
         title: 'Create New',
+        addContentA11y: 'Create a recipe, note, or shopping list',
+        closeA11y: 'Close Create New',
         addRecipeTitle: 'Add Recipe',
         addRecipeSubtitle: 'Save your favorite dishes',
         createNoteTitle: 'Create Note',

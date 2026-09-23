@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons'
 import { router, useFocusEffect } from 'expo-router'
 import React, { useCallback, useMemo, useState } from 'react'
-import { ActivityIndicator, Text, View } from 'react-native'
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
@@ -106,8 +106,11 @@ export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps
   }, [hasShoppingList, isCreatingList])
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={[styles.container, largeScreen.pagePaddingStyle]}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <ScrollView
+        contentContainerStyle={[styles.container, largeScreen.pagePaddingStyle]}
+        contentInsetAdjustmentBehavior="automatic"
+      >
         <View style={largeScreen.contentWidthStyle}>
         {/* Header */}
         <View style={styles.headerRow}>
@@ -118,10 +121,9 @@ export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps
             size="md"
             onPress={() => router.back()}
             style={styles.closeButton}
+            accessibilityLabel={t('createNew.closeA11y')}
             icon={<Feather name="x" size={18} style={styles.closeIcon} />}
-          >
-            {/* no label */}
-          </Button>
+          />
         </View>
 
         <View style={styles.cards}>
@@ -151,7 +153,7 @@ export default function CreateNewScreen({ group = 'auth' }: CreateNewScreenProps
           />
         </View>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   )
 }
@@ -162,14 +164,15 @@ const styles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.background,
   },
   container: {
-    flex: 1,
     paddingHorizontal: layout.screenPadding,
     paddingTop: layout.screenPadding,
+    paddingBottom: layout.screenPadding,
+    flexGrow: 1,
   },
 
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     marginBottom: theme.spacing.lg,
   },
@@ -177,6 +180,8 @@ const styles = createThemedStyles((theme) => ({
   title: {
     ...theme.textVariants.display,
     color: theme.colors.foreground,
+    flex: 1,
+    flexShrink: 1,
   },
 
   closeButton: {
@@ -186,6 +191,7 @@ const styles = createThemedStyles((theme) => ({
     borderRadius: theme.radii.full,
     alignItems: 'center',
     justifyContent: 'center',
+    marginLeft: theme.spacing.md,
   },
 
   closeIcon: {

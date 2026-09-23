@@ -723,6 +723,8 @@ export const es: TranslationSchema = {
     },
     createNew: {
         title: 'Crear nuevo',
+        addContentA11y: 'Crear una receta, nota o lista de compras',
+        closeA11y: 'Cerrar Crear nuevo',
         addRecipeTitle: 'Añadir receta',
         addRecipeSubtitle: 'Guarda tus platos favoritos',
         createNoteTitle: 'Crear nota',

@@ -33,6 +33,7 @@ interface ButtonProps {
   loading?: boolean
   loadingLabel?: string
   testID?: string
+  accessibilityLabel?: string
 }
 
 export default function Button({
@@ -47,6 +48,7 @@ export default function Button({
   loading = false,
   loadingLabel,
   testID,
+  accessibilityLabel,
 }: ButtonProps) {
   const hasText = children != null && children !== ''
   const isDisabled = disabled || loading
@@ -63,6 +65,7 @@ export default function Button({
       activeOpacity={isDisabled ? 1 : 0.88}
       disabled={isDisabled}
       testID={testID}
+      accessibilityLabel={accessibilityLabel}
       style={[
         styles.base,
         styles[`radius_${size}`],
@@ -82,6 +85,7 @@ export default function Button({
       {hasText ? (
         <Text
           style={[
+            styles.text,
             styles[`textSize_${size}`],
             !isDisabled ? styles[`text_${variant}`] : styles[`textDisabled_${variant}`],
             textStyle,
@@ -191,6 +195,10 @@ const styles = createThemedStyles((theme) => ({
     fontFamily: theme.fontFamily.semibold,
     fontSize: theme.fontSize.sm,
     lineHeight: theme.lineHeight.sm,
+  },
+  text: {
+    flexShrink: 1,
+    textAlign: 'center',
   },
   textSize_lg: {
     ...theme.textVariants.emphasis,
