@@ -200,6 +200,8 @@ export const en = {
             logoutErrorTitle: 'Unable to log out',
             logoutTitle: 'Log out',
             logoutMessage: 'Are you sure you want to log out?',
+            logoutLocalDataMessage:
+                'Your Free content stays on this device, but it is not backed up and will not be restored after uninstalling the app or changing phones.',
             cancel: 'Cancel',
             confirmLogout: 'Log Out',
         },
@@ -349,6 +351,8 @@ export const en = {
             deleteFailedTitle: 'Unable to delete account',
             deleteTitle: 'Delete account',
             deleteBody: 'This permanently deletes your account and cannot be undone.',
+            deleteLocalOnlyBody:
+                'Your Free content is stored only on this device and is not backed up. Deleting your account cannot be undone.',
             settingsTitle: 'Settings',
             dangerTitle: 'Danger Zone',
             unavailable: 'Create an account to manage this setting',
@@ -549,6 +553,9 @@ export const en = {
                 notes: 'Unlimited notes',
                 local: 'Stored locally on this device',
             },
+            localNoticeTitle: 'Stored on this device',
+            localNoticeBody:
+                'Free recipes, notes, and imports are not backed up. They will not be restored after uninstalling the app, clearing its data, or changing phones.',
             premiumFeatures: {
                 recipes: 'Unlimited recipes',
                 notes: 'Unlimited notes',
@@ -813,12 +820,9 @@ export const en = {
             storageUpdateBody: 'This device doesn\'t have your previous data. Premium keeps everything backed up across devices.',
             learnPremium: 'Learn about Premium',
             notNow: 'Not now',
-            localOnlyTitle: 'Local-only for now',
-            localOnlyBodyLead: 'Everything stays on this device.',
-            localOnlyYouCan: 'You can ',
-            localOnlyBodyCreate: 'Create an account',
-            localOnlyBodyMiddle: ' anytime. Cloud backup is available with ',
-            localOnlyBodyPremium: 'Premium',
+            localOnlyTitle: 'Stored on this device',
+            localOnlyBody:
+                'Your recipes, notes, and imports are not backed up. They will not be restored after you uninstall the app, clear its data, or change phones.',
             gotIt: 'Got it',
             dismissStorageRiskA11y: 'Dismiss storage risk banner',
             dismissPremiumSuggestionA11y: 'Dismiss premium suggestion banner',

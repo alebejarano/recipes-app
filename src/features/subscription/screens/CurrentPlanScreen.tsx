@@ -307,6 +307,14 @@ export default function CurrentPlanScreen({
         </View>
       )}
 
+      <View style={styles.localStorageNotice}>
+        <Feather name="smartphone" size={20} style={styles.localStorageNoticeIcon} />
+        <View style={styles.localStorageNoticeText}>
+          <Text style={styles.localStorageNoticeTitle}>{i18n.t('subscription.currentPlan.localNoticeTitle')}</Text>
+          <Text style={styles.localStorageNoticeBody}>{i18n.t('subscription.currentPlan.localNoticeBody')}</Text>
+        </View>
+      </View>
+
       <View style={styles.sectionBlock}>
         <Text style={styles.sectionHeading}>{i18n.t('subscription.currentPlan.comparePlans')}</Text>
 
@@ -452,6 +460,30 @@ const styles = createThemedStyles((theme) => ({
   },
   usageMessage: {
     marginTop: theme.spacing.xs,
+    ...theme.textVariants.caption,
+    color: theme.colors.mutedForeground,
+  },
+  localStorageNotice: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radii.lg,
+    backgroundColor: theme.colors.secondary,
+    padding: theme.spacing.lg,
+  },
+  localStorageNoticeIcon: {
+    color: theme.colors.mutedForeground,
+  },
+  localStorageNoticeText: {
+    flex: 1,
+    gap: theme.spacing.xxs,
+  },
+  localStorageNoticeTitle: {
+    ...theme.textVariants.label,
+    color: theme.colors.foreground,
+  },
+  localStorageNoticeBody: {
     ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },

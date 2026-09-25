@@ -4,7 +4,7 @@ import { Image as ExpoImage } from 'expo-image';
 import { router, useFocusEffect, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useQueryClient } from '@tanstack/react-query';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
 
 import Screen from '@/components/Screen';
@@ -40,6 +40,7 @@ import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyReci
 import type { RecipeMealTime } from '@/features/recipes/types/mealTimes';
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore';
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode';
+import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext';
 import {
   FREE_PLAN_MAX_IMPORT_TOTAL_BYTES,
   FREE_PLAN_MAX_RECIPES,
@@ -300,6 +301,7 @@ export default function HomeScreen({
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl);
   const segments = useSegments();
   const { user } = useAuth();
+  const { plan } = useContext(SubscriptionContext);
   const resolvedMode =
     mode ??
     (segments[0] === '(public)' ? 'public' : 'auth');
@@ -465,6 +467,10 @@ export default function HomeScreen({
   const [activeConversionTriggerId, setActiveConversionTriggerId] = useState<string | null>(null);
   const [storageBannerStateReady, setStorageBannerStateReady] = useState(false);
   const [recipeOpenHistory, setRecipeOpenHistory] = useState<RecipeOpenHistory>({});
+  const storageInfoBannerDismissKey = useMemo(
+    () => `${STORAGE_INFO_BANNER_DISMISSED_KEY}:${user?.id ?? 'guest'}`,
+    [user?.id]
+  );
 
   const refreshRecipeOpenHistory = useCallback(async () => {
     try {
@@ -481,7 +487,7 @@ export default function HomeScreen({
       try {
         const [infoDismissedRaw, riskDismissedEventRaw, seenTriggersRaw, markerCacheRaw] =
           await Promise.all([
-            AsyncStorage.getItem(STORAGE_INFO_BANNER_DISMISSED_KEY),
+            AsyncStorage.getItem(storageInfoBannerDismissKey),
             AsyncStorage.getItem(STORAGE_RISK_BANNER_DISMISSED_EVENT_KEY),
             AsyncStorage.getItem(STORAGE_CONVERSION_BANNER_SEEN_TRIGGERS_KEY),
             AsyncStorage.getItem(STORAGE_DEVICE_MARKER_CACHE_KEY),
@@ -528,7 +534,7 @@ export default function HomeScreen({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [storageInfoBannerDismissKey]);
 
   useFocusEffect(
     useCallback(() => {
@@ -571,8 +577,8 @@ export default function HomeScreen({
 
   const importsCount = importsQuery.data?.length ?? importsUsageQuery.data?.totalCount ?? 0;
   const importsTotalBytes = importsUsageQuery.data?.totalBytes ?? 0;
-  const hasUserGeneratedContent =
-    visibleRecipes.length > 0 || visibleNotes.length > 0 || importsCount > 0;
+  const hasMeaningfulLocalContent =
+    visibleRecipes.length + visibleNotes.length + importsCount >= 3;
   const conversionTrigger = useMemo(
     () =>
       getConversionBannerTrigger({
@@ -594,17 +600,16 @@ export default function HomeScreen({
     Boolean(conversionTrigger) &&
     conversionTrigger?.id === activeConversionTriggerId;
   const shouldShowStorageInfoBanner =
-    isPublic &&
-    !isAuthenticated &&
+    plan === 'free' &&
     storageBannerStateReady &&
     !showRiskBanner &&
     !showConversionBanner &&
-    hasUserGeneratedContent &&
+    hasMeaningfulLocalContent &&
     storageBannerDismissed === false;
 
   const dismissStorageInfoBanner = async () => {
     try {
-      await AsyncStorage.setItem(STORAGE_INFO_BANNER_DISMISSED_KEY, 'true');
+      await AsyncStorage.setItem(storageInfoBannerDismissKey, 'true');
     } finally {
       setStorageBannerDismissed(true);
     }
@@ -993,29 +998,18 @@ export default function HomeScreen({
               <Feather name="x" size={18} color={styles.localOnlyCloseIcon.color} />
             </Pressable>
           </View>
-          <Text style={styles.localOnlyBody}>
-            {t('home.banners.localOnlyBodyLead')}{'\n'}
-            {t('home.banners.localOnlyYouCan')}
-            <Text
-              style={styles.localOnlyLink}
-              onPress={() => {
-                router.push('/(public)/register');
-              }}
-            >
-              {t('home.banners.localOnlyBodyCreate')}
-            </Text>{' '}
-            {t('home.banners.localOnlyBodyMiddle')}
-            <Text
-              style={styles.localOnlyPremiumLink}
-              onPress={() => {
-                router.push('/(public)/premium');
-              }}
-            >
-              {t('home.banners.localOnlyBodyPremium')}
-            </Text>
-            .
-          </Text>
+          <Text style={styles.localOnlyBody}>{t('home.banners.localOnlyBody')}</Text>
           <View style={styles.localOnlyFooterRow}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('home.banners.learnPremiumA11y')}
+              onPress={() => {
+                router.push(resolvedMode === 'public' ? '/(public)/premium' : '/(auth)/premium');
+              }}
+              style={({ pressed }) => [styles.contextPrimaryAction, pressed && styles.actionPressed]}
+            >
+              <Text style={styles.contextPrimaryActionText}>{t('home.banners.learnPremium')}</Text>
+            </Pressable>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('home.banners.dismissStorageInfoA11y')}
@@ -1356,16 +1350,6 @@ const styles = createThemedStyles((theme) => ({
   localOnlyBody: {
     ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
-  },
-  localOnlyLink: {
-    ...theme.textVariants.body,
-    color: theme.colors.foreground,
-    textDecorationLine: 'underline',
-  },
-  localOnlyPremiumLink: {
-    ...theme.textVariants.emphasis,
-    color: theme.colors.foreground,
-    textDecorationLine: 'underline',
   },
   localOnlyFooterRow: {
     marginTop: theme.spacing.md,

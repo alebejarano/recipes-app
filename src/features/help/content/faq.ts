@@ -79,7 +79,7 @@ const FAQ_SECTIONS_BY_LOCALE: Record<'en' | 'es', FaqSection[]> = {
         },
         {
           id: 'free-plan-device-space',
-          question: 'Why can I save more recipes, notes, or imports if I have not hit the Free plan limits?',
+          question: "Why can't I save more recipes, notes, or imports if I have not hit the Free plan limits?",
           answers: [
             'Free plan limits are app limits, but your device still needs enough available storage to save new data.',
             'If your phone is low on space, imports or images may fail even when your plan limits have not been reached.',

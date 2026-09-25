@@ -202,6 +202,8 @@ export const es: TranslationSchema = {
             logoutErrorTitle: 'No se pudo cerrar sesión',
             logoutTitle: 'Cerrar sesión',
             logoutMessage: '¿Seguro que quieres cerrar sesión?',
+            logoutLocalDataMessage:
+                'Tu contenido Free se queda en este dispositivo, pero no tiene copia de seguridad y no se restaurará al desinstalar la app o cambiar de teléfono.',
             cancel: 'Cancelar',
             confirmLogout: 'Cerrar sesión',
         },
@@ -351,6 +353,8 @@ export const es: TranslationSchema = {
             deleteFailedTitle: 'No se pudo eliminar la cuenta',
             deleteTitle: 'Eliminar cuenta',
             deleteBody: 'Esto elimina tu cuenta de forma permanente y no se puede deshacer.',
+            deleteLocalOnlyBody:
+                'Tu contenido Free se guarda solo en este dispositivo y no tiene copia de seguridad. Eliminar tu cuenta no se puede deshacer.',
             settingsTitle: 'Configuración',
             dangerTitle: 'Zona de peligro',
             unavailable: 'Crea una cuenta para gestionar este ajuste',
@@ -551,6 +555,9 @@ export const es: TranslationSchema = {
                 notes: 'Notas ilimitadas',
                 local: 'Guardado localmente en este dispositivo',
             },
+            localNoticeTitle: 'Guardado en este dispositivo',
+            localNoticeBody:
+                'Las recetas, notas e importaciones Free no tienen copia de seguridad. No se restaurarán después de desinstalar la app, borrar sus datos o cambiar de teléfono.',
             premiumFeatures: {
                 recipes: 'Recetas ilimitadas',
                 notes: 'Notas ilimitadas',
@@ -815,12 +822,9 @@ export const es: TranslationSchema = {
             storageUpdateBody: 'Este dispositivo no tiene tus datos anteriores. Premium mantiene todo respaldado entre dispositivos.',
             learnPremium: 'Ver Premium',
             notNow: 'Ahora no',
-            localOnlyTitle: 'Solo local por ahora',
-            localOnlyBodyLead: 'Todo se queda en este dispositivo.',
-            localOnlyYouCan: 'Puedes ',
-            localOnlyBodyCreate: 'Crea una cuenta',
-            localOnlyBodyMiddle: ' cuando quieras. La copia en la nube está disponible con ',
-            localOnlyBodyPremium: 'Premium',
+            localOnlyTitle: 'Guardado en este dispositivo',
+            localOnlyBody:
+                'Tus recetas, notas e importaciones no tienen copia de seguridad. No se restaurarán si desinstalas la app, borras sus datos o cambias de teléfono.',
             gotIt: 'Entendido',
             dismissStorageRiskA11y: 'Cerrar aviso de riesgo de almacenamiento',
             dismissPremiumSuggestionA11y: 'Cerrar sugerencia de Premium',

@@ -39,6 +39,7 @@ export default function ProfileScreen() {
   const { plan } = useContext(SubscriptionContext)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const accountPlan: AccountPlan = plan === 'premium' ? 'premium' : 'free'
+  const isPremiumPlan = accountPlan === 'premium'
 
   const displayName = useMemo(() => {
     const metadataName = user?.user_metadata?.display_name
@@ -68,17 +69,23 @@ export default function ProfileScreen() {
   const onLogoutPress = useCallback(() => {
     if (isLoggingOut) return
 
-    Alert.alert(t('profile.alerts.logoutTitle'), t('profile.alerts.logoutMessage'), [
-      { text: t('profile.alerts.cancel'), style: 'cancel' },
-      {
-        text: t('profile.alerts.confirmLogout'),
-        style: 'destructive',
-        onPress: () => {
-          void performLogout()
+    Alert.alert(
+      t('profile.alerts.logoutTitle'),
+      isPremiumPlan
+        ? t('profile.alerts.logoutMessage')
+        : t('profile.alerts.logoutLocalDataMessage'),
+      [
+        { text: t('profile.alerts.cancel'), style: 'cancel' },
+        {
+          text: t('profile.alerts.confirmLogout'),
+          style: 'destructive',
+          onPress: () => {
+            void performLogout()
+          },
         },
-      },
-    ])
-  }, [isLoggingOut, performLogout, t])
+      ]
+    )
+  }, [isLoggingOut, isPremiumPlan, performLogout, t])
 
   const membershipItems = useMemo(
     () =>
@@ -96,8 +103,6 @@ export default function ProfileScreen() {
   const membershipStatusTitle = accountPlan === 'premium'
     ? t('profile.membershipStatus.premium')
     : t('profile.membershipStatus.free')
-  const isPremiumPlan = accountPlan === 'premium'
-
   const notificationItems = useMemo(
     () =>
       buildNotificationsItems({

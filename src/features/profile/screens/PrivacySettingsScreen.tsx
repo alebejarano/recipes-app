@@ -1,5 +1,5 @@
 import { router } from 'expo-router'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useContext, useMemo, useState } from 'react'
 import { Alert, Text, View } from 'react-native'
 
 import { useAnalyticsConsent } from '@/features/analytics/context/AnalyticsConsentContext'
@@ -9,6 +9,7 @@ import SettingsSection from '@/features/profile/components/SettingsSection'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
+import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
 
 type PrivacySettingsScreenProps = {
   onBack: () => void
@@ -18,6 +19,7 @@ type PrivacySettingsScreenProps = {
 export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySettingsScreenProps) {
   const { t } = useTranslation()
   const { user, deleteAccount } = useAuth()
+  const { plan } = useContext(SubscriptionContext)
   const { analyticsEnabled, isLoaded: analyticsConsentLoaded, setAnalyticsEnabled } = useAnalyticsConsent()
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const hasAccount = Boolean(user?.id)
@@ -40,7 +42,9 @@ export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySe
 
     Alert.alert(
       t('profile.privacySettings.deleteTitle'),
-      t('profile.privacySettings.deleteBody'),
+      plan === 'free'
+        ? t('profile.privacySettings.deleteLocalOnlyBody')
+        : t('profile.privacySettings.deleteBody'),
       [
         { text: t('profile.privacySettings.cancel'), style: 'cancel' },
         {
@@ -52,7 +56,7 @@ export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySe
         },
       ]
     )
-  }, [hasAccount, isDeletingAccount, performDeleteAccount, t])
+  }, [hasAccount, isDeletingAccount, performDeleteAccount, plan, t])
 
   const unavailableSubtitle = t('profile.privacySettings.unavailable')
   const settingsItems = useMemo(

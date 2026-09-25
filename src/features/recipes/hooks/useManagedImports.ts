@@ -37,28 +37,11 @@ export function useManagedImports(mode: StorageScreenMode = 'auth') {
     queryFn: async ({ pageParam }) => {
       if (shouldUseLocalData) {
         const localItems = await listManagedImports()
-        // Earlier Premium versions uploaded imports directly to the cloud.
-        // Keep those records visible after a downgrade while new imports use
-        // the durable local-first path.
-        if (!user?.id) {
-          return { items: localItems, nextCursor: null }
-        }
-        try {
-          const cloudPage = await listCloudManagedImportsPage({
-            cursor: pageParam,
-            limit: CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
-          })
-          if (pageParam) return cloudPage
-          const localCloudIds = new Set(
-            localItems.map((item) => item.cloudId).filter((id): id is string => Boolean(id))
-          )
-          return {
-            ...cloudPage,
-            items: [...localItems, ...cloudPage.items.filter((item) => !localCloudIds.has(item.id))],
-          }
-        } catch {
-          return { items: localItems, nextCursor: null }
-        }
+        // Free and public modes are device-local. Do not merge historical
+        // cloud records here: Collection's Imports segment also reads the
+        // local document store in this mode, and surfacing cloud-only imports
+        // on Home made the two screens disagree after a reinstall.
+        return { items: localItems, nextCursor: null }
       }
 
       try {
