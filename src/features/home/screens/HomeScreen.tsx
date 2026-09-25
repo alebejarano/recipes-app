@@ -8,6 +8,7 @@ import React, { useCallback, useContext, useEffect, useMemo, useState } from 're
 import { Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
 
 import Screen from '@/components/Screen';
+import Button from '@/components/Button'
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
 import { i18n } from '@/localization/i18n';
 import { useTranslation } from '@/localization';
@@ -96,6 +97,8 @@ const STORAGE_RISK_BANNER_DISMISSED_EVENT_KEY = 'storage_risk_banner_dismissed_e
 const STORAGE_CONVERSION_BANNER_SEEN_TRIGGERS_KEY = 'storage_conversion_banner_seen_triggers';
 const STORAGE_DEVICE_MARKER_CACHE_KEY = 'storage_device_marker_cache';
 const SECURE_DEVICE_MARKER_KEY = 'storage_device_marker_secure';
+const FREE_PLAN_SAFETY_PROMPT_ITEM_COUNT = 20;
+const FREE_PLAN_SAFETY_PROMPT_STORAGE_RATIO = 0.2;
 type ConversionBannerTrigger = {
   id: string;
   title: string;
@@ -329,7 +332,7 @@ export default function HomeScreen({
   const recipesQuery = useStrategyRecipesList({ limit: 50 }, resolvedMode);
   const notesQuery = useStrategyNotesList({ limit: 50 }, resolvedMode);
   const importsQuery = useManagedImports(resolvedMode);
-  const importsUsageQuery = useRecipeDocumentUsageSummary({ enabled: isPublic && !isAuthenticated });
+  const importsUsageQuery = useRecipeDocumentUsageSummary({ enabled: plan === 'free' });
 
   const hydrateShopping = useShoppingListStore((s) => s.hydrate);
   const isShoppingHydrated = useShoppingListStore((s) => s.isHydrated);
@@ -577,8 +580,9 @@ export default function HomeScreen({
 
   const importsCount = importsQuery.data?.length ?? importsUsageQuery.data?.totalCount ?? 0;
   const importsTotalBytes = importsUsageQuery.data?.totalBytes ?? 0;
-  const hasMeaningfulLocalContent =
-    visibleRecipes.length + visibleNotes.length + importsCount >= 3;
+  const hasReachedSafetyPromptThreshold =
+    visibleRecipes.length + visibleNotes.length + importsCount >= FREE_PLAN_SAFETY_PROMPT_ITEM_COUNT ||
+    importsTotalBytes >= FREE_PLAN_MAX_IMPORT_TOTAL_BYTES * FREE_PLAN_SAFETY_PROMPT_STORAGE_RATIO;
   const conversionTrigger = useMemo(
     () =>
       getConversionBannerTrigger({
@@ -604,7 +608,7 @@ export default function HomeScreen({
     storageBannerStateReady &&
     !showRiskBanner &&
     !showConversionBanner &&
-    hasMeaningfulLocalContent &&
+    hasReachedSafetyPromptThreshold &&
     storageBannerDismissed === false;
 
   const dismissStorageInfoBanner = async () => {
@@ -1000,15 +1004,26 @@ export default function HomeScreen({
           </View>
           <Text style={styles.localOnlyBody}>{t('home.banners.localOnlyBody')}</Text>
           <View style={styles.localOnlyFooterRow}>
-            <Pressable
-              accessibilityRole="button"
+            <Button
               accessibilityLabel={t('home.banners.learnPremiumA11y')}
               onPress={() => {
                 router.push(resolvedMode === 'public' ? '/(public)/premium' : '/(auth)/premium');
               }}
-              style={({ pressed }) => [styles.contextPrimaryAction, pressed && styles.actionPressed]}
+              variant="premium"
+              size="md"
+              style={styles.localOnlyPremiumButton}
             >
-              <Text style={styles.contextPrimaryActionText}>{t('home.banners.learnPremium')}</Text>
+              {t('home.banners.backUpWithPremium')}
+            </Button>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('home.banners.exportDataA11y')}
+              onPress={() => {
+                router.push(resolvedMode === 'public' ? '/(public)/settings/export-data' : '/(auth)/settings/export-data');
+              }}
+              style={({ pressed }) => [styles.localOnlyExportButton, pressed && styles.gotItButtonPressed]}
+            >
+              <Text style={styles.localOnlyExportButtonText}>{t('home.banners.exportData')}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -1353,13 +1368,37 @@ const styles = createThemedStyles((theme) => ({
   },
   localOnlyFooterRow: {
     marginTop: theme.spacing.md,
-    gap: theme.spacing.xs,
+    alignItems: 'flex-start',
+    gap: theme.spacing.md,
+  },
+  localOnlyPremiumButton: {
+    alignSelf: 'flex-start',
+    width: 'auto',
+  },
+  localOnlyExportButton: {
+    alignSelf: 'flex-start',
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.radii.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+  },
+  localOnlyExportButtonText: {
+    ...theme.textVariants.label,
+    color: theme.colors.foreground,
   },
   gotItButton: {
     alignSelf: 'flex-start',
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.xs,
-    borderRadius: theme.radii.full,
+    borderRadius: theme.radii.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.background,

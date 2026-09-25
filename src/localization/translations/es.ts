@@ -825,6 +825,9 @@ export const es: TranslationSchema = {
             localOnlyTitle: 'Guardado en este dispositivo',
             localOnlyBody:
                 'Tus recetas, notas e importaciones no tienen copia de seguridad. No se restaurarán si desinstalas la app, borras sus datos o cambias de teléfono.',
+            backUpWithPremium: 'Hacer copia con Premium',
+            exportData: 'Exportar una copia',
+            exportDataA11y: 'Exportar una copia de tus datos',
             gotIt: 'Entendido',
             dismissStorageRiskA11y: 'Cerrar aviso de riesgo de almacenamiento',
             dismissPremiumSuggestionA11y: 'Cerrar sugerencia de Premium',

@@ -823,6 +823,9 @@ export const en = {
             localOnlyTitle: 'Stored on this device',
             localOnlyBody:
                 'Your recipes, notes, and imports are not backed up. They will not be restored after you uninstall the app, clear its data, or change phones.',
+            backUpWithPremium: 'Back up with Premium',
+            exportData: 'Export a copy',
+            exportDataA11y: 'Export a copy of your data',
             gotIt: 'Got it',
             dismissStorageRiskA11y: 'Dismiss storage risk banner',
             dismissPremiumSuggestionA11y: 'Dismiss premium suggestion banner',
