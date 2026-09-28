@@ -17,7 +17,7 @@ import SearchHeader from '@/features/search/components/SearchHeader';
 import { useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders';
 import { useStrategyNotesList } from '@/features/notes/hooks/useStrategyNotes';
 import RecipeRow from '@/features/recipes/components/RecipeRow';
-import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes';
+import { useLibraryRecipesList } from '@/features/recipes/hooks/useLibraryRecipes';
 import {
   SEARCH_FILTERS,
   type BrowseCategory,
@@ -54,7 +54,7 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
     []
   )
   const foldersQuery = useStrategyFoldersList(resolvedMode, searchParams);
-  const recipesQuery = useStrategyRecipesList(recipeSearchParams, resolvedMode);
+  const recipesQuery = useLibraryRecipesList(recipeSearchParams, resolvedMode);
   const notesQuery = useStrategyNotesList(searchParams, resolvedMode);
 
   const placeholder = useMemo(() => {
@@ -92,7 +92,7 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
     }));
   }, [foldersQuery.data]);
   const recipeItems = useMemo(() => {
-    const source = recipesQuery.data ?? []
+    const source = (recipesQuery.data ?? []).map((item) => item.recipe)
     const normalizedQuery = trimmedQuery.toLowerCase()
 
     return source.filter((recipe) => {

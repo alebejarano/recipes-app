@@ -23,7 +23,7 @@ import {
 } from '@/features/collections/utils/collections'
 import { useStrategyDeleteFolder, useStrategyFoldersList, useStrategyUpdateFolder } from '@/features/folders/hooks/useStrategyFolders'
 import RecipeRow from '@/features/recipes/components/RecipeRow'
-import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
+import { useLibraryRecipesList } from '@/features/recipes/hooks/useLibraryRecipes'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
@@ -53,7 +53,7 @@ export default function CollectionDetailScreen() {
 
   const isUncategorized = isUncategorizedKey(key)
   const title = isUncategorized ? t('collections.uncategorized') : key
-  const recipesQuery = useStrategyRecipesList({ limit: 200 }, 'auth')
+  const recipesQuery = useLibraryRecipesList({ limit: 200 }, 'auth')
   const foldersQuery = useStrategyFoldersList('auth')
   const updateFolderMutation = useStrategyUpdateFolder('auth')
   const deleteFolderMutation = useStrategyDeleteFolder('auth')
@@ -63,7 +63,7 @@ export default function CollectionDetailScreen() {
   const [isSavingFolder, setIsSavingFolder] = useState(false)
 
   const recipes = useMemo(() => {
-    const list = recipesQuery.data ?? []
+    const list = (recipesQuery.data ?? []).map((item) => item.recipe)
     if (isUncategorized) {
       return list.filter((r) => getCategorizingFolders(r.folders).length === 0)
     }

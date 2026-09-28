@@ -32,9 +32,9 @@ import type { RecipeFormSubmitValues } from '@/features/recipes/components/Recip
 import {
   useStrategyDeleteRecipe,
   useStrategyRecipe,
-  useStrategyRecipesList,
   useStrategyUpdateRecipe,
 } from '@/features/recipes/hooks/useStrategyRecipes'
+import { findLibraryRecipe, useLibraryRecipesList } from '@/features/recipes/hooks/useLibraryRecipes'
 import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { buildRecipeShareText, shareRecipeAsTextFile } from '@/features/recipes/utils/shareRecipe'
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
@@ -120,20 +120,22 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
   const routeMode = segments[0] === '(public)' ? 'public' : 'auth'
   const deleteMutation = useStrategyDeleteRecipe(routeMode)
   const updateMutation = useStrategyUpdateRecipe(recipeId, routeMode)
-  const recipesListQuery = useStrategyRecipesList({ limit: 2000 }, routeMode)
+  const recipesListQuery = useLibraryRecipesList({ limit: 2000 }, routeMode)
   const foldersQuery = useStrategyFoldersList(routeMode)
   const createFolderMutation = useStrategyCreateFolder(routeMode)
   const recipeQuery = useStrategyRecipe(recipeId, routeMode)
-  const recipe = recipeQuery.data
-  const isLoading = recipeQuery.isLoading
-  const isError = recipeQuery.isError
+  const libraryItem = findLibraryRecipe(recipesListQuery.data, recipeId)
+  const isArchived = libraryItem?.access === 'archived'
+  const recipe = recipeQuery.data ?? libraryItem?.recipe ?? null
+  const isLoading = recipeQuery.isLoading || recipesListQuery.isLoading
+  const isError = recipeQuery.isError && !libraryItem
   const error = recipeQuery.error
 
   const ingredientLines = useMemo(
     () => buildIngredientLines(recipe?.ingredients),
     [recipe?.ingredients]
   )
-  const recipesCount = recipesListQuery.data?.length ?? 0
+  const recipesCount = recipesListQuery.data?.filter((item) => item.access === 'active').length ?? 0
   const usageSnapshot = useMemo(
     () => buildFreePlanUsageSnapshot(recipesCount, 0),
     [recipesCount]
@@ -254,6 +256,10 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
   }
 
   const handleEdit = () => {
+    if (isArchived) {
+      router.push(premiumPath as any)
+      return
+    }
     router.push({
       pathname: editPath as any,
       params: { id: recipeId, returnTo: returnToParam ?? detailPath },
@@ -261,6 +267,10 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
   }
 
   const handleDelete = () => {
+    if (isArchived) {
+      router.push(premiumPath as any)
+      return
+    }
     Alert.alert(t('recipes.detail.deletePromptTitle'), t('recipes.detail.deletePromptBody'), [
       { text: t('recipes.detail.cancel'), style: 'cancel' },
       {

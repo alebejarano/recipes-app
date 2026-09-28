@@ -438,7 +438,7 @@ export const en = {
             back: 'Back',
             title: 'Keep your recipes safe everywhere',
             subtitleInactive:
-                'Premium gives you backup, sync, and unlimited saves so your kitchen is always with you.',
+                'Back up your kitchen, restore it after reinstalling, and use it on every device.',
             subtitleActive: 'Your kitchen is synced, backed up, and fully unlocked.',
             monthly: 'Monthly',
             yearly: 'Yearly',
@@ -450,14 +450,16 @@ export const en = {
             includedTitle: 'Everything included',
             checklist: {
                 neverLose: 'Never lose a recipe',
+                restore: 'Restore after reinstalling',
                 syncDevices: 'Sync across your devices',
-                unlimited: 'Save without limits',
+                unlimited: 'Unlimited recipes',
                 backup: 'Backup your kitchen',
             },
             benefitDescriptions: {
                 neverLose: 'Your recipes are safely backed up in the cloud.',
+                restore: 'Sign in on a new phone and get your kitchen back.',
                 syncDevices: 'Access your recipes from any device, anytime.',
-                unlimited: 'Save as many recipes as you want. No limits.',
+                unlimited: 'Save as many recipes as you want. Imports have a separate 5GB allowance.',
                 backup: 'Cloud backup keeps your recipes safe and secure.',
                 organizedTitle: 'Everything in one place',
                 organized: 'All your recipes, notes, images and lists, organized in one place.',
@@ -483,6 +485,8 @@ export const en = {
             success: {
                 title: 'Welcome to Premium!',
                 subtitle: 'Your kitchen just got an upgrade.',
+                backupPendingSubtitle: 'Your Premium access is active. Your first backup is still being completed.',
+                backupPendingBenefit: 'Keep the app open and connected until your kitchen finishes backing up.',
                 benefits: {
                     unlimited: 'Unlimited recipes.',
                     backup: 'Cloud backup.',

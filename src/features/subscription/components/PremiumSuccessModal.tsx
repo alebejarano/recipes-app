@@ -7,6 +7,7 @@ import { createThemedStyles } from '@/styles/createStyles'
 type PremiumSuccessModalProps = {
   visible: boolean
   onClose: () => void
+  isInitialBackupPending?: boolean
 }
 
 type ConfettiPiece = {
@@ -43,9 +44,15 @@ function createConfettiPieces(): ConfettiPiece[] {
   })
 }
 
-export default function PremiumSuccessModal({ visible, onClose }: PremiumSuccessModalProps) {
+export default function PremiumSuccessModal({
+  visible,
+  onClose,
+  isInitialBackupPending = false,
+}: PremiumSuccessModalProps) {
   const [cardHeight, setCardHeight] = React.useState(0)
-  const highlightedBenefits = [
+  const highlightedBenefits = isInitialBackupPending ? [
+    i18n.t('subscription.premium.success.backupPendingBenefit'),
+  ] : [
     i18n.t('subscription.premium.success.benefits.unlimited'),
     i18n.t('subscription.premium.success.benefits.backup'),
     i18n.t('subscription.premium.success.benefits.sync'),
@@ -162,7 +169,13 @@ export default function PremiumSuccessModal({ visible, onClose }: PremiumSuccess
           </View>
 
           <Text style={styles.title}>{i18n.t('subscription.premium.success.title')}</Text>
-          <Text style={styles.subtitle}>{i18n.t('subscription.premium.success.subtitle')}</Text>
+          <Text style={styles.subtitle}>
+            {i18n.t(
+              isInitialBackupPending
+                ? 'subscription.premium.success.backupPendingSubtitle'
+                : 'subscription.premium.success.subtitle'
+            )}
+          </Text>
 
           <View style={styles.benefitsWrap}>
             {highlightedBenefits.map((benefit) => (
@@ -172,10 +185,12 @@ export default function PremiumSuccessModal({ visible, onClose }: PremiumSuccess
             ))}
           </View>
 
-          <View style={styles.footerCopy}>
-            <Text style={styles.footerLine}>{i18n.t('subscription.premium.success.footerPrimary')}</Text>
-            <Text style={styles.footerLine}>{i18n.t('subscription.premium.success.footerSecondary')}</Text>
-          </View>
+          {!isInitialBackupPending ? (
+            <View style={styles.footerCopy}>
+              <Text style={styles.footerLine}>{i18n.t('subscription.premium.success.footerPrimary')}</Text>
+              <Text style={styles.footerLine}>{i18n.t('subscription.premium.success.footerSecondary')}</Text>
+            </View>
+          ) : null}
 
           <Pressable onPress={onClose} style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}>
             <Text style={styles.closeButtonText}>{i18n.t('subscription.premium.success.cta')}</Text>

@@ -37,7 +37,7 @@ import SuccessBanner from '@/features/home/components/SuccessBanner';
 import { useStrategyNotesList } from '@/features/notes/hooks/useStrategyNotes';
 import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments';
 import { useManagedImports } from '@/features/recipes/hooks/useManagedImports';
-import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes';
+import { useLibraryRecipesList } from '@/features/recipes/hooks/useLibraryRecipes';
 import type { RecipeMealTime } from '@/features/recipes/types/mealTimes';
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore';
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode';
@@ -329,7 +329,7 @@ export default function HomeScreen({
     return Math.floor(clamped);
   }, [screenWidth, PAGE_PADDING, CARD_GAP]);
 
-  const recipesQuery = useStrategyRecipesList({ limit: 50 }, resolvedMode);
+  const recipesQuery = useLibraryRecipesList({ limit: 50 }, resolvedMode);
   const notesQuery = useStrategyNotesList({ limit: 50 }, resolvedMode);
   const importsQuery = useManagedImports(resolvedMode);
   const importsUsageQuery = useRecipeDocumentUsageSummary({ enabled: plan === 'free' });
@@ -347,7 +347,7 @@ export default function HomeScreen({
   const recipes = useMemo<HomeRecipe[]>(
     () => {
       const source = recipesQuery.data ?? [];
-      return source.map((recipe) => ({
+      return source.map(({ recipe }) => ({
         id: recipe.id,
         title: recipe.title,
         subtitle: recipe.subtitle ?? null,

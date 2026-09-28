@@ -61,6 +61,7 @@ export default function PremiumRoute() {
   const [isPurchaseFlowRunning, setIsPurchaseFlowRunning] = useState(false)
   const isUpgrading = upgradeStatus === 'running' || isPurchaseFlowRunning
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [isInitialBackupPending, setIsInitialBackupPending] = useState(false)
   const shouldHoldRedirectRef = useRef(false)
 
   const monthlyPackage = getPackageForBillingCycle('month')
@@ -94,6 +95,7 @@ export default function PremiumRoute() {
 
     shouldHoldRedirectRef.current = true
     setIsPurchaseFlowRunning(true)
+    setIsInitialBackupPending(false)
     let purchaseConfirmed = false
 
     try {
@@ -142,11 +144,20 @@ export default function PremiumRoute() {
         // Premium was being activated. This is idempotent; the regular sync
         // bootstrap continues retrying if the server entitlement is still
         // propagating from RevenueCat.
-        await triggerRecipeSync()
+        try {
+          await triggerRecipeSync()
+        } catch (retryError) {
+          logOperationalEvent('sync_retry_failed', {
+            operation: 'premium_upgrade_migration_immediate_retry',
+            entity: 'supabase',
+            category: getErrorCategory(retryError),
+          })
+        }
         captureAnalyticsEvent('purchase_succeeded', {
           plan: 'premium',
           billing_cycle: selectedBillingCycle,
         })
+        setIsInitialBackupPending(true)
         setShowSuccessModal(true)
         return
       }
@@ -165,6 +176,7 @@ export default function PremiumRoute() {
 
   const onCloseSuccessModal = () => {
     setShowSuccessModal(false)
+    setIsInitialBackupPending(false)
     shouldHoldRedirectRef.current = false
     router.replace(safeReturnTo ?? '/(auth)/current-plan')
   }
@@ -202,7 +214,11 @@ export default function PremiumRoute() {
         />
       )}
 
-      <PremiumSuccessModal visible={showSuccessModal} onClose={onCloseSuccessModal} />
+      <PremiumSuccessModal
+        visible={showSuccessModal}
+        onClose={onCloseSuccessModal}
+        isInitialBackupPending={isInitialBackupPending}
+      />
     </>
   )
 }

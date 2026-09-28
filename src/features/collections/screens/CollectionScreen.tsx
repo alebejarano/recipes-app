@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useQuery } from '@tanstack/react-query'
 import { router, useLocalSearchParams, useSegments } from 'expo-router'
 import React, { useContext, useEffect, useMemo, useState } from 'react'
 import {
@@ -42,7 +43,8 @@ import {
 } from '@/features/collections/utils/collections'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
 import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments'
-import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
+import { listFreeImportArchiveMetadata } from '@/features/recipes/api/freeArchiveRepo'
+import { useLibraryRecipesList } from '@/features/recipes/hooks/useLibraryRecipes'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
 import { FREE_PLAN_MAX_IMPORT_TOTAL_BYTES } from '@/features/subscription/constants/limits'
 import { KITCHEN_ALMOST_FULL_STORAGE_DISMISS_UNTIL_PREFIX } from '@/features/subscription/constants/reminderKeys'
@@ -88,7 +90,14 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   const [newFolderEmoji, setNewFolderEmoji] = useState('')
   const [newFolderName, setNewFolderName] = useState('')
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
-  const recipesQuery = useStrategyRecipesList({ limit: 200 }, resolvedMode)
+  const recipesQuery = useLibraryRecipesList({ limit: 200 }, resolvedMode)
+  const archiveQuery = useLibraryRecipesList({ limit: 1, includeArchive: true }, resolvedMode)
+  const archiveImportsQuery = useQuery({
+    queryKey: ['recipes', 'library', 'archive-imports'],
+    queryFn: listFreeImportArchiveMetadata,
+    enabled: resolvedMode === 'auth',
+    retry: false,
+  })
   const storageUsageQuery = useRecipeDocumentUsageSummary({ enabled: plan !== 'premium' })
   const foldersQuery = useStrategyFoldersList(resolvedMode)
   const createFolderMutation = useStrategyCreateFolder(resolvedMode)
@@ -102,7 +111,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     resolvedMode === 'public'
         ? '/(public)/imports/manage'
         : '/(auth)/imports/manage'
-  const recipeCount = recipesQuery.data?.length ?? 0
+  const recipeCount = recipesQuery.data?.filter((item) => item.access === 'active').length ?? 0
   const storageBytesUsed = storageUsageQuery.data?.totalBytes ?? 0
   const usageSnapshot = useMemo(
     () => buildFreePlanUsageSnapshot(recipeCount, storageBytesUsed),
@@ -234,7 +243,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   }
 
   const recipeData = useMemo(
-    () => recipesQuery.data ?? [],
+    () => (recipesQuery.data ?? []).map((item) => item.recipe),
     [recipesQuery.data]
   )
 
@@ -380,6 +389,23 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
       <SegmentedTabs value={segment} onChange={setSegment} />
       {segment === 'recipes' ? (
         <RecipeSegmentedTabs value={recipeSegment} onChange={setRecipeSegment} />
+      ) : null}
+
+      {segment === 'recipes' && (
+        archiveQuery.data?.some((item) => item.access === 'archived') || (archiveImportsQuery.data?.length ?? 0) > 0
+      ) ? (
+        <Pressable
+          style={styles.archiveLink}
+          onPress={() => router.push('/(auth)/archive' as any)}
+          accessibilityRole="button"
+        >
+          <Feather name="cloud" size={18} color={styles.archiveIcon.color} />
+          <View style={styles.archiveCopy}>
+            <Text style={styles.archiveTitle}>Cloud Archive</Text>
+            <Text style={styles.archiveSubtitle}>Your Premium library is safely stored here.</Text>
+          </View>
+          <Feather name="chevron-right" size={18} color={styles.archiveIcon.color} />
+        </Pressable>
       ) : null}
 
       {segment === 'recipes' && recipeSegment === 'documents' && (showDocSuccess || showDocQueued) ? (
@@ -813,6 +839,19 @@ const styles = createThemedStyles((theme) => ({
   modalPlaceholder: {
     color: theme.colors.mutedForeground,
   },
+  archiveLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginHorizontal: theme.spacing.lg,
+    padding: theme.spacing.md,
+    borderRadius: theme.radii.lg,
+    backgroundColor: theme.colors.accent10,
+  },
+  archiveCopy: { flex: 1 },
+  archiveTitle: { ...theme.textVariants.label, color: theme.colors.foreground },
+  archiveSubtitle: { ...theme.textVariants.body, color: theme.colors.mutedForeground },
+  archiveIcon: { color: theme.colors.accent },
   modalActions: {
     flexDirection: 'row',
     gap: theme.spacing.sm,

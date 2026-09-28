@@ -440,7 +440,7 @@ export const es: TranslationSchema = {
             back: 'Volver',
             title: 'Protege tus recetas en todas partes',
             subtitleInactive:
-                'Premium te da copia de seguridad, sincronización y guardado sin límites para que tu cocina vaya siempre contigo.',
+                'Haz una copia de tu cocina, recupérala tras reinstalar y úsala en todos tus dispositivos.',
             subtitleActive: 'Tu cocina está sincronizada, respaldada y completamente desbloqueada.',
             monthly: 'Mensual',
             yearly: 'Anual',
@@ -452,14 +452,16 @@ export const es: TranslationSchema = {
             includedTitle: 'Todo incluido',
             checklist: {
                 neverLose: 'No vuelvas a perder una receta',
+                restore: 'Recupera tu cocina tras reinstalar',
                 syncDevices: 'Sincroniza todos tus dispositivos',
-                unlimited: 'Guarda sin límites',
+                unlimited: 'Recetas ilimitadas',
                 backup: 'Haz copia de seguridad de tu cocina',
             },
             benefitDescriptions: {
                 neverLose: 'Tus recetas están protegidas con una copia de seguridad en la nube.',
+                restore: 'Inicia sesión en un móvil nuevo y recupera tu cocina.',
                 syncDevices: 'Accede a tus recetas desde cualquier dispositivo, cuando quieras.',
-                unlimited: 'Guarda tantas recetas como quieras. Sin límites.',
+                unlimited: 'Guarda todas las recetas que quieras. Las importaciones tienen un límite independiente de 5 GB.',
                 backup: 'La copia de seguridad en la nube mantiene tus recetas protegidas.',
                 organizedTitle: 'Todo en un solo lugar',
                 organized: 'Tus recetas, notas, imágenes y listas, organizadas en un solo lugar.',
@@ -485,6 +487,8 @@ export const es: TranslationSchema = {
             success: {
                 title: '¡Bienvenido a Premium!',
                 subtitle: 'Tu cocina acaba de mejorar.',
+                backupPendingSubtitle: 'Tu acceso a Premium está activo. Tu primera copia de seguridad todavía se está completando.',
+                backupPendingBenefit: 'Mantén la app abierta y conectada hasta que tu cocina termine de respaldarse.',
                 benefits: {
                     unlimited: 'Recetas ilimitadas.',
                     backup: 'Copia de seguridad en la nube.',

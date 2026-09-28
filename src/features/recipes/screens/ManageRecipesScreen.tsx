@@ -9,7 +9,8 @@ import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
 
 import MealTimeChip from '@/features/recipes/components/MealTimeChip'
-import { useStrategyDeleteRecipe, useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
+import { useStrategyDeleteRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
+import { useLibraryRecipesList } from '@/features/recipes/hooks/useLibraryRecipes'
 import { RECIPE_MEAL_TIMES, type RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
@@ -40,7 +41,7 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
 
   const insets = useSafeAreaInsets()
   const bottomPadding = insets.bottom + theme.spacing.lg
-  const recipesQuery = useStrategyRecipesList({ limit: 200 }, resolvedMode)
+  const recipesQuery = useLibraryRecipesList({ limit: 200 }, resolvedMode)
   const deleteRecipeMutation = useStrategyDeleteRecipe(resolvedMode)
 
   const [sortMode, setSortMode] = useState<SortMode>('oldest')
@@ -51,7 +52,10 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
   const [isBulkDeleting, setIsBulkDeleting] = useState(false)
   const [bulkDeleteSuccessMessage, setBulkDeleteSuccessMessage] = useState<string | null>(null)
 
-  const recipeData = useMemo(() => recipesQuery.data ?? [], [recipesQuery.data])
+  const recipeData = useMemo(
+    () => (recipesQuery.data ?? []).filter((item) => item.isEditable).map((item) => item.recipe),
+    [recipesQuery.data]
+  )
 
   const filteredRecipes = useMemo(() => {
     const normalizedSearch = searchQuery.trim().toLowerCase()

@@ -7,7 +7,9 @@ const PREMIUM_EVENT_TYPES = new Set([
   'RENEWAL',
   'UNCANCELLATION',
   'NON_RENEWING_PURCHASE',
+  'PRODUCT_CHANGE',
 ])
+const EXPIRATION_EVENT_TYPE = 'EXPIRATION'
 
 type RevenueCatEvent = {
   type?: string
@@ -80,7 +82,14 @@ serve(async (req) => {
   }
 
   const event = payload.event
-  if (!event || !hasPremiumEntitlement(event)) return json({ received: true })
+  if (!event) return json({ received: true })
+
+  const eventType = typeof event.type === 'string' ? event.type : ''
+  const updatesSubscriptionAccess =
+    PREMIUM_EVENT_TYPES.has(eventType) || eventType === EXPIRATION_EVENT_TYPE
+  if (!updatesSubscriptionAccess || !hasPremiumEntitlement(event)) {
+    return json({ received: true })
+  }
 
   const userId = getUserId(event)
   if (!userId) {
@@ -88,8 +97,7 @@ serve(async (req) => {
     return json({ received: true })
   }
 
-  const eventType = typeof event.type === 'string' ? event.type : ''
-  const plan = eventType === 'EXPIRATION'
+  const plan = eventType === EXPIRATION_EVENT_TYPE
     ? 'free'
     : PREMIUM_EVENT_TYPES.has(eventType)
       ? 'premium'

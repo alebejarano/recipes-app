@@ -38,6 +38,7 @@ export default function PremiumScreen({
   const [billingCycle, setBillingCycle] = React.useState<BillingCycle>('year')
   const benefits: { title: string; description: string; icon: FeatherIconName }[] = [
     { title: t('subscription.premium.checklist.neverLose'), description: t('subscription.premium.benefitDescriptions.neverLose'), icon: 'bookmark' },
+    { title: t('subscription.premium.checklist.restore'), description: t('subscription.premium.benefitDescriptions.restore'), icon: 'download-cloud' },
     { title: t('subscription.premium.checklist.syncDevices'), description: t('subscription.premium.benefitDescriptions.syncDevices'), icon: 'refresh-cw' },
     { title: t('subscription.premium.checklist.unlimited'), description: t('subscription.premium.benefitDescriptions.unlimited'), icon: 'repeat' },
     { title: t('subscription.premium.benefitDescriptions.organizedTitle'), description: t('subscription.premium.benefitDescriptions.organized'), icon: 'folder' },
@@ -53,6 +54,11 @@ export default function PremiumScreen({
           <Text style={styles.backText}>{t('subscription.premium.back')}</Text>
         </TouchableOpacity>
       )}
+
+      <View style={styles.heroCopy}>
+        <Text style={styles.heroTitle}>{t('subscription.premium.title')}</Text>
+        <Text style={styles.heroSubtitle}>{t('subscription.premium.subtitleInactive')}</Text>
+      </View>
 
       <Text style={styles.title}>{t('subscription.premium.includedTitle')}</Text>
 
@@ -155,6 +161,9 @@ const styles = createThemedStyles((theme) => ({
   backRow: { alignSelf: 'stretch', minHeight: 44, flexDirection: 'row', alignItems: 'center' },
   backIcon: { color: theme.colors.mutedForeground },
   backText: { marginLeft: theme.spacing.xs, ...theme.textVariants.body, color: theme.colors.mutedForeground },
+  heroCopy: { width: '100%', maxWidth: 480, alignItems: 'center', gap: theme.spacing.sm },
+  heroTitle: { textAlign: 'center', ...theme.textVariants.display, color: theme.colors.foreground },
+  heroSubtitle: { textAlign: 'center', ...theme.textVariants.body, color: theme.colors.mutedForeground },
   title: { textAlign: 'center', ...theme.textVariants.hero, color: theme.colors.foreground },
   benefitsCard: { width: '100%', maxWidth: 480 },
   benefitRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.lg, paddingVertical: theme.spacing.lg },

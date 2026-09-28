@@ -77,6 +77,28 @@ serve(async (req) => {
     return json({ error: 'Import not found' }, 404, origin)
   }
 
+  const [{ data: entitlement, error: entitlementError }, { count: activeSlotCount, error: slotError }] =
+    await Promise.all([
+      adminClient
+        .from('user_entitlements')
+        .select('is_premium')
+        .eq('user_id', user.id)
+        .maybeSingle(),
+      adminClient
+        .from('free_active_import_slots')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('recipe_document_import_id', documentId),
+    ])
+  if (entitlementError || slotError) {
+    return json({ error: 'Unable to verify import access' }, 500, origin)
+  }
+  if (!entitlement?.is_premium && !activeSlotCount) {
+    return json({
+      error: 'This import is in your cloud archive. Upgrade to Premium or make it active within your Free storage allowance.',
+    }, 403, origin)
+  }
+
   const { data: signedData, error: signedError } = await adminClient.storage
     .from(document.storage_bucket)
     .createSignedUrl(document.storage_path, SIGNED_URL_TTL_SECONDS)

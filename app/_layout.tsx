@@ -1,15 +1,16 @@
 // app/_layout.tsx
-import { Slot } from 'expo-router'
+import { Slot, useRouter, useSegments } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
 import * as SystemUI from 'expo-system-ui'
 import { PostHogProvider, usePostHog } from 'posthog-react-native'
 import React, { useEffect, useRef } from 'react'
 import { AppState, LogBox } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import { AnalyticsConsentProvider, useAnalyticsConsent } from '@/features/analytics/context/AnalyticsConsentContext'
 import { AnalyticsCaptureProvider } from '@/features/analytics/events'
-import { AuthProvider } from '@/features/auth/context/AuthContext'
+import { AuthProvider, useAuth } from '@/features/auth/context/AuthContext'
 import GlobalSnackbar from '@/features/feedback/components/GlobalSnackbar'
 import { OnboardingProvider } from '@/features/onboarding/context/OnboardingContext'
 import { ensureRecipePdfStorageReady } from '@/features/recipes/storage/recipePdfStorage'
@@ -22,6 +23,7 @@ import { setProductionLogCapture } from '@/lib/productionLogger'
 import { LocalizationProvider } from '@/localization'
 import QueryProvider from '@/providers/QueryProvider'
 import { useLoadFonts } from '@/styles/useLoadFonts'
+import { supabase } from '@/lib/supabase'
 import { ThemeProvider, useTheme } from '@/styles/ThemeProvider'
 
 export default function RootLayout() {
@@ -62,6 +64,7 @@ export default function RootLayout() {
             <StorageStrategyProvider>
               <RecipeSyncBootstrap />
               <OnboardingProvider>
+                <DowngradeGate />
                 <Slot />
                 <GlobalSnackbar />
               </OnboardingProvider>
@@ -81,6 +84,25 @@ export default function RootLayout() {
       </PostHogGate>
     </AnalyticsConsentProvider>
   )
+}
+
+function DowngradeGate() {
+  const { user } = useAuth()
+  const router = useRouter()
+  const segments = useSegments()
+  useEffect(() => {
+    if (!user?.id || (segments as readonly string[]).includes('downgrade')) return
+    void supabase.from('user_entitlements')
+      .select('legacy_archive_enabled,legacy_archive_started_at')
+      .eq('user_id', user.id).maybeSingle()
+      .then(async ({ data }) => {
+        if (!data?.legacy_archive_enabled || !data.legacy_archive_started_at) return
+        const key = `subscription:legacy-archive-ack:${user.id}`
+        if (await AsyncStorage.getItem(key) === data.legacy_archive_started_at) return
+        router.replace('/(auth)/downgrade' as never)
+      })
+  }, [router, segments, user?.id])
+  return null
 }
 
 function ThemedApp({ children }: { children: React.ReactNode }) {
