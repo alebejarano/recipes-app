@@ -402,7 +402,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
           <Feather name="cloud" size={18} color={styles.archiveIcon.color} />
           <View style={styles.archiveCopy}>
             <Text style={styles.archiveTitle}>Cloud Archive</Text>
-            <Text style={styles.archiveSubtitle}>Your Premium library is safely stored here.</Text>
+            <Text style={styles.archiveSubtitle}>Manage what stays Active on Free. Archived items remain safe.</Text>
           </View>
           <Feather name="chevron-right" size={18} color={styles.archiveIcon.color} />
         </Pressable>

@@ -15,6 +15,7 @@ import { getActiveLocalDataOwner, getLocalDataOwnerFilter } from '@/features/sto
 
 export type RecipeDocument = {
   id: string
+  cloudId?: string | null
   title: string | null
   fileName: string
   fileUri: string
@@ -220,6 +221,7 @@ export async function findDuplicateRecipeDocumentByFile(input: {
     title: string | null
     file_uri: string
     created_at: string
+    cloud_id: string | null
   }>(
     `SELECT id, title, file_uri, created_at
      FROM recipe_documents
@@ -252,12 +254,14 @@ export async function listRecipeDocuments(): Promise<RecipeDocument[]> {
     file_uri: string
     file_size: number
     created_at: string
+    cloud_id: string | null
   }>(
     `SELECT * FROM recipe_documents WHERE ${ownerFilter.sql} ORDER BY created_at DESC;`,
     ownerFilter.params
   )
   return rows.map((row) => ({
     id: row.id as string,
+    cloudId: row.cloud_id ?? null,
     title: row.title ?? null,
     fileName: row.file_name as string,
     fileUri: row.file_uri as string,
@@ -277,10 +281,12 @@ export async function getRecipeDocument(id: string): Promise<RecipeDocument | nu
     file_uri: string
     file_size: number
     created_at: string
+    cloud_id: string | null
   }>(`SELECT * FROM recipe_documents WHERE id = ? AND ${ownerFilter.sql};`, [id, ...ownerFilter.params])
   if (!row) return null
   return {
     id: row.id as string,
+    cloudId: row.cloud_id ?? null,
     title: row.title ?? null,
     fileName: row.file_name as string,
     fileUri: row.file_uri as string,
@@ -397,6 +403,7 @@ export async function addRecipeDocument(input: {
 
   return {
     id,
+    cloudId: input.cloudId ?? null,
     title: input.title ?? null,
     fileName: input.name,
     fileUri,

@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQueryClient, type InfiniteData } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query'
 
 import {
   deleteManagedImport,
@@ -12,10 +12,12 @@ import {
   type CloudRecipeDocumentsCursor,
   type CloudRecipeDocumentsPage,
 } from '@/features/recipes/api/recipeDocumentsCloudRepo'
+import { listFreeImportLibraryMetadata } from '@/features/recipes/api/freeArchiveRepo'
 import { listPendingLocalRecipeDocuments } from '@/features/recipes/storage/recipeDocumentStorage'
 import { triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { useStorageDataMode, type StorageScreenMode } from '@/features/storage/hooks/useStorageDataMode'
+import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 
 const IMPORTS_KEY = ['recipes', 'imports', 'managed']
 const DOCS_KEY = ['recipes', 'documents']
@@ -23,7 +25,15 @@ const DOCS_USAGE_KEY = ['recipes', 'documents', 'usage']
 
 export function useManagedImports(mode: StorageScreenMode = 'auth') {
   const { isStorageModeReady, shouldUseLocalData } = useStorageDataMode(mode)
+  const { isAuthenticated, isLoaded, isPremium } = useStorageStrategy()
   const { user } = useAuth()
+  const shouldRestrictCloudCache = mode === 'auth' && isAuthenticated && isLoaded && !isPremium
+  const activeImportsQuery = useQuery({
+    queryKey: ['recipes', 'library', 'archive-imports'],
+    queryFn: listFreeImportLibraryMetadata,
+    enabled: shouldRestrictCloudCache,
+    retry: false,
+  })
   const query = useInfiniteQuery<
     CloudRecipeDocumentsPage<ManagedImport>,
     Error,
@@ -77,9 +87,17 @@ export function useManagedImports(mode: StorageScreenMode = 'auth') {
     getNextPageParam: (lastPage) => lastPage.nextCursor,
   })
 
+  const activeCloudImportIds = new Set(
+    (activeImportsQuery.data ?? []).filter((item) => item.isActive).map((item) => item.id)
+  )
+  const data = (query.data?.pages.flatMap((page) => page.items) ?? []).filter((item) =>
+    !shouldRestrictCloudCache || !item.cloudId || activeCloudImportIds.has(item.cloudId)
+  )
+
   return {
     ...query,
-    data: query.data?.pages.flatMap((page) => page.items) ?? [],
+    data,
+    isLoading: query.isLoading || (shouldRestrictCloudCache && activeImportsQuery.isLoading),
   }
 }
 

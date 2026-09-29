@@ -77,7 +77,7 @@ type LocalRecipeFoldersRow = {
 export type LocalRecipeSyncRow = {
   id: string
   ownerUserId: string | null
-  cloudId: string | null
+  cloudId?: string | null
   title: string
   subtitle: string | null
   description: string | null
@@ -95,6 +95,7 @@ export type LocalRecipeSyncRow = {
 
 export type LocalRecipe = {
   id: string
+  cloudId?: string | null
   title: string
   subtitle: string | null
   description: string | null
@@ -184,6 +185,7 @@ async function resolveLocalRecipeImageUrl(params: {
 function toRecipeView(row: LocalRecipeRow): LocalRecipe {
   return {
     id: row.id,
+    cloudId: row.cloud_id ?? null,
     title: row.title,
     subtitle: row.subtitle ?? null,
     description: row.description ?? null,

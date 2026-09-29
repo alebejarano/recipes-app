@@ -10,6 +10,7 @@ import {
   type CloudRecipeDocumentsCursor,
   type CloudRecipeDocumentsPage,
 } from '@/features/recipes/api/recipeDocumentsCloudRepo'
+import { listFreeImportLibraryMetadata } from '@/features/recipes/api/freeArchiveRepo'
 import type { ImportPlan } from '@/features/recipes/storage/importsStorage'
 import {
   addRecipeDocument,
@@ -57,7 +58,15 @@ function isConnectivityError(error: unknown) {
 
 export function useRecipeDocuments(mode: StorageScreenMode = 'auth') {
   const { isStorageModeReady, shouldUseLocalData } = useStorageDataMode(mode)
+  const { isAuthenticated, isLoaded, isPremium } = useStorageStrategy()
   const { user } = useAuth()
+  const shouldRestrictCloudCache = mode === 'auth' && isAuthenticated && isLoaded && !isPremium
+  const activeImportsQuery = useQuery({
+    queryKey: ['recipes', 'library', 'archive-imports'],
+    queryFn: listFreeImportLibraryMetadata,
+    enabled: shouldRestrictCloudCache,
+    retry: false,
+  })
   const query = useInfiniteQuery<
     CloudRecipeDocumentsPage<RecipeDocument>,
     Error,
@@ -103,20 +112,44 @@ export function useRecipeDocuments(mode: StorageScreenMode = 'auth') {
     getNextPageParam: (lastPage) => lastPage.nextCursor,
   })
 
+  const activeCloudImportIds = new Set(
+    (activeImportsQuery.data ?? []).filter((item) => item.isActive).map((item) => item.id)
+  )
+  const data = (query.data?.pages.flatMap((page) => page.items) ?? []).filter((item) =>
+    !shouldRestrictCloudCache || !item.cloudId || activeCloudImportIds.has(item.cloudId)
+  )
+
   return {
     ...query,
-    data: query.data?.pages.flatMap((page) => page.items) ?? [],
+    data,
+    // A former Premium member must not see cached archived imports while the
+    // Active Library is being resolved. A never-Premium user has no cloud IDs.
+    isLoading: query.isLoading || (shouldRestrictCloudCache && activeImportsQuery.isLoading),
   }
 }
 
 export function useRecipeDocument(id: string, mode: StorageScreenMode = 'auth') {
   const { isStorageModeReady, shouldUseLocalData } = useStorageDataMode(mode)
+  const { isAuthenticated, isLoaded, isPremium } = useStorageStrategy()
   const { user } = useAuth()
+  const shouldRestrictCloudCache = mode === 'auth' && isAuthenticated && isLoaded && !isPremium
+  const activeImportsQuery = useQuery({
+    queryKey: ['recipes', 'library', 'archive-imports'],
+    queryFn: listFreeImportLibraryMetadata,
+    enabled: shouldRestrictCloudCache,
+    retry: false,
+  })
+  const activeCloudImportIds = new Set(
+    (activeImportsQuery.data ?? []).filter((item) => item.isActive).map((item) => item.id)
+  )
   return useQuery<RecipeDocument | null>({
-    queryKey: [...DOCS_KEY, shouldUseLocalData ? 'local' : 'cloud', user?.id ?? 'guest', id],
+    queryKey: [...DOCS_KEY, shouldUseLocalData ? 'local' : 'cloud', user?.id ?? 'guest', id, shouldRestrictCloudCache ? 'active-library' : 'all'],
     queryFn: async () => {
       if (shouldUseLocalData) {
         const localDocument = await getRecipeDocument(id)
+        if (shouldRestrictCloudCache && localDocument?.cloudId && !activeCloudImportIds.has(localDocument.cloudId)) {
+          return null
+        }
         if (localDocument || !user?.id) return localDocument
 
         // A Premium migration can temporarily use the local strategy while a
@@ -141,7 +174,7 @@ export function useRecipeDocument(id: string, mode: StorageScreenMode = 'auth') 
         return getRecipeDocument(id)
       }
     },
-    enabled: Boolean(id) && isStorageModeReady,
+    enabled: Boolean(id) && isStorageModeReady && (!shouldRestrictCloudCache || !activeImportsQuery.isLoading),
   })
 }
 

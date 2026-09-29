@@ -125,10 +125,13 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
   const createFolderMutation = useStrategyCreateFolder(routeMode)
   const recipeQuery = useStrategyRecipe(recipeId, routeMode)
   const libraryItem = findLibraryRecipe(recipesListQuery.data, recipeId)
+  const isAccessRestricted = recipesListQuery.isAccessRestricted
   const isArchived = libraryItem?.access === 'archived'
-  const recipe = recipeQuery.data ?? libraryItem?.recipe ?? null
-  const isLoading = recipeQuery.isLoading || recipesListQuery.isLoading
-  const isError = recipeQuery.isError && !libraryItem
+  // Do not let a deep link bypass the Active Library filter by reading an
+  // archived recipe directly from the former Premium member's local cache.
+  const recipe = isAccessRestricted ? libraryItem?.recipe ?? null : recipeQuery.data ?? libraryItem?.recipe ?? null
+  const isLoading = recipeQuery.isLoading || recipesListQuery.isLoading || recipesListQuery.isArchiveAccessLoading
+  const isError = isAccessRestricted ? !libraryItem : recipeQuery.isError && !libraryItem
   const error = recipeQuery.error
 
   const ingredientLines = useMemo(

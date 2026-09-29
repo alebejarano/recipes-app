@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { useAuth } from '@/features/auth/context/AuthContext'
-import { listFreeRecipeArchiveMetadata } from '@/features/recipes/api/freeArchiveRepo'
+import { listFreeRecipeLibraryMetadata } from '@/features/recipes/api/freeArchiveRepo'
 import type { Recipe } from '@/features/recipes/api/recipesRepo'
 import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
 import type { LocalRecipe } from '@/features/recipes/storage/localRecipesStorage'
@@ -46,20 +46,36 @@ export function useLibraryRecipesList(
     const { user } = useAuth()
     const { isAuthenticated, isPremium, isLoaded } = useStorageStrategy()
     const activeQuery = useStrategyRecipesList(params, mode)
-    const archiveQuery = useQuery<Recipe[]>({
+    const archiveQuery = useQuery({
         queryKey: ['recipes', 'library', 'archive', user?.id ?? 'guest'],
-        queryFn: listFreeRecipeArchiveMetadata,
-        enabled: Boolean(params?.includeArchive) && mode === 'auth' && isAuthenticated && isLoaded && !isPremium,
+        queryFn: listFreeRecipeLibraryMetadata,
+        // This request establishes the server-authoritative Active Library for
+        // former Premium members. Never-Premium users receive a rejected RPC,
+        // which is intentionally treated as an empty archive below.
+        enabled: mode === 'auth' && isAuthenticated && isLoaded && !isPremium,
         retry: false,
     })
 
-    const active = (activeQuery.data ?? []).map<LibraryRecipe>((recipe) => ({
+    const shouldRestrictCloudCache = mode === 'auth' && isAuthenticated && isLoaded && !isPremium
+    const activeCloudRecipeIds = new Set(
+        (archiveQuery.data ?? []).filter((recipe) => recipe.isActive).map((recipe) => recipe.id)
+    )
+    const visibleActiveRecipes = (activeQuery.data ?? []).filter((recipe) => {
+        if (!shouldRestrictCloudCache) return true
+        // Local-only Free recipes were never part of the Premium library and
+        // remain active. Cached cloud recipes require a current server slot.
+        const cloudId = 'cloudId' in recipe ? recipe.cloudId : null
+        return !cloudId || activeCloudRecipeIds.has(cloudId)
+    })
+
+    const active = visibleActiveRecipes.map<LibraryRecipe>((recipe) => ({
         recipe: normalizeActiveRecipe(recipe),
         access: 'active',
         isEditable: true,
         isAvailableOffline: true,
     }))
     const archive = (params?.includeArchive ? archiveQuery.data ?? [] : [])
+        .filter((recipe) => !recipe.isActive)
         .filter((recipe) => matchesSearch(recipe, params?.search))
         .map<LibraryRecipe>((recipe) => ({
             recipe,
@@ -75,12 +91,16 @@ export function useLibraryRecipesList(
         // Archive access is optional for never-Premium users. The RPC rejects
         // those users by design, which must not turn their local library into
         // an error state.
-        isLoading: activeQuery.isLoading,
+        isLoading: activeQuery.isLoading || (shouldRestrictCloudCache && archiveQuery.isLoading),
         isError: activeQuery.isError,
         error: activeQuery.error,
         refetch: async () => {
             await Promise.all([activeQuery.refetch(), archiveQuery.refetch()])
         },
+        // Fail closed for cached cloud content if the Active Library request
+        // is unavailable. Local-only Free recipes remain visible.
+        isAccessRestricted: shouldRestrictCloudCache,
+        isArchiveAccessLoading: shouldRestrictCloudCache && archiveQuery.isLoading,
     }
 }
 

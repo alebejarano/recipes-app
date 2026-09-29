@@ -27,6 +27,7 @@ import RecipeForm, {
   type RecipeFormValues,
 } from '@/features/recipes/components/RecipeForm'
 import { useStrategyRecipe, useStrategyUpdateRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
+import { findLibraryRecipe, useLibraryRecipesList } from '@/features/recipes/hooks/useLibraryRecipes'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
 import { useTranslation } from '@/localization'
@@ -89,9 +90,11 @@ export default function EditRecipeScreen() {
   const showSnackbar = useTransientSnackbarStore((state) => state.show)
 
   const recipeQuery = useStrategyRecipe(recipeId, routeMode)
-  const recipe = recipeQuery.data
-  const isLoading = recipeQuery.isLoading
-  const isError = recipeQuery.isError
+  const libraryQuery = useLibraryRecipesList({ limit: 2000 }, routeMode)
+  const libraryRecipe = findLibraryRecipe(libraryQuery.data, recipeId)
+  const recipe = libraryQuery.isAccessRestricted ? libraryRecipe?.recipe ?? null : recipeQuery.data
+  const isLoading = recipeQuery.isLoading || libraryQuery.isLoading || libraryQuery.isArchiveAccessLoading
+  const isError = libraryQuery.isAccessRestricted ? !libraryRecipe : recipeQuery.isError
 
   const updateMutation = useStrategyUpdateRecipe(recipeId, routeMode)
   const cloudFoldersQuery = useCloudFoldersList({ enabled: !shouldUseLocalData })
