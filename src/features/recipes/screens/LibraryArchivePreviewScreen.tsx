@@ -30,6 +30,7 @@ function sizeLabel(bytes: number) {
 
 export default function LibraryArchivePreviewScreen() {
   const [showArchive, setShowArchive] = useState(false)
+  const [archiveSection, setArchiveSection] = useState<'recipes' | 'imports'>('recipes')
   const [activeRecipeIds, setActiveRecipeIds] = useState(() => recipes.slice(0, 100).map((item) => item.id))
   const [activeImportIds, setActiveImportIds] = useState(() => imports.slice(0, 8).map((item) => item.id))
   const activeImportBytes = useMemo(
@@ -59,42 +60,58 @@ export default function LibraryArchivePreviewScreen() {
 
   return (
     <Screen scroll contentStyle={styles.content}>
-      <View style={styles.previewNotice}>
-        <Feather name="info" size={18} color={styles.accent.color} />
-        <Text style={styles.noticeText}>TEST PREVIEW — sample data only. Nothing is saved, uploaded, or deleted.</Text>
-      </View>
-
       {!showArchive ? (
         <>
           <Text style={styles.title}>Your library is safe</Text>
-          <Text style={styles.body}>Preview: a Premium account with 150 recipes and imports has downgraded. Free keeps up to 100 active recipes and 50 MB of active imports; the rest stays safely archived.</Text>
+          <Text style={styles.body}>Free includes 100 active recipes and 50 MB of active imports. Your remaining Premium library stays safely stored in Cloud Archive.</Text>
           <View style={styles.card}>
             <Text style={styles.cardTitle}>What happens now</Text>
-            <Text style={styles.body}>Removing an item from Active keeps it safely archived. It does not delete it. Permanently deleting items is a separate action in Manage Library.</Text>
+            <Text style={styles.body}>Your newest recipes are already active. In Cloud Archive, removing an item from Active keeps it safely archived—it does not delete it. Manage Library is separate and permanently deletes local items to free device space.</Text>
+            <View style={styles.manageLinks}>
+              <Pressable accessibilityRole="button" onPress={() => router.push('/(auth)/recipes/manage' as never)}><Text style={styles.manageLink}>Manage recipes</Text></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => router.push('/(auth)/imports/manage' as never)}><Text style={styles.manageLink}>Manage imports</Text></Pressable>
+            </View>
           </View>
           <Pressable accessibilityRole="button" style={styles.primary} onPress={() => setShowArchive(true)}>
             <Text style={styles.primaryText}>Open Cloud Archive</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" style={styles.secondary} onPress={() => router.back()}>
-            <Text style={styles.secondaryText}>Close preview</Text>
+          <Pressable accessibilityRole="button" style={styles.secondary} onPress={() => router.push('/(auth)/premium' as never)}>
+            <Text style={styles.secondaryText}>Restore full library with Premium</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => router.replace('/(auth)/(tabs)/collections' as never)}>
+            <Text style={styles.continue}>Continue with Free</Text>
           </Pressable>
         </>
       ) : (
         <>
           <Pressable accessibilityRole="button" style={styles.back} onPress={() => setShowArchive(false)}>
             <Feather name="chevron-left" size={20} color={styles.accent.color} />
-            <Text style={styles.action}>Downgrade notice</Text>
+            <Text numberOfLines={1} style={styles.backLabel}>Back</Text>
           </Pressable>
           <Text style={styles.title}>Cloud Archive</Text>
-          <Text style={styles.body}>Choose what stays available on Free. Archived items remain safely stored and can be made active later.</Text>
+          <Text style={styles.body}>Choose the recipes and imports available on Free. Everything else stays safely archived in the cloud.</Text>
+          <View style={styles.explainer}>
+            <Feather name="archive" size={20} color={styles.accent.color} />
+            <View style={styles.rowCopy}>
+              <Text style={styles.cardTitle}>Removing from Active is not deleting</Text>
+              <Text style={styles.body}>An item removed from Active remains safely in Cloud Archive. You can activate it again later.</Text>
+            </View>
+          </View>
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Active Library preview</Text>
-            <Text style={styles.body}>Recipes: {activeRecipeIds.length} / {FREE_PLAN_MAX_RECIPES}</Text>
-            <Text style={styles.body}>Imports: {sizeLabel(activeImportBytes)} / 50 MB</Text>
+            <Text style={styles.body}>Active recipes: {activeRecipeIds.length} / {FREE_PLAN_MAX_RECIPES}</Text>
+            <Text style={styles.body}>Active imports: {sizeLabel(activeImportBytes)} / 50 MB</Text>
           </View>
 
-          <Text style={styles.sectionTitle}>Recipes ({recipes.length})</Text>
-          {recipes.map((item) => {
+          <View style={styles.segmentedControl} accessibilityRole="tablist">
+            <Pressable accessibilityRole="tab" accessibilityState={{ selected: archiveSection === 'recipes' }} style={[styles.segment, archiveSection === 'recipes' && styles.segmentSelected]} onPress={() => setArchiveSection('recipes')}>
+              <Text style={[styles.segmentText, archiveSection === 'recipes' && styles.segmentTextSelected]}>Recipes ({recipes.length})</Text>
+            </Pressable>
+            <Pressable accessibilityRole="tab" accessibilityState={{ selected: archiveSection === 'imports' }} style={[styles.segment, archiveSection === 'imports' && styles.segmentSelected]} onPress={() => setArchiveSection('imports')}>
+              <Text style={[styles.segmentText, archiveSection === 'imports' && styles.segmentTextSelected]}>Imports ({imports.length})</Text>
+            </Pressable>
+          </View>
+
+          {archiveSection === 'recipes' ? recipes.map((item) => {
             const active = activeRecipeIds.includes(item.id)
             return (
               <Pressable key={item.id} style={styles.row} onPress={() => toggleRecipe(item.id)} accessibilityRole="checkbox" accessibilityState={{ checked: active }}>
@@ -106,10 +123,9 @@ export default function LibraryArchivePreviewScreen() {
                 <Text style={styles.action}>{active ? 'Remove from Active' : 'Make Active'}</Text>
               </Pressable>
             )
-          })}
+          }) : null}
 
-          <Text style={styles.sectionTitle}>Imports ({imports.length})</Text>
-          {imports.map((item) => {
+          {archiveSection === 'imports' ? imports.map((item) => {
             const active = activeImportIds.includes(item.id)
             return (
               <Pressable key={item.id} style={styles.row} onPress={() => toggleImport(item.id)} accessibilityRole="checkbox" accessibilityState={{ checked: active }}>
@@ -121,15 +137,16 @@ export default function LibraryArchivePreviewScreen() {
                 <Text style={styles.action}>{active ? 'Remove from Active' : 'Make Active'}</Text>
               </Pressable>
             )
-          })}
+          }) : null}
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Permanent deletion is separate</Text>
-            <Text style={styles.body}>Cloud Archive only changes what is Active. To permanently delete real items, go to Manage Library. This preview never deletes anything.</Text>
+            <Text style={styles.cardTitle}>Need to delete something permanently?</Text>
+            <Text style={styles.body}>Cloud Archive does not delete anything. Manage Library is separate and uses permanent deletion to free space on this device.</Text>
+            <View style={styles.manageLinks}>
+              <Pressable accessibilityRole="button" onPress={() => router.push('/(auth)/recipes/manage' as never)}><Text style={styles.manageLink}>Manage recipes</Text></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => router.push('/(auth)/imports/manage' as never)}><Text style={styles.manageLink}>Manage imports</Text></Pressable>
+            </View>
           </View>
-          <Pressable accessibilityRole="button" style={styles.secondary} onPress={() => router.back()}>
-            <Text style={styles.secondaryText}>Close preview</Text>
-          </Pressable>
         </>
       )}
     </Screen>
@@ -138,21 +155,28 @@ export default function LibraryArchivePreviewScreen() {
 
 const styles = createThemedStyles((theme) => ({
   content: { gap: theme.spacing.md, padding: theme.spacing.md, paddingBottom: theme.spacing['3xl'] },
-  previewNotice: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, padding: theme.spacing.md, borderRadius: theme.radii.lg, backgroundColor: theme.colors.secondary },
-  noticeText: { ...theme.textVariants.label, color: theme.colors.foreground, flex: 1 },
   title: { ...theme.textVariants.display, color: theme.colors.foreground },
   body: { ...theme.textVariants.body, color: theme.colors.mutedForeground },
   card: { gap: theme.spacing.sm, padding: theme.spacing.lg, borderRadius: theme.radii.lg, backgroundColor: theme.colors.card },
   cardTitle: { ...theme.textVariants.heading, color: theme.colors.foreground },
-  primary: { padding: theme.spacing.lg, borderRadius: theme.radii.full, backgroundColor: theme.colors.accent, alignItems: 'center' },
-  primaryText: { ...theme.textVariants.label, color: theme.colors.accentForeground },
-  secondary: { padding: theme.spacing.md, alignItems: 'center' },
+  primary: { padding: theme.spacing.lg, borderRadius: theme.radii.full, backgroundColor: theme.colors.primary, alignItems: 'center' },
+  primaryText: { ...theme.textVariants.label, color: theme.colors.primaryForeground },
+  secondary: { minHeight: 48, paddingHorizontal: theme.spacing.lg, borderWidth: 1, borderColor: theme.colors.accent, borderRadius: theme.radii.full, alignItems: 'center', justifyContent: 'center' },
   secondaryText: { ...theme.textVariants.label, color: theme.colors.accent },
+  continue: { textAlign: 'center', ...theme.textVariants.body, color: theme.colors.mutedForeground },
   back: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
-  sectionTitle: { ...theme.textVariants.heading, color: theme.colors.foreground, marginTop: theme.spacing.lg },
+  backLabel: { ...theme.textVariants.label, color: theme.colors.accent, flexShrink: 1 },
+  explainer: { flexDirection: 'row', alignItems: 'flex-start', gap: theme.spacing.sm, padding: theme.spacing.md, borderRadius: theme.radii.lg, backgroundColor: theme.colors.secondary },
+  segmentedControl: { flexDirection: 'row', padding: theme.spacing.xs, borderRadius: theme.radii.full, backgroundColor: theme.colors.secondary },
+  segment: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: theme.spacing.sm, borderRadius: theme.radii.full },
+  segmentSelected: { backgroundColor: theme.colors.card },
+  segmentText: { ...theme.textVariants.label, color: theme.colors.mutedForeground, textAlign: 'center' },
+  segmentTextSelected: { color: theme.colors.foreground },
   row: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, padding: theme.spacing.md, borderRadius: theme.radii.lg, backgroundColor: theme.colors.card },
   rowCopy: { flex: 1 },
   rowTitle: { ...theme.textVariants.label, color: theme.colors.foreground },
   action: { ...theme.textVariants.label, color: theme.colors.accent, textAlign: 'right', maxWidth: 112 },
+  manageLinks: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.lg },
+  manageLink: { ...theme.textVariants.label, color: theme.colors.accent },
   accent: { color: theme.colors.accent },
 }))

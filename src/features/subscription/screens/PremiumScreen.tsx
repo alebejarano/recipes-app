@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons'
 import React from 'react'
 import { ActivityIndicator, Modal, Text, TouchableOpacity, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
 import { useAnalyticsCapture } from '@/features/analytics/events'
@@ -32,10 +33,19 @@ export default function PremiumScreen({
   onManageSubscription,
   monthlyPriceLabel = '€5',
   yearlyPriceLabel = '€36',
+  yearlyMonthlyEquivalentLabel,
 }: PremiumScreenProps) {
   const captureAnalyticsEvent = useAnalyticsCapture()
   const { t } = useTranslation()
+  const insets = useSafeAreaInsets()
   const [billingCycle, setBillingCycle] = React.useState<BillingCycle>('year')
+  const [purchaseBarHeight, setPurchaseBarHeight] = React.useState(180)
+  const renewalDisclosure = billingCycle === 'year'
+    ? t('subscription.premium.yearlyRenewalDisclosure', {
+        price: yearlyPriceLabel,
+        monthlyPrice: yearlyMonthlyEquivalentLabel ?? t('subscription.premium.yearlyMonthlyEquivalentFallback'),
+      })
+    : t('subscription.premium.monthlyRenewalDisclosure', { price: monthlyPriceLabel })
   const benefits: { title: string; description: string; icon: FeatherIconName }[] = [
     { title: t('subscription.premium.checklist.neverLose'), description: t('subscription.premium.benefitDescriptions.neverLose'), icon: 'bookmark' },
     { title: t('subscription.premium.checklist.restore'), description: t('subscription.premium.benefitDescriptions.restore'), icon: 'download-cloud' },
@@ -47,7 +57,8 @@ export default function PremiumScreen({
 
   return (
     <>
-      <Screen scroll contentStyle={styles.content}>
+      <View style={styles.root}>
+      <Screen scroll contentStyle={[styles.content, { paddingBottom: purchaseBarHeight + 16 }]}>
       {!!onMaybeLater && (
         <TouchableOpacity style={styles.backRow} onPress={onMaybeLater} activeOpacity={0.75}>
           <Feather name="chevron-left" size={18} style={styles.backIcon} />
@@ -56,25 +67,25 @@ export default function PremiumScreen({
       )}
 
       <View style={styles.heroCopy}>
-        <Text style={styles.heroTitle}>{t('subscription.premium.title')}</Text>
+        <Text style={styles.heroTitle}>
+          {t('subscription.premium.titleLead')}
+          <Text style={styles.heroTitleAccent}>{t('subscription.premium.titleAccent')}</Text>
+        </Text>
         <Text style={styles.heroSubtitle}>{t('subscription.premium.subtitleInactive')}</Text>
       </View>
 
-      <Text style={styles.title}>{t('subscription.premium.includedTitle')}</Text>
-
       <View style={styles.benefitsCard}>
-        {benefits.map((benefit, index) => (
+        {benefits.map((benefit) => (
           <React.Fragment key={benefit.title}>
             <View style={styles.benefitRow}>
               <View style={styles.benefitIcon}>
-                <Feather name={benefit.icon} size={24} color={styles.benefitIconGlyph.color} />
+                <Feather name={benefit.icon} size={20} color={styles.benefitIconGlyph.color} />
               </View>
               <View style={styles.benefitCopy}>
                 <Text style={styles.benefitTitle}>{benefit.title}</Text>
                 <Text style={styles.benefitDescription}>{benefit.description}</Text>
               </View>
             </View>
-            {index < benefits.length - 1 ? <View style={styles.benefitDivider} /> : null}
           </React.Fragment>
         ))}
       </View>
@@ -85,16 +96,19 @@ export default function PremiumScreen({
             style={[styles.planCard, billingCycle === 'month' && styles.planCardSelected]}
             onPress={() => setBillingCycle('month')}
             activeOpacity={0.85}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: billingCycle === 'month' }}
           >
-            <View style={styles.planHeader}>
-              <Text style={[styles.planName, billingCycle === 'month' && styles.planTextSelected]}>{t('subscription.premium.monthly')}</Text>
-              <View style={[styles.selectionIndicator, billingCycle === 'month' && styles.selectionIndicatorSelected]}>
-                {billingCycle === 'month' ? <Feather name="check" size={16} color={styles.selectionCheck.color} /> : null}
-              </View>
+            <View style={styles.planOptionCopy}>
+              <Text style={[styles.planName, billingCycle === 'month' && styles.planTextSelected]}>{t('subscription.premium.monthlyPlanTitle')}</Text>
+              <Text style={styles.planHint}>{t('subscription.premium.monthlyPlanHint')}</Text>
             </View>
-            <View style={styles.planPriceRow}>
+            <View style={styles.planOptionPrice}>
               <Text style={[styles.planPrice, billingCycle === 'month' && styles.planTextSelected]}>{monthlyPriceLabel}</Text>
               <Text style={[styles.planPeriod, billingCycle === 'month' && styles.planTextSelected]}>{t('subscription.premium.perMonth')}</Text>
+            </View>
+            <View style={[styles.selectionIndicator, billingCycle === 'month' && styles.selectionIndicatorSelected]}>
+              {billingCycle === 'month' ? <Feather name="check" size={16} color={styles.selectionCheck.color} /> : null}
             </View>
           </TouchableOpacity>
 
@@ -102,26 +116,38 @@ export default function PremiumScreen({
             style={[styles.planCard, styles.yearlyPlanCard, billingCycle === 'year' && styles.planCardSelected]}
             onPress={() => setBillingCycle('year')}
             activeOpacity={0.85}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: billingCycle === 'year' }}
           >
             <View style={styles.bestValueBadge}><Text style={styles.bestValueText}>{t('subscription.premium.bestValue')}</Text></View>
-            <View style={styles.planHeader}>
-              <Text style={[styles.planName, styles.yearlyPlanText]}>{t('subscription.premium.yearly')}</Text>
-              <View style={[styles.selectionIndicator, billingCycle === 'year' && styles.selectionIndicatorSelected]}>
-                {billingCycle === 'year' ? <Feather name="check" size={16} color={styles.selectionCheck.color} /> : null}
+            <View style={styles.planOptionCopy}>
+              <Text style={[styles.planName, billingCycle === 'year' && styles.planTextSelected]}>{t('subscription.premium.yearly')}</Text>
+              <View style={styles.freeMonthsBadge}>
+                <Feather name="gift" size={16} color={styles.freeMonthsText.color} />
+                <Text style={styles.freeMonthsText}>{t('subscription.premium.yearlyFreeMonths')}</Text>
               </View>
             </View>
-            <View style={styles.planPriceRow}>
-              <Text style={[styles.planPrice, styles.yearlyPlanText]}>{yearlyPriceLabel}</Text>
-              <Text style={[styles.planPeriod, styles.yearlyPlanText]}>{t('subscription.premium.perYear')}</Text>
+            <View style={styles.planOptionPrice}>
+              <Text style={[styles.planPrice, billingCycle === 'year' && styles.planTextSelected]}>{yearlyPriceLabel}</Text>
+              <Text style={[styles.planPeriod, billingCycle === 'year' && styles.planTextSelected]}>{t('subscription.premium.perYear')}</Text>
             </View>
-            <View style={styles.freeMonthsBadge}>
-              <Feather name="gift" size={16} color={styles.freeMonthsText.color} />
-              <Text style={styles.freeMonthsText}>{t('subscription.premium.yearlyFreeMonths')}</Text>
+            <View style={[styles.selectionIndicator, billingCycle === 'year' && styles.selectionIndicatorSelected]}>
+              {billingCycle === 'year' ? <Feather name="check" size={16} color={styles.selectionCheck.color} /> : null}
             </View>
           </TouchableOpacity>
         </View>
       ) : null}
 
+      </Screen>
+
+      <View
+        onLayout={({ nativeEvent }) => {
+          const nextHeight = nativeEvent.layout.height
+          setPurchaseBarHeight((currentHeight) => currentHeight === nextHeight ? currentHeight : nextHeight)
+        }}
+        style={[styles.purchaseBar, { paddingBottom: insets.bottom + 16 }]}
+      >
+        <View style={styles.purchaseBarContent}>
       <Button
         onPress={isActive ? onManageSubscription ?? (() => {}) : () => {
           captureAnalyticsEvent('upgrade_clicked', { surface: 'premium_screen', billing_cycle: billingCycle })
@@ -140,8 +166,10 @@ export default function PremiumScreen({
               ? t('subscription.premium.loadingPlans')
               : t('subscription.premium.unlock')}
       </Button>
-
-      </Screen>
+      {!isActive ? <Text style={styles.renewalDisclosure}>{renewalDisclosure}</Text> : null}
+        </View>
+      </View>
+      </View>
 
       <Modal visible={isUpgrading} transparent animationType="fade" statusBarTranslucent>
         <View style={styles.loadingBackdrop}>
@@ -157,41 +185,44 @@ export default function PremiumScreen({
 }
 
 const styles = createThemedStyles((theme) => ({
+  root: { flex: 1, backgroundColor: theme.colors.background },
   content: { paddingTop: theme.spacing.md, paddingBottom: theme.spacing['3xl'], alignItems: 'center', gap: theme.spacing.xl },
   backRow: { alignSelf: 'stretch', minHeight: 44, flexDirection: 'row', alignItems: 'center' },
   backIcon: { color: theme.colors.mutedForeground },
   backText: { marginLeft: theme.spacing.xs, ...theme.textVariants.body, color: theme.colors.mutedForeground },
-  heroCopy: { width: '100%', maxWidth: 480, alignItems: 'center', gap: theme.spacing.sm },
-  heroTitle: { textAlign: 'center', ...theme.textVariants.display, color: theme.colors.foreground },
-  heroSubtitle: { textAlign: 'center', ...theme.textVariants.body, color: theme.colors.mutedForeground },
-  title: { textAlign: 'center', ...theme.textVariants.hero, color: theme.colors.foreground },
+  heroCopy: { width: '100%', maxWidth: 480, alignItems: 'flex-start', gap: theme.spacing.md },
+  heroTitle: { width: '100%', textAlign: 'left', fontFamily: theme.fontFamily.fraunces, fontSize: 38, lineHeight: 44, color: theme.colors.foreground },
+  heroTitleAccent: { color: theme.colors.accent },
+  heroSubtitle: { maxWidth: 440, textAlign: 'left', fontFamily: theme.fontFamily.regular, fontSize: theme.fontSize.lg, lineHeight: theme.lineHeight.lg, color: theme.colors.mutedForeground },
   benefitsCard: { width: '100%', maxWidth: 480 },
   benefitRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.lg, paddingVertical: theme.spacing.lg },
-  benefitIcon: { width: 56, height: 56, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: theme.radii.full, backgroundColor: theme.colors.accent10 },
+  benefitIcon: { width: 48, height: 48, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: theme.radii.full, backgroundColor: theme.colors.accent10 },
   benefitIconGlyph: { color: theme.colors.accent },
   benefitCopy: { flex: 1, gap: theme.spacing.xs },
   benefitTitle: { ...theme.textVariants.heading, color: theme.colors.foreground },
   benefitDescription: { ...theme.textVariants.body, color: theme.colors.mutedForeground },
-  benefitDivider: { height: 1, backgroundColor: theme.colors.border },
-  plansRow: { width: '100%', maxWidth: 480, flexDirection: 'row', alignItems: 'stretch', gap: theme.spacing.md },
-  planCard: { flex: 1, minHeight: 178, padding: theme.spacing.lg, justifyContent: 'space-between', borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.xl, backgroundColor: theme.colors.card },
+  plansRow: { width: '100%', maxWidth: 480, flexDirection: 'column', alignItems: 'stretch', gap: theme.spacing.md },
+  planCard: { width: '100%', minHeight: 108, padding: theme.spacing.lg, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.xl, backgroundColor: theme.colors.card },
   planCardSelected: { borderWidth: 2, borderColor: theme.colors.accent },
-  yearlyPlanCard: { paddingTop: theme.spacing['2xl'] },
-  planHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: theme.spacing.sm },
+  yearlyPlanCard: { marginTop: theme.spacing.sm },
+  planOptionCopy: { flex: 1, gap: theme.spacing.xs },
+  planHint: { ...theme.textVariants.body, color: theme.colors.mutedForeground },
+  planOptionPrice: { alignItems: 'flex-end', marginRight: theme.spacing.sm },
   planName: { ...theme.textVariants.heading, color: theme.colors.foreground },
   planTextSelected: { color: theme.colors.accent },
-  yearlyPlanText: { color: theme.colors.accent },
   selectionIndicator: { width: 28, height: 28, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: theme.colors.mutedForeground, borderRadius: theme.radii.full },
   selectionIndicatorSelected: { borderColor: theme.colors.accent, backgroundColor: theme.colors.accent },
   selectionCheck: { color: theme.colors.accentForeground },
-  planPriceRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', gap: theme.spacing.xs },
-  planPrice: { fontFamily: theme.fontFamily.bold, fontSize: theme.fontSize.display, lineHeight: theme.lineHeight.display, color: theme.colors.foreground },
+  planPrice: { fontFamily: theme.fontFamily.bold, fontSize: theme.fontSize.xxl, lineHeight: theme.lineHeight.xxl, color: theme.colors.foreground },
   planPeriod: { ...theme.textVariants.body, color: theme.colors.mutedForeground },
   bestValueBadge: { position: 'absolute', zIndex: 1, top: -theme.spacing.md, alignSelf: 'center', paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.xs, borderRadius: theme.radii.full, backgroundColor: theme.colors.accentLight },
   bestValueText: { ...theme.textVariants.labelSmall, color: theme.colors.accent },
-  freeMonthsBadge: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
-  freeMonthsText: { ...theme.textVariants.label, color: theme.colors.primary },
-  ctaButton: { width: '100%', maxWidth: 480, marginTop: theme.spacing.xs },
+  freeMonthsBadge: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
+  freeMonthsText: { ...theme.textVariants.labelSmall, color: theme.colors.primary },
+  purchaseBar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: theme.spacing.md, paddingHorizontal: theme.spacing.xl, borderTopWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.background },
+  purchaseBarContent: { width: '100%', maxWidth: 480, alignSelf: 'center', gap: theme.spacing.sm },
+  ctaButton: { width: '100%' },
+  renewalDisclosure: { textAlign: 'center', ...theme.textVariants.caption, color: theme.colors.mutedForeground },
   loadingBackdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: theme.spacing['2xl'], backgroundColor: theme.colors.overlay },
   loadingCard: { width: '100%', maxWidth: 320, alignItems: 'center', gap: theme.spacing.md, padding: theme.spacing['2xl'], borderRadius: theme.radii.xl, backgroundColor: theme.colors.card },
   loadingSpinner: { color: theme.colors.accent },

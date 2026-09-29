@@ -29,6 +29,7 @@ export default function CloudArchiveRoute() {
   const importsQuery = useQuery({ queryKey: ['recipes', 'library', 'free-active-imports'], queryFn: listFreeImportLibraryMetadata, retry: false })
   const [selectedRecipeIds, setSelectedRecipeIds] = useState<string[] | null>(null)
   const [selectedImportIds, setSelectedImportIds] = useState<string[] | null>(null)
+  const [archiveSection, setArchiveSection] = useState<'recipes' | 'imports'>('recipes')
   const [isDirty, setIsDirty] = useState(false)
   const recipes = useMemo(() => recipesQuery.data ?? [], [recipesQuery.data])
   const imports = useMemo(() => importsQuery.data ?? [], [importsQuery.data])
@@ -71,23 +72,26 @@ export default function CloudArchiveRoute() {
 
   return (
     <Screen scroll contentStyle={styles.content}>
-      <Pressable onPress={() => router.back()} style={styles.back} accessibilityRole="button"><Feather name="chevron-left" size={20} /><Text>Collections</Text></Pressable>
+      <Pressable onPress={() => router.back()} style={styles.back} accessibilityRole="button"><Feather name="chevron-left" size={20} /><Text>Back</Text></Pressable>
       <Text style={styles.title}>Cloud Archive</Text>
       <Text style={styles.subtitle}>Choose the recipes and imports available on Free. Everything else stays safely archived in the cloud.</Text>
       <View style={styles.explainer}><Feather name="archive" size={20} color={styles.icon.color} /><View style={styles.copy}><Text style={styles.explainerTitle}>Removing from Active is not deleting</Text><Text style={styles.rowSubtitle}>An item removed from Active remains safely in Cloud Archive. You can activate it again later.</Text></View></View>
       <View style={styles.usageCard}><Text style={styles.usageText}>Active recipes: {activeRecipeIds.length} / {FREE_PLAN_MAX_RECIPES}</Text><Text style={styles.usageText}>Active imports: {formatMegabytes(activeImportBytes)} / 50 MB</Text></View>
 
-      <Text style={styles.heading}>Recipes ({recipes.length})</Text>
-      {recipes.map((recipe) => {
+      <View style={styles.segmentedControl} accessibilityRole="tablist">
+        <Pressable accessibilityRole="tab" accessibilityState={{ selected: archiveSection === 'recipes' }} style={[styles.segment, archiveSection === 'recipes' && styles.segmentSelected]} onPress={() => setArchiveSection('recipes')}><Text style={[styles.segmentText, archiveSection === 'recipes' && styles.segmentTextSelected]}>Recipes ({recipes.length})</Text></Pressable>
+        <Pressable accessibilityRole="tab" accessibilityState={{ selected: archiveSection === 'imports' }} style={[styles.segment, archiveSection === 'imports' && styles.segmentSelected]} onPress={() => setArchiveSection('imports')}><Text style={[styles.segmentText, archiveSection === 'imports' && styles.segmentTextSelected]}>Imports ({imports.length})</Text></Pressable>
+      </View>
+
+      {archiveSection === 'recipes' ? recipes.map((recipe) => {
         const isActive = activeRecipeIds.includes(recipe.id)
         return <Pressable key={recipe.id} style={styles.row} onPress={() => toggleRecipe(recipe.id)} accessibilityRole="checkbox" accessibilityState={{ checked: isActive }}><Feather name={isActive ? 'check-circle' : 'archive'} size={18} color={styles.icon.color} /><View style={styles.copy}><Text style={styles.rowTitle}>{recipe.title}</Text><Text style={styles.rowSubtitle}>{isActive ? 'Active on Free' : `Archived · Saved ${formatDate(recipe.createdAt)}`}</Text></View><Text style={styles.action}>{isActive ? 'Remove from Active' : 'Make Active'}</Text></Pressable>
-      })}
+      }) : null}
 
-      <Text style={styles.heading}>Imports ({imports.length})</Text>
-      {imports.map((item) => {
+      {archiveSection === 'imports' ? imports.map((item) => {
         const isActive = activeImportIds.includes(item.id)
         return <Pressable key={item.id} style={styles.row} onPress={() => toggleImport(item.id)} accessibilityRole="checkbox" accessibilityState={{ checked: isActive }}><Feather name={isActive ? 'check-circle' : 'archive'} size={18} color={styles.icon.color} /><View style={styles.copy}><Text style={styles.rowTitle}>{item.title ?? item.fileName}</Text><Text style={styles.rowSubtitle}>{isActive ? `Active on Free · ${formatMegabytes(item.bytes)}` : `Archived · ${formatDate(item.createdAt)} · ${formatMegabytes(item.bytes)}`}</Text></View><Text style={styles.action}>{isActive ? 'Remove from Active' : 'Make Active'}</Text></Pressable>
-      })}
+      }) : null}
 
       {hasChanges ? <Pressable style={styles.saveButton} onPress={() => saveMutation.mutate()} disabled={saveMutation.isPending}><Text style={styles.saveButtonText}>{saveMutation.isPending ? 'Saving…' : 'Save Active Library'}</Text></Pressable> : null}
       <View style={styles.deleteCard}><Text style={styles.explainerTitle}>Need to delete something permanently?</Text><Text style={styles.rowSubtitle}>Cloud Archive does not delete anything. Manage Library is separate and uses permanent deletion to free space on this device.</Text><View style={styles.manageActions}><Pressable onPress={() => router.push('/(auth)/recipes/manage' as never)} accessibilityRole="button"><Text style={styles.manageAction}>Manage recipes</Text></Pressable><Pressable onPress={() => router.push('/(auth)/imports/manage' as never)} accessibilityRole="button"><Text style={styles.manageAction}>Manage imports</Text></Pressable></View></View>
@@ -98,7 +102,8 @@ export default function CloudArchiveRoute() {
 const styles = createThemedStyles((theme) => ({
   content: { gap: theme.spacing.md, paddingTop: theme.spacing.md, paddingBottom: theme.spacing['3xl'] },
   back: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs, minHeight: 44 },
-  title: { ...theme.textVariants.display, color: theme.colors.foreground }, subtitle: { ...theme.textVariants.body, color: theme.colors.mutedForeground }, heading: { ...theme.textVariants.heading, color: theme.colors.foreground, marginTop: theme.spacing.lg },
+  title: { ...theme.textVariants.display, color: theme.colors.foreground }, subtitle: { ...theme.textVariants.body, color: theme.colors.mutedForeground },
+  segmentedControl: { flexDirection: 'row', padding: theme.spacing.xs, borderRadius: theme.radii.full, backgroundColor: theme.colors.secondary }, segment: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: theme.spacing.sm, borderRadius: theme.radii.full }, segmentSelected: { backgroundColor: theme.colors.card }, segmentText: { ...theme.textVariants.label, color: theme.colors.mutedForeground, textAlign: 'center' }, segmentTextSelected: { color: theme.colors.foreground },
   row: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, padding: theme.spacing.md, borderRadius: theme.radii.lg, backgroundColor: theme.colors.card }, explainer: { flexDirection: 'row', gap: theme.spacing.sm, padding: theme.spacing.md, borderRadius: theme.radii.lg, backgroundColor: theme.colors.secondary }, deleteCard: { gap: theme.spacing.sm, padding: theme.spacing.md, borderRadius: theme.radii.lg, backgroundColor: theme.colors.card }, usageCard: { gap: theme.spacing.xs, padding: theme.spacing.md, borderRadius: theme.radii.lg, backgroundColor: theme.colors.card },
   usageText: { ...theme.textVariants.label, color: theme.colors.foreground, fontVariant: ['tabular-nums'] }, icon: { color: theme.colors.accent }, copy: { flex: 1 }, rowTitle: { ...theme.textVariants.label, color: theme.colors.foreground }, rowSubtitle: { ...theme.textVariants.body, color: theme.colors.mutedForeground }, explainerTitle: { ...theme.textVariants.label, color: theme.colors.foreground }, action: { ...theme.textVariants.label, color: theme.colors.accent, textAlign: 'right', maxWidth: 105 }, saveButton: { padding: theme.spacing.lg, borderRadius: theme.radii.full, backgroundColor: theme.colors.accent, alignItems: 'center', marginTop: theme.spacing.md }, saveButtonText: { ...theme.textVariants.label, color: theme.colors.accentForeground }, manageActions: { flexDirection: 'row', gap: theme.spacing.lg }, manageAction: { ...theme.textVariants.label, color: theme.colors.accent },
 }))

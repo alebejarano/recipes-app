@@ -4,6 +4,7 @@ export const fontFamily = {
     medium: 'PlusJakartaSans-Medium',
     semibold: 'PlusJakartaSans-SemiBold',
     bold: 'PlusJakartaSans-Bold',
+    fraunces: 'Fraunces',
 } as const;
 
 export const fontSize = {
