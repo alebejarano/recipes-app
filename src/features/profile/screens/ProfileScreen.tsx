@@ -1,7 +1,7 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useCallback, useContext, useMemo, useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 
 import Screen from '@/components/Screen';
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
@@ -251,6 +251,20 @@ export default function ProfileScreen() {
 
       <SettingsSection title={t('profile.sections.session')} items={sessionItems} />
 
+      {__DEV__ ? (
+        <>
+          <View style={styles.mediumSpace} />
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/(auth)/library-preview' as never)}
+            style={styles.previewLink}
+          >
+            <Text style={styles.previewTitle}>Developer preview</Text>
+            <Text style={styles.previewSubtitle}>Preview downgrade notice and Cloud Archive with sample data</Text>
+          </Pressable>
+        </>
+      ) : null}
+
       <View style={styles.bigSpace} />
     </Screen>
   )
@@ -303,4 +317,13 @@ const styles = createThemedStyles((theme) => ({
     borderColor: theme.colors.border,
     overflow: 'hidden',
   },
+  previewLink: {
+    padding: theme.spacing.md,
+    borderRadius: theme.radii.lg,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  previewTitle: { ...theme.textVariants.label, color: theme.colors.foreground },
+  previewSubtitle: { ...theme.textVariants.body, color: theme.colors.mutedForeground },
 }))

@@ -35,8 +35,7 @@ import RecipeCarousel, { type RecipePreview } from '@/features/home/components/R
 import SectionHeaderRow from '@/features/home/components/SectionHeaderRow';
 import SuccessBanner from '@/features/home/components/SuccessBanner';
 import { useStrategyNotesList } from '@/features/notes/hooks/useStrategyNotes';
-import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments';
-import { useManagedImports } from '@/features/recipes/hooks/useManagedImports';
+import { useRecipeDocuments, useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments';
 import { useLibraryRecipesList } from '@/features/recipes/hooks/useLibraryRecipes';
 import type { RecipeMealTime } from '@/features/recipes/types/mealTimes';
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore';
@@ -331,7 +330,10 @@ export default function HomeScreen({
 
   const recipesQuery = useLibraryRecipesList({ limit: 50 }, resolvedMode);
   const notesQuery = useStrategyNotesList({ limit: 50 }, resolvedMode);
-  const importsQuery = useManagedImports(resolvedMode);
+  // Collections' Imports tab uses this same entitlement-aware document list.
+  // Keep Home's Recent Activity on the identical source so an archived or
+  // stale local import can never appear on one screen but not the other.
+  const importsQuery = useRecipeDocuments(resolvedMode);
   const importsUsageQuery = useRecipeDocumentUsageSummary({ enabled: plan === 'free' });
 
   const hydrateShopping = useShoppingListStore((s) => s.hydrate);
@@ -735,6 +737,7 @@ export default function HomeScreen({
         imports: (importsQuery.data ?? []).map((item) => ({
           ...item,
           title: item.title ?? item.fileName,
+          documentId: item.id,
         })),
         noteFallbackTitle: t('notes.fallbackTitle'),
         importFallbackTitle: t('home.activity.importFallbackTitle'),

@@ -26,7 +26,7 @@ function formatDate(value: string) {
 export default function CloudArchiveRoute() {
   const queryClient = useQueryClient()
   const recipesQuery = useQuery({ queryKey: ['recipes', 'library', 'archive-recipes'], queryFn: listFreeRecipeLibraryMetadata, retry: false })
-  const importsQuery = useQuery({ queryKey: ['recipes', 'library', 'archive-imports'], queryFn: listFreeImportLibraryMetadata, retry: false })
+  const importsQuery = useQuery({ queryKey: ['recipes', 'library', 'free-active-imports'], queryFn: listFreeImportLibraryMetadata, retry: false })
   const [selectedRecipeIds, setSelectedRecipeIds] = useState<string[] | null>(null)
   const [selectedImportIds, setSelectedImportIds] = useState<string[] | null>(null)
   const [isDirty, setIsDirty] = useState(false)

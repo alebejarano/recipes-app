@@ -29,7 +29,7 @@ export function useManagedImports(mode: StorageScreenMode = 'auth') {
   const { user } = useAuth()
   const shouldRestrictCloudCache = mode === 'auth' && isAuthenticated && isLoaded && !isPremium
   const activeImportsQuery = useQuery({
-    queryKey: ['recipes', 'library', 'archive-imports'],
+    queryKey: ['recipes', 'library', 'free-active-imports'],
     queryFn: listFreeImportLibraryMetadata,
     enabled: shouldRestrictCloudCache,
     retry: false,

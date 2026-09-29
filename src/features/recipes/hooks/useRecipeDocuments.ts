@@ -62,7 +62,7 @@ export function useRecipeDocuments(mode: StorageScreenMode = 'auth') {
   const { user } = useAuth()
   const shouldRestrictCloudCache = mode === 'auth' && isAuthenticated && isLoaded && !isPremium
   const activeImportsQuery = useQuery({
-    queryKey: ['recipes', 'library', 'archive-imports'],
+    queryKey: ['recipes', 'library', 'free-active-imports'],
     queryFn: listFreeImportLibraryMetadata,
     enabled: shouldRestrictCloudCache,
     retry: false,
@@ -134,7 +134,7 @@ export function useRecipeDocument(id: string, mode: StorageScreenMode = 'auth') 
   const { user } = useAuth()
   const shouldRestrictCloudCache = mode === 'auth' && isAuthenticated && isLoaded && !isPremium
   const activeImportsQuery = useQuery({
-    queryKey: ['recipes', 'library', 'archive-imports'],
+    queryKey: ['recipes', 'library', 'free-active-imports'],
     queryFn: listFreeImportLibraryMetadata,
     enabled: shouldRestrictCloudCache,
     retry: false,
@@ -186,8 +186,19 @@ export function useRecipeDocumentUsageSummary(options?: {
   const resolvedMode = options?.mode
   const { shouldUseLocalData } = useStorageDataMode(resolvedMode ?? 'auth')
   const useCloudUsage = resolvedMode ? !shouldUseLocalData : strategy.cloudSyncEnabled
+  const shouldUseActiveLibraryUsage =
+    (resolvedMode ?? 'auth') === 'auth' &&
+    strategy.isAuthenticated &&
+    strategy.isLoaded &&
+    !strategy.isPremium
+  const activeImportsQuery = useQuery({
+    queryKey: ['recipes', 'library', 'free-active-imports'],
+    queryFn: listFreeImportLibraryMetadata,
+    enabled: shouldUseActiveLibraryUsage,
+    retry: false,
+  })
 
-  return useQuery({
+  const usageQuery = useQuery({
     queryKey: [...USAGE_KEY, useCloudUsage ? 'cloud' : 'local'],
     queryFn: async () => {
       if (!useCloudUsage) return getRecipeDocumentUsageSummary()
@@ -201,6 +212,20 @@ export function useRecipeDocumentUsageSummary(options?: {
     },
     enabled: options?.enabled,
   })
+
+  const activeImports = activeImportsQuery.data?.filter((item) => item.isActive)
+  const activeLibraryUsage = activeImports
+    ? {
+        totalCount: activeImports.length,
+        totalBytes: activeImports.reduce((total, item) => total + item.bytes, 0),
+      }
+    : undefined
+
+  return {
+    ...usageQuery,
+    data: activeLibraryUsage ?? usageQuery.data,
+    isLoading: usageQuery.isLoading || (shouldUseActiveLibraryUsage && activeImportsQuery.isLoading),
+  }
 }
 
 export function useAddRecipeDocument() {

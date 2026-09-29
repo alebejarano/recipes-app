@@ -43,7 +43,7 @@ import {
 } from '@/features/collections/utils/collections'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
 import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments'
-import { listFreeImportArchiveMetadata } from '@/features/recipes/api/freeArchiveRepo'
+import { listFreeImportLibraryMetadata } from '@/features/recipes/api/freeArchiveRepo'
 import { useLibraryRecipesList } from '@/features/recipes/hooks/useLibraryRecipes'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
 import { FREE_PLAN_MAX_IMPORT_TOTAL_BYTES } from '@/features/subscription/constants/limits'
@@ -93,8 +93,8 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   const recipesQuery = useLibraryRecipesList({ limit: 200 }, resolvedMode)
   const archiveQuery = useLibraryRecipesList({ limit: 1, includeArchive: true }, resolvedMode)
   const archiveImportsQuery = useQuery({
-    queryKey: ['recipes', 'library', 'archive-imports'],
-    queryFn: listFreeImportArchiveMetadata,
+    queryKey: ['recipes', 'library', 'free-active-imports'],
+    queryFn: listFreeImportLibraryMetadata,
     enabled: resolvedMode === 'auth',
     retry: false,
   })
@@ -392,7 +392,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
       ) : null}
 
       {segment === 'recipes' && (
-        archiveQuery.data?.some((item) => item.access === 'archived') || (archiveImportsQuery.data?.length ?? 0) > 0
+        archiveQuery.data?.some((item) => item.access === 'archived') || archiveImportsQuery.data?.some((item) => !item.isActive)
       ) ? (
         <Pressable
           style={styles.archiveLink}

@@ -6,8 +6,7 @@ import { router } from 'expo-router';
 
 import HomeScreen from '@/features/home/screens/HomeScreen';
 import { useStrategyNotesList } from '@/features/notes/hooks/useStrategyNotes';
-import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments';
-import { useManagedImports } from '@/features/recipes/hooks/useManagedImports';
+import { useRecipeDocuments, useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments';
 import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes';
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode';
 
@@ -15,6 +14,7 @@ jest.mock('@expo/vector-icons', () => ({ Feather: () => null, Ionicons: () => nu
 jest.mock('@tanstack/react-query', () => ({
     ...jest.requireActual('@tanstack/react-query'),
     useQueryClient: () => ({ invalidateQueries: jest.fn() }),
+    useQuery: () => ({ data: undefined, isLoading: false, isError: false, error: null, refetch: jest.fn() }),
 }));
 jest.mock('expo-image', () => ({ Image: { prefetch: jest.fn() } }));
 jest.mock('expo-secure-store', () => ({ getItemAsync: jest.fn().mockResolvedValue(null), setItemAsync: jest.fn() }));
@@ -77,8 +77,7 @@ jest.mock('@/localization', () => ({ useTranslation: () => ({ t: (key: string) =
 jest.mock('@/localization/i18n', () => ({ i18n: { t: (key: string) => key } }));
 jest.mock('@/features/recipes/hooks/useStrategyRecipes', () => ({ useStrategyRecipesList: jest.fn() }));
 jest.mock('@/features/notes/hooks/useStrategyNotes', () => ({ useStrategyNotesList: jest.fn() }));
-jest.mock('@/features/recipes/hooks/useManagedImports', () => ({ useManagedImports: jest.fn() }));
-jest.mock('@/features/recipes/hooks/useRecipeDocuments', () => ({ useRecipeDocumentUsageSummary: jest.fn() }));
+jest.mock('@/features/recipes/hooks/useRecipeDocuments', () => ({ useRecipeDocuments: jest.fn(), useRecipeDocumentUsageSummary: jest.fn() }));
 jest.mock('@/features/storage/hooks/useStorageDataMode', () => ({ useStorageDataMode: jest.fn() }));
 jest.mock('@/features/shopping-list/store/useShoppingListStore', () => ({
     useShoppingListStore: (selector: (state: Record<string, unknown>) => unknown) => selector({
@@ -88,7 +87,7 @@ jest.mock('@/features/shopping-list/store/useShoppingListStore', () => ({
 
 const mockRecipes = useStrategyRecipesList as jest.Mock;
 const mockNotes = useStrategyNotesList as jest.Mock;
-const mockImports = useManagedImports as jest.Mock;
+const mockImports = useRecipeDocuments as jest.Mock;
 const mockImportUsage = useRecipeDocumentUsageSummary as jest.Mock;
 const mockStorageMode = useStorageDataMode as jest.Mock;
 const mockAsyncStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
@@ -199,7 +198,7 @@ describe('<HomeScreen /> state rendering', () => {
     });
 
     it('shows and persists dismissal of the public local-storage banner', async () => {
-        mockRecipes.mockReturnValue({ data: [recipe('1')], isLoading: false });
+        mockRecipes.mockReturnValue({ data: Array.from({ length: 20 }, (_, index) => recipe(String(index + 1))), isLoading: false });
 
         const { getAllByLabelText, getByText, queryByText } = await render(<HomeScreen mode="public" />);
         await waitFor(() => expect(getByText('home.banners.localOnlyTitle')).toBeVisible());
@@ -210,7 +209,7 @@ describe('<HomeScreen /> state rendering', () => {
         });
 
         await waitFor(() => expect(queryByText('home.banners.localOnlyTitle')).toBeNull());
-        expect(mockAsyncStorage.setItem).toHaveBeenCalledWith('storage_banner_dismissed', 'true');
+        expect(mockAsyncStorage.setItem).toHaveBeenCalledWith('storage_banner_dismissed:guest', 'true');
     });
 
     it('prioritizes the public storage-risk banner when a device marker changes', async () => {

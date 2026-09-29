@@ -46,7 +46,11 @@ const config: ExpoConfig & { newArchEnabled: boolean } = {
       monochromeImage: './assets/images/android-icon-monochrome.png',
     },
     predictiveBackGestureEnabled: false,
-    package: 'studio.alpinova.dropsauce',
+    // Keep the dev install separate from the Play Store app so device testing
+    // cannot replace the production install or its local data.
+    package: appEnv === 'development'
+      ? 'studio.alpinova.dropsauce.dev'
+      : 'studio.alpinova.dropsauce',
   },
   web: {
     output: 'static',
