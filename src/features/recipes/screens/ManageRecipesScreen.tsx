@@ -41,7 +41,9 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
 
   const insets = useSafeAreaInsets()
   const bottomPadding = insets.bottom + theme.spacing.lg
-  const recipesQuery = useLibraryRecipesList({ limit: 200 }, resolvedMode)
+  // Manage Recipes permanently removes on-device records, so it must include
+  // every local recipe—not only the subset active in the Free cloud library.
+  const recipesQuery = useLibraryRecipesList({ limit: 200, restrictToActiveLibrary: false }, resolvedMode)
   const deleteRecipeMutation = useStrategyDeleteRecipe(resolvedMode)
 
   const [sortMode, setSortMode] = useState<SortMode>('oldest')
@@ -143,6 +145,12 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
     setSelectedRecipeIds((current) =>
       current.includes(id) ? current.filter((value) => value !== id) : [...current, id]
     )
+  }
+
+  const handleRowLongPress = (id: string) => {
+    if (isBulkDeleting || isSelectionMode) return
+    setIsSelectionMode(true)
+    setSelectedRecipeIds([id])
   }
 
   const handleSelectAll = () => {
@@ -371,6 +379,7 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
                 <View style={[styles.rowCard, isSelected && styles.rowCardSelected]}>
                   <Pressable
                     onPress={() => (isSelectionMode ? toggleSelect(item.id) : openRecipe(item.id))}
+                    onLongPress={() => handleRowLongPress(item.id)}
                     style={styles.rowPress}
                     accessibilityRole={isSelectionMode ? 'checkbox' : 'button'}
                     accessibilityState={isSelectionMode ? { checked: isSelected } : undefined}
@@ -398,16 +407,6 @@ export default function ManageRecipesScreen({ mode }: ManageRecipesScreenProps) 
                     </View>
                   </Pressable>
 
-                  {!isSelectionMode ? (
-                    <Pressable
-                      onPress={() => openRecipe(item.id)}
-                      style={styles.openButton}
-                      accessibilityRole="button"
-                      accessibilityLabel={t('recipes.manage.openItemA11y', { title: item.title })}
-                    >
-                      <Text style={styles.openButtonText}>{t('recipes.manage.open')}</Text>
-                    </Pressable>
-                  ) : null}
                 </View>
               )
             }}
@@ -647,20 +646,6 @@ const styles = createThemedStyles((theme) => ({
     marginTop: theme.spacing.xxs,
     ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
-  },
-  openButton: {
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.radii.full,
-    backgroundColor: theme.colors.secondary,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  openButtonText: {
-    fontFamily: theme.fontFamily.medium,
-    fontSize: theme.fontSize.xs,
-    lineHeight: theme.lineHeight.xs,
-    color: theme.colors.secondaryForeground,
   },
   bulkBar: {
     marginTop: theme.spacing.md,

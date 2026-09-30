@@ -90,6 +90,11 @@ function DowngradeGate() {
   const { user } = useAuth()
   const router = useRouter()
   const segments = useSegments()
+  // The notice is a destination, not a navigation lock. Once it has brought the
+  // customer here for this downgrade event, its CTAs must be allowed to navigate
+  // without the gate immediately replacing their destination with the notice.
+  const presentedNoticeRef = useRef<string | null>(null)
+
   useEffect(() => {
     if (!user?.id || (segments as readonly string[]).includes('downgrade')) return
     void supabase.from('user_entitlements')
@@ -99,6 +104,9 @@ function DowngradeGate() {
         if (!data?.legacy_archive_enabled || !data.legacy_archive_started_at) return
         const key = `subscription:legacy-archive-ack:${user.id}`
         if (await AsyncStorage.getItem(key) === data.legacy_archive_started_at) return
+        const noticeId = `${user.id}:${data.legacy_archive_started_at}`
+        if (presentedNoticeRef.current === noticeId) return
+        presentedNoticeRef.current = noticeId
         router.replace('/(auth)/downgrade' as never)
       })
   }, [router, segments, user?.id])

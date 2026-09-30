@@ -91,13 +91,17 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   const [newFolderName, setNewFolderName] = useState('')
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
   const recipesQuery = useLibraryRecipesList({ limit: 200 }, resolvedMode)
-  const archiveQuery = useLibraryRecipesList({ limit: 1, includeArchive: true }, resolvedMode)
+  const archiveQuery = useLibraryRecipesList({ includeArchive: true }, resolvedMode)
   const archiveImportsQuery = useQuery({
     queryKey: ['recipes', 'library', 'free-active-imports'],
     queryFn: listFreeImportLibraryMetadata,
     enabled: resolvedMode === 'auth',
     retry: false,
   })
+  const hasArchivedLibrary = Boolean(
+    archiveQuery.data?.some((item) => item.access === 'archived') ||
+    archiveImportsQuery.data?.some((item) => !item.isActive)
+  )
   const storageUsageQuery = useRecipeDocumentUsageSummary({ enabled: plan !== 'premium' })
   const foldersQuery = useStrategyFoldersList(resolvedMode)
   const createFolderMutation = useStrategyCreateFolder(resolvedMode)
@@ -391,23 +395,6 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
         <RecipeSegmentedTabs value={recipeSegment} onChange={setRecipeSegment} />
       ) : null}
 
-      {segment === 'recipes' && (
-        archiveQuery.data?.some((item) => item.access === 'archived') || archiveImportsQuery.data?.some((item) => !item.isActive)
-      ) ? (
-        <Pressable
-          style={styles.archiveLink}
-          onPress={() => router.push('/(auth)/archive' as any)}
-          accessibilityRole="button"
-        >
-          <Feather name="cloud" size={18} color={styles.archiveIcon.color} />
-          <View style={styles.archiveCopy}>
-            <Text style={styles.archiveTitle}>Cloud Archive</Text>
-            <Text style={styles.archiveSubtitle}>Manage what stays Active on Free. Archived items remain safe.</Text>
-          </View>
-          <Feather name="chevron-right" size={18} color={styles.archiveIcon.color} />
-        </Pressable>
-      ) : null}
-
       {segment === 'recipes' && recipeSegment === 'documents' && (showDocSuccess || showDocQueued) ? (
         <View style={styles.successBanner} accessibilityRole="alert">
           <View style={styles.successContent}>
@@ -485,30 +472,46 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
               <Text style={styles.loadingText}>{t('collections.detail.loading')}</Text>
             </View>
           ) : recipeData.length === 0 ? (
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIcon}>
-                <Feather name="folder" size={22} color={theme.colors.mutedForeground} />
+            <>
+              <View style={styles.emptyState}>
+                <View style={styles.emptyIcon}>
+                  <Feather name="folder" size={22} color={theme.colors.mutedForeground} />
+                </View>
+                <Text style={styles.emptyTitle}>{t('collections.emptyRecipesTitle')}</Text>
+                <Text style={styles.emptyBody}>
+                  {t('collections.emptyRecipesBody')}
+                </Text>
+                <Pressable
+                  onPress={() =>
+                    router.push(
+                      isPublic
+                        ? '/(public)/recipes/create'
+                        : '/(auth)/recipes/create'
+                    )
+                  }
+                  style={styles.emptyCta}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('collections.createFirstRecipe')}
+                >
+                  <Feather name="plus" size={18} color={theme.colors.primaryForeground} />
+                  <Text style={styles.emptyCtaText}>{t('collections.createFirstRecipe')}</Text>
+                </Pressable>
               </View>
-              <Text style={styles.emptyTitle}>{t('collections.emptyRecipesTitle')}</Text>
-              <Text style={styles.emptyBody}>
-                {t('collections.emptyRecipesBody')}
-              </Text>
-              <Pressable
-                onPress={() =>
-                  router.push(
-                    isPublic
-                      ? '/(public)/recipes/create'
-                      : '/(auth)/recipes/create'
-                  )
-                }
-                style={styles.emptyCta}
-                accessibilityRole="button"
-                accessibilityLabel={t('collections.createFirstRecipe')}
-              >
-                <Feather name="plus" size={18} color={theme.colors.primaryForeground} />
-                <Text style={styles.emptyCtaText}>{t('collections.createFirstRecipe')}</Text>
-              </Pressable>
-            </View>
+              {hasArchivedLibrary ? (
+                <Pressable
+                  style={styles.archiveLink}
+                  onPress={() => router.push('/(auth)/archive' as never)}
+                  accessibilityRole="button"
+                >
+                  <Feather name="cloud" size={18} color={styles.archiveIcon.color} />
+                  <View style={styles.archiveCopy}>
+                    <Text style={styles.archiveTitle}>Cloud Archive</Text>
+                    <Text style={styles.archiveSubtitle}>Manage what stays Active on Free. Archived items remain safe.</Text>
+                  </View>
+                  <Feather name="chevron-right" size={18} color={styles.archiveIcon.color} />
+                </Pressable>
+              ) : null}
+            </>
           ) : (
             <FlatList
               data={collections}
@@ -517,6 +520,22 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
               columnWrapperStyle={styles.row}
               contentContainerStyle={[styles.grid, { paddingBottom: bottomPadding }]}
               showsVerticalScrollIndicator={false}
+              ListFooterComponent={
+                hasArchivedLibrary ? (
+                  <Pressable
+                    style={styles.archiveLink}
+                    onPress={() => router.push('/(auth)/archive' as never)}
+                    accessibilityRole="button"
+                  >
+                    <Feather name="cloud" size={18} color={styles.archiveIcon.color} />
+                    <View style={styles.archiveCopy}>
+                      <Text style={styles.archiveTitle}>Cloud Archive</Text>
+                      <Text style={styles.archiveSubtitle}>Manage what stays Active on Free. Archived items remain safe.</Text>
+                    </View>
+                    <Feather name="chevron-right" size={18} color={styles.archiveIcon.color} />
+                  </Pressable>
+                ) : null
+              }
               renderItem={({ item }) => {
                 if (item.kind === 'new')
                   return <NewCollectionTile onPress={() => setIsCreateFolderOpen(true)} />
@@ -844,6 +863,7 @@ const styles = createThemedStyles((theme) => ({
     alignItems: 'center',
     gap: theme.spacing.sm,
     marginHorizontal: theme.spacing.lg,
+    marginTop: theme.spacing.md,
     padding: theme.spacing.md,
     borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.accent10,

@@ -21,6 +21,7 @@ type RecipesListParams = {
     limit?: number
     search?: string
     includeArchive?: boolean
+    restrictToActiveLibrary?: boolean
 }
 
 function matchesSearch(recipe: Recipe, search: string | undefined) {
@@ -46,17 +47,21 @@ export function useLibraryRecipesList(
     const { user } = useAuth()
     const { isAuthenticated, isPremium, isLoaded } = useStorageStrategy()
     const activeQuery = useStrategyRecipesList(params, mode)
+    const canAccessFreeArchive = mode === 'auth' && isAuthenticated && isLoaded && !isPremium
+    const needsFreeArchiveMetadata =
+        params?.includeArchive || params?.restrictToActiveLibrary !== false
     const archiveQuery = useQuery({
         queryKey: ['recipes', 'library', 'archive', user?.id ?? 'guest'],
         queryFn: listFreeRecipeLibraryMetadata,
         // This request establishes the server-authoritative Active Library for
         // former Premium members. Never-Premium users receive a rejected RPC,
         // which is intentionally treated as an empty archive below.
-        enabled: mode === 'auth' && isAuthenticated && isLoaded && !isPremium,
+        enabled: canAccessFreeArchive && needsFreeArchiveMetadata,
         retry: false,
     })
 
-    const shouldRestrictCloudCache = mode === 'auth' && isAuthenticated && isLoaded && !isPremium
+    const shouldRestrictCloudCache =
+        canAccessFreeArchive && params?.restrictToActiveLibrary !== false
     const activeCloudRecipeIds = new Set(
         (archiveQuery.data ?? []).filter((recipe) => recipe.isActive).map((recipe) => recipe.id)
     )

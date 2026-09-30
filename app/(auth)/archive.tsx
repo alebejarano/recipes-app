@@ -30,35 +30,48 @@ export default function CloudArchiveRoute() {
   const [selectedRecipeIds, setSelectedRecipeIds] = useState<string[] | null>(null)
   const [selectedImportIds, setSelectedImportIds] = useState<string[] | null>(null)
   const [archiveSection, setArchiveSection] = useState<'recipes' | 'imports'>('recipes')
-  const [isDirty, setIsDirty] = useState(false)
   const recipes = useMemo(() => recipesQuery.data ?? [], [recipesQuery.data])
   const imports = useMemo(() => importsQuery.data ?? [], [importsQuery.data])
   const activeRecipeIds = selectedRecipeIds ?? recipes.filter((item) => item.isActive).map((item) => item.id)
   const activeImportIds = selectedImportIds ?? imports.filter((item) => item.isActive).map((item) => item.id)
   const activeImportBytes = useMemo(() => imports.filter((item) => activeImportIds.includes(item.id)).reduce((total, item) => total + item.bytes, 0), [activeImportIds, imports])
-  const hasChanges = isDirty
 
-  const saveMutation = useMutation({
-    mutationFn: async () => { await Promise.all([setFreeActiveRecipeIds(activeRecipeIds), setFreeActiveImportIds(activeImportIds)]) },
+  const saveRecipeSlotsMutation = useMutation({
+    mutationFn: setFreeActiveRecipeIds,
     onSuccess: async () => {
-      setSelectedRecipeIds(null)
-      setSelectedImportIds(null)
-      setIsDirty(false)
       await queryClient.invalidateQueries({ queryKey: ['recipes', 'library'] })
+      setSelectedRecipeIds(null)
     },
-    onError: (error) => Alert.alert('Could not save Active Library', error instanceof Error ? error.message : 'Please try again.'),
+    onError: (error) => {
+      setSelectedRecipeIds(null)
+      Alert.alert('Could not update Active Library', error instanceof Error ? error.message : 'Please try again.')
+    },
+  })
+  const saveImportSlotsMutation = useMutation({
+    mutationFn: setFreeActiveImportIds,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['recipes', 'library'] })
+      setSelectedImportIds(null)
+    },
+    onError: (error) => {
+      setSelectedImportIds(null)
+      Alert.alert('Could not update Active Library', error instanceof Error ? error.message : 'Please try again.')
+    },
   })
 
   const toggleRecipe = (id: string) => {
+    if (saveRecipeSlotsMutation.isPending) return
     const isActive = activeRecipeIds.includes(id)
     if (!isActive && activeRecipeIds.length >= FREE_PLAN_MAX_RECIPES) {
       Alert.alert('Active Library is full', 'Free includes up to 100 active recipes. Remove another recipe from Active first.')
       return
     }
-    setIsDirty(true)
-    setSelectedRecipeIds(isActive ? activeRecipeIds.filter((value) => value !== id) : [...activeRecipeIds, id])
+    const nextActiveRecipeIds = isActive ? activeRecipeIds.filter((value) => value !== id) : [...activeRecipeIds, id]
+    setSelectedRecipeIds(nextActiveRecipeIds)
+    saveRecipeSlotsMutation.mutate(nextActiveRecipeIds)
   }
   const toggleImport = (id: string) => {
+    if (saveImportSlotsMutation.isPending) return
     const isActive = activeImportIds.includes(id)
     const item = imports.find((entry) => entry.id === id)
     if (!item) return
@@ -66,8 +79,9 @@ export default function CloudArchiveRoute() {
       Alert.alert('Active Library is full', 'Free includes up to 50 MB of active imports. Remove another import from Active first.')
       return
     }
-    setIsDirty(true)
-    setSelectedImportIds(isActive ? activeImportIds.filter((value) => value !== id) : [...activeImportIds, id])
+    const nextActiveImportIds = isActive ? activeImportIds.filter((value) => value !== id) : [...activeImportIds, id]
+    setSelectedImportIds(nextActiveImportIds)
+    saveImportSlotsMutation.mutate(nextActiveImportIds)
   }
 
   return (
@@ -85,15 +99,14 @@ export default function CloudArchiveRoute() {
 
       {archiveSection === 'recipes' ? recipes.map((recipe) => {
         const isActive = activeRecipeIds.includes(recipe.id)
-        return <Pressable key={recipe.id} style={styles.row} onPress={() => toggleRecipe(recipe.id)} accessibilityRole="checkbox" accessibilityState={{ checked: isActive }}><Feather name={isActive ? 'check-circle' : 'archive'} size={18} color={styles.icon.color} /><View style={styles.copy}><Text style={styles.rowTitle}>{recipe.title}</Text><Text style={styles.rowSubtitle}>{isActive ? 'Active on Free' : `Archived · Saved ${formatDate(recipe.createdAt)}`}</Text></View><Text style={styles.action}>{isActive ? 'Remove from Active' : 'Make Active'}</Text></Pressable>
+        return <Pressable key={recipe.id} style={styles.row} onPress={() => toggleRecipe(recipe.id)} disabled={saveRecipeSlotsMutation.isPending} accessibilityRole="checkbox" accessibilityState={{ checked: isActive, disabled: saveRecipeSlotsMutation.isPending }}><Feather name={isActive ? 'check-circle' : 'archive'} size={18} color={styles.icon.color} /><View style={styles.copy}><Text style={styles.rowTitle}>{recipe.title}</Text><Text style={styles.rowSubtitle}>{isActive ? 'Active on Free' : `Archived · Saved ${formatDate(recipe.createdAt)}`}</Text></View><Text style={styles.action}>{saveRecipeSlotsMutation.isPending ? 'Saving…' : isActive ? 'Remove from Active' : 'Make Active'}</Text></Pressable>
       }) : null}
 
       {archiveSection === 'imports' ? imports.map((item) => {
         const isActive = activeImportIds.includes(item.id)
-        return <Pressable key={item.id} style={styles.row} onPress={() => toggleImport(item.id)} accessibilityRole="checkbox" accessibilityState={{ checked: isActive }}><Feather name={isActive ? 'check-circle' : 'archive'} size={18} color={styles.icon.color} /><View style={styles.copy}><Text style={styles.rowTitle}>{item.title ?? item.fileName}</Text><Text style={styles.rowSubtitle}>{isActive ? `Active on Free · ${formatMegabytes(item.bytes)}` : `Archived · ${formatDate(item.createdAt)} · ${formatMegabytes(item.bytes)}`}</Text></View><Text style={styles.action}>{isActive ? 'Remove from Active' : 'Make Active'}</Text></Pressable>
+        return <Pressable key={item.id} style={styles.row} onPress={() => toggleImport(item.id)} disabled={saveImportSlotsMutation.isPending} accessibilityRole="checkbox" accessibilityState={{ checked: isActive, disabled: saveImportSlotsMutation.isPending }}><Feather name={isActive ? 'check-circle' : 'archive'} size={18} color={styles.icon.color} /><View style={styles.copy}><Text style={styles.rowTitle}>{item.title ?? item.fileName}</Text><Text style={styles.rowSubtitle}>{isActive ? `Active on Free · ${formatMegabytes(item.bytes)}` : `Archived · ${formatDate(item.createdAt)} · ${formatMegabytes(item.bytes)}`}</Text></View><Text style={styles.action}>{saveImportSlotsMutation.isPending ? 'Saving…' : isActive ? 'Remove from Active' : 'Make Active'}</Text></Pressable>
       }) : null}
 
-      {hasChanges ? <Pressable style={styles.saveButton} onPress={() => saveMutation.mutate()} disabled={saveMutation.isPending}><Text style={styles.saveButtonText}>{saveMutation.isPending ? 'Saving…' : 'Save Active Library'}</Text></Pressable> : null}
       <View style={styles.deleteCard}><Text style={styles.explainerTitle}>Need to delete something permanently?</Text><Text style={styles.rowSubtitle}>Cloud Archive does not delete anything. Manage Library is separate and uses permanent deletion to free space on this device.</Text><View style={styles.manageActions}><Pressable onPress={() => router.push('/(auth)/recipes/manage' as never)} accessibilityRole="button"><Text style={styles.manageAction}>Manage recipes</Text></Pressable><Pressable onPress={() => router.push('/(auth)/imports/manage' as never)} accessibilityRole="button"><Text style={styles.manageAction}>Manage imports</Text></Pressable></View></View>
     </Screen>
   )
@@ -105,5 +118,5 @@ const styles = createThemedStyles((theme) => ({
   title: { ...theme.textVariants.display, color: theme.colors.foreground }, subtitle: { ...theme.textVariants.body, color: theme.colors.mutedForeground },
   segmentedControl: { flexDirection: 'row', padding: theme.spacing.xs, borderRadius: theme.radii.full, backgroundColor: theme.colors.secondary }, segment: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: theme.spacing.sm, borderRadius: theme.radii.full }, segmentSelected: { backgroundColor: theme.colors.card }, segmentText: { ...theme.textVariants.label, color: theme.colors.mutedForeground, textAlign: 'center' }, segmentTextSelected: { color: theme.colors.foreground },
   row: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, padding: theme.spacing.md, borderRadius: theme.radii.lg, backgroundColor: theme.colors.card }, explainer: { flexDirection: 'row', gap: theme.spacing.sm, padding: theme.spacing.md, borderRadius: theme.radii.lg, backgroundColor: theme.colors.secondary }, deleteCard: { gap: theme.spacing.sm, padding: theme.spacing.md, borderRadius: theme.radii.lg, backgroundColor: theme.colors.card }, usageCard: { gap: theme.spacing.xs, padding: theme.spacing.md, borderRadius: theme.radii.lg, backgroundColor: theme.colors.card },
-  usageText: { ...theme.textVariants.label, color: theme.colors.foreground, fontVariant: ['tabular-nums'] }, icon: { color: theme.colors.accent }, copy: { flex: 1 }, rowTitle: { ...theme.textVariants.label, color: theme.colors.foreground }, rowSubtitle: { ...theme.textVariants.body, color: theme.colors.mutedForeground }, explainerTitle: { ...theme.textVariants.label, color: theme.colors.foreground }, action: { ...theme.textVariants.label, color: theme.colors.accent, textAlign: 'right', maxWidth: 105 }, saveButton: { padding: theme.spacing.lg, borderRadius: theme.radii.full, backgroundColor: theme.colors.accent, alignItems: 'center', marginTop: theme.spacing.md }, saveButtonText: { ...theme.textVariants.label, color: theme.colors.accentForeground }, manageActions: { flexDirection: 'row', gap: theme.spacing.lg }, manageAction: { ...theme.textVariants.label, color: theme.colors.accent },
+  usageText: { ...theme.textVariants.label, color: theme.colors.foreground, fontVariant: ['tabular-nums'] }, icon: { color: theme.colors.accent }, copy: { flex: 1 }, rowTitle: { ...theme.textVariants.label, color: theme.colors.foreground }, rowSubtitle: { ...theme.textVariants.body, color: theme.colors.mutedForeground }, explainerTitle: { ...theme.textVariants.label, color: theme.colors.foreground }, action: { ...theme.textVariants.label, color: theme.colors.accent, textAlign: 'right', maxWidth: 105 }, manageActions: { flexDirection: 'row', gap: theme.spacing.lg }, manageAction: { ...theme.textVariants.label, color: theme.colors.accent },
 }))
