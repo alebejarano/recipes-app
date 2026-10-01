@@ -14,6 +14,10 @@ import { getErrorCategory, logOperationalEvent } from '@/lib/productionLogger'
 let syncInFlight: Promise<void> | null = null
 const PLAN_KEY_PREFIX = 'subscription:plan:user:'
 
+async function hasPremiumSyncAccess(userId: string) {
+  return (await AsyncStorage.getItem(`${PLAN_KEY_PREFIX}${userId}`)) === 'premium'
+}
+
 function toUpdateInput(row: LocalNoteSyncRow) {
   return {
     title: row.title ?? '',
@@ -57,8 +61,7 @@ async function runNoteSync() {
 
   const userId = data.session?.user?.id
   if (!userId) return
-  const plan = await AsyncStorage.getItem(`${PLAN_KEY_PREFIX}${userId}`)
-  if (plan !== 'premium') return
+  if (!(await hasPremiumSyncAccess(userId))) return
 
   const dirtyRows = await listDirtyLocalNoteRowsForSync()
   let noteSyncSuccessCount = 0
@@ -72,6 +75,7 @@ async function runNoteSync() {
   }
 
   for (const row of dirtyRows) {
+    if (!(await hasPremiumSyncAccess(userId))) return
     if (row.ownerUserId !== userId) continue
 
     try {
@@ -134,6 +138,9 @@ async function runNoteSync() {
 
   try {
     const cloudNotes = await listNotes({ limit: 1000 })
+    // A cancellation may land while this request is in flight. A restricted
+    // Free response is not an authoritative deletion list for local notes.
+    if (!(await hasPremiumSyncAccess(userId))) return
     await mergeCloudNotesIntoLocal({
       ownerUserId: userId,
       cloudNotes,

@@ -61,7 +61,7 @@ export const darkColors = {
     card: 'hsl(30 15% 12%)',
     cardForeground: 'hsl(45 20% 92%)',
 
-    primary: 'hsl(142 25% 55%)',
+    primary: 'hsl(142 25% 66%)',
     primaryForeground: 'hsl(30 15% 10%)',
     primarySoft: 'hsl(142 15% 20%)',
     primaryDark: 'hsl(142 30% 65%)',
@@ -73,7 +73,7 @@ export const darkColors = {
     secondaryForeground: 'hsl(45 20% 92%)',
 
     muted: 'hsl(30 15% 18%)',
-    mutedForeground: 'hsl(45 15% 60%)',
+    mutedForeground: 'hsl(47 15% 76%)',
 
     accent: 'hsl(18 45% 55%)',
     accentLight: 'hsl(25 45% 22%)',
@@ -82,7 +82,7 @@ export const darkColors = {
 
     destructive: 'hsl(0 55% 45%)',
     destructiveForeground: 'hsl(45 30% 98%)',
-    danger: 'hsl(0 75% 68%)',
+    danger: 'hsl(0 89% 72%)',
 
     border: 'hsl(30 15% 22%)',
     input: 'hsl(30 15% 22%)',

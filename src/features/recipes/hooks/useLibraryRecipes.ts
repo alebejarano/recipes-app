@@ -7,6 +7,7 @@ import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyReci
 import type { LocalRecipe } from '@/features/recipes/storage/localRecipesStorage'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 import type { StorageScreenMode } from '@/features/storage/hooks/useStorageDataMode'
+import { selectFreeLocalRecipes } from '@/features/recipes/utils/freeLibrary'
 
 export type RecipeAccess = 'active' | 'archived'
 
@@ -48,8 +49,9 @@ export function useLibraryRecipesList(
     const { isAuthenticated, isPremium, isLoaded } = useStorageStrategy()
     const activeQuery = useStrategyRecipesList(params, mode)
     const canAccessFreeArchive = mode === 'auth' && isAuthenticated && isLoaded && !isPremium
-    const needsFreeArchiveMetadata =
-        params?.includeArchive || params?.restrictToActiveLibrary !== false
+    // Active Free access is entirely device-local. Cloud metadata is only
+    // needed when the user explicitly opens the archived-library view.
+    const needsFreeArchiveMetadata = Boolean(params?.includeArchive)
     const archiveQuery = useQuery({
         queryKey: ['recipes', 'library', 'archive', user?.id ?? 'guest'],
         queryFn: listFreeRecipeLibraryMetadata,
@@ -62,17 +64,12 @@ export function useLibraryRecipesList(
 
     const shouldRestrictCloudCache =
         canAccessFreeArchive && params?.restrictToActiveLibrary !== false
-    const activeCloudRecipeIds = new Set(
-        (archiveQuery.data ?? []).filter((recipe) => recipe.isActive).map((recipe) => recipe.id)
-    )
-    const visibleActiveRecipes = (activeQuery.data ?? []).filter((recipe) => {
-        if (!shouldRestrictCloudCache) return true
-        // Local-only Free recipes remain available. Cached Premium recipes are
-        // limited to the snapshot created at downgrade; cloud-only recipes are
-        // never returned by this local-first query.
-        const cloudId = 'cloudId' in recipe ? recipe.cloudId : null
-        return !cloudId || activeCloudRecipeIds.has(cloudId)
-    })
+    const visibleActiveRecipes = shouldRestrictCloudCache
+        // A downgrade must not make locally cached recipes disappear while an
+        // archive RPC is loading, unavailable, or still being provisioned.
+        // The Free subset is chosen on the device, so it also works offline.
+        ? selectFreeLocalRecipes(activeQuery.data ?? [])
+        : activeQuery.data ?? []
 
     const active = visibleActiveRecipes.map<LibraryRecipe>((recipe) => ({
         recipe: normalizeActiveRecipe(recipe),
@@ -97,11 +94,14 @@ export function useLibraryRecipesList(
         // Archive access is optional for never-Premium users. The RPC rejects
         // those users by design, which must not turn their local library into
         // an error state.
-        isLoading: activeQuery.isLoading || (shouldRestrictCloudCache && archiveQuery.isLoading),
+        isLoading: activeQuery.isLoading || (Boolean(params?.includeArchive) && archiveQuery.isLoading),
         isError: activeQuery.isError,
         error: activeQuery.error,
         refetch: async () => {
-            await Promise.all([activeQuery.refetch(), archiveQuery.refetch()])
+            await Promise.all([
+                activeQuery.refetch(),
+                ...(needsFreeArchiveMetadata ? [archiveQuery.refetch()] : []),
+            ])
         },
         // Fail closed for cached cloud content if the Active Library request
         // is unavailable. Local-only Free recipes remain visible.

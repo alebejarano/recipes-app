@@ -7,10 +7,12 @@ import { Pressable, Text, View } from 'react-native'
 import Screen from '@/components/Screen'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 
 export default function DowngradeScreen() {
   const { user } = useAuth()
+  const { t } = useTranslation()
   const [event, setEvent] = useState<string | null>(null)
 
   useEffect(() => {
@@ -39,38 +41,34 @@ export default function DowngradeScreen() {
           onPress={() => void continueFree()}
           style={styles.closeButton}
           accessibilityRole="button"
-          accessibilityLabel="Close downgrade notice"
+          accessibilityLabel={t('subscription.downgradeNotice.closeA11y')}
           hitSlop={8}
         >
           <Feather name="x" size={22} color={styles.closeIcon.color} />
         </Pressable>
       </View>
 
-      <Text style={styles.title}>Your library is safe</Text>
-      <Text style={styles.body}>
-        Free includes up to 100 recipes and 50 MB of imports already stored on this device. Your remaining Premium library stays safely archived in the cloud.
-      </Text>
+      <Text style={styles.title}>{t('subscription.downgradeNotice.title')}</Text>
+      <Text style={styles.body}>{t('subscription.downgradeNotice.intro')}</Text>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>What happens now</Text>
-        <Text style={styles.body}>
-          Items already on this device remain available within the Free limits. To restore your complete library on any device, upgrade to Premium. Manage Library permanently deletes local items to free device space.
-        </Text>
+        <Text style={styles.cardTitle}>{t('subscription.downgradeNotice.cardTitle')}</Text>
+        <Text style={styles.body}>{t('subscription.downgradeNotice.cardBody')}</Text>
         <View style={styles.manageLinks}>
           <Pressable accessibilityRole="button" onPress={() => router.push('/(auth)/recipes/manage' as never)}>
-            <Text style={styles.manageLink}>Manage recipes</Text>
+            <Text style={styles.manageLink}>{t('subscription.downgradeNotice.manageRecipes')}</Text>
           </Pressable>
           <Pressable accessibilityRole="button" onPress={() => router.push('/(auth)/imports/manage' as never)}>
-            <Text style={styles.manageLink}>Manage imports</Text>
+            <Text style={styles.manageLink}>{t('subscription.downgradeNotice.manageImports')}</Text>
           </Pressable>
         </View>
       </View>
 
       <Pressable style={styles.primary} onPress={() => router.push('/(auth)/premium' as never)}>
-        <Text style={styles.primaryText}>Restore full library with Premium</Text>
+        <Text style={styles.primaryText}>{t('subscription.downgradeNotice.restore')}</Text>
       </Pressable>
       <Pressable onPress={() => void continueFree()}>
-        <Text style={styles.continue}>Continue with Free</Text>
+        <Text style={styles.continue}>{t('subscription.downgradeNotice.continue')}</Text>
       </Pressable>
     </Screen>
   )

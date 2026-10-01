@@ -10,6 +10,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   View,
@@ -75,7 +76,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   const isPublic = resolvedMode === 'public'
   const { user } = useAuth()
   const showSnackbar = useTransientSnackbarStore((state) => state.show)
-  const { plan } = useContext(SubscriptionContext)
+  const { plan, isLoaded: isSubscriptionLoaded } = useContext(SubscriptionContext)
   const { shouldUseLocalData } = useStorageDataMode(resolvedMode)
   const [segment, setSegment] = useState<SegmentKey>('recipes')
   const [recipeSegment, setRecipeSegment] = useState<RecipeSegmentKey>('folders')
@@ -89,7 +90,9 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   const [newFolderName, setNewFolderName] = useState('')
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
   const recipesQuery = useLibraryRecipesList({ limit: 200 }, resolvedMode)
-  const showCloudArchiveLink = !isPublic
+  // This is a downgrade-only affordance. Do not briefly show it while the
+  // subscription is still loading, or to an active Premium member.
+  const showCloudArchiveLink = !isPublic && isSubscriptionLoaded && plan === 'free'
   const storageUsageQuery = useRecipeDocumentUsageSummary({ enabled: plan !== 'premium' })
   const foldersQuery = useStrategyFoldersList(resolvedMode)
   const createFolderMutation = useStrategyCreateFolder(resolvedMode)
@@ -259,16 +262,33 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     const base = buildCollectionsForSegment(segment, recipeData)
     if (segment !== 'recipes') return base
 
-    const folderSource = foldersQuery.data ?? []
-
-    const folderItems: CollectionItem[] =
-      folderSource.map((folder) => ({
-        key: folder.name,
-        label: folder.name,
-        count: folderCounts.counts.get(folder.name.toLowerCase()) ?? 0,
-        kind: 'tag' as const,
+    // A downgraded account reads its recipes from the device. Folder rows may
+    // have been cloud-only before the downgrade, while the recipe's folder
+    // assignment is still safely cached locally. Build the visible folder list
+    // from both sources so those recipes never look uncategorized.
+    const foldersByName = new Map<string, { name: string; emoji?: string }>()
+    for (const folder of foldersQuery.data ?? []) {
+      foldersByName.set(folder.name.trim().toLowerCase(), {
+        name: folder.name,
         emoji: folder.emoji ?? undefined,
-      }))
+      })
+    }
+    for (const recipe of recipeData) {
+      for (const folder of recipe.folders ?? []) {
+        const name = folder.name.trim()
+        const key = name.toLowerCase()
+        if (!name || foldersByName.has(key)) continue
+        foldersByName.set(key, { name, emoji: folder.emoji ?? undefined })
+      }
+    }
+
+    const folderItems: CollectionItem[] = Array.from(foldersByName.entries()).map(([key, folder]) => ({
+      key: folder.name,
+      label: folder.name,
+      count: folderCounts.counts.get(key) ?? 0,
+      kind: 'tag' as const,
+      emoji: folder.emoji,
+    }))
 
     const items: CollectionItem[] = [...folderItems]
     if (folderCounts.uncategorized > 0) {
@@ -460,7 +480,12 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
               <Text style={styles.loadingText}>{t('collections.detail.loading')}</Text>
             </View>
           ) : recipeData.length === 0 ? (
-            <>
+            <ScrollView
+              style={styles.emptyScroll}
+              contentContainerStyle={[styles.emptyContent, { paddingBottom: bottomPadding }]}
+              contentInsetAdjustmentBehavior="automatic"
+              showsVerticalScrollIndicator={false}
+            >
               <View style={styles.emptyState}>
                 <View style={styles.emptyIcon}>
                   <Feather name="folder" size={22} color={theme.colors.mutedForeground} />
@@ -493,13 +518,13 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
                 >
                   <Feather name="cloud" size={18} color={styles.archiveIcon.color} />
                   <View style={styles.archiveCopy}>
-                    <Text style={styles.archiveTitle}>Cloud Archive</Text>
-                    <Text style={styles.archiveSubtitle}>Your previous Premium library is safely archived. Restore it with Premium.</Text>
+                    <Text style={styles.archiveTitle}>{t('subscription.archive.linkTitle')}</Text>
+                    <Text style={styles.archiveSubtitle}>{t('subscription.archive.linkSubtitle')}</Text>
                   </View>
                   <Feather name="chevron-right" size={18} color={styles.archiveIcon.color} />
                 </Pressable>
               ) : null}
-            </>
+            </ScrollView>
           ) : (
             <FlatList
               data={collections}
@@ -517,8 +542,8 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
                   >
                     <Feather name="cloud" size={18} color={styles.archiveIcon.color} />
                     <View style={styles.archiveCopy}>
-                      <Text style={styles.archiveTitle}>Cloud Archive</Text>
-                    <Text style={styles.archiveSubtitle}>Your previous Premium library is safely archived. Restore it with Premium.</Text>
+                      <Text style={styles.archiveTitle}>{t('subscription.archive.linkTitle')}</Text>
+                    <Text style={styles.archiveSubtitle}>{t('subscription.archive.linkSubtitle')}</Text>
                     </View>
                     <Feather name="chevron-right" size={18} color={styles.archiveIcon.color} />
                   </Pressable>
@@ -748,6 +773,8 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
     paddingHorizontal: theme.spacing.lg,
   },
+  emptyScroll: { flex: 1 },
+  emptyContent: { flexGrow: 1 },
   emptyIcon: {
     width: 56,
     height: 56,

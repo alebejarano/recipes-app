@@ -463,7 +463,11 @@ export default function CreateRecipeScreen({
             contentContainerStyle={[
               styles.scrollContent,
               largeScreen.pagePaddingStyle,
-              { paddingBottom: insets.bottom + FOOTER_HEIGHT + FOOTER_EXTRA_BOTTOM_PADDING + 24 },
+              {
+                paddingBottom: entryMode
+                  ? insets.bottom + FOOTER_HEIGHT + FOOTER_EXTRA_BOTTOM_PADDING + 24
+                  : insets.bottom + 24,
+              },
             ]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
@@ -550,37 +554,39 @@ export default function CreateRecipeScreen({
             </View>
           </ScrollView>
 
-          {/* Sticky footer */}
-          <View
-            style={[
-              styles.footer,
-              largeScreen.pagePaddingStyle,
-              { paddingBottom: Math.max(insets.bottom, 8) + FOOTER_EXTRA_BOTTOM_PADDING },
-            ]}
-          >
-            <View style={[styles.footerInner, largeScreen.contentWidthStyle]}>
-            <Button
-              variant="secondary"
-              size="md"
-              onPress={handleBack}
-              disabled={isSaving}
-              style={styles.footerButton}
+          {/* The entry picker has its own choices; actions belong to a form. */}
+          {entryMode ? (
+            <View
+              style={[
+                styles.footer,
+                largeScreen.pagePaddingStyle,
+                { paddingBottom: Math.max(insets.bottom, 8) + FOOTER_EXTRA_BOTTOM_PADDING },
+              ]}
             >
-              {t('recipes.form.cancel')}
-            </Button>
+              <View style={[styles.footerInner, largeScreen.contentWidthStyle]}>
+                <Button
+                  variant="secondary"
+                  size="md"
+                  onPress={handleBack}
+                  disabled={isSaving}
+                  style={styles.footerButton}
+                >
+                  {t('recipes.form.cancel')}
+                </Button>
 
-            <Button
-              variant="primary"
-              size="md"
-              onPress={triggerSave}
-              loading={isSaving}
-              disabled={isSaving || !entryMode}
-              style={styles.footerButton}
-            >
-              {submitLabel}
-            </Button>
+                <Button
+                  variant="primary"
+                  size="md"
+                  onPress={triggerSave}
+                  loading={isSaving}
+                  disabled={isSaving}
+                  style={styles.footerButton}
+                >
+                  {submitLabel}
+                </Button>
+              </View>
             </View>
-          </View>
+          ) : null}
         </KeyboardAvoidingView>
       </View>
 

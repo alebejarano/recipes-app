@@ -28,6 +28,10 @@ import { getErrorCategory, logOperationalEvent } from '@/lib/productionLogger'
 let syncInFlight: Promise<void> | null = null
 const PLAN_KEY_PREFIX = 'subscription:plan:user:'
 
+async function hasPremiumSyncAccess(userId: string) {
+  return (await AsyncStorage.getItem(`${PLAN_KEY_PREFIX}${userId}`)) === 'premium'
+}
+
 function parseStringList(raw: string): string[] {
   try {
     const parsed = JSON.parse(raw) as unknown
@@ -208,8 +212,7 @@ async function runRecipeSync() {
 
   const userId = data.session?.user?.id
   if (!userId) return
-  const plan = await AsyncStorage.getItem(`${PLAN_KEY_PREFIX}${userId}`)
-  if (plan !== 'premium') return
+  if (!(await hasPremiumSyncAccess(userId))) return
 
   await syncPendingRecipeDocuments(userId)
 
@@ -225,6 +228,7 @@ async function runRecipeSync() {
   }
 
   for (const row of dirtyRows) {
+    if (!(await hasPremiumSyncAccess(userId))) return
     if (row.ownerUserId !== userId) continue
 
     try {
@@ -288,6 +292,7 @@ async function runRecipeSync() {
 
   try {
     const cloudRecipes = await listRecipes({ limit: 1000 })
+    if (!(await hasPremiumSyncAccess(userId))) return
     const cloudById = new Map(cloudRecipes.map((recipe) => [recipe.id, recipe]))
     const repairCandidates = await listLocalRecipeRowsForImageRepair(userId)
 
@@ -330,6 +335,9 @@ async function runRecipeSync() {
     }
 
     const refreshedCloudRecipes = await listRecipes({ limit: 1000 })
+    // Do not interpret a post-downgrade restricted response as cloud
+    // deletions. Local recipes are the source of truth for Free access.
+    if (!(await hasPremiumSyncAccess(userId))) return
     await mergeCloudRecipesIntoLocal({
       ownerUserId: userId,
       cloudRecipes: refreshedCloudRecipes,
