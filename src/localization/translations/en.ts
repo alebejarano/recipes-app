@@ -545,11 +545,13 @@ export const en = {
             closeA11y: 'Close downgrade notice',
             title: 'Your library is safe',
             intro: 'Free includes up to 100 recipes and 50 MB of imports already stored on this device. Your remaining Premium library stays safely archived in the cloud.',
+            localOnlyIntro: 'Everything saved on this device is still here. Your recipes, notes, folders, and eligible imports are now stored on this device only—backup and sync are off.',
             cardTitle: 'What happens now',
             cardBody: 'Items already on this device remain available within the Free limits. To restore your complete library on any device, upgrade to Premium. Manage Library permanently deletes local items to free device space.',
             manageRecipes: 'Manage recipes',
             manageImports: 'Manage imports',
             restore: 'Restore full library with Premium',
+            restoreBackup: 'Restore backup & sync with Premium',
             continue: 'Continue with Free',
         },
         currentPlan: {

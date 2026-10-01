@@ -366,7 +366,11 @@ export async function mergeCloudNotesIntoLocal(params: {
     )
   }
 
+  // Do not turn a restricted/empty post-downgrade response into a local
+  // deletion list. Notes have no Free count cap and stay device-local.
+  const canReconcileMissingCloudNotes = cloudNotes.length > 0
   for (const existing of existingRows) {
+    if (!canReconcileMissingCloudNotes) break
     if (!existing.cloud_id) continue
     if (existing.dirty === 1) continue
     if (!cloudIds.has(existing.cloud_id)) {

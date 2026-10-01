@@ -16,6 +16,7 @@ import {
   addRecipeDocument,
   deleteRecipeDocument,
   getRecipeDocument,
+  getRecipeDocumentByCloudId,
   getRecipeDocumentUsageSummary,
   listPendingLocalRecipeDocuments,
   listRecipeDocuments,
@@ -145,8 +146,10 @@ export function useRecipeDocument(id: string, mode: StorageScreenMode = 'auth') 
   return useQuery<RecipeDocument | null>({
     queryKey: [...DOCS_KEY, shouldUseLocalData ? 'local' : 'cloud', user?.id ?? 'guest', id, shouldRestrictCloudCache ? 'active-library' : 'all'],
     queryFn: async () => {
+      // A server id in a Premium list is not the SQLite primary key. Prefer
+      // either local identity so a synced import opens without a connection.
+      const localDocument = await getRecipeDocument(id) ?? await getRecipeDocumentByCloudId(id)
       if (shouldUseLocalData) {
-        const localDocument = await getRecipeDocument(id)
         if (shouldRestrictCloudCache && localDocument?.cloudId && !activeCloudImportIds.has(localDocument.cloudId)) {
           return null
         }
@@ -165,6 +168,8 @@ export function useRecipeDocument(id: string, mode: StorageScreenMode = 'auth') 
           return null
         }
       }
+
+      if (localDocument) return localDocument
 
       try {
         const cloudDocument = await getCloudRecipeDocument(id)

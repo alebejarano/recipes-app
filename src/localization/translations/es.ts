@@ -547,11 +547,13 @@ export const es: TranslationSchema = {
             closeA11y: 'Cerrar aviso de cambio a Free',
             title: 'Tu biblioteca está a salvo',
             intro: 'Free incluye hasta 100 recetas y 50 MB de importaciones que ya están guardadas en este dispositivo. El resto de tu biblioteca de Premium permanece archivado de forma segura en la nube.',
+            localOnlyIntro: 'Todo lo guardado en este dispositivo sigue aquí. Tus recetas, notas, carpetas e importaciones compatibles ahora se guardan solo en este dispositivo; la copia de seguridad y la sincronización están desactivadas.',
             cardTitle: 'Qué ocurre ahora',
             cardBody: 'Los elementos que ya están en este dispositivo seguirán disponibles dentro de los límites de Free. Para recuperar tu biblioteca completa en cualquier dispositivo, pásate a Premium. Gestionar biblioteca elimina los elementos locales de forma permanente para liberar espacio en el dispositivo.',
             manageRecipes: 'Gestionar recetas',
             manageImports: 'Gestionar importaciones',
             restore: 'Recuperar biblioteca completa con Premium',
+            restoreBackup: 'Recuperar copia de seguridad y sincronización con Premium',
             continue: 'Continuar con Free',
         },
         currentPlan: {

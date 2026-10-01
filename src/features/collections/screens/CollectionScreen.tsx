@@ -43,6 +43,7 @@ import {
 } from '@/features/collections/utils/collections'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
 import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments'
+import { useFreeArchiveAvailability } from '@/features/recipes/hooks/useFreeArchiveAvailability'
 import { useLibraryRecipesList } from '@/features/recipes/hooks/useLibraryRecipes'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
 import { FREE_PLAN_MAX_IMPORT_TOTAL_BYTES } from '@/features/subscription/constants/limits'
@@ -90,9 +91,15 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   const [newFolderName, setNewFolderName] = useState('')
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
   const recipesQuery = useLibraryRecipesList({ limit: 200 }, resolvedMode)
+  const archiveAvailability = useFreeArchiveAvailability()
   // This is a downgrade-only affordance. Do not briefly show it while the
   // subscription is still loading, or to an active Premium member.
-  const showCloudArchiveLink = !isPublic && isSubscriptionLoaded && plan === 'free'
+  const showCloudArchiveLink =
+    !isPublic &&
+    isSubscriptionLoaded &&
+    plan === 'free' &&
+    !archiveAvailability.isLoading &&
+    archiveAvailability.data?.hasArchivedContent === true
   const storageUsageQuery = useRecipeDocumentUsageSummary({ enabled: plan !== 'premium' })
   const foldersQuery = useStrategyFoldersList(resolvedMode)
   const createFolderMutation = useStrategyCreateFolder(resolvedMode)

@@ -381,7 +381,11 @@ export async function mergeCloudFoldersIntoLocal(params: {
     )
   }
 
+  // Preserve the local folder cache if access changed during this cloud
+  // request and it consequently returned no rows.
+  const canReconcileMissingCloudFolders = cloudFolders.length > 0
   for (const existing of existingRows) {
+    if (!canReconcileMissingCloudFolders) break
     if (!existing.cloud_id) continue
     if (existing.dirty === 1) continue
     if (!cloudIds.has(existing.cloud_id)) {

@@ -802,7 +802,13 @@ export async function mergeCloudRecipesIntoLocal(params: {
     )
   }
 
+  // A downgrade can take effect while an in-flight Premium sync is reading
+  // the cloud. In that case the restricted response can be empty, but it is
+  // not evidence that this device's cached recipes were deleted. Retain the
+  // cache; Free access applies its own 100-recipe local subset at read time.
+  const canReconcileMissingCloudRecipes = cloudRecipes.length > 0
   for (const existing of existingRows) {
+    if (!canReconcileMissingCloudRecipes) break
     if (!existing.cloud_id) continue
     if (existing.dirty === 1) continue
     if (!cloudIds.has(existing.cloud_id)) {

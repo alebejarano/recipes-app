@@ -9,6 +9,11 @@ import {
 } from '@/features/recipes/api/recipesRepo'
 import { uploadPremiumImport } from '@/features/recipes/api/importsRepo'
 import {
+  CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
+  getActiveImportDownloadUrl,
+  listCloudRecipeDocumentsPage,
+} from '@/features/recipes/api/recipeDocumentsCloudRepo'
+import {
   listDirtyLocalRecipeRowsForSync,
   listLocalRecipeRowsForImageRepair,
   mergeCloudRecipesIntoLocal,
@@ -17,9 +22,11 @@ import {
   type LocalRecipeSyncRow,
 } from '@/features/recipes/storage/localRecipesStorage'
 import {
+  getRecipeDocumentByCloudId,
   listDirtyLocalRecipeDocumentRowsForSync,
   markLocalRecipeDocumentSynced,
   recordLocalRecipeDocumentSyncFailure,
+  restoreCloudRecipeDocument,
 } from '@/features/recipes/storage/recipeDocumentStorage'
 import { normalizeMealTimes } from '@/features/recipes/types/mealTimes'
 import { supabase } from '@/lib/supabase'
@@ -206,6 +213,49 @@ export async function syncPendingRecipeDocuments(
   return result
 }
 
+/**
+ * Cache the bytes, not just cloud metadata. Signed URLs expire and cannot be
+ * renewed in airplane mode, so Premium imports must be downloaded as part of
+ * the normal account sync on every device.
+ */
+async function cacheCloudRecipeDocuments(userId: string) {
+  let cursor: { createdAt: string; id: string } | null = null
+
+  do {
+    const page = await listCloudRecipeDocumentsPage({
+      cursor,
+      limit: CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
+    })
+
+    for (const document of page.items) {
+      if (!(await hasPremiumSyncAccess(userId))) return
+      if (await getRecipeDocumentByCloudId(document.id)) continue
+
+      try {
+        await restoreCloudRecipeDocument({
+          cloudId: document.id,
+          title: document.title,
+          fileName: document.fileName,
+          bytes: document.fileSize,
+          createdAt: document.createdAt,
+          signedUrl: await getActiveImportDownloadUrl(document.id),
+          plan: 'premium',
+        })
+      } catch (error) {
+        // Keep successfully cached files; retry uncacheable files next sync.
+        if (isConnectivityError(error)) throw error
+        logOperationalEvent('sync_retry_failed', {
+          operation: 'cache_import',
+          entity: 'import',
+          category: getErrorCategory(error),
+        })
+      }
+    }
+
+    cursor = page.nextCursor
+  } while (cursor)
+}
+
 async function runRecipeSync() {
   const { data, error } = await supabase.auth.getSession()
   if (error) throw error
@@ -342,6 +392,7 @@ async function runRecipeSync() {
       ownerUserId: userId,
       cloudRecipes: refreshedCloudRecipes,
     })
+    await cacheCloudRecipeDocuments(userId)
   } catch (pullError) {
     if (isConnectivityError(pullError)) return
     throw pullError

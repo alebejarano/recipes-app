@@ -6,6 +6,7 @@ import { Pressable, Text, View } from 'react-native'
 
 import Screen from '@/components/Screen'
 import { useAuth } from '@/features/auth/context/AuthContext'
+import { useFreeArchiveAvailability } from '@/features/recipes/hooks/useFreeArchiveAvailability'
 import { supabase } from '@/lib/supabase'
 import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
@@ -14,6 +15,8 @@ export default function DowngradeScreen() {
   const { user } = useAuth()
   const { t } = useTranslation()
   const [event, setEvent] = useState<string | null>(null)
+  const archiveAvailability = useFreeArchiveAvailability()
+  const hasArchivedContent = archiveAvailability.data?.hasArchivedContent === true
 
   useEffect(() => {
     void supabase
@@ -49,23 +52,33 @@ export default function DowngradeScreen() {
       </View>
 
       <Text style={styles.title}>{t('subscription.downgradeNotice.title')}</Text>
-      <Text style={styles.body}>{t('subscription.downgradeNotice.intro')}</Text>
+      <Text style={styles.body}>
+        {t(hasArchivedContent
+          ? 'subscription.downgradeNotice.intro'
+          : 'subscription.downgradeNotice.localOnlyIntro')}
+      </Text>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{t('subscription.downgradeNotice.cardTitle')}</Text>
-        <Text style={styles.body}>{t('subscription.downgradeNotice.cardBody')}</Text>
-        <View style={styles.manageLinks}>
-          <Pressable accessibilityRole="button" onPress={() => router.push('/(auth)/recipes/manage' as never)}>
-            <Text style={styles.manageLink}>{t('subscription.downgradeNotice.manageRecipes')}</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={() => router.push('/(auth)/imports/manage' as never)}>
-            <Text style={styles.manageLink}>{t('subscription.downgradeNotice.manageImports')}</Text>
-          </Pressable>
+      {hasArchivedContent ? (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{t('subscription.downgradeNotice.cardTitle')}</Text>
+          <Text style={styles.body}>{t('subscription.downgradeNotice.cardBody')}</Text>
+          <View style={styles.manageLinks}>
+            <Pressable accessibilityRole="button" onPress={() => router.push('/(auth)/recipes/manage' as never)}>
+              <Text style={styles.manageLink}>{t('subscription.downgradeNotice.manageRecipes')}</Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" onPress={() => router.push('/(auth)/imports/manage' as never)}>
+              <Text style={styles.manageLink}>{t('subscription.downgradeNotice.manageImports')}</Text>
+            </Pressable>
+          </View>
         </View>
-      </View>
+      ) : null}
 
       <Pressable style={styles.primary} onPress={() => router.push('/(auth)/premium' as never)}>
-        <Text style={styles.primaryText}>{t('subscription.downgradeNotice.restore')}</Text>
+        <Text style={styles.primaryText}>
+          {t(hasArchivedContent
+            ? 'subscription.downgradeNotice.restore'
+            : 'subscription.downgradeNotice.restoreBackup')}
+        </Text>
       </Pressable>
       <Pressable onPress={() => void continueFree()}>
         <Text style={styles.continue}>{t('subscription.downgradeNotice.continue')}</Text>

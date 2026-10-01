@@ -169,6 +169,7 @@ export default function PremiumScreen({
       {!isActive ? <Text style={styles.renewalDisclosure}>{renewalDisclosure}</Text> : null}
         </View>
       </View>
+
       </View>
 
       <Modal visible={isUpgrading} transparent animationType="fade" statusBarTranslucent>

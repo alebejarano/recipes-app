@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useState } from 'react'
 import { Alert, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 
@@ -62,7 +62,10 @@ export default function PremiumRoute() {
   const isUpgrading = upgradeStatus === 'running' || isPurchaseFlowRunning
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [isInitialBackupPending, setIsInitialBackupPending] = useState(false)
-  const shouldHoldRedirectRef = useRef(false)
+  // Keep this in render state, rather than a ref, so an entitlement update
+  // cannot render the route away between the loading overlay and the success
+  // modal being committed.
+  const [shouldHoldRedirect, setShouldHoldRedirect] = useState(false)
 
   const monthlyPackage = getPackageForBillingCycle('month')
   const yearlyPackage = getPackageForBillingCycle('year')
@@ -85,15 +88,15 @@ export default function PremiumRoute() {
   const premiumNextRenewalLabel = formatRenewalLabel(activeEntitlement?.expirationDate ?? null)
 
   useEffect(() => {
-    if (plan === 'premium' && !showSuccessModal && !isUpgrading && !shouldHoldRedirectRef.current) {
+    if (plan === 'premium' && !showSuccessModal && !isUpgrading && !shouldHoldRedirect) {
       router.replace(safeReturnTo ?? '/(auth)/current-plan')
     }
-  }, [isUpgrading, plan, router, safeReturnTo, showSuccessModal])
+  }, [isUpgrading, plan, router, safeReturnTo, shouldHoldRedirect, showSuccessModal])
 
   const handleUpgrade = async (selectedBillingCycle: 'month' | 'year') => {
     if (!user?.id || isUpgrading) return
 
-    shouldHoldRedirectRef.current = true
+    setShouldHoldRedirect(true)
     setIsPurchaseFlowRunning(true)
     setIsInitialBackupPending(false)
     let purchaseConfirmed = false
@@ -105,7 +108,7 @@ export default function PremiumRoute() {
       )
 
       if (!premiumActivated) {
-        shouldHoldRedirectRef.current = false
+        setShouldHoldRedirect(false)
         setIsPurchaseFlowRunning(false)
         await setUpgradeStatus('idle')
         return
@@ -126,9 +129,11 @@ export default function PremiumRoute() {
       setShowSuccessModal(true)
       setIsPurchaseFlowRunning(false)
     } catch (error) {
-      shouldHoldRedirectRef.current = false
       setIsPurchaseFlowRunning(false)
-      if (isPurchaseCancelledError(error)) return
+      if (isPurchaseCancelledError(error)) {
+        setShouldHoldRedirect(false)
+        return
+      }
 
       if (purchaseConfirmed) {
         // The store purchase remains valid even if the durable migration
@@ -162,6 +167,7 @@ export default function PremiumRoute() {
         return
       }
 
+      setShouldHoldRedirect(false)
       Alert.alert(
         i18n.t('subscription.premium.upgradeFailedTitle'),
         getUserFacingErrorMessage(error, i18n.t('subscription.premium.upgradeFailedMessage'))
@@ -177,11 +183,11 @@ export default function PremiumRoute() {
   const onCloseSuccessModal = () => {
     setShowSuccessModal(false)
     setIsInitialBackupPending(false)
-    shouldHoldRedirectRef.current = false
+    setShouldHoldRedirect(false)
     router.replace(safeReturnTo ?? '/(auth)/current-plan')
   }
 
-  if (plan === 'premium' && !showSuccessModal && !isUpgrading) {
+  if (plan === 'premium' && !showSuccessModal && !isUpgrading && !shouldHoldRedirect) {
     return null
   }
 

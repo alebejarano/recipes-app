@@ -295,6 +295,38 @@ export async function getRecipeDocument(id: string): Promise<RecipeDocument | nu
   }
 }
 
+/**
+ * Cloud lists use the server id while SQLite uses its own primary key. This
+ * resolves the cached copy when a route is addressed with the cloud id.
+ */
+export async function getRecipeDocumentByCloudId(cloudId: string): Promise<RecipeDocument | null> {
+  await ensureRecipeDocumentStorageReady()
+  await ensureLocalRecipeDocumentCleanup()
+  const ownerFilter = getLocalDataOwnerFilter()
+  const row = await getFirstAsync<{
+    id: string
+    title: string | null
+    file_name: string
+    file_uri: string
+    file_size: number
+    created_at: string
+    cloud_id: string | null
+  }>(
+    `SELECT * FROM recipe_documents WHERE cloud_id = ? AND ${ownerFilter.sql} LIMIT 1;`,
+    [cloudId, ...ownerFilter.params]
+  )
+  if (!row) return null
+  return {
+    id: row.id,
+    cloudId: row.cloud_id ?? null,
+    title: row.title,
+    fileName: row.file_name,
+    fileUri: row.file_uri,
+    fileSize: Number(row.file_size),
+    createdAt: row.created_at,
+  }
+}
+
 export async function updateRecipeDocumentTitle(input: {
   id: string
   title: string
@@ -419,6 +451,7 @@ export async function restoreCloudRecipeDocument(input: {
   bytes: number
   createdAt: string
   signedUrl: string
+  plan?: ImportPlan
 }): Promise<RecipeDocument> {
   if (Platform.OS === 'web') {
     throw new Error('Cloud Archive imports must be restored from the mobile app.')
@@ -455,7 +488,7 @@ export async function restoreCloudRecipeDocument(input: {
     }
   }
 
-  await assertCanAddRecipeDocument({ plan: 'free', incomingBytes: input.bytes })
+  await assertCanAddRecipeDocument({ plan: input.plan ?? 'free', incomingBytes: input.bytes })
   await ensureDir()
   const destination = new File(buildDestinationPath(input.fileName))
   const downloaded = await File.downloadFileAsync(input.signedUrl, destination)
