@@ -31,6 +31,7 @@ import { useLocalRecipesList } from '@/features/recipes/hooks/useLocalRecipes'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
+import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding'
 
 function isUncategorizedKey(key: string) {
   return key === 'uncategorized'
@@ -57,6 +58,7 @@ export default function PublicCollectionDetailScreen({
   const safeReturnTo = getSafeReturnTo(returnToParam)
   const returnTo = typeof safeReturnTo === 'string' ? safeReturnTo : undefined
   const showSnackbar = useTransientSnackbarStore((state) => state.show)
+  const listBottomPadding = useTabBarBottomPadding(theme.spacing.xl)
 
   const isUncategorized = isUncategorizedKey(key)
   const title = isUncategorized ? t('collections.uncategorized') : key
@@ -239,7 +241,7 @@ export default function PublicCollectionDetailScreen({
         <FlatList
           data={recipes}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingBottom: listBottomPadding }]}
           renderItem={({ item }) => (
             <RecipeRow
               title={item.title}

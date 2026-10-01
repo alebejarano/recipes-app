@@ -77,25 +77,17 @@ serve(async (req) => {
     return json({ error: 'Import not found' }, 404, origin)
   }
 
-  const [{ data: entitlement, error: entitlementError }, { count: activeSlotCount, error: slotError }] =
-    await Promise.all([
-      adminClient
-        .from('user_entitlements')
-        .select('is_premium')
-        .eq('user_id', user.id)
-        .maybeSingle(),
-      adminClient
-        .from('free_active_import_slots')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('recipe_document_import_id', documentId),
-    ])
-  if (entitlementError || slotError) {
+  const { data: entitlement, error: entitlementError } = await adminClient
+    .from('user_entitlements')
+    .select('is_premium')
+    .eq('user_id', user.id)
+    .maybeSingle()
+  if (entitlementError) {
     return json({ error: 'Unable to verify import access' }, 500, origin)
   }
-  if (!entitlement?.is_premium && !activeSlotCount) {
+  if (!entitlement?.is_premium) {
     return json({
-      error: 'This import is in your cloud archive. Upgrade to Premium or make it active within your Free storage allowance.',
+      error: 'This import is safely archived. Upgrade to Premium to restore it on this device.',
     }, 403, origin)
   }
 

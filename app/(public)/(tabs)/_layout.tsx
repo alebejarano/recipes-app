@@ -11,6 +11,7 @@ import { theme } from '@/styles/theme';
 const ICON_SIZE = 22;
 const ADD_ICON_SIZE = 28;
 const ADD_BUTTON_SIZE = 58;
+const LABEL_BOTTOM_PADDING = 4;
 
 const styles = createThemedStyles((theme) => ({
   tabBar: {
@@ -28,6 +29,10 @@ const styles = createThemedStyles((theme) => ({
     fontSize: theme.fontSize.xs,
     fontFamily: theme.fontFamily.medium,
     marginTop: 2,
+  },
+
+  tabBarItem: {
+    paddingBottom: LABEL_BOTTOM_PADDING,
   },
 
   centerSlot: {
@@ -56,7 +61,7 @@ export default function PublicTabsLayout() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
-  const baseHeight = Platform.select({ ios: 64, android: 62 }) ?? 62;
+  const baseHeight = Platform.select({ ios: 68, android: 66 }) ?? 66;
   const tabBarHeight = baseHeight + insets.bottom;
   const lift = insets.bottom > 0 ? 22 : 18;
 
@@ -67,12 +72,13 @@ export default function PublicTabsLayout() {
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.mutedForeground,
         tabBarLabelStyle: styles.tabBarLabel,
+        tabBarItemStyle: styles.tabBarItem,
         tabBarHideOnKeyboard: true,
         tabBarStyle: [
           styles.tabBar,
           {
             height: tabBarHeight,
-            paddingBottom: insets.bottom,
+            paddingBottom: insets.bottom + LABEL_BOTTOM_PADDING,
           },
         ],
       }}
@@ -81,6 +87,7 @@ export default function PublicTabsLayout() {
         name="index"
         options={{
           title: t('tabs.home'),
+          tabBarAccessibilityLabel: t('tabs.home'),
           tabBarIcon: ({ color }) => (
             <Feather name="home" size={ICON_SIZE} color={color} />
           ),
@@ -91,6 +98,7 @@ export default function PublicTabsLayout() {
         name="collections"
         options={{
           title: t('tabs.collections'),
+          tabBarAccessibilityLabel: t('tabs.collections'),
           tabBarIcon: ({ color }) => (
             <Feather name="folder" size={ICON_SIZE} color={color} />
           ),
@@ -101,6 +109,7 @@ export default function PublicTabsLayout() {
         name="add-recipe"
         options={{
           title: '',
+          tabBarAccessibilityLabel: t('createNew.addContentA11y'),
           tabBarLabel: () => null,
           tabBarIcon: () => (
             <Feather
@@ -147,6 +156,7 @@ export default function PublicTabsLayout() {
         name="search"
         options={{
           title: t('tabs.search'),
+          tabBarAccessibilityLabel: t('tabs.search'),
           tabBarIcon: ({ color }) => (
             <Feather name="search" size={ICON_SIZE} color={color} />
           ),
@@ -157,6 +167,7 @@ export default function PublicTabsLayout() {
         name="profile"
         options={{
           title: t('tabs.account'),
+          tabBarAccessibilityLabel: t('tabs.account'),
           tabBarIcon: ({ color }) => (
             <Feather name="user" size={ICON_SIZE} color={color} />
           ),

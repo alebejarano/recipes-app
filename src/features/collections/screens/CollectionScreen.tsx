@@ -1,6 +1,5 @@
 import { Feather } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useQuery } from '@tanstack/react-query'
 import { router, useLocalSearchParams, useSegments } from 'expo-router'
 import React, { useContext, useEffect, useMemo, useState } from 'react'
 import {
@@ -43,7 +42,6 @@ import {
 } from '@/features/collections/utils/collections'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
 import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments'
-import { listFreeImportLibraryMetadata } from '@/features/recipes/api/freeArchiveRepo'
 import { useLibraryRecipesList } from '@/features/recipes/hooks/useLibraryRecipes'
 import { useStorageDataMode } from '@/features/storage/hooks/useStorageDataMode'
 import { FREE_PLAN_MAX_IMPORT_TOTAL_BYTES } from '@/features/subscription/constants/limits'
@@ -91,17 +89,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
   const [newFolderName, setNewFolderName] = useState('')
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl)
   const recipesQuery = useLibraryRecipesList({ limit: 200 }, resolvedMode)
-  const archiveQuery = useLibraryRecipesList({ includeArchive: true }, resolvedMode)
-  const archiveImportsQuery = useQuery({
-    queryKey: ['recipes', 'library', 'free-active-imports'],
-    queryFn: listFreeImportLibraryMetadata,
-    enabled: resolvedMode === 'auth',
-    retry: false,
-  })
-  const hasArchivedLibrary = Boolean(
-    archiveQuery.data?.some((item) => item.access === 'archived') ||
-    archiveImportsQuery.data?.some((item) => !item.isActive)
-  )
+  const showCloudArchiveLink = !isPublic
   const storageUsageQuery = useRecipeDocumentUsageSummary({ enabled: plan !== 'premium' })
   const foldersQuery = useStrategyFoldersList(resolvedMode)
   const createFolderMutation = useStrategyCreateFolder(resolvedMode)
@@ -497,7 +485,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
                   <Text style={styles.emptyCtaText}>{t('collections.createFirstRecipe')}</Text>
                 </Pressable>
               </View>
-              {hasArchivedLibrary ? (
+              {showCloudArchiveLink ? (
                 <Pressable
                   style={styles.archiveLink}
                   onPress={() => router.push('/(auth)/archive' as never)}
@@ -506,7 +494,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
                   <Feather name="cloud" size={18} color={styles.archiveIcon.color} />
                   <View style={styles.archiveCopy}>
                     <Text style={styles.archiveTitle}>Cloud Archive</Text>
-                    <Text style={styles.archiveSubtitle}>Manage what stays Active on Free. Archived items remain safe.</Text>
+                    <Text style={styles.archiveSubtitle}>Your previous Premium library is safely archived. Restore it with Premium.</Text>
                   </View>
                   <Feather name="chevron-right" size={18} color={styles.archiveIcon.color} />
                 </Pressable>
@@ -521,7 +509,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
               contentContainerStyle={[styles.grid, { paddingBottom: bottomPadding }]}
               showsVerticalScrollIndicator={false}
               ListFooterComponent={
-                hasArchivedLibrary ? (
+                showCloudArchiveLink ? (
                   <Pressable
                     style={styles.archiveLink}
                     onPress={() => router.push('/(auth)/archive' as never)}
@@ -530,7 +518,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
                     <Feather name="cloud" size={18} color={styles.archiveIcon.color} />
                     <View style={styles.archiveCopy}>
                       <Text style={styles.archiveTitle}>Cloud Archive</Text>
-                      <Text style={styles.archiveSubtitle}>Manage what stays Active on Free. Archived items remain safe.</Text>
+                    <Text style={styles.archiveSubtitle}>Your previous Premium library is safely archived. Restore it with Premium.</Text>
                     </View>
                     <Feather name="chevron-right" size={18} color={styles.archiveIcon.color} />
                   </Pressable>

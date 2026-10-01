@@ -98,10 +98,11 @@ function DowngradeGate() {
   useEffect(() => {
     if (!user?.id || (segments as readonly string[]).includes('downgrade')) return
     void supabase.from('user_entitlements')
-      .select('legacy_archive_enabled,legacy_archive_started_at')
+      .select('legacy_archive_enabled,legacy_archive_started_at,legacy_archive_notice_acknowledged_at')
       .eq('user_id', user.id).maybeSingle()
       .then(async ({ data }) => {
         if (!data?.legacy_archive_enabled || !data.legacy_archive_started_at) return
+        if (data.legacy_archive_notice_acknowledged_at === data.legacy_archive_started_at) return
         const key = `subscription:legacy-archive-ack:${user.id}`
         if (await AsyncStorage.getItem(key) === data.legacy_archive_started_at) return
         const noticeId = `${user.id}:${data.legacy_archive_started_at}`

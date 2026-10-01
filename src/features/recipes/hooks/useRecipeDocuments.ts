@@ -150,7 +150,9 @@ export function useRecipeDocument(id: string, mode: StorageScreenMode = 'auth') 
         if (shouldRestrictCloudCache && localDocument?.cloudId && !activeCloudImportIds.has(localDocument.cloudId)) {
           return null
         }
-        if (localDocument || !user?.id) return localDocument
+        // Free access is device-local. Never fall back to a cloud download for
+        // a former Premium member, even when a route still has a cloud ID.
+        if (localDocument || !user?.id || shouldRestrictCloudCache) return localDocument
 
         // A Premium migration can temporarily use the local strategy while a
         // document is queued. Existing cloud documents must still be

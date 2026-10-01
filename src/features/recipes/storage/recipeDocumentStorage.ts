@@ -412,6 +412,83 @@ export async function addRecipeDocument(input: {
   }
 }
 
+export async function restoreCloudRecipeDocument(input: {
+  cloudId: string
+  title: string | null
+  fileName: string
+  bytes: number
+  createdAt: string
+  signedUrl: string
+}): Promise<RecipeDocument> {
+  if (Platform.OS === 'web') {
+    throw new Error('Cloud Archive imports must be restored from the mobile app.')
+  }
+
+  await ensureRecipeDocumentStorageReady()
+  await ensureLocalRecipeDocumentCleanup()
+  await ensureDocumentImportsBackfilled()
+
+  const ownerFilter = getLocalDataOwnerFilter()
+  const existing = await getFirstAsync<{
+    id: string
+    title: string | null
+    file_name: string
+    file_uri: string
+    file_size: number
+    created_at: string
+  }>(
+    `SELECT id, title, file_name, file_uri, file_size, created_at
+     FROM recipe_documents
+     WHERE cloud_id = ? AND ${ownerFilter.sql}
+     LIMIT 1;`,
+    [input.cloudId, ...ownerFilter.params]
+  )
+  if (existing && new File(existing.file_uri).exists) {
+    return {
+      id: existing.id,
+      cloudId: input.cloudId,
+      title: existing.title,
+      fileName: existing.file_name,
+      fileUri: existing.file_uri,
+      fileSize: Number(existing.file_size),
+      createdAt: existing.created_at,
+    }
+  }
+
+  await assertCanAddRecipeDocument({ plan: 'free', incomingBytes: input.bytes })
+  await ensureDir()
+  const destination = new File(buildDestinationPath(input.fileName))
+  const downloaded = await File.downloadFileAsync(input.signedUrl, destination)
+  const fileInfo = await downloaded.info()
+  const fileSize = Number(fileInfo.size ?? input.bytes)
+  if (!fileInfo.exists || fileSize <= 0) {
+    throw new Error('The import could not be downloaded.')
+  }
+
+  const id = makeId()
+  const ownerUserId = getActiveLocalDataOwner()
+  try {
+    await runSqlAsync(
+      `INSERT INTO recipe_documents
+        (id, title, file_name, file_uri, file_size, created_at, owner_user_id, cloud_id, dirty, last_synced_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?);`,
+      [id, input.title, input.fileName, downloaded.uri, fileSize, input.createdAt, ownerUserId, input.cloudId, new Date().toISOString()]
+    )
+    await registerImport({
+      kind: 'document',
+      fileName: input.fileName,
+      fileUri: downloaded.uri,
+      bytes: fileSize,
+      ownerUserId,
+    })
+  } catch (error) {
+    if (downloaded.exists) downloaded.delete()
+    throw error
+  }
+
+  return { id, cloudId: input.cloudId, title: input.title, fileName: input.fileName, fileUri: downloaded.uri, fileSize, createdAt: input.createdAt }
+}
+
 export async function listDirtyLocalRecipeDocumentRowsForSync(): Promise<LocalRecipeDocumentSyncRow[]> {
   await ensureRecipeDocumentStorageReady()
   await ensureLocalRecipeDocumentCleanup()

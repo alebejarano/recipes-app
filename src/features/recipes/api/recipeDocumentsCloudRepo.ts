@@ -221,6 +221,19 @@ export async function getCloudRecipeDocument(id: string): Promise<RecipeDocument
   }
 }
 
+export async function getActiveImportDownloadUrl(documentId: string): Promise<string> {
+  const { data, error } = await supabase.functions.invoke('get-import-download-url', {
+    body: { documentId },
+  })
+
+  if (error) throw error
+  const signedUrl = (data as { signedUrl?: unknown } | null)?.signedUrl
+  if (typeof signedUrl !== 'string' || !signedUrl) {
+    throw new Error('The stored import is unavailable')
+  }
+  return signedUrl
+}
+
 export async function getCloudRecipeDocumentUsageSummary(): Promise<RecipeDocumentUsageSummary> {
   const { data, error } = await supabase.rpc('get_recipe_document_import_usage')
   if (error) throw error

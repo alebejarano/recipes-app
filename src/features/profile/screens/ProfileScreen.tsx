@@ -256,11 +256,12 @@ export default function ProfileScreen() {
           <View style={styles.mediumSpace} />
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.push('/(auth)/library-preview' as never)}
+            accessibilityLabel="Open the real downgrade notice"
+            onPress={() => router.push('/(auth)/downgrade' as never)}
             style={styles.previewLink}
           >
-            <Text style={styles.previewTitle}>Developer preview</Text>
-            <Text style={styles.previewSubtitle}>Preview downgrade notice and Cloud Archive with sample data</Text>
+            <Text style={styles.previewTitle}>Test real downgrade notice</Text>
+            <Text style={styles.previewSubtitle}>Open the actual notice shown to downgraded accounts</Text>
           </Pressable>
         </>
       ) : null}

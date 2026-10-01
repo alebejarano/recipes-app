@@ -53,9 +53,9 @@ export function useLibraryRecipesList(
     const archiveQuery = useQuery({
         queryKey: ['recipes', 'library', 'archive', user?.id ?? 'guest'],
         queryFn: listFreeRecipeLibraryMetadata,
-        // This request establishes the server-authoritative Active Library for
-        // former Premium members. Never-Premium users receive a rejected RPC,
-        // which is intentionally treated as an empty archive below.
+        // This request establishes the server-authoritative downgrade snapshot
+        // that caps a former Premium member's already-cached device library.
+        // It never grants a cloud download or cross-device restoration.
         enabled: canAccessFreeArchive && needsFreeArchiveMetadata,
         retry: false,
     })
@@ -67,8 +67,9 @@ export function useLibraryRecipesList(
     )
     const visibleActiveRecipes = (activeQuery.data ?? []).filter((recipe) => {
         if (!shouldRestrictCloudCache) return true
-        // Local-only Free recipes were never part of the Premium library and
-        // remain active. Cached cloud recipes require a current server slot.
+        // Local-only Free recipes remain available. Cached Premium recipes are
+        // limited to the snapshot created at downgrade; cloud-only recipes are
+        // never returned by this local-first query.
         const cloudId = 'cloudId' in recipe ? recipe.cloudId : null
         return !cloudId || activeCloudRecipeIds.has(cloudId)
     })
