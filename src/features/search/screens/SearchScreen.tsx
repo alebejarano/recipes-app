@@ -111,7 +111,12 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
     })
   }, [recipesQuery.data, trimmedQuery]);
   const noteItems = useMemo(() => notesQuery.data ?? [], [notesQuery.data]);
-  const folderItems = useMemo(() => foldersQuery.data ?? [], [foldersQuery.data]);
+  const folderItems = useMemo(() => {
+    const normalizedQuery = trimmedQuery.toLocaleLowerCase()
+    return (foldersQuery.data ?? []).filter((folder) =>
+      folder.name.toLocaleLowerCase().includes(normalizedQuery)
+    )
+  }, [foldersQuery.data, trimmedQuery]);
 
   const showRecipes = !isBrowsing && (activeFilter === 'all' || activeFilter === 'recipes');
   const showFolders = !isBrowsing && (activeFilter === 'all' || activeFilter === 'collections');
