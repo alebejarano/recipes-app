@@ -57,6 +57,15 @@ const config: ExpoConfig & { newArchEnabled: boolean } = {
     favicon: './assets/images/favicon.png',
   },
   plugins: [
+    [
+      'expo-build-properties',
+      {
+        android: {
+          enableMinifyInReleaseBuilds: true,
+          enableShrinkResourcesInReleaseBuilds: true,
+        },
+      },
+    ],
     'expo-web-browser',
     'expo-router',
     'expo-image',
