@@ -68,11 +68,11 @@ export function useLibraryRecipesList(
         // A downgrade must not make locally cached recipes disappear while an
         // archive RPC is loading, unavailable, or still being provisioned.
         // The Free subset is chosen on the device, so it also works offline.
-        ? selectFreeLocalRecipes(activeQuery.data ?? [])
+        ? selectFreeLocalRecipes<Recipe | LocalRecipe>((activeQuery.data ?? []) as (Recipe | LocalRecipe)[])
         : activeQuery.data ?? []
 
     const active = visibleActiveRecipes.map<LibraryRecipe>((recipe) => ({
-        recipe: normalizeActiveRecipe(recipe),
+        recipe: normalizeActiveRecipe(recipe as Recipe | LocalRecipe),
         access: 'active',
         isEditable: true,
         isAvailableOffline: true,

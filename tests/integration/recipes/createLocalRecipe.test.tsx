@@ -75,7 +75,7 @@ describe('local recipe creation', () => {
                 prepTimeMinutes: 10,
                 cookTimeMinutes: 15,
                 servings: 2,
-                ingredients: ['Pasta'],
+                ingredients: [{ quantity: '', unit: '', name: 'Pasta', notes: '' }],
                 steps: ['Cook the pasta'],
                 folders: ['Dinner'],
                 mealTimes: ['dinner'],

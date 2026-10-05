@@ -252,12 +252,12 @@ async function backfillLocalRecipeMealTimesIfNeeded(rows: LocalRecipeRow[]) {
 function buildIngredients(values: RecipeFormSubmitValues): LocalRecipeIngredient[] {
   const list = values.ingredients ?? []
   return list
-    .map((name, index) => ({
+    .map((ingredient, index) => ({
       id: makeId(),
-      name: name.trim(),
-      quantity: null,
-      unit: null,
-      notes: null,
+      name: ingredient.name.trim(),
+      quantity: ingredient.quantity.trim() || null,
+      unit: ingredient.unit.trim() || null,
+      notes: ingredient.notes.trim() || null,
       position: index + 1,
     }))
     .filter((item) => item.name.length > 0)

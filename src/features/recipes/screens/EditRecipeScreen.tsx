@@ -45,7 +45,7 @@ type RecipeFormSeed = {
   prepTimeMinutes: number | null
   cookTimeMinutes: number | null
   servings: number | null
-  ingredients: { name: string }[]
+  ingredients: { name: string; quantity: string | null; unit: string | null; notes: string | null }[]
   steps: string[]
   folders: { name: string }[]
   mealTimes?: RecipeMealTime[]
@@ -70,7 +70,7 @@ function buildInitialValues(recipe: RecipeFormSeed): RecipeFormValues {
       recipe.servings !== null && recipe.servings !== undefined
         ? String(recipe.servings)
         : '',
-    ingredientsText: recipe.ingredients?.map((item) => item.name).filter(Boolean).join('\n') ?? '',
+    ingredients: recipe.ingredients?.map((item) => ({ quantity: item.quantity ?? '', unit: item.unit ?? '', name: item.name, notes: item.notes ?? '' })) ?? [{ quantity: '', unit: '', name: '', notes: '' }],
     steps: recipe.steps?.length ? recipe.steps : [''],
     folders: recipe.folders?.map((folder) => folder.name) ?? [],
     mealTimes: recipe.mealTimes ?? [],

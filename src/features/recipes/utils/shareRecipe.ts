@@ -1,5 +1,6 @@
 import { Directory, File, Paths } from '@/lib/fileSystem'
 import * as Sharing from 'expo-sharing'
+import { formatIngredientMeasurement } from '@/features/recipes/utils/ingredientMeasurements'
 
 export type ShareRecipeInput = {
   title: string
@@ -8,7 +9,7 @@ export type ShareRecipeInput = {
   prepTimeMinutes?: number | null
   cookTimeMinutes?: number | null
   servings?: number | null
-  ingredients?: { name: string }[]
+  ingredients?: { name: string; quantity?: string | null; unit?: string | null; notes?: string | null }[]
   steps?: string[]
   folders?: { name: string }[]
 }
@@ -49,7 +50,14 @@ export function buildRecipeShareText(recipe: ShareRecipeInput) {
     lines.push(`Folders: ${folders.join(', ')}`)
   }
 
-  const ingredients = recipe.ingredients?.map((item) => normalizeLine(item.name)).filter(Boolean) ?? []
+  const ingredients = recipe.ingredients
+    ?.map((item) => formatIngredientMeasurement({
+      quantity: item.quantity ?? null,
+      unit: item.unit ?? null,
+      name: item.name,
+      notes: item.notes ?? null,
+    }))
+    .filter(Boolean) ?? []
   if (ingredients.length > 0) {
     lines.push('')
     lines.push('Ingredients')

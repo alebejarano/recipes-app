@@ -58,6 +58,25 @@ function parseStringList(raw: string): string[] {
   }
 }
 
+function parseIngredients(raw: string) {
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return []
+    return parsed.map((item) => {
+      if (typeof item === 'string') return { quantity: '', unit: '', name: item.trim(), notes: '' }
+      const value = item as { quantity?: unknown; unit?: unknown; name?: unknown; notes?: unknown }
+      return {
+        quantity: typeof value.quantity === 'string' ? value.quantity.trim() : '',
+        unit: typeof value.unit === 'string' ? value.unit.trim() : '',
+        name: typeof value.name === 'string' ? value.name.trim() : '',
+        notes: typeof value.notes === 'string' ? value.notes.trim() : '',
+      }
+    }).filter((item) => item.name)
+  } catch {
+    return []
+  }
+}
+
 function inferImportMimeType(fileName: string) {
   const lower = fileName.trim().toLowerCase()
   if (lower.endsWith('.pdf')) return 'application/pdf'
@@ -73,7 +92,7 @@ async function toCreateOrUpdateInput(row: LocalRecipeSyncRow): Promise<CreateRec
     description: row.description,
     emoji: row.emoji,
     imageUrl: await ensureCloudRecipeImageUrl(row.imageUrl),
-    ingredients: parseStringList(row.ingredientsJson),
+    ingredients: parseIngredients(row.ingredientsJson),
     steps: row.stepsText
       ? row.stepsText
           .split('\n')
@@ -366,7 +385,7 @@ async function runRecipeSync() {
           description: row.description,
           emoji: row.emoji,
           imageUrl: repairedImageUrl,
-          ingredients: parseStringList(row.ingredientsJson),
+          ingredients: parseIngredients(row.ingredientsJson),
           steps: row.stepsText
             ? row.stepsText
                 .split('\n')

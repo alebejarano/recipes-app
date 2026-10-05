@@ -35,7 +35,9 @@ import {
   useStrategyUpdateRecipe,
 } from '@/features/recipes/hooks/useStrategyRecipes'
 import { findLibraryRecipe, useLibraryRecipesList } from '@/features/recipes/hooks/useLibraryRecipes'
+import { useMeasurementSystem } from '@/features/recipes/hooks/useMeasurementSystem'
 import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
+import { convertIngredientMeasurement, formatIngredientMeasurement, type MeasurementSystem } from '@/features/recipes/utils/ingredientMeasurements'
 import { buildRecipeShareText, shareRecipeAsTextFile } from '@/features/recipes/utils/shareRecipe'
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding'
@@ -67,7 +69,7 @@ type FavoriteToggleRecipe = {
   prepTimeMinutes: number | null
   cookTimeMinutes: number | null
   servings: number | null
-  ingredients: { name: string }[]
+  ingredients: { name: string; quantity: string | null; unit: string | null; notes: string | null }[]
   steps: string[]
   folders: { name: string }[]
   mealTimes?: RecipeMealTime[]
@@ -87,16 +89,16 @@ function buildFavoriteTogglePayload(
     prepTimeMinutes: recipe.prepTimeMinutes ?? null,
     cookTimeMinutes: recipe.cookTimeMinutes ?? null,
     servings: recipe.servings ?? null,
-    ingredients: recipe.ingredients.map((item) => item.name).filter(Boolean),
+    ingredients: recipe.ingredients.map((item) => ({ quantity: item.quantity ?? '', unit: item.unit ?? '', name: item.name, notes: item.notes ?? '' })).filter((item) => item.name),
     steps: recipe.steps.filter(Boolean),
     folders: nextFolderNames.length ? nextFolderNames : null,
     mealTimes: recipe.mealTimes?.length ? recipe.mealTimes : null,
   }
 }
 
-function buildIngredientLines(ingredients: { name: string }[] | undefined): string[] {
+function buildIngredientLines(ingredients: { name: string; quantity?: string | null; unit?: string | null; notes?: string | null }[] | undefined): string[] {
   if (!ingredients || ingredients.length === 0) return []
-  return ingredients.map((item) => item.name).filter(Boolean)
+  return ingredients.map((item) => formatIngredientMeasurement({ quantity: item.quantity ?? null, unit: item.unit ?? null, name: item.name, notes: item.notes ?? null })).filter(Boolean)
 }
 
 
@@ -109,6 +111,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
   const [favoriteOverride, setFavoriteOverride] = useState<boolean | null>(null)
   const [isActionsSheetOpen, setIsActionsSheetOpen] = useState(false)
   const [isShareSheetOpen, setIsShareSheetOpen] = useState(false)
+  const { measurementSystem, setMeasurementSystem } = useMeasurementSystem()
   const { user } = useAuth()
   const showSnackbar = useTransientSnackbarStore((state) => state.show)
 
@@ -137,6 +140,10 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
   const ingredientLines = useMemo(
     () => buildIngredientLines(recipe?.ingredients),
     [recipe?.ingredients]
+  )
+  const displayedIngredients = useMemo(
+    () => (recipe?.ingredients ?? []).map((ingredient) => formatIngredientMeasurement(convertIngredientMeasurement(ingredient, measurementSystem))),
+    [measurementSystem, recipe?.ingredients]
   )
   const recipesCount = recipesListQuery.data?.filter((item) => item.access === 'active').length ?? 0
   const usageSnapshot = useMemo(
@@ -594,23 +601,17 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>{t('recipes.detail.ingredients')}</Text>
-            <TouchableOpacity
-              onPress={() => setIsIngredientImportOpen(true)}
-              accessibilityRole="button"
-              accessibilityLabel={t('recipes.detail.addIngredientsA11y')}
-              style={styles.sectionActionButton}
-            >
-              <MaterialIcons
-                name="add-shopping-cart"
-                size={16}
-                style={styles.sectionActionIcon}
-              />
-              <Text style={styles.sectionActionText}>{t('recipes.detail.addIngredients')}</Text>
-            </TouchableOpacity>
+            <View style={styles.ingredientsActions}>
+              <View style={styles.measurementToggle}>{(['original', 'metric', 'us'] as MeasurementSystem[]).map((system) => <TouchableOpacity key={system} onPress={() => setMeasurementSystem(system)} style={[styles.measurementOption, measurementSystem === system && styles.measurementOptionActive]}><Text style={[styles.measurementOptionText, measurementSystem === system && styles.measurementOptionTextActive]}>{t(`recipes.detail.measurement.${system}`)}</Text></TouchableOpacity>)}</View>
+              <TouchableOpacity onPress={() => setIsIngredientImportOpen(true)} accessibilityRole="button" accessibilityLabel={t('recipes.detail.addIngredientsA11y')} style={styles.sectionActionButton}>
+                <MaterialIcons name="add-shopping-cart" size={16} style={styles.sectionActionIcon} />
+                <Text style={styles.sectionActionText}>{t('recipes.detail.addIngredients')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
           <View style={styles.card}>
-            {ingredientLines.length > 0 ? (
-              ingredientLines.map((line, index) => (
+            {displayedIngredients.length > 0 ? (
+              displayedIngredients.map((line, index) => (
                 <View key={`${line}-${index}`} style={styles.ingredientRow}>
                   <Text style={styles.ingredientText}>{line}</Text>
                 </View>
@@ -852,6 +853,12 @@ const styles = createThemedStyles((theme) => ({
     justifyContent: 'space-between',
     gap: theme.spacing.sm,
   },
+  ingredientsActions: { alignItems: 'flex-end', gap: theme.spacing.xs },
+  measurementToggle: { flexDirection: 'row', borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, overflow: 'hidden' },
+  measurementOption: { paddingHorizontal: theme.spacing.sm, paddingVertical: 4 },
+  measurementOptionActive: { backgroundColor: theme.colors.foreground },
+  measurementOptionText: { ...theme.textVariants.caption, color: theme.colors.mutedForeground },
+  measurementOptionTextActive: { color: theme.colors.background },
   sectionTitle: {
     ...theme.textVariants.subtitle,
     color: theme.colors.foreground,

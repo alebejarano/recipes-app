@@ -57,10 +57,17 @@ export type RecipeFormValues = {
   prepTimeMinutes: string
   cookTimeMinutes: string
   servings: string
-  ingredientsText: string
+  ingredients: RecipeFormIngredient[]
   steps: string[]
   folders: string[]
   mealTimes: RecipeMealTime[]
+}
+
+export type RecipeFormIngredient = {
+  quantity: string
+  unit: string
+  name: string
+  notes: string
 }
 
 export type RecipeFormSubmitValues = {
@@ -72,7 +79,7 @@ export type RecipeFormSubmitValues = {
   prepTimeMinutes: number | null
   cookTimeMinutes: number | null
   servings: number | null
-  ingredients: string[] | null
+  ingredients: RecipeFormIngredient[] | null
   steps: string[] | null
   folders: string[] | null
   mealTimes: RecipeMealTime[] | null
@@ -113,10 +120,14 @@ export function buildRecipeFormSubmitValues(
   const title = values.title.trim()
   if (!title) return null
 
-  const normalizedIngredients = values.ingredientsText
-    .split(/\r?\n/)
-    .map((ingredient) => ingredient.trim())
-    .filter(Boolean)
+  const normalizedIngredients = values.ingredients
+    .map((ingredient) => ({
+      quantity: ingredient.quantity.trim(),
+      unit: ingredient.unit.trim(),
+      name: ingredient.name.trim(),
+      notes: ingredient.notes.trim(),
+    }))
+    .filter((ingredient) => ingredient.name)
   const normalizedSteps = values.steps.map((step) => step.trim()).filter(Boolean)
   const normalizedFolders = values.folders.map((folder) => folder.trim()).filter(Boolean)
   const emoji = normalizeOptionalText(values.emoji)
@@ -148,7 +159,7 @@ export function createEmptyRecipeFormValues(): RecipeFormValues {
     prepTimeMinutes: '',
     cookTimeMinutes: '',
     servings: '',
-    ingredientsText: '',
+    ingredients: [{ quantity: '', unit: '', name: '', notes: '' }],
     steps: [''],
     folders: [],
     mealTimes: [],
@@ -179,7 +190,6 @@ const IMAGE_QUALITY_STEPS = [
   0.58,
   0.5,
 ]
-const INGREDIENTS_MIN_HEIGHT = 148
 
 async function getPickedImageSizeBytes(asset: ImagePicker.ImagePickerAsset): Promise<number> {
   const fileSize = (asset as { fileSize?: number | null }).fileSize
@@ -234,7 +244,6 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   const [emojiDraft, setEmojiDraft] = useState('')
   const [emojiKeyboardInset, setEmojiKeyboardInset] = useState(0)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
-  const [ingredientsInputHeight, setIngredientsInputHeight] = useState(INGREDIENTS_MIN_HEIGHT)
   const [focusedStepIndex, setFocusedStepIndex] = useState<number | null>(null)
   const [isMoreDetailsExpanded, setIsMoreDetailsExpanded] = useState(() => {
     const source = initialValues ?? createEmptyRecipeFormValues()
@@ -314,6 +323,28 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       const steps = [...prev.steps]
       steps[index] = next
       return { ...prev, steps }
+    })
+  }, [])
+
+  const updateIngredient = useCallback((index: number, key: keyof RecipeFormIngredient, next: string) => {
+    setValues((prev) => {
+      const ingredients = [...prev.ingredients]
+      ingredients[index] = { ...ingredients[index], [key]: next }
+      return { ...prev, ingredients }
+    })
+  }, [])
+
+  const addIngredient = useCallback(() => {
+    setValues((prev) => ({
+      ...prev,
+      ingredients: [...prev.ingredients, { quantity: '', unit: '', name: '', notes: '' }],
+    }))
+  }, [])
+
+  const removeIngredient = useCallback((index: number) => {
+    setValues((prev) => {
+      const ingredients = prev.ingredients.filter((_, itemIndex) => itemIndex !== index)
+      return { ...prev, ingredients: ingredients.length ? ingredients : [{ quantity: '', unit: '', name: '', notes: '' }] }
     })
   }, [])
 
@@ -612,34 +643,25 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
 
         <View style={styles.fieldCompact}>
           <Text style={styles.primarySectionLabel}>{t('recipes.form.ingredients')}</Text>
-          <TextInput
-            value={values.ingredientsText}
-            onChangeText={(t) => update('ingredientsText', t)}
-            placeholder={t('recipes.form.ingredientsPlaceholder')}
-            placeholderTextColor={styles.placeholder.color}
-            style={[
-              styles.textareaInput,
-              styles.ingredientsInput,
-              { height: ingredientsInputHeight },
-              shouldTintPrefilledValues &&
-                isPrefilledValue(values.ingredientsText, initialFormValues.ingredientsText) &&
-                styles.prefilledValue,
-            ]}
-            editable={!isSubmitting}
-            multiline
-            scrollEnabled={false}
-            onContentSizeChange={({ nativeEvent }) => {
-              const nextHeight = Math.max(
-                INGREDIENTS_MIN_HEIGHT,
-                Math.ceil(nativeEvent.contentSize.height)
-              )
-              setIngredientsInputHeight((currentHeight) =>
-                currentHeight === nextHeight ? currentHeight : nextHeight
-              )
-            }}
-            autoCapitalize="sentences"
-            textAlignVertical="top"
-          />
+          <View style={styles.ingredientsStack}>
+            {values.ingredients.map((ingredient, index) => (
+              <View key={`ingredient-${index}`} style={styles.ingredientEditor}>
+                <View style={styles.ingredientRow}>
+                  <TextInput value={ingredient.quantity} onChangeText={(value) => updateIngredient(index, 'quantity', value)} placeholder={t('recipes.form.quantityPlaceholder')} placeholderTextColor={styles.placeholder.color} style={[styles.input, styles.ingredientQuantity]} keyboardType="decimal-pad" editable={!isSubmitting} />
+                  <TextInput value={ingredient.unit} onChangeText={(value) => updateIngredient(index, 'unit', value)} placeholder={t('recipes.form.unitPlaceholder')} placeholderTextColor={styles.placeholder.color} style={[styles.input, styles.ingredientUnit]} autoCapitalize="none" editable={!isSubmitting} />
+                  <TextInput value={ingredient.name} onChangeText={(value) => updateIngredient(index, 'name', value)} placeholder={t('recipes.form.ingredientNamePlaceholder')} placeholderTextColor={styles.placeholder.color} style={[styles.input, styles.ingredientName]} autoCapitalize="sentences" editable={!isSubmitting} />
+                  <Pressable onPress={() => removeIngredient(index)} disabled={isSubmitting} hitSlop={8} style={styles.ingredientRemoveButton} accessibilityRole="button" accessibilityLabel={t('recipes.form.removeIngredientA11y', { ingredient: index + 1 })}>
+                    <Feather name="x" size={16} color={styles.stepClearIcon.color} />
+                  </Pressable>
+                </View>
+                <TextInput value={ingredient.notes} onChangeText={(value) => updateIngredient(index, 'notes', value)} placeholder={t('recipes.form.ingredientNotesPlaceholder')} placeholderTextColor={styles.placeholder.color} style={styles.ingredientNotesInput} autoCapitalize="sentences" editable={!isSubmitting} />
+              </View>
+            ))}
+            <Pressable onPress={addIngredient} disabled={isSubmitting} style={styles.addIngredientButton} accessibilityRole="button">
+              <Feather name="plus" size={16} color={styles.addStepText.color} />
+              <Text style={styles.addStepText}>{t('recipes.form.addIngredient')}</Text>
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.fieldCompact}>
@@ -1274,9 +1296,15 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.foreground,
     textAlignVertical: 'top',
   },
-  ingredientsInput: {
-    minHeight: INGREDIENTS_MIN_HEIGHT,
-  },
+  ingredientsStack: { gap: theme.spacing.sm },
+  ingredientEditor: { gap: theme.spacing.xs, padding: theme.spacing.sm, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.xl, backgroundColor: theme.colors.card },
+  ingredientRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
+  ingredientQuantity: { width: 64, paddingHorizontal: theme.spacing.sm },
+  ingredientUnit: { width: 66, paddingHorizontal: theme.spacing.sm },
+  ingredientName: { flex: 1, paddingHorizontal: theme.spacing.sm },
+  ingredientNotesInput: { ...theme.textVariants.caption, color: theme.colors.foreground, paddingHorizontal: theme.spacing.sm, paddingVertical: theme.spacing.xs },
+  ingredientRemoveButton: { padding: theme.spacing.xs },
+  addIngredientButton: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: theme.spacing.xs, paddingVertical: theme.spacing.xs },
   notesInput: {
     minHeight: 112,
   },

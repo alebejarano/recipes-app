@@ -338,9 +338,12 @@ export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
 
   if (input.ingredients && input.ingredients.length > 0) {
     const { error: ingredientError } = await supabase.from('recipe_ingredients').insert(
-      input.ingredients.map((name, index) => ({
+      input.ingredients.map((ingredient, index) => ({
         recipe_id: recipe.id,
-        name,
+        name: ingredient.name,
+        quantity: ingredient.quantity || null,
+        unit: ingredient.unit || null,
+        notes: ingredient.notes || null,
         position: index + 1,
       }))
     )
@@ -560,9 +563,12 @@ export async function updateRecipe(id: string, input: UpdateRecipeInput): Promis
       const { error: ingredientError } = await supabase
         .from('recipe_ingredients')
         .insert(
-          input.ingredients.map((name, index) => ({
+          input.ingredients.map((ingredient, index) => ({
             recipe_id: id,
-            name,
+            name: ingredient.name,
+            quantity: ingredient.quantity || null,
+            unit: ingredient.unit || null,
+            notes: ingredient.notes || null,
             position: index + 1,
           }))
         )

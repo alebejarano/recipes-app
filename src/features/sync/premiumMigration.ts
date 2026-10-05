@@ -63,10 +63,15 @@ function parseJsonArray<T>(raw: string | null | undefined): T[] {
 }
 
 function parseIngredientNames(raw: LocalRecipeRow['ingredients_json']) {
-  const list = parseJsonArray<{ name?: string | null }>(raw)
+  const list = parseJsonArray<{ name?: string | null; quantity?: string | null; unit?: string | null; notes?: string | null }>(raw)
   return list
-    .map((item) => (typeof item?.name === 'string' ? item.name.trim() : ''))
-    .filter(Boolean)
+    .map((item) => ({
+      name: item?.name?.trim() ?? '',
+      quantity: item?.quantity?.trim() ?? '',
+      unit: item?.unit?.trim() ?? '',
+      notes: item?.notes?.trim() ?? '',
+    }))
+    .filter((item) => item.name)
 }
 
 function parseFolderNames(raw: LocalRecipeRow['folders_json']) {
