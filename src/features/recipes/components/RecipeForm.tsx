@@ -3,6 +3,7 @@ import { File } from '@/lib/fileSystem'
 import { Feather } from '@expo/vector-icons'
 import { Image } from 'expo-image'
 import * as ImagePicker from 'expo-image-picker'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import React, {
   forwardRef,
   useCallback,
@@ -168,6 +169,30 @@ export function createEmptyRecipeFormValues(): RecipeFormValues {
 
 type FolderSuggestion = { label: string; emoji?: string | null }
 
+type UnitOption = {
+  value: string
+  group: 'weight' | 'volume' | 'other'
+  label?: string
+}
+
+const UNIT_OPTIONS: UnitOption[] = [
+  { value: 'g', group: 'weight' },
+  { value: 'kg', group: 'weight' },
+  { value: 'oz', group: 'weight' },
+  { value: 'lb', group: 'weight' },
+  { value: 'ml', group: 'volume' },
+  { value: 'l', group: 'volume' },
+  { value: 'tsp', group: 'volume' },
+  { value: 'tbsp', group: 'volume' },
+  { value: 'fl oz', group: 'volume' },
+  { value: 'cup', group: 'volume' },
+  { value: 'piece', group: 'other' },
+  { value: 'pinch', group: 'other' },
+  { value: 'clove', group: 'other' },
+  { value: 'can', group: 'other' },
+  { value: '', label: 'noUnit', group: 'other' },
+]
+
 type Props = {
   mode?: 'create' | 'edit'
   initialValues?: RecipeFormValues
@@ -233,6 +258,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   ref
 ) {
   const { t } = useTranslation()
+  const insets = useSafeAreaInsets()
   const [values, setValues] = useState<RecipeFormValues>(
     initialValues ?? createEmptyRecipeFormValues()
   )
@@ -241,10 +267,13 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   const [isEmojiModalOpen, setIsEmojiModalOpen] = useState(false)
   const [isCoverOptionsModalOpen, setIsCoverOptionsModalOpen] = useState(false)
   const [isPhotoOptionsModalOpen, setIsPhotoOptionsModalOpen] = useState(false)
+  const [unitPickerIndex, setUnitPickerIndex] = useState<number | null>(null)
+  const [unitSearch, setUnitSearch] = useState('')
   const [emojiDraft, setEmojiDraft] = useState('')
   const [emojiKeyboardInset, setEmojiKeyboardInset] = useState(0)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [focusedStepIndex, setFocusedStepIndex] = useState<number | null>(null)
+  const [focusedIngredientIndex, setFocusedIngredientIndex] = useState<number | null>(null)
   const [isMoreDetailsExpanded, setIsMoreDetailsExpanded] = useState(() => {
     const source = initialValues ?? createEmptyRecipeFormValues()
     return Boolean(
@@ -333,6 +362,29 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       return { ...prev, ingredients }
     })
   }, [])
+
+  const openUnitPicker = useCallback((index: number) => {
+    setUnitSearch('')
+    setFocusedIngredientIndex(index)
+    setUnitPickerIndex(index)
+  }, [])
+
+  const selectUnit = useCallback((unit: string) => {
+    if (unitPickerIndex === null) return
+    updateIngredient(unitPickerIndex, 'unit', unit)
+    setUnitPickerIndex(null)
+    setFocusedIngredientIndex(null)
+  }, [unitPickerIndex, updateIngredient])
+
+  const closeUnitPicker = useCallback(() => {
+    setUnitPickerIndex(null)
+    setFocusedIngredientIndex(null)
+  }, [])
+
+  const filteredUnits = useMemo(() => {
+    const query = unitSearch.trim().toLowerCase()
+    return UNIT_OPTIONS.filter((option) => !query || (option.label ?? option.value).includes(query))
+  }, [unitSearch])
 
   const addIngredient = useCallback(() => {
     setValues((prev) => ({
@@ -645,22 +697,34 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
           <Text style={styles.primarySectionLabel}>{t('recipes.form.ingredients')}</Text>
           <View style={styles.ingredientsStack}>
             {values.ingredients.map((ingredient, index) => (
-              <View key={`ingredient-${index}`} style={styles.ingredientEditor}>
+              <View key={`ingredient-${index}`} style={[styles.ingredientEditor, focusedIngredientIndex === index && styles.ingredientEditorActive]}>
                 <View style={styles.ingredientRow}>
-                  <TextInput value={ingredient.quantity} onChangeText={(value) => updateIngredient(index, 'quantity', value)} placeholder={t('recipes.form.quantityPlaceholder')} placeholderTextColor={styles.placeholder.color} style={[styles.input, styles.ingredientQuantity]} keyboardType="decimal-pad" editable={!isSubmitting} />
-                  <TextInput value={ingredient.unit} onChangeText={(value) => updateIngredient(index, 'unit', value)} placeholder={t('recipes.form.unitPlaceholder')} placeholderTextColor={styles.placeholder.color} style={[styles.input, styles.ingredientUnit]} autoCapitalize="none" editable={!isSubmitting} />
-                  <TextInput value={ingredient.name} onChangeText={(value) => updateIngredient(index, 'name', value)} placeholder={t('recipes.form.ingredientNamePlaceholder')} placeholderTextColor={styles.placeholder.color} style={[styles.input, styles.ingredientName]} autoCapitalize="sentences" editable={!isSubmitting} />
-                  <Pressable onPress={() => removeIngredient(index)} disabled={isSubmitting} hitSlop={8} style={styles.ingredientRemoveButton} accessibilityRole="button" accessibilityLabel={t('recipes.form.removeIngredientA11y', { ingredient: index + 1 })}>
-                    <Feather name="x" size={16} color={styles.stepClearIcon.color} />
-                  </Pressable>
+                  <View style={styles.ingredientFieldGroup}>
+                    <TextInput value={ingredient.quantity} onChangeText={(value) => updateIngredient(index, 'quantity', value)} onFocus={() => setFocusedIngredientIndex(index)} onBlur={() => setFocusedIngredientIndex((current) => current === index ? null : current)} placeholder={t('recipes.form.quantityPlaceholder')} placeholderTextColor={styles.placeholder.color} style={[styles.ingredientGroupInput, styles.ingredientQuantity]} keyboardType="decimal-pad" editable={!isSubmitting} />
+                    <Pressable onPress={() => openUnitPicker(index)} disabled={isSubmitting} style={styles.ingredientUnitPicker} accessibilityRole="button" accessibilityLabel={t('recipes.form.unitPlaceholder')}>
+                      <Text numberOfLines={1} style={[styles.ingredientUnitText, !ingredient.unit && styles.placeholder]}>{ingredient.unit || t('recipes.form.unitPlaceholder')}</Text>
+                      <Feather name="chevron-down" size={18} color={styles.ingredientUnitText.color} />
+                    </Pressable>
+                    <TextInput value={ingredient.name} onChangeText={(value) => updateIngredient(index, 'name', value)} onFocus={() => setFocusedIngredientIndex(index)} onBlur={() => setFocusedIngredientIndex((current) => current === index ? null : current)} placeholder={t('recipes.form.ingredientNamePlaceholder')} placeholderTextColor={styles.placeholder.color} style={[styles.ingredientGroupInput, styles.ingredientName]} autoCapitalize="sentences" editable={!isSubmitting} />
+                    <Pressable onPress={() => removeIngredient(index)} disabled={isSubmitting} hitSlop={8} style={styles.ingredientRemoveButton} accessibilityRole="button" accessibilityLabel={t('recipes.form.removeIngredientA11y', { ingredient: index + 1 })}>
+                      <Feather name="x" size={16} color={styles.stepClearIcon.color} />
+                    </Pressable>
+                  </View>
                 </View>
-                <TextInput value={ingredient.notes} onChangeText={(value) => updateIngredient(index, 'notes', value)} placeholder={t('recipes.form.ingredientNotesPlaceholder')} placeholderTextColor={styles.placeholder.color} style={styles.ingredientNotesInput} autoCapitalize="sentences" editable={!isSubmitting} />
+                <TextInput value={ingredient.notes} onChangeText={(value) => updateIngredient(index, 'notes', value)} onFocus={() => setFocusedIngredientIndex(index)} onBlur={() => setFocusedIngredientIndex((current) => current === index ? null : current)} placeholder={t('recipes.form.ingredientNotesPlaceholder')} placeholderTextColor={styles.placeholder.color} style={styles.ingredientNotesInput} autoCapitalize="sentences" editable={!isSubmitting} />
               </View>
             ))}
-            <Pressable onPress={addIngredient} disabled={isSubmitting} style={styles.addIngredientButton} accessibilityRole="button">
-              <Feather name="plus" size={16} color={styles.addStepText.color} />
-              <Text style={styles.addStepText}>{t('recipes.form.addIngredient')}</Text>
-            </Pressable>
+            <Button
+              variant="ghost"
+              size="md"
+              onPress={addIngredient}
+              disabled={isSubmitting}
+              style={styles.addIngredientButton}
+              textStyle={styles.addStepText}
+              icon={<Feather name="plus" size={18} color={styles.addStepIcon.color} />}
+            >
+              {t('recipes.form.addIngredient')}
+            </Button>
           </View>
         </View>
 
@@ -696,6 +760,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
                       placeholderTextColor={styles.placeholder.color}
                       style={[
                         styles.stepInput,
+                        focusedStepIndex === index && styles.stepInputFocused,
                         showStepClear && styles.stepInputWithClear,
                         shouldTintPrefilledValues &&
                           isPrefilledValue(step, initialFormValues.steps[index]) &&
@@ -1049,6 +1114,62 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       ) : null}
 
       <Modal
+        visible={unitPickerIndex !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={closeUnitPicker}
+      >
+        <KeyboardAvoidingView style={styles.unitPickerBackdrop} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <Pressable style={styles.modalDismissArea} onPress={closeUnitPicker} accessibilityRole="button" accessibilityLabel={t('recipes.form.cancel')} />
+          <View style={[styles.unitPickerSheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+            <View style={styles.unitPickerHandle} />
+            <Text style={styles.unitPickerTitle}>{t('recipes.form.unitPickerTitle')}</Text>
+            <Text style={styles.unitPickerSubtitle}>
+              {unitPickerIndex === null ? '' : t('recipes.form.unitPickerFor', {
+                quantity: values.ingredients[unitPickerIndex]?.quantity || '—',
+                name: values.ingredients[unitPickerIndex]?.name || t('recipes.form.ingredientNamePlaceholder'),
+              })}
+            </Text>
+            <View style={styles.unitSearch}>
+              <Feather name="search" size={20} color={styles.unitSearchIcon.color} />
+              <TextInput value={unitSearch} onChangeText={setUnitSearch} placeholder={t('recipes.form.typeUnitPlaceholder')} placeholderTextColor={styles.placeholder.color} style={styles.unitSearchInput} autoCapitalize="none" autoCorrect={false} />
+            </View>
+            <ScrollView contentContainerStyle={[styles.unitGroups, { paddingBottom: insets.bottom }]} keyboardShouldPersistTaps="handled">
+              {unitSearch.trim() && !UNIT_OPTIONS.some((option) => option.value.toLowerCase() === unitSearch.trim().toLowerCase()) ? (
+                <Pressable onPress={() => selectUnit(unitSearch.trim())} style={styles.customUnitOption} accessibilityRole="button">
+                  <Feather name="plus" size={18} color={styles.addStepIcon.color} />
+                  <Text style={styles.customUnitOptionText}>{t('recipes.form.useCustomUnit', { unit: unitSearch.trim() })}</Text>
+                </Pressable>
+              ) : null}
+              {(['weight', 'volume', 'other'] as const).map((group) => {
+                const units = filteredUnits.filter((option) => option.group === group)
+                if (!units.length) return null
+                const title = group === 'weight'
+                  ? t('recipes.form.unitGroupWeight')
+                  : group === 'volume'
+                    ? t('recipes.form.unitGroupVolume')
+                    : t('recipes.form.unitGroupOther')
+                return (
+                  <View key={group} style={styles.unitGroup}>
+                    <Text style={styles.unitGroupTitle}>{title}</Text>
+                    <View style={styles.unitOptions}>
+                      {units.map((option) => {
+                        const isSelected = values.ingredients[unitPickerIndex ?? 0]?.unit === option.value
+                        const label = option.label === 'noUnit' ? t('recipes.form.noUnit') : option.value
+                        return <Pressable key={option.label ?? option.value} onPress={() => selectUnit(option.value)} style={[styles.unitOption, isSelected && styles.unitOptionSelected]} accessibilityRole="button" accessibilityState={{ selected: isSelected }}>
+                          <Text style={[styles.unitOptionText, isSelected && styles.unitOptionTextSelected]}>{label}</Text>
+                        </Pressable>
+                      })}
+                    </View>
+                  </View>
+                )
+              })}
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      <Modal
         visible={isCoverOptionsModalOpen}
         animationType="fade"
         transparent
@@ -1297,14 +1418,18 @@ const styles = createThemedStyles((theme) => ({
     textAlignVertical: 'top',
   },
   ingredientsStack: { gap: theme.spacing.sm },
-  ingredientEditor: { gap: theme.spacing.xs, padding: theme.spacing.sm, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.xl, backgroundColor: theme.colors.card },
-  ingredientRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
-  ingredientQuantity: { width: 64, paddingHorizontal: theme.spacing.sm },
-  ingredientUnit: { width: 66, paddingHorizontal: theme.spacing.sm },
-  ingredientName: { flex: 1, paddingHorizontal: theme.spacing.sm },
-  ingredientNotesInput: { ...theme.textVariants.caption, color: theme.colors.foreground, paddingHorizontal: theme.spacing.sm, paddingVertical: theme.spacing.xs },
-  ingredientRemoveButton: { padding: theme.spacing.xs },
-  addIngredientButton: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: theme.spacing.xs, paddingVertical: theme.spacing.xs },
+  ingredientEditor: { overflow: 'hidden', borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.xl, backgroundColor: theme.colors.card },
+  ingredientEditorActive: { borderColor: theme.colors.primary },
+  ingredientRow: { flexDirection: 'row', alignItems: 'stretch' },
+  ingredientFieldGroup: { flex: 1, minHeight: 46, flexDirection: 'row', alignItems: 'stretch' },
+  ingredientGroupInput: { ...theme.textVariants.body, color: theme.colors.foreground, paddingHorizontal: theme.spacing.md },
+  ingredientQuantity: { width: 82, borderRightWidth: 1, borderRightColor: theme.colors.border },
+  ingredientUnitPicker: { width: 112, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: theme.spacing.xs, paddingHorizontal: theme.spacing.md, borderRightWidth: 1, borderRightColor: theme.colors.border },
+  ingredientUnitText: { ...theme.textVariants.body, flexShrink: 1, color: theme.colors.foreground },
+  ingredientName: { flex: 1 },
+  ingredientNotesInput: { borderTopWidth: 1, borderTopColor: theme.colors.border, ...theme.textVariants.caption, color: theme.colors.foreground, paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm },
+  ingredientRemoveButton: { width: 44, alignItems: 'center', justifyContent: 'center' },
+  addIngredientButton: { alignSelf: 'flex-start', paddingHorizontal: 0 },
   notesInput: {
     minHeight: 112,
   },
@@ -1328,6 +1453,24 @@ const styles = createThemedStyles((theme) => ({
     bottom: 0,
     left: 0,
   },
+  unitPickerBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: theme.colors.overlay },
+  unitPickerSheet: { maxHeight: '78%', gap: theme.spacing.md, paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.sm, paddingBottom: theme.spacing.xl, borderTopLeftRadius: theme.radii.xxl, borderTopRightRadius: theme.radii.xxl, backgroundColor: theme.colors.background },
+  unitPickerHandle: { alignSelf: 'center', width: 80, height: 5, borderRadius: 999, backgroundColor: theme.colors.border },
+  unitPickerTitle: { ...theme.textVariants.title, color: theme.colors.foreground },
+  unitPickerSubtitle: { ...theme.textVariants.body, color: theme.colors.mutedForeground, marginTop: -theme.spacing.sm },
+  unitSearch: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, paddingHorizontal: theme.spacing.md, borderRadius: theme.radii.xl, backgroundColor: theme.colors.muted },
+  unitSearchIcon: { color: theme.colors.mutedForeground },
+  unitSearchInput: { flex: 1, ...theme.textVariants.body, color: theme.colors.foreground },
+  unitGroups: { gap: theme.spacing.lg, paddingBottom: theme.spacing.md },
+  unitGroup: { gap: theme.spacing.sm },
+  unitGroupTitle: { ...theme.textVariants.emphasis, color: theme.colors.mutedForeground, textTransform: 'uppercase', letterSpacing: 1.1 },
+  unitOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm },
+  unitOption: { minWidth: 104, alignItems: 'center', justifyContent: 'center', paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.background },
+  unitOptionSelected: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primary },
+  unitOptionText: { ...theme.textVariants.body, color: theme.colors.foreground },
+  unitOptionTextSelected: { color: theme.colors.primaryForeground },
+  customUnitOption: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: theme.spacing.xs, paddingVertical: theme.spacing.xs },
+  customUnitOptionText: { ...theme.textVariants.body, color: theme.colors.primary },
   centeredModalCard: {
     width: '100%',
     maxWidth: 420,
@@ -1403,6 +1546,7 @@ const styles = createThemedStyles((theme) => ({
   stepInputWithClear: {
     paddingRight: 40,
   },
+  stepInputFocused: { borderColor: theme.colors.primary },
   stepClearButton: {
     position: 'absolute',
     right: theme.spacing.md,
