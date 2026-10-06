@@ -142,7 +142,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
     [recipe?.ingredients]
   )
   const displayedIngredients = useMemo(
-    () => (recipe?.ingredients ?? []).map((ingredient) => formatIngredientMeasurement(convertIngredientMeasurement(ingredient, measurementSystem))),
+    () => (recipe?.ingredients ?? []).map((ingredient) => convertIngredientMeasurement(ingredient, measurementSystem)),
     [measurementSystem, recipe?.ingredients]
   )
   const recipesCount = recipesListQuery.data?.filter((item) => item.access === 'active').length ?? 0
@@ -601,24 +601,26 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>{t('recipes.detail.ingredients')}</Text>
-            <View style={styles.ingredientsActions}>
-              <View style={styles.measurementToggle}>{(['original', 'metric', 'us'] as MeasurementSystem[]).map((system) => <TouchableOpacity key={system} onPress={() => setMeasurementSystem(system)} style={[styles.measurementOption, measurementSystem === system && styles.measurementOptionActive]}><Text style={[styles.measurementOptionText, measurementSystem === system && styles.measurementOptionTextActive]}>{t(`recipes.detail.measurement.${system}`)}</Text></TouchableOpacity>)}</View>
-              <TouchableOpacity onPress={() => setIsIngredientImportOpen(true)} accessibilityRole="button" accessibilityLabel={t('recipes.detail.addIngredientsA11y')} style={styles.sectionActionButton}>
-                <MaterialIcons name="add-shopping-cart" size={16} style={styles.sectionActionIcon} />
-                <Text style={styles.sectionActionText}>{t('recipes.detail.addIngredients')}</Text>
-              </TouchableOpacity>
-            </View>
+            <View style={styles.measurementToggle}>{(['original', 'metric', 'us'] as MeasurementSystem[]).map((system) => <TouchableOpacity key={system} onPress={() => setMeasurementSystem(system)} style={[styles.measurementOption, measurementSystem === system && styles.measurementOptionActive]}><Text style={[styles.measurementOptionText, measurementSystem === system && styles.measurementOptionTextActive]}>{t(`recipes.detail.measurement.${system}`)}</Text></TouchableOpacity>)}</View>
           </View>
           <View style={styles.card}>
             {displayedIngredients.length > 0 ? (
-              displayedIngredients.map((line, index) => (
-                <View key={`${line}-${index}`} style={styles.ingredientRow}>
-                  <Text style={styles.ingredientText}>{line}</Text>
+              displayedIngredients.map((ingredient, index) => (
+                <View key={`${ingredient.quantity}-${ingredient.unit}-${ingredient.name}-${index}`} style={styles.ingredientRow}>
+                  <Text style={styles.ingredientQuantity}>{[ingredient.quantity, ingredient.unit].filter(Boolean).join(' ')}</Text>
+                  <Text style={styles.ingredientText}>
+                    {ingredient.name}
+                    {ingredient.notes ? <Text style={styles.ingredientNotes}>{` · ${ingredient.notes}`}</Text> : null}
+                  </Text>
                 </View>
               ))
             ) : (
               <Text style={styles.emptyText}>{t('recipes.detail.noIngredientsListed')}</Text>
             )}
+            <TouchableOpacity onPress={() => setIsIngredientImportOpen(true)} accessibilityRole="button" accessibilityLabel={t('recipes.detail.addIngredientsA11y')} style={styles.sectionActionButton}>
+              <MaterialIcons name="add-shopping-cart" size={24} style={styles.sectionActionIcon} />
+              <Text style={styles.sectionActionText}>{t('recipes.detail.addIngredients')}</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -853,12 +855,11 @@ const styles = createThemedStyles((theme) => ({
     justifyContent: 'space-between',
     gap: theme.spacing.sm,
   },
-  ingredientsActions: { alignItems: 'flex-end', gap: theme.spacing.xs },
-  measurementToggle: { flexDirection: 'row', borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, overflow: 'hidden' },
-  measurementOption: { paddingHorizontal: theme.spacing.sm, paddingVertical: 4 },
-  measurementOptionActive: { backgroundColor: theme.colors.foreground },
-  measurementOptionText: { ...theme.textVariants.caption, color: theme.colors.mutedForeground },
-  measurementOptionTextActive: { color: theme.colors.background },
+  measurementToggle: { flex: 1, flexDirection: 'row', gap: theme.spacing.xs, padding: theme.spacing.xxs, borderRadius: theme.radii.full, backgroundColor: theme.colors.creamDark },
+  measurementOption: { flex: 1, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: theme.radii.full },
+  measurementOptionActive: { backgroundColor: theme.colors.background, borderWidth: 1, borderColor: theme.colors.border },
+  measurementOptionText: { ...theme.textVariants.label, color: theme.colors.mutedForeground },
+  measurementOptionTextActive: { color: theme.colors.foreground },
   sectionTitle: {
     ...theme.textVariants.subtitle,
     color: theme.colors.foreground,
@@ -866,36 +867,48 @@ const styles = createThemedStyles((theme) => ({
   sectionActionButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: theme.spacing.xs,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.radii.md,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    minHeight: 56,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
   },
   sectionActionIcon: {
     color: theme.colors.primaryDark,
   },
   sectionActionText: {
-    ...theme.textVariants.labelSmall,
-    color: theme.colors.foreground,
+    ...theme.textVariants.subtitle,
+    color: theme.colors.primaryDark,
   },
   card: {
-    borderRadius: theme.radii.lg,
-    backgroundColor: theme.colors.muted,
-    padding: theme.spacing.lg,
-    gap: theme.spacing.sm,
+    overflow: 'hidden',
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   ingredientRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: theme.spacing.sm,
+    gap: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  ingredientQuantity: {
+    width: 80,
+    ...theme.textVariants.body,
+    color: theme.colors.foreground,
   },
   ingredientText: {
     flex: 1,
     ...theme.textVariants.body,
     color: theme.colors.foreground,
+  },
+  ingredientNotes: {
+    ...theme.textVariants.body,
+    color: theme.colors.mutedForeground,
   },
   stepsBlock: {
     gap: theme.spacing.md,
