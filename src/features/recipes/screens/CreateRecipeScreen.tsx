@@ -124,6 +124,7 @@ export default function CreateRecipeScreen({
   const [entryMode, setEntryMode] = useState<CreateRecipeEntry | null>(
     isOnboarding ? 'scratch' : entry ?? null
   )
+  const [isUnitPickerOpen, setIsUnitPickerOpen] = useState(false)
   const [limitModalType, setLimitModalType] = useState<PlanLimitReachedType | null>(null)
   const [pendingRetry, setPendingRetry] = useState<PendingLimitRetry | null>(null)
   const hasTriedAutoRetryRef = useRef(false)
@@ -507,6 +508,7 @@ export default function CreateRecipeScreen({
                     onCreateFolder={handleCreateFolder}
                     imageUploadMode={shouldUseLocalData ? 'local' : 'cloud'}
                     plan={importPlan}
+                    onUnitPickerVisibilityChange={setIsUnitPickerOpen}
                   />
                 )}
               </>
@@ -555,7 +557,7 @@ export default function CreateRecipeScreen({
           </ScrollView>
 
           {/* The entry picker has its own choices; actions belong to a form. */}
-          {entryMode ? (
+          {entryMode && !isUnitPickerOpen ? (
             <View
               style={[
                 styles.footer,

@@ -206,6 +206,7 @@ type Props = {
   folderContextMessage?: string | null
   imageUploadMode?: 'cloud' | 'local'
   plan?: ImportPlan
+  onUnitPickerVisibilityChange?: (isVisible: boolean) => void
 }
 
 const IMAGE_QUALITY_STEPS = [
@@ -254,6 +255,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     folderContextMessage,
     imageUploadMode = 'cloud',
     plan: _plan = 'free',
+    onUnitPickerVisibilityChange,
   },
   ref
 ) {
@@ -269,6 +271,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   const [isPhotoOptionsModalOpen, setIsPhotoOptionsModalOpen] = useState(false)
   const [unitPickerIndex, setUnitPickerIndex] = useState<number | null>(null)
   const [unitSearch, setUnitSearch] = useState('')
+  const [unitPickerHeight, setUnitPickerHeight] = useState<number | null>(null)
   const [emojiDraft, setEmojiDraft] = useState('')
   const [emojiKeyboardInset, setEmojiKeyboardInset] = useState(0)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
@@ -365,6 +368,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
 
   const openUnitPicker = useCallback((index: number) => {
     setUnitSearch('')
+    setUnitPickerHeight(null)
     setFocusedIngredientIndex(index)
     setUnitPickerIndex(index)
   }, [])
@@ -378,8 +382,18 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
 
   const closeUnitPicker = useCallback(() => {
     setUnitPickerIndex(null)
+    setUnitPickerHeight(null)
     setFocusedIngredientIndex(null)
   }, [])
+
+  useEffect(() => {
+    onUnitPickerVisibilityChange?.(unitPickerIndex !== null)
+    return () => onUnitPickerVisibilityChange?.(false)
+  }, [onUnitPickerVisibilityChange, unitPickerIndex])
+
+  const handleUnitPickerLayout = useCallback((height: number) => {
+    if (!unitSearch.trim()) setUnitPickerHeight(height)
+  }, [unitSearch])
 
   const filteredUnits = useMemo(() => {
     const query = unitSearch.trim().toLowerCase()
@@ -1117,11 +1131,23 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
         visible={unitPickerIndex !== null}
         transparent
         animationType="slide"
+        statusBarTranslucent
+        navigationBarTranslucent
         onRequestClose={closeUnitPicker}
       >
-        <KeyboardAvoidingView style={styles.unitPickerBackdrop} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView
+          style={styles.unitPickerBackdrop}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <Pressable style={styles.modalDismissArea} onPress={closeUnitPicker} accessibilityRole="button" accessibilityLabel={t('recipes.form.cancel')} />
-          <View style={[styles.unitPickerSheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+          <View
+            onLayout={(event) => handleUnitPickerLayout(event.nativeEvent.layout.height)}
+            style={[
+              styles.unitPickerSheet,
+              unitSearch.trim() && unitPickerHeight ? { height: unitPickerHeight } : undefined,
+              { paddingBottom: Math.max(insets.bottom, 16) },
+            ]}
+          >
             <View style={styles.unitPickerHandle} />
             <Text style={styles.unitPickerTitle}>{t('recipes.form.unitPickerTitle')}</Text>
             <Text style={styles.unitPickerSubtitle}>
@@ -1134,7 +1160,11 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
               <Feather name="search" size={20} color={styles.unitSearchIcon.color} />
               <TextInput value={unitSearch} onChangeText={setUnitSearch} placeholder={t('recipes.form.typeUnitPlaceholder')} placeholderTextColor={styles.placeholder.color} style={styles.unitSearchInput} autoCapitalize="none" autoCorrect={false} />
             </View>
-            <ScrollView contentContainerStyle={[styles.unitGroups, { paddingBottom: insets.bottom }]} keyboardShouldPersistTaps="handled">
+            <ScrollView
+              style={unitSearch.trim() ? styles.unitGroupsScroll : undefined}
+              contentContainerStyle={[styles.unitGroups, { paddingBottom: insets.bottom }]}
+              keyboardShouldPersistTaps="handled"
+            >
               {unitSearch.trim() && !UNIT_OPTIONS.some((option) => option.value.toLowerCase() === unitSearch.trim().toLowerCase()) ? (
                 <Pressable onPress={() => selectUnit(unitSearch.trim())} style={styles.customUnitOption} accessibilityRole="button">
                   <Feather name="plus" size={18} color={styles.addStepIcon.color} />
@@ -1454,13 +1484,14 @@ const styles = createThemedStyles((theme) => ({
     left: 0,
   },
   unitPickerBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: theme.colors.overlay },
-  unitPickerSheet: { maxHeight: '78%', gap: theme.spacing.md, paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.sm, paddingBottom: theme.spacing.xl, borderTopLeftRadius: theme.radii.xxl, borderTopRightRadius: theme.radii.xxl, backgroundColor: theme.colors.background },
+  unitPickerSheet: { maxHeight: '78%', flexShrink: 0, gap: theme.spacing.md, paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.sm, paddingBottom: theme.spacing.xl, borderTopLeftRadius: theme.radii.xxl, borderTopRightRadius: theme.radii.xxl, backgroundColor: theme.colors.background },
   unitPickerHandle: { alignSelf: 'center', width: 80, height: 5, borderRadius: 999, backgroundColor: theme.colors.border },
   unitPickerTitle: { ...theme.textVariants.title, color: theme.colors.foreground },
   unitPickerSubtitle: { ...theme.textVariants.body, color: theme.colors.mutedForeground, marginTop: -theme.spacing.sm },
   unitSearch: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, paddingHorizontal: theme.spacing.md, borderRadius: theme.radii.xl, backgroundColor: theme.colors.muted },
   unitSearchIcon: { color: theme.colors.mutedForeground },
   unitSearchInput: { flex: 1, ...theme.textVariants.body, color: theme.colors.foreground },
+  unitGroupsScroll: { flex: 1 },
   unitGroups: { gap: theme.spacing.lg, paddingBottom: theme.spacing.md },
   unitGroup: { gap: theme.spacing.sm },
   unitGroupTitle: { ...theme.textVariants.emphasis, color: theme.colors.mutedForeground, textTransform: 'uppercase', letterSpacing: 1.1 },

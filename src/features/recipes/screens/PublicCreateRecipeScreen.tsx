@@ -118,6 +118,7 @@ export default function PublicCreateRecipeScreen({
   }>()
   const { isPremium } = useStorageStrategy()
   const [entryMode, setEntryMode] = useState<'scratch' | 'pdf' | null>(entry ?? null)
+  const [isUnitPickerOpen, setIsUnitPickerOpen] = useState(false)
   const [limitModalType, setLimitModalType] = useState<PlanLimitReachedType | null>(null)
   const [pendingRetry, setPendingRetry] = useState<PendingLimitRetry | null>(null)
   const hasTriedAutoRetryRef = useRef(false)
@@ -476,6 +477,7 @@ export default function PublicCreateRecipeScreen({
                     folderContextMessage={folderContextMessage}
                     onCreateFolder={handleCreateFolder}
                     imageUploadMode="local"
+                    onUnitPickerVisibilityChange={setIsUnitPickerOpen}
                   />
                 )}
               </>
@@ -523,7 +525,7 @@ export default function PublicCreateRecipeScreen({
           </ScrollView>
 
           {/* The entry picker has its own choices; actions belong to a form. */}
-          {entryMode ? (
+          {entryMode && !isUnitPickerOpen ? (
             <View style={[styles.footer, { paddingBottom: footerBottomPadding }]}>
               <Button
                 variant="secondary"
