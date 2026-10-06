@@ -110,7 +110,7 @@ describe('recipe sync', () => {
 
         expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({
             title: 'Pasta',
-            ingredients: ['Pasta'],
+            ingredients: [{ name: 'Pasta', quantity: '', unit: '', notes: '' }],
             steps: ['Boil water', 'Add pasta'],
             folders: ['Dinner'],
             mealTimes: ['dinner'],

@@ -36,6 +36,7 @@ import {
 } from '@/features/recipes/hooks/useStrategyRecipes'
 import { findLibraryRecipe, useLibraryRecipesList } from '@/features/recipes/hooks/useLibraryRecipes'
 import { useMeasurementSystem } from '@/features/recipes/hooks/useMeasurementSystem'
+import { useConversionReference } from '@/features/recipes/hooks/useConversionReference'
 import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { convertIngredientMeasurement, formatIngredientMeasurement, type MeasurementSystem } from '@/features/recipes/utils/ingredientMeasurements'
 import { buildRecipeShareText, shareRecipeAsTextFile } from '@/features/recipes/utils/shareRecipe'
@@ -112,6 +113,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
   const [isActionsSheetOpen, setIsActionsSheetOpen] = useState(false)
   const [isShareSheetOpen, setIsShareSheetOpen] = useState(false)
   const { measurementSystem, setMeasurementSystem } = useMeasurementSystem()
+  const conversionReferenceQuery = useConversionReference()
   const { user } = useAuth()
   const showSnackbar = useTransientSnackbarStore((state) => state.show)
 
@@ -142,8 +144,8 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
     [recipe?.ingredients]
   )
   const displayedIngredients = useMemo(
-    () => (recipe?.ingredients ?? []).map((ingredient) => convertIngredientMeasurement(ingredient, measurementSystem)),
-    [measurementSystem, recipe?.ingredients]
+    () => (recipe?.ingredients ?? []).map((ingredient) => convertIngredientMeasurement(ingredient, measurementSystem, conversionReferenceQuery.data)),
+    [conversionReferenceQuery.data, measurementSystem, recipe?.ingredients]
   )
   const recipesCount = recipesListQuery.data?.filter((item) => item.access === 'active').length ?? 0
   const usageSnapshot = useMemo(

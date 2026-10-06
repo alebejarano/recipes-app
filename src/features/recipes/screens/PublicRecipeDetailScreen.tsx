@@ -27,6 +27,7 @@ import RecipeShareSheet from '@/features/recipes/components/RecipeShareSheet'
 import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
 import { useDeleteLocalRecipe, useLocalRecipe, useUpdateLocalRecipe } from '@/features/recipes/hooks/useLocalRecipes'
 import { useMeasurementSystem } from '@/features/recipes/hooks/useMeasurementSystem'
+import { useConversionReference } from '@/features/recipes/hooks/useConversionReference'
 import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { convertIngredientMeasurement, formatIngredientMeasurement, type MeasurementSystem } from '@/features/recipes/utils/ingredientMeasurements'
 import { buildRecipeShareText, shareRecipeAsTextFile } from '@/features/recipes/utils/shareRecipe'
@@ -92,6 +93,7 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
   const [isActionsSheetOpen, setIsActionsSheetOpen] = useState(false)
   const [isShareSheetOpen, setIsShareSheetOpen] = useState(false)
   const { measurementSystem, setMeasurementSystem } = useMeasurementSystem()
+  const conversionReferenceQuery = useConversionReference()
 
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const safeReturnTo = getSafeReturnTo(returnTo)
@@ -108,8 +110,8 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
     [recipe?.ingredients]
   )
   const displayedIngredients = useMemo(
-    () => (recipe?.ingredients ?? []).map((ingredient) => convertIngredientMeasurement(ingredient, measurementSystem)),
-    [measurementSystem, recipe?.ingredients]
+    () => (recipe?.ingredients ?? []).map((ingredient) => convertIngredientMeasurement(ingredient, measurementSystem, conversionReferenceQuery.data)),
+    [conversionReferenceQuery.data, measurementSystem, recipe?.ingredients]
   )
   const bulkAdd = useShoppingListStore((s) => s.bulkAdd)
 
