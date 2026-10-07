@@ -29,7 +29,7 @@ type AuthContextValue = {
   isLoading: boolean
 
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string) => Promise<AuthResponse['data']>
+  register: (email: string, password: string) => Promise<RegisterResult>
   resendEmailConfirmation: (email: string) => Promise<void>
   verifySignupCode: (email: string, code: string) => Promise<void>
   resendEmailChangeConfirmation: (email: string) => Promise<void>
@@ -44,6 +44,10 @@ type AuthContextValue = {
   updatePasswordWithCurrentPassword: (currentPassword: string, nextPassword: string, nonce?: string) => Promise<void>
   deleteAccount: () => Promise<void>
   logout: () => Promise<void>
+}
+
+type RegisterResult = AuthResponse['data'] & {
+  existingAccount: boolean
 }
 
 export type PushPreferences = {
@@ -295,6 +299,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
     if (error) throw error
 
+    // With email confirmation enabled, Supabase intentionally returns a
+    // sessionless user with no identities when the email is already
+    // registered. Treat it as an existing account instead of sending the
+    // person into the new-account confirmation flow.
+    const existingAccount = !data.session && data.user?.identities?.length === 0
+    if (existingAccount) return { ...data, existingAccount }
+
     if (startedAsGuest && data.user?.id) {
       try {
         await AsyncStorage.setItem(PENDING_GUEST_DATA_CLAIM_KEY, data.user.id)
@@ -323,7 +334,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     }
-    return data
+    return { ...data, existingAccount }
   }, [claimPendingGuestData])
 
   const resendEmailConfirmation = useCallback(async (email: string) => {

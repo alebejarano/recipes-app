@@ -96,6 +96,22 @@ describe('AuthProvider', () => {
         unmount();
     });
 
+    it('identifies Supabase’s obfuscated existing-account sign-up response', async () => {
+        mockSignUp.mockResolvedValue({
+            data: { session: null, user: { id: 'existing-user', identities: [] } },
+            error: null,
+        });
+        const { result, unmount } = await renderAuth();
+
+        let registration;
+        await act(async () => {
+            registration = await result.current.register('cook@example.com', 'Secure123');
+        });
+
+        expect(registration).toEqual(expect.objectContaining({ existingAccount: true }));
+        unmount();
+    });
+
     it('signs the user out', async () => {
         const { result, unmount } = await renderAuth();
 

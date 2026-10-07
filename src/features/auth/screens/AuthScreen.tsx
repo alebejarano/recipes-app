@@ -223,6 +223,15 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
       // Register
       const data = await register(normalizedEmail, password)
+      if (data.existingAccount) {
+        setMode('login')
+        setError({
+          title: t('auth.errors.emailAlreadyRegisteredTitle'),
+          message: t('auth.errors.emailAlreadyRegisteredMessage'),
+        })
+        return
+      }
+
       captureAnalyticsEvent('sign_up_completed', { method: 'email' })
 
       // If email confirmations are enabled, session may be null.

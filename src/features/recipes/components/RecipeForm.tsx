@@ -172,7 +172,7 @@ type FolderSuggestion = { label: string; emoji?: string | null }
 type UnitOption = {
   value: string
   group: 'weight' | 'volume' | 'other'
-  label?: string
+  label?: 'unitPiece' | 'unitPinch' | 'unitClove' | 'unitCan' | 'noUnit'
 }
 
 const UNIT_OPTIONS: UnitOption[] = [
@@ -186,10 +186,10 @@ const UNIT_OPTIONS: UnitOption[] = [
   { value: 'tbsp', group: 'volume' },
   { value: 'fl oz', group: 'volume' },
   { value: 'cup', group: 'volume' },
-  { value: 'piece', group: 'other' },
-  { value: 'pinch', group: 'other' },
-  { value: 'clove', group: 'other' },
-  { value: 'can', group: 'other' },
+  { value: 'piece', label: 'unitPiece', group: 'other' },
+  { value: 'pinch', label: 'unitPinch', group: 'other' },
+  { value: 'clove', label: 'unitClove', group: 'other' },
+  { value: 'can', label: 'unitCan', group: 'other' },
   { value: '', label: 'noUnit', group: 'other' },
 ]
 
@@ -395,10 +395,19 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     if (!unitSearch.trim()) setUnitPickerHeight(height)
   }, [unitSearch])
 
+  const getUnitOptionLabel = useCallback((option: UnitOption) => {
+    if (option.label === 'unitPiece') return t('recipes.form.unitPiece')
+    if (option.label === 'unitPinch') return t('recipes.form.unitPinch')
+    if (option.label === 'unitClove') return t('recipes.form.unitClove')
+    if (option.label === 'unitCan') return t('recipes.form.unitCan')
+    if (option.label === 'noUnit') return t('recipes.form.noUnit')
+    return option.value
+  }, [t])
+
   const filteredUnits = useMemo(() => {
     const query = unitSearch.trim().toLowerCase()
-    return UNIT_OPTIONS.filter((option) => !query || (option.label ?? option.value).includes(query))
-  }, [unitSearch])
+    return UNIT_OPTIONS.filter((option) => !query || getUnitOptionLabel(option).toLowerCase().includes(query))
+  }, [getUnitOptionLabel, unitSearch])
 
   const addIngredient = useCallback(() => {
     setValues((prev) => ({
@@ -716,7 +725,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
                   <View style={styles.ingredientFieldGroup}>
                     <TextInput value={ingredient.quantity} onChangeText={(value) => updateIngredient(index, 'quantity', value)} onFocus={() => setFocusedIngredientIndex(index)} onBlur={() => setFocusedIngredientIndex((current) => current === index ? null : current)} placeholder={t('recipes.form.quantityPlaceholder')} placeholderTextColor={styles.placeholder.color} style={[styles.ingredientGroupInput, styles.ingredientQuantity]} keyboardType="decimal-pad" editable={!isSubmitting} />
                     <Pressable onPress={() => openUnitPicker(index)} disabled={isSubmitting} style={styles.ingredientUnitPicker} accessibilityRole="button" accessibilityLabel={t('recipes.form.unitPlaceholder')}>
-                      <Text numberOfLines={1} style={[styles.ingredientUnitText, !ingredient.unit && styles.placeholder]}>{ingredient.unit || t('recipes.form.unitPlaceholder')}</Text>
+                      <Text numberOfLines={1} style={[styles.ingredientUnitText, !ingredient.unit && styles.placeholder]}>{ingredient.unit ? getUnitOptionLabel(UNIT_OPTIONS.find((option) => option.value === ingredient.unit) ?? { value: ingredient.unit, group: 'other' }) : t('recipes.form.unitPlaceholder')}</Text>
                       <Feather name="chevron-down" size={18} color={styles.ingredientUnitText.color} />
                     </Pressable>
                     <TextInput value={ingredient.name} onChangeText={(value) => updateIngredient(index, 'name', value)} onFocus={() => setFocusedIngredientIndex(index)} onBlur={() => setFocusedIngredientIndex((current) => current === index ? null : current)} placeholder={t('recipes.form.ingredientNamePlaceholder')} placeholderTextColor={styles.placeholder.color} style={[styles.ingredientGroupInput, styles.ingredientName]} autoCapitalize="sentences" editable={!isSubmitting} />
@@ -1185,7 +1194,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
                     <View style={styles.unitOptions}>
                       {units.map((option) => {
                         const isSelected = values.ingredients[unitPickerIndex ?? 0]?.unit === option.value
-                        const label = option.label === 'noUnit' ? t('recipes.form.noUnit') : option.value
+                        const label = getUnitOptionLabel(option)
                         return <Pressable key={option.label ?? option.value} onPress={() => selectUnit(option.value)} style={[styles.unitOption, isSelected && styles.unitOptionSelected]} accessibilityRole="button" accessibilityState={{ selected: isSelected }}>
                           <Text style={[styles.unitOptionText, isSelected && styles.unitOptionTextSelected]}>{label}</Text>
                         </Pressable>
@@ -1453,7 +1462,7 @@ const styles = createThemedStyles((theme) => ({
   ingredientRow: { flexDirection: 'row', alignItems: 'stretch' },
   ingredientFieldGroup: { flex: 1, minHeight: 46, flexDirection: 'row', alignItems: 'stretch' },
   ingredientGroupInput: { ...theme.textVariants.body, color: theme.colors.foreground, paddingHorizontal: theme.spacing.md },
-  ingredientQuantity: { width: 82, borderRightWidth: 1, borderRightColor: theme.colors.border },
+  ingredientQuantity: { width: 64, paddingHorizontal: theme.spacing.sm, borderRightWidth: 1, borderRightColor: theme.colors.border },
   ingredientUnitPicker: { width: 112, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: theme.spacing.xs, paddingHorizontal: theme.spacing.md, borderRightWidth: 1, borderRightColor: theme.colors.border },
   ingredientUnitText: { ...theme.textVariants.body, flexShrink: 1, color: theme.colors.foreground },
   ingredientName: { flex: 1 },
