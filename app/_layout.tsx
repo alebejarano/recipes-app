@@ -57,30 +57,30 @@ export default function RootLayout() {
   }
 
   const content = (
-    <LocalizationProvider>
-      <QueryProvider>
-        <AuthProvider>
-          <SubscriptionProvider>
-            <StorageStrategyProvider>
-              <RecipeSyncBootstrap />
-              <OnboardingProvider>
-                <DowngradeGate />
-                <Slot />
-                <GlobalSnackbar />
-              </OnboardingProvider>
-            </StorageStrategyProvider>
-          </SubscriptionProvider>
-        </AuthProvider>
-      </QueryProvider>
-    </LocalizationProvider>
+    <QueryProvider>
+      <AuthProvider>
+        <SubscriptionProvider>
+          <StorageStrategyProvider>
+            <RecipeSyncBootstrap />
+            <OnboardingProvider>
+              <DowngradeGate />
+              <Slot />
+              <GlobalSnackbar />
+            </OnboardingProvider>
+          </StorageStrategyProvider>
+        </SubscriptionProvider>
+      </AuthProvider>
+    </QueryProvider>
   )
 
   return (
     <AnalyticsConsentProvider>
       <PostHogGate enabled={posthogEnabled} apiKey={posthogApiKey} host={posthogHost}>
-        <ThemeProvider>
-          <ThemedApp>{content}</ThemedApp>
-        </ThemeProvider>
+        <LocalizationProvider>
+          <ThemeProvider>
+            <ThemedApp>{content}</ThemedApp>
+          </ThemeProvider>
+        </LocalizationProvider>
       </PostHogGate>
     </AnalyticsConsentProvider>
   )

@@ -109,7 +109,12 @@ export default function PublicAccountScreen() {
   )
 
   return (
-    <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
+    <Screen
+      scroll
+      scrollRestorationKey="guest-account"
+      bottomPadding={bottomPadding}
+      contentStyle={styles.content}
+    >
       <ProfileHeader title={t('profile.guest.title')} />
 
       <ProfileUserCard name={t('profile.guest.name')} subtitle={t('profile.guest.email')} />

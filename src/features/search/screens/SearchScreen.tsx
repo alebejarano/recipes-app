@@ -103,6 +103,11 @@ export default function SearchScreen({ mode }: SearchScreenProps) {
         recipe.subtitle ?? '',
         recipe.description ?? '',
         ...(recipe.folders ?? []).map((folder) => folder.name),
+        ...(recipe.ingredients ?? []).flatMap((ingredient) => [
+          ingredient.name,
+          ingredient.unit ?? '',
+          ingredient.notes ?? '',
+        ]),
       ]
         .join(' ')
         .toLowerCase()

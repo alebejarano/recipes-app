@@ -186,7 +186,12 @@ export default function ProfileScreen() {
       })
 
   return (
-    <Screen scroll bottomPadding={bottomPadding} contentStyle={styles.content}>
+    <Screen
+      scroll
+      scrollRestorationKey="profile"
+      bottomPadding={bottomPadding}
+      contentStyle={styles.content}
+    >
       <ProfileHeader
         title={t('profile.title')}
         environmentLabel={environmentLabel}
