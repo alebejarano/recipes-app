@@ -1,7 +1,8 @@
-import { router } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import { Text, View } from 'react-native'
 
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
+import { getSafeReturnTo } from '@/lib/navigation'
 import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 
@@ -18,6 +19,10 @@ type PolicySection = {
     groups?: readonly PolicyGroup[]
     bullets?: readonly string[]
     footer?: string
+}
+
+type PrivacyPolicyScreenProps = {
+    onBack?: () => void
 }
 
 const POLICY_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly PolicySection[]> = {
@@ -385,8 +390,11 @@ const POLICY_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly PolicySection[]> =
     ],
 }
 
-export default function PrivacyPolicyScreen() {
+export default function PrivacyPolicyScreen({ onBack }: PrivacyPolicyScreenProps) {
     const { locale, t } = useTranslation()
+    const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
+    const safeReturnTo = getSafeReturnTo(returnTo)
+    const handleBack = onBack ?? (() => safeReturnTo ? router.replace(safeReturnTo) : router.back())
     const sections = locale.toLowerCase().startsWith('es')
         ? POLICY_SECTIONS_BY_LOCALE.es
         : POLICY_SECTIONS_BY_LOCALE.en
@@ -395,7 +403,7 @@ export default function PrivacyPolicyScreen() {
         <ProfileSubpageLayout
             title={t('auth.legal.privacyPolicyTitle')}
             subtitle={t('auth.legal.lastUpdated')}
-            onBack={() => router.back()}
+            onBack={handleBack}
         >
             <Text style={styles.intro}>{t('auth.legal.privacyIntro')}</Text>
 

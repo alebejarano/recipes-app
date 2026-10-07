@@ -5,6 +5,7 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   Text,
@@ -19,6 +20,8 @@ import { useAnalyticsCapture } from '@/features/analytics/events'
 import { OTP_CODE_LENGTH } from '@/features/auth/constants/otp'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { isValidEmail, normalizeEmail } from '@/features/auth/utils/email'
+import PrivacyPolicyScreen from '@/features/profile/screens/PrivacyPolicyScreen'
+import TermsOfServiceScreen from '@/features/profile/screens/TermsOfServiceScreen'
 import {
   PASSWORD_REQUIREMENTS,
   getPasswordPolicyIssues,
@@ -41,6 +44,8 @@ type SubmitError = {
   title: string
   message: string
 } | null
+
+type LegalDocument = 'terms' | 'privacy' | null
 
 const KEYBOARD_SCROLL_PADDING = 96
 
@@ -77,6 +82,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
   const [error, setError] = useState<SubmitError>(null)
   const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false)
+  const [legalDocument, setLegalDocument] = useState<LegalDocument>(null)
 
   const isLogin = mode === 'login'
 
@@ -370,7 +376,8 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -545,14 +552,20 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
                 {t('auth.screen.legalPrefix')}
                 <Text
                   style={styles.legalConsentLink}
-                  onPress={() => router.push('/(public)/terms')}
+                  onPress={(event) => {
+                    event.stopPropagation()
+                    setLegalDocument('terms')
+                  }}
                 >
                   {t('auth.legal.termsTitle')}
                 </Text>
                 {t('auth.screen.legalMiddle')}
                 <Text
                   style={styles.legalConsentLink}
-                  onPress={() => router.push('/(public)/privacy-policy')}
+                  onPress={(event) => {
+                    event.stopPropagation()
+                    setLegalDocument('privacy')
+                  }}
                 >
                   {t('auth.legal.privacyPolicyTitle')}
                 </Text>
@@ -585,7 +598,21 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+
+      <Modal
+        visible={legalDocument !== null}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setLegalDocument(null)}
+      >
+        {legalDocument === 'terms' ? (
+          <TermsOfServiceScreen onBack={() => setLegalDocument(null)} />
+        ) : legalDocument === 'privacy' ? (
+          <PrivacyPolicyScreen onBack={() => setLegalDocument(null)} />
+        ) : null}
+      </Modal>
+    </>
   )
 }
 

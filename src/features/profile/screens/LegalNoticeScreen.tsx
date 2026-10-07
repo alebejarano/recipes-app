@@ -1,7 +1,8 @@
-import { router } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import { Text, View } from 'react-native'
 
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
+import { getSafeReturnTo } from '@/lib/navigation'
 import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 
@@ -130,6 +131,8 @@ const NOTICE_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly NoticeSection[]> =
 
 export default function LegalNoticeScreen() {
     const { locale, t } = useTranslation()
+    const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
+    const safeReturnTo = getSafeReturnTo(returnTo)
     const sections = locale.toLowerCase().startsWith('es')
         ? NOTICE_SECTIONS_BY_LOCALE.es
         : NOTICE_SECTIONS_BY_LOCALE.en
@@ -138,7 +141,7 @@ export default function LegalNoticeScreen() {
         <ProfileSubpageLayout
             title={t('auth.legal.legalNoticeTitle')}
             subtitle={t('auth.legal.lastUpdated')}
-            onBack={() => router.back()}
+            onBack={() => safeReturnTo ? router.replace(safeReturnTo) : router.back()}
         >
             <Text style={styles.intro}>{t('auth.legal.legalIntro')}</Text>
 

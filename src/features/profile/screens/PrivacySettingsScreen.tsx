@@ -14,9 +14,10 @@ import { SubscriptionContext } from '@/features/subscription/context/Subscriptio
 type PrivacySettingsScreenProps = {
   onBack: () => void
   exportRoute: string
+  returnRoute: string
 }
 
-export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySettingsScreenProps) {
+export default function PrivacySettingsScreen({ onBack, exportRoute, returnRoute }: PrivacySettingsScreenProps) {
   const { t } = useTranslation()
   const { user, deleteAccount } = useAuth()
   const { plan } = useContext(SubscriptionContext)
@@ -98,7 +99,10 @@ export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySe
         icon: 'file-text' as const,
         title: t('profile.privacySettings.policyTitle'),
         subtitle: t('profile.privacySettings.policySubtitle'),
-        onPress: () => router.push('/privacy-policy'),
+        onPress: () => router.push({
+          pathname: '/privacy-policy',
+          params: { returnTo: returnRoute },
+        }),
       },
       {
         id: 'terms',
@@ -106,7 +110,10 @@ export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySe
         icon: 'file-text' as const,
         title: t('profile.privacySettings.termsTitle'),
         subtitle: t('profile.privacySettings.termsSubtitle'),
-        onPress: () => router.push('/(public)/terms'),
+        onPress: () => router.push({
+          pathname: '/(public)/terms',
+          params: { returnTo: returnRoute },
+        }),
       },
       {
         id: 'legal-notice',
@@ -114,10 +121,13 @@ export default function PrivacySettingsScreen({ onBack, exportRoute }: PrivacySe
         icon: 'info' as const,
         title: t('profile.privacySettings.legalTitle'),
         subtitle: t('profile.privacySettings.legalSubtitle'),
-        onPress: () => router.push('/(public)/legal-notice' as any),
+        onPress: () => router.push({
+          pathname: '/(public)/legal-notice',
+          params: { returnTo: returnRoute },
+        }),
       },
     ],
-    [analyticsConsentLoaded, analyticsEnabled, exportRoute, hasAccount, setAnalyticsEnabled, t, unavailableSubtitle]
+    [analyticsConsentLoaded, analyticsEnabled, exportRoute, hasAccount, returnRoute, setAnalyticsEnabled, t, unavailableSubtitle]
   )
   const dangerItems = useMemo(
     () => [

@@ -1,8 +1,9 @@
-import { router } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import React from 'react'
 import { Text, View } from 'react-native'
 
 import ProfileSubpageLayout from '@/features/profile/components/ProfileSubpageLayout'
+import { getSafeReturnTo } from '@/lib/navigation'
 import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 
@@ -11,6 +12,10 @@ type TermsSection = {
     paragraphs?: readonly string[]
     bullets?: readonly string[]
     footer?: string
+}
+
+type TermsOfServiceScreenProps = {
+    onBack?: () => void
 }
 
 const TERMS_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly TermsSection[]> = {
@@ -250,8 +255,11 @@ const TERMS_SECTIONS_BY_LOCALE: Record<'en' | 'es', readonly TermsSection[]> = {
     ],
 }
 
-export default function TermsOfServiceScreen() {
+export default function TermsOfServiceScreen({ onBack }: TermsOfServiceScreenProps) {
     const { locale, t } = useTranslation()
+    const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
+    const safeReturnTo = getSafeReturnTo(returnTo)
+    const handleBack = onBack ?? (() => safeReturnTo ? router.replace(safeReturnTo) : router.back())
     const sections = locale.toLowerCase().startsWith('es')
         ? TERMS_SECTIONS_BY_LOCALE.es
         : TERMS_SECTIONS_BY_LOCALE.en
@@ -260,7 +268,7 @@ export default function TermsOfServiceScreen() {
         <ProfileSubpageLayout
             title={t('auth.legal.termsTitle')}
             subtitle={t('auth.legal.lastUpdated')}
-            onBack={() => router.back()}
+            onBack={handleBack}
         >
             <Text style={styles.intro}>{t('auth.legal.termsIntro')}</Text>
 

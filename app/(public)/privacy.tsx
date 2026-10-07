@@ -7,6 +7,7 @@ export default function PrivacySettingsRoute() {
     <PrivacySettingsScreen
       onBack={() => router.replace('/(public)/(tabs)/profile')}
       exportRoute="/(public)/settings/export-data"
+      returnRoute="/(public)/privacy"
     />
   )
 }
