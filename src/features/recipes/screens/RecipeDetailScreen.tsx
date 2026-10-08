@@ -547,6 +547,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
               <View style={styles.tagsRow}>
                 {folders.map((folder) => (
                   <View key={folder} style={styles.tagPill}>
+                    <Feather name="folder" size={14} style={styles.tagIcon} />
                     <Text style={styles.tagText}>{folder}</Text>
                   </View>
                 ))}
@@ -624,6 +625,10 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
             <TouchableOpacity activeOpacity={1} onPress={() => setIsIngredientImportOpen(true)} accessibilityRole="button" accessibilityLabel={t('recipes.detail.addIngredientsA11y')} style={styles.sectionActionButton}>
               <MaterialIcons name="add-shopping-cart" size={24} style={styles.sectionActionIcon} />
               <Text style={styles.sectionActionText}>{t('recipes.detail.addIngredients')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity activeOpacity={0.8} onPress={() => router.push('/(auth)/converter' as never)} accessibilityRole="button" accessibilityLabel={t('recipes.detail.unitConverterA11y')} style={styles.unitConverterLink}>
+              <Text style={styles.unitConverterText}>{t('recipes.detail.unitConverter')}</Text>
+              <Feather name="arrow-up-right" size={20} style={styles.unitConverterIcon} />
             </TouchableOpacity>
           </View>
         </View>
@@ -823,10 +828,16 @@ const styles = createThemedStyles((theme) => ({
     gap: theme.spacing.sm,
   },
   tagPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.radii.xl,
     backgroundColor: theme.colors.secondary,
+  },
+  tagIcon: {
+    color: theme.colors.mutedForeground,
   },
   tagText: {
     ...theme.textVariants.labelSmall,
@@ -888,6 +899,20 @@ const styles = createThemedStyles((theme) => ({
   sectionActionText: {
     ...theme.textVariants.subtitle,
     color: theme.colors.primaryDark,
+  },
+  unitConverterLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingHorizontal: theme.spacing.xs,
+    paddingTop: theme.spacing.md,
+  },
+  unitConverterText: {
+    ...theme.textVariants.body,
+    color: theme.colors.foreground,
+  },
+  unitConverterIcon: {
+    color: theme.colors.foreground,
   },
   ingredientsBlock: {
     gap: 0,

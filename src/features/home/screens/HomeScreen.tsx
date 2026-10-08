@@ -758,6 +758,7 @@ export default function HomeScreen({
     root === '(public)'
         ? '/(public)/shopping-list'
         : '/(auth)/shopping-list';
+  const converterPath = root === '(public)' ? '/(public)/converter' : '/(auth)/converter';
   const recipeDocumentDetailPath =
     root === '(public)'
       ? '/(public)/recipes/documents/[id]'
@@ -817,6 +818,15 @@ export default function HomeScreen({
       variant="shoppingEmpty"
       leftIcon={<Feather name="plus" size={28} color={theme.colors.primaryDark} />}
       onPress={openShoppingList}
+    />
+  );
+  const kitchenToolsCard = (
+    <ActionCard
+      kicker={t('home.kitchenTools.kicker')}
+      title={t('home.kitchenTools.unitConverter')}
+      meta={t('home.kitchenTools.unitConverterMeta')}
+      leftIcon={<Feather name="sliders" size={24} color={theme.colors.primaryDark} />}
+      onPress={() => router.push(converterPath as never)}
     />
   );
 
@@ -1233,7 +1243,7 @@ export default function HomeScreen({
         </View>
       ) : null}
 
-      <View style={styles.section}>{shoppingListCard}</View>
+      <View style={styles.section}>{shoppingListCard}{kitchenToolsCard}</View>
     </Screen>
   );
 }

@@ -823,6 +823,11 @@ export const es: TranslationSchema = {
             emptyTitle: 'Empieza una lista de compras',
             emptyMeta: 'Lleva el control de los ingredientes',
         },
+        kitchenTools: {
+            kicker: 'Herramientas de cocina',
+            unitConverter: 'Conversor de unidades',
+            unitConverterMeta: 'Peso, volumen y temperatura',
+        },
         loading: 'Cargando tus recetas...',
         success: {
             account: 'Todo listo. Tus recetas están a salvo.',
@@ -990,6 +995,36 @@ export const es: TranslationSchema = {
             cancel: 'Cancelar',
             creating: 'Creando...',
             create: 'Crear',
+        },
+    },
+    converter: {
+        title: 'Conversor de unidades',
+        intro: 'Medidas y temperaturas de horno.',
+        back: 'Volver',
+        from: 'De',
+        to: 'A',
+        swapUnits: 'Intercambiar unidades',
+        measurements: {
+            title: 'Peso y volumen',
+            subtitle: 'Convierte medidas de cocina habituales.',
+            ingredient: 'Ingrediente',
+            valueA11y: 'Valor de medida',
+            chooseUnit: 'Elige una unidad',
+            chooseIngredient: 'Elige un ingrediente',
+            searchIngredients: 'Buscar ingredientes',
+            sameTypeOnly: 'Elige un ingrediente para convertir entre peso y volumen.',
+            approximation: 'Resultado aproximado para %{ingredient}',
+        },
+        ingredients: {
+            any: 'Cualquiera (solo el mismo tipo)',
+            anyHelp: 'Convierte peso a peso y volumen a volumen.',
+            water: 'Agua', flour: 'Harina', sugar: 'Azúcar', butter: 'Mantequilla',
+        },
+        temperature: {
+            title: 'Temperatura',
+            subtitle: 'Convierte temperaturas de horno y cocina.',
+            valueA11y: 'Valor de temperatura',
+            swap: 'Cambiar Celsius y Fahrenheit',
         },
     },
     recipes: {
@@ -1176,6 +1211,8 @@ export const es: TranslationSchema = {
             ingredients: 'Ingredientes',
             addIngredientsA11y: 'Añadir ingredientes a la lista de compras',
             addIngredients: 'Añadir ingredientes a tu lista',
+            unitConverter: 'Conversor de unidades',
+            unitConverterA11y: 'Abrir conversor de unidades',
             noIngredientsListed: 'No hay ingredientes listados.',
             measurement: {
                 original: 'Original',

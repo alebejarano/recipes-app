@@ -821,6 +821,11 @@ export const en = {
             emptyTitle: 'Start a shopping list',
             emptyMeta: 'Keep track of ingredients',
         },
+        kitchenTools: {
+            kicker: 'Kitchen tools',
+            unitConverter: 'Unit converter',
+            unitConverterMeta: 'Weight, volume and temperature',
+        },
         loading: 'Loading your recipes...',
         success: {
             account: 'You\'re all set! Your recipes are safe.',
@@ -988,6 +993,36 @@ export const en = {
             cancel: 'Cancel',
             creating: 'Creating...',
             create: 'Create',
+        },
+    },
+    converter: {
+        title: 'Unit converter',
+        intro: 'Measurements and oven temperatures.',
+        back: 'Back',
+        from: 'From',
+        to: 'To',
+        swapUnits: 'Swap units',
+        measurements: {
+            title: 'Weight & volume',
+            subtitle: 'Convert common kitchen measurements.',
+            ingredient: 'Ingredient',
+            valueA11y: 'Measurement value',
+            chooseUnit: 'Choose a unit',
+            chooseIngredient: 'Choose an ingredient',
+            searchIngredients: 'Search ingredients',
+            sameTypeOnly: 'Choose an ingredient to convert weight and volume.',
+            approximation: 'Approximate result for %{ingredient}',
+        },
+        ingredients: {
+            any: 'Any (same type only)',
+            anyHelp: 'Converts weight to weight and volume to volume.',
+            water: 'Water', flour: 'Flour', sugar: 'Sugar', butter: 'Butter',
+        },
+        temperature: {
+            title: 'Temperature',
+            subtitle: 'Convert oven and cooking temperatures.',
+            valueA11y: 'Temperature value',
+            swap: 'Switch Celsius and Fahrenheit',
         },
     },
     recipes: {
@@ -1174,6 +1209,8 @@ export const en = {
             ingredients: 'Ingredients',
             addIngredientsA11y: 'Add ingredients to shopping list',
             addIngredients: 'Add ingredients to your list',
+            unitConverter: 'Unit converter',
+            unitConverterA11y: 'Open unit converter',
             noIngredientsListed: 'No ingredients listed.',
             measurement: {
                 original: 'Original',
