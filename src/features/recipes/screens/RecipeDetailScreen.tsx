@@ -5,7 +5,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Image } from 'expo-image'
 import { router, useFocusEffect, useLocalSearchParams, useSegments } from 'expo-router'
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -24,36 +24,36 @@ import { useAuth } from '@/features/auth/context/AuthContext'
 import { isFavoritesFolderName } from '@/features/collections/utils/collections'
 import { useTransientSnackbarStore } from '@/features/feedback/store/useTransientSnackbarStore'
 import { useStrategyCreateFolder, useStrategyFoldersList } from '@/features/folders/hooks/useStrategyFolders'
+import { recordRecipeOpen } from '@/features/home/utils/recipeOpenHistory'
 import IngredientImportSheet from '@/features/recipes/components/IngredientImportSheet'
 import KitchenAlmostFullCard from '@/features/recipes/components/KitchenAlmostFullCard'
 import RecipeActionsSheet from '@/features/recipes/components/RecipeActionsSheet'
-import RecipeShareSheet from '@/features/recipes/components/RecipeShareSheet'
 import type { RecipeFormSubmitValues } from '@/features/recipes/components/RecipeForm'
+import RecipeShareSheet from '@/features/recipes/components/RecipeShareSheet'
+import { useConversionReference } from '@/features/recipes/hooks/useConversionReference'
+import { findLibraryRecipe, useLibraryRecipesList } from '@/features/recipes/hooks/useLibraryRecipes'
+import { useMeasurementSystem } from '@/features/recipes/hooks/useMeasurementSystem'
 import {
   useStrategyDeleteRecipe,
   useStrategyRecipe,
   useStrategyUpdateRecipe,
 } from '@/features/recipes/hooks/useStrategyRecipes'
-import { findLibraryRecipe, useLibraryRecipesList } from '@/features/recipes/hooks/useLibraryRecipes'
-import { useMeasurementSystem } from '@/features/recipes/hooks/useMeasurementSystem'
-import { useConversionReference } from '@/features/recipes/hooks/useConversionReference'
 import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { convertIngredientMeasurement, formatIngredientMeasurement, type MeasurementSystem } from '@/features/recipes/utils/ingredientMeasurements'
 import { buildRecipeShareText, shareRecipeAsTextFile } from '@/features/recipes/utils/shareRecipe'
 import { useShoppingListStore } from '@/features/shopping-list/store/useShoppingListStore'
-import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding'
-import { useTranslation } from '@/localization'
 import { FREE_PLAN_MAX_RECIPES } from '@/features/subscription/constants/limits'
 import { KITCHEN_ALMOST_FULL_RECIPE_DISMISS_UNTIL_PREFIX } from '@/features/subscription/constants/reminderKeys'
 import { SubscriptionContext } from '@/features/subscription/context/SubscriptionContext'
+import { buildFreePlanUsageSnapshot } from '@/features/subscription/utils/planUsage'
 import {
   hasShownKitchenCapacityReminderInSession,
   markKitchenCapacityReminderShownInSession,
 } from '@/features/subscription/utils/reminderSession'
-import { buildFreePlanUsageSnapshot } from '@/features/subscription/utils/planUsage'
-import { recordRecipeOpen } from '@/features/home/utils/recipeOpenHistory'
+import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { useTranslation } from '@/localization'
 
 const FALLBACK_FOLDERS: string[] = []
 
@@ -605,21 +605,23 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
             <Text style={styles.sectionTitle}>{t('recipes.detail.ingredients')}</Text>
             <View style={styles.measurementToggle}>{(['original', 'metric', 'us'] as MeasurementSystem[]).map((system) => <TouchableOpacity key={system} onPress={() => setMeasurementSystem(system)} style={[styles.measurementOption, measurementSystem === system && styles.measurementOptionActive]}><Text style={[styles.measurementOptionText, measurementSystem === system && styles.measurementOptionTextActive]}>{t(`recipes.detail.measurement.${system}`)}</Text></TouchableOpacity>)}</View>
           </View>
-          <View style={styles.card}>
-            {displayedIngredients.length > 0 ? (
-              displayedIngredients.map((ingredient, index) => (
-                <View key={`${ingredient.quantity}-${ingredient.unit}-${ingredient.name}-${index}`} style={styles.ingredientRow}>
-                  <Text style={styles.ingredientQuantity}>{[ingredient.quantity, ingredient.unit].filter(Boolean).join(' ')}</Text>
-                  <Text style={styles.ingredientText}>
-                    {ingredient.name}
-                    {ingredient.notes ? <Text style={styles.ingredientNotes}>{` · ${ingredient.notes}`}</Text> : null}
-                  </Text>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.emptyText}>{t('recipes.detail.noIngredientsListed')}</Text>
-            )}
-            <TouchableOpacity onPress={() => setIsIngredientImportOpen(true)} accessibilityRole="button" accessibilityLabel={t('recipes.detail.addIngredientsA11y')} style={styles.sectionActionButton}>
+          <View style={styles.ingredientsBlock}>
+            <View style={styles.card}>
+              {displayedIngredients.length > 0 ? (
+                displayedIngredients.map((ingredient, index) => (
+                  <View key={`${ingredient.quantity}-${ingredient.unit}-${ingredient.name}-${index}`} style={styles.ingredientRow}>
+                    <Text style={styles.ingredientQuantity}>{[ingredient.quantity, ingredient.unit].filter(Boolean).join(' ')}</Text>
+                    <Text style={styles.ingredientText}>
+                      {ingredient.name}
+                      {ingredient.notes ? <Text style={styles.ingredientNotes}>{` · ${ingredient.notes}`}</Text> : null}
+                    </Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.emptyText}>{t('recipes.detail.noIngredientsListed')}</Text>
+              )}
+            </View>
+            <TouchableOpacity activeOpacity={1} onPress={() => setIsIngredientImportOpen(true)} accessibilityRole="button" accessibilityLabel={t('recipes.detail.addIngredientsA11y')} style={styles.sectionActionButton}>
               <MaterialIcons name="add-shopping-cart" size={24} style={styles.sectionActionIcon} />
               <Text style={styles.sectionActionText}>{t('recipes.detail.addIngredients')}</Text>
             </TouchableOpacity>
@@ -650,7 +652,7 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
         {recipe.description ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('recipes.detail.notes')}</Text>
-            <View style={styles.card}>
+            <View style={styles.noteCard}>
               <Text style={styles.noteText}>{recipe.description}</Text>
             </View>
           </View>
@@ -872,8 +874,13 @@ const styles = createThemedStyles((theme) => ({
     justifyContent: 'center',
     gap: theme.spacing.xs,
     minHeight: 56,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    borderRadius: 0,
+    borderBottomLeftRadius: theme.radii.lg,
+    borderBottomRightRadius: theme.radii.lg,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: theme.colors.border,
   },
   sectionActionIcon: {
     color: theme.colors.primaryDark,
@@ -882,12 +889,22 @@ const styles = createThemedStyles((theme) => ({
     ...theme.textVariants.subtitle,
     color: theme.colors.primaryDark,
   },
+  ingredientsBlock: {
+    gap: 0,
+  },
   card: {
     overflow: 'hidden',
-    borderRadius: theme.radii.xl,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderRadius: 0,
+    borderTopLeftRadius: theme.radii.lg,
+    borderTopRightRadius: theme.radii.lg,
+    backgroundColor: theme.colors.secondary,
+    borderWidth: 0,
+  },
+  noteCard: {
+    borderRadius: theme.radii.lg,
+    backgroundColor: theme.colors.secondary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
   },
   ingredientRow: {
     flexDirection: 'row',

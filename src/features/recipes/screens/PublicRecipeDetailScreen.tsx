@@ -448,21 +448,23 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
             <Text style={styles.sectionTitle}>{t('recipes.detail.ingredients')}</Text>
             <View style={styles.measurementToggle}>{(['original', 'metric', 'us'] as MeasurementSystem[]).map((system) => <TouchableOpacity key={system} onPress={() => setMeasurementSystem(system)} style={[styles.measurementOption, measurementSystem === system && styles.measurementOptionActive]}><Text style={[styles.measurementOptionText, measurementSystem === system && styles.measurementOptionTextActive]}>{t(`recipes.detail.measurement.${system}`)}</Text></TouchableOpacity>)}</View>
           </View>
-          <View style={styles.card}>
-            {displayedIngredients.length > 0 ? (
-              displayedIngredients.map((ingredient, index) => (
-                <View key={`${ingredient.quantity}-${ingredient.unit}-${ingredient.name}-${index}`} style={styles.ingredientRow}>
-                  <Text style={styles.ingredientQuantity}>{[ingredient.quantity, ingredient.unit].filter(Boolean).join(' ')}</Text>
-                  <Text style={styles.ingredientText}>
-                    {ingredient.name}
-                    {ingredient.notes ? <Text style={styles.ingredientNotes}>{` · ${ingredient.notes}`}</Text> : null}
-                  </Text>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.emptyText}>{t('recipes.detail.noIngredientsListed')}</Text>
-            )}
-            <TouchableOpacity onPress={() => setIsIngredientImportOpen(true)} accessibilityRole="button" accessibilityLabel={t('recipes.detail.addIngredientsA11y')} style={styles.sectionActionButton}>
+          <View style={styles.ingredientsBlock}>
+            <View style={styles.card}>
+              {displayedIngredients.length > 0 ? (
+                displayedIngredients.map((ingredient, index) => (
+                  <View key={`${ingredient.quantity}-${ingredient.unit}-${ingredient.name}-${index}`} style={styles.ingredientRow}>
+                    <Text style={styles.ingredientQuantity}>{[ingredient.quantity, ingredient.unit].filter(Boolean).join(' ')}</Text>
+                    <Text style={styles.ingredientText}>
+                      {ingredient.name}
+                      {ingredient.notes ? <Text style={styles.ingredientNotes}>{` · ${ingredient.notes}`}</Text> : null}
+                    </Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.emptyText}>{t('recipes.detail.noIngredientsListed')}</Text>
+              )}
+            </View>
+            <TouchableOpacity activeOpacity={1} onPress={() => setIsIngredientImportOpen(true)} accessibilityRole="button" accessibilityLabel={t('recipes.detail.addIngredientsA11y')} style={styles.sectionActionButton}>
               <MaterialIcons name="add-shopping-cart" size={24} style={styles.sectionActionIcon} />
               <Text style={styles.sectionActionText}>{t('recipes.detail.addIngredients')}</Text>
             </TouchableOpacity>
@@ -493,7 +495,7 @@ export default function PublicRecipeDetailScreen({ recipeId }: RecipeDetailScree
         {recipe.description ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('recipes.detail.notes')}</Text>
-            <View style={styles.card}>
+            <View style={styles.noteCard}>
               <Text style={styles.noteText}>{recipe.description}</Text>
             </View>
           </View>
@@ -715,8 +717,13 @@ const styles = createThemedStyles((theme) => ({
     justifyContent: 'center',
     gap: theme.spacing.xs,
     minHeight: 56,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    borderRadius: 0,
+    borderBottomLeftRadius: theme.radii.lg,
+    borderBottomRightRadius: theme.radii.lg,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: theme.colors.border,
   },
   sectionActionIcon: {
     color: theme.colors.primaryDark,
@@ -725,12 +732,23 @@ const styles = createThemedStyles((theme) => ({
     ...theme.textVariants.subtitle,
     color: theme.colors.primaryDark,
   },
+  ingredientsBlock: {
+    gap: 0,
+  },
   card: {
     overflow: 'hidden',
-    borderRadius: theme.radii.xl,
+    borderRadius: 0,
+    borderTopLeftRadius: theme.radii.lg,
+    borderTopRightRadius: theme.radii.lg,
+    backgroundColor: theme.colors.secondary,
+  },
+  noteCard: {
+    borderRadius: theme.radii.lg,
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
   },
   ingredientRow: {
     flexDirection: 'row',
