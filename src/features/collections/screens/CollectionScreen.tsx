@@ -318,10 +318,6 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
     return items
   }, [folderCounts, foldersQuery.data, recipeData, segment, t])
 
-  const recipeHelperText =
-    recipeSegment === 'documents'
-      ? ''
-      : t('collections.helperText')
   const isCreatingFolder = createFolderMutation.isPending
   const showFab = segment === 'recipes'
 
@@ -466,12 +462,9 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
       {/* Segment content */}
       {segment === 'recipes' ? (
         <>
-          {recipeHelperText ? (
+          {isPublic ? (
             <View style={styles.helperSection}>
-              <Text style={styles.helperText}>{recipeHelperText}</Text>
-              {isPublic ? (
-                <Text style={styles.publicHint}>{t('collections.detail.publicHint')}</Text>
-              ) : null}
+              <Text style={styles.publicHint}>{t('collections.detail.publicHint')}</Text>
             </View>
           ) : null}
 
@@ -716,12 +709,6 @@ const styles = createThemedStyles((theme) => ({
     marginTop: theme.spacing.lg,
     marginBottom: theme.spacing.lg,
   },
-  helperText: {
-    ...theme.textVariants.body,
-    color: theme.colors.mutedForeground,
-    maxWidth: 320,
-  },
-
   successBanner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -761,7 +748,7 @@ const styles = createThemedStyles((theme) => ({
   },
 
   grid: {
-    paddingTop: 0,
+    paddingTop: theme.spacing.xl,
   },
   loadingState: {
     flex: 1,

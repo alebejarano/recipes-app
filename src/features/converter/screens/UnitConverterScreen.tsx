@@ -12,10 +12,11 @@ import {
   TextInput,
   View,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import Screen from '@/components/Screen'
 import { useConversionReference } from '@/features/recipes/hooks/useConversionReference'
-import type { ConversionIngredient, RecipeUnit } from '@/features/recipes/utils/ingredientMeasurements'
+import { formatCulinaryQuantity, parseQuantity, type ConversionIngredient, type RecipeUnit } from '@/features/recipes/utils/ingredientMeasurements'
 import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 import { theme } from '@/styles/theme'
@@ -23,7 +24,7 @@ import { theme } from '@/styles/theme'
 type Selector = 'ingredient' | 'from' | 'to' | null
 const ANY = 'any'
 
-function format(value: number) {
+function formatDecimal(value: number) {
   return Number.isFinite(value) ? new Intl.NumberFormat(undefined, { maximumFractionDigits: value < 10 ? 2 : 0 }).format(value) : '—'
 }
 
@@ -40,6 +41,7 @@ function convert(value: number, from: RecipeUnit | undefined, to: RecipeUnit | u
 
 export default function UnitConverterScreen() {
   const { t } = useTranslation()
+  const insets = useSafeAreaInsets()
   const referenceQuery = useConversionReference()
   const reference = referenceQuery.data
   const units = useMemo(() => (reference?.units ?? []).filter((unit) => unit.dimension === 'mass' || unit.dimension === 'volume'), [reference?.units])
@@ -54,7 +56,8 @@ export default function UnitConverterScreen() {
   const from = units.find((unit) => unit.id === fromId)
   const to = units.find((unit) => unit.id === toId)
   const ingredient = reference?.ingredients.find((item) => item.id === ingredientId)
-  const result = convert(Number(amount.replace(',', '.')) || 0, from, to, ingredient, units, reference?.weights ?? [])
+  const parsedAmount = parseQuantity(amount) ?? 0
+  const result = convert(parsedAmount, from, to, ingredient, units, reference?.weights ?? [])
   const crossType = from?.dimension !== to?.dimension
   const tempResult = isCelsius ? (Number(temperature.replace(',', '.')) || 0) * 9 / 5 + 32 : ((Number(temperature.replace(',', '.')) || 0) - 32) * 5 / 9
   const shownIngredient = ingredient?.canonicalName ?? t('converter.ingredients.any')
@@ -72,9 +75,9 @@ export default function UnitConverterScreen() {
         <View style={styles.conversionArea}>
           <MeasurementRow value={amount} onChangeText={setAmount} unit={from} onPressUnit={() => open('from')} editable />
           <Swap onPress={() => { setFromId(toId); setToId(fromId) }} label={t('converter.swapUnits')} />
-          <MeasurementRow value={result ? `${result.approximate ? '~' : ''}${format(result.value)}` : '—'} unit={to} onPressUnit={() => open('to')} />
+          <MeasurementRow value={result ? `${result.approximate ? '~' : ''}${formatCulinaryQuantity(result.value, to?.id)}` : '—'} unit={to} onPressUnit={() => open('to')} />
         </View>
-        <Text style={styles.note}>{crossType && !result ? t('converter.measurements.sameTypeOnly') : result?.approximate ? t('converter.measurements.approximation', { ingredient: shownIngredient, value: `${amount || 0} ${from?.symbol ?? ''}`, result: `${format(result.value)} ${to?.symbol ?? ''}` }) : `${amount || 0} ${from?.symbol ?? ''} = ${format(result?.value ?? 0)} ${to?.symbol ?? ''}`}</Text>
+        <Text style={styles.note}>{crossType && !result ? t('converter.measurements.sameTypeOnly') : result?.approximate ? t('converter.measurements.approximation', { ingredient: shownIngredient, value: `${amount || 0} ${from?.symbol ?? ''}`, result: `${formatCulinaryQuantity(result.value, to?.id)} ${to?.symbol ?? ''}` }) : `${amount || 0} ${from?.symbol ?? ''} = ${formatCulinaryQuantity(result?.value ?? 0, to?.id)} ${to?.symbol ?? ''}`}</Text>
       </View>
     </View>
 
@@ -83,7 +86,7 @@ export default function UnitConverterScreen() {
       <View style={styles.temperatureCard}>
         <TemperatureRow value={temperature} onChangeText={setTemperature} unit={isCelsius ? '°C' : '°F'} editable />
         <Swap onPress={() => setIsCelsius((value) => !value)} label={t('converter.temperature.swap')} />
-        <TemperatureRow value={format(tempResult)} unit={isCelsius ? '°F' : '°C'} />
+        <TemperatureRow value={formatDecimal(tempResult)} unit={isCelsius ? '°F' : '°C'} />
       </View>
     </View>
 
@@ -95,7 +98,7 @@ export default function UnitConverterScreen() {
               <Text style={styles.sheetTitle}>{selector === 'ingredient' ? t('converter.measurements.chooseIngredient') : t('converter.measurements.chooseUnit')}</Text>
               {selector === 'ingredient' ? <TextInput value={query} onChangeText={setQuery} placeholder={t('converter.measurements.searchIngredients')} placeholderTextColor={theme.colors.mutedForeground} autoFocus style={styles.searchInput} /> : null}
             </View>
-            <ScrollView style={styles.options} contentContainerStyle={styles.optionsContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.options} contentContainerStyle={[styles.optionsContent, { paddingBottom: insets.bottom + theme.spacing['3xl'] }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
               {selector === 'ingredient' ? <Option title={t('converter.ingredients.any')} subtitle={t('converter.ingredients.anyHelp')} onPress={() => { setIngredientId(ANY); setSelector(null) }} /> : null}
               {(selector === 'ingredient' ? availableIngredients : units).map((item) => {
                 const ingredientOption = selector === 'ingredient'; const id = ingredientOption ? (item as ConversionIngredient).id : (item as RecipeUnit).id; const title = ingredientOption ? (item as ConversionIngredient).canonicalName : `${(item as RecipeUnit).name} (${(item as RecipeUnit).symbol})`
@@ -112,7 +115,7 @@ export default function UnitConverterScreen() {
 
 function Option({ title, subtitle, onPress }: { title: string; subtitle?: string; onPress: () => void }) { return <Pressable style={styles.sheetOption} onPress={onPress}><Text style={styles.optionTitle}>{title}</Text>{subtitle ? <Text style={styles.optionSubtitle}>{subtitle}</Text> : null}</Pressable> }
 function Swap({ onPress, label }: { onPress: () => void; label: string }) { return <View style={styles.swapLine}><View style={styles.line} /><Pressable onPress={onPress} style={styles.swap} accessibilityRole="button" accessibilityLabel={label}><Feather name="repeat" size={28} color={theme.colors.primaryDark} /></Pressable><View style={styles.line} /></View> }
-function MeasurementRow({ value, unit, onChangeText, onPressUnit, editable = false }: { value: string; unit?: RecipeUnit; onChangeText?: (value: string) => void; onPressUnit: () => void; editable?: boolean }) { return <View style={styles.row}>{editable ? <TextInput value={value} onChangeText={onChangeText} keyboardType="decimal-pad" style={styles.value} /> : <Text selectable style={[styles.value, styles.valueResult]}>{value}</Text>}<Pressable onPress={onPressUnit} style={styles.unit}><Text style={styles.unitText}>{unit?.symbol ?? '—'}</Text><Feather name="chevron-down" size={22} color={theme.colors.foreground} /></Pressable></View> }
+function MeasurementRow({ value, unit, onChangeText, onPressUnit, editable = false }: { value: string; unit?: RecipeUnit; onChangeText?: (value: string) => void; onPressUnit: () => void; editable?: boolean }) { return <View style={styles.row}>{editable ? <TextInput value={value} onChangeText={onChangeText} keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'} placeholder="1/2" placeholderTextColor={theme.colors.mutedForeground} style={styles.value} /> : <Text selectable style={[styles.value, styles.valueResult]}>{value}</Text>}<Pressable onPress={onPressUnit} style={styles.unit}><Text style={styles.unitText}>{unit?.symbol ?? '—'}</Text><Feather name="chevron-down" size={22} color={theme.colors.foreground} /></Pressable></View> }
 function TemperatureRow({ value, unit, onChangeText, editable = false }: { value: string; unit: string; onChangeText?: (value: string) => void; editable?: boolean }) { return <View style={styles.row}>{editable ? <TextInput value={value} onChangeText={onChangeText} keyboardType="decimal-pad" style={styles.value} /> : <Text selectable style={[styles.value, styles.valueResult]}>{value}</Text>}<Text style={styles.temperatureUnit}>{unit}</Text></View> }
 
 const styles = createThemedStyles((theme) => ({

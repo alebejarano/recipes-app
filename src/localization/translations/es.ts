@@ -908,7 +908,6 @@ export const es: TranslationSchema = {
             importFile: 'Importar archivo',
             createFolder: 'Crear carpeta',
         },
-        helperText: 'Las recetas se agrupan automáticamente según las etiquetas',
         documentsSegment: {
             fallbackTitle: 'Archivo de receta sin título',
             helper: 'Recetas importadas desde archivos PDF o de imagen',

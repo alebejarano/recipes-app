@@ -906,7 +906,6 @@ export const en = {
             importFile: 'Import file',
             createFolder: 'Create folder',
         },
-        helperText: 'Recipes are grouped automatically based on tags',
         documentsSegment: {
             fallbackTitle: 'Untitled recipe file',
             helper: 'Recipes imported from PDF or image files',

@@ -1,4 +1,4 @@
-import { convertIngredientMeasurement, convertMeasurement, formatCulinaryQuantity, resolveIngredient, type ConversionReferenceData } from '../ingredientMeasurements'
+import { convertIngredientMeasurement, convertMeasurement, formatCulinaryQuantity, parseQuantity, resolveIngredient, type ConversionReferenceData } from '../ingredientMeasurements'
 
 const units = [
     ['g', 'mass', 'metric', 'g', 1], ['kg', 'mass', 'metric', 'kg', 1000], ['oz', 'mass', 'us_customary', 'oz', 28.349523125], ['lb', 'mass', 'us_customary', 'lb', 453.59237],
@@ -52,5 +52,11 @@ describe('ingredient measurements', () => {
         const original = { quantity: '200', unit: 'g', name: 'all-purpose flour' }
         expect(convertIngredientMeasurement(original, 'us', reference)).toMatchObject({ quantity: '~1⅗', unit: 'cup' })
         expect(original).toEqual({ quantity: '200', unit: 'g', name: 'all-purpose flour' })
+    })
+
+    it('parses cooking fractions for converter input', () => {
+        expect(parseQuantity('1/2')).toBe(0.5)
+        expect(parseQuantity('1/3')).toBeCloseTo(1 / 3)
+        expect(parseQuantity('1 1/2')).toBe(1.5)
     })
 })
