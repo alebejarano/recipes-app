@@ -531,7 +531,7 @@ export default function CollectionsScreen({ mode }: CollectionsScreenProps) {
               keyExtractor={(item) => item.key}
               numColumns={2}
               columnWrapperStyle={styles.row}
-              contentContainerStyle={[styles.grid, { paddingBottom: bottomPadding }]}
+              contentContainerStyle={[isPublic ? styles.publicGrid : styles.grid, { paddingBottom: bottomPadding }]}
               showsVerticalScrollIndicator={false}
               ListFooterComponent={
                 showCloudArchiveLink ? (
@@ -750,6 +750,7 @@ const styles = createThemedStyles((theme) => ({
   grid: {
     paddingTop: theme.spacing.xl,
   },
+  publicGrid: { paddingTop: 0 },
   loadingState: {
     flex: 1,
     alignItems: 'center',

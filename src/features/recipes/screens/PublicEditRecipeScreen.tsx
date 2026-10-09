@@ -28,6 +28,7 @@ import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 const FOOTER_HEIGHT = 72
+const FOOTER_EXTRA_BOTTOM_PADDING = 16
 
 function buildInitialValues(recipe: {
   title: string
@@ -80,6 +81,7 @@ export default function PublicEditRecipeScreen() {
   const foldersQuery = useLocalFoldersList()
   const createFolderMutation = useCreateLocalFolder()
   const formRef = useRef<RecipeFormHandle>(null)
+  const shouldRegisterAfterSaveRef = useRef(false)
 
   const handleBack = useCallback(() => {
     if (updateMutation.isPending) return
@@ -91,8 +93,14 @@ export default function PublicEditRecipeScreen() {
       try {
         await updateMutation.mutateAsync(values)
         showSnackbar(t('recipes.manage.saved'))
+        if (shouldRegisterAfterSaveRef.current) {
+          shouldRegisterAfterSaveRef.current = false
+          router.replace('/(public)/register')
+          return
+        }
         router.back()
       } catch (e: any) {
+        shouldRegisterAfterSaveRef.current = false
         Alert.alert(t('recipes.manage.saveFailed'), getUserFacingErrorMessage(e))
       }
     },
@@ -131,7 +139,13 @@ export default function PublicEditRecipeScreen() {
           t('collections.folderPrompt.body'),
           [
             { text: t('collections.folderPrompt.notNow'), style: 'cancel' },
-            { text: t('collections.folderPrompt.createAccount'), onPress: () => router.push('/(public)/get-started') },
+            {
+              text: t('collections.folderPrompt.createAccount'),
+              onPress: () => {
+                shouldRegisterAfterSaveRef.current = true
+                formRef.current?.submit()
+              },
+            },
           ]
         )
       }
@@ -185,7 +199,7 @@ export default function PublicEditRecipeScreen() {
             style={styles.flex1}
             contentContainerStyle={[
               styles.scrollContent,
-              { paddingBottom: insets.bottom + FOOTER_HEIGHT + 24 },
+              { paddingBottom: insets.bottom + FOOTER_HEIGHT + FOOTER_EXTRA_BOTTOM_PADDING + 24 },
             ]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
@@ -218,7 +232,7 @@ export default function PublicEditRecipeScreen() {
             ) : null}
           </ScrollView>
 
-          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 8) + FOOTER_EXTRA_BOTTOM_PADDING }]}>
             <Button
               variant="secondary"
               size="md"

@@ -317,7 +317,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
     return filtered.slice(0, 8)
   }, [suggestedFolders, folderInput, values.folders])
 
-  const stepInputRefs = useRef<(TextInput | null)[]>([])
+  const unitPickerRefs = useRef<(React.ElementRef<typeof Pressable> | null)[]>([])
 
   useEffect(() => {
     if (Platform.OS !== 'android' || !isEmojiModalOpen) {
@@ -367,6 +367,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   }, [])
 
   const openUnitPicker = useCallback((index: number) => {
+    Keyboard.dismiss()
     setUnitSearch('')
     setUnitPickerHeight(null)
     setFocusedIngredientIndex(index)
@@ -375,9 +376,13 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
 
   const selectUnit = useCallback((unit: string) => {
     if (unitPickerIndex === null) return
-    updateIngredient(unitPickerIndex, 'unit', unit)
+    const selectedIndex = unitPickerIndex
+    updateIngredient(selectedIndex, 'unit', unit)
     setUnitPickerIndex(null)
-    setFocusedIngredientIndex(null)
+
+    requestAnimationFrame(() => {
+      unitPickerRefs.current[selectedIndex]?.focus()
+    })
   }, [unitPickerIndex, updateIngredient])
 
   const closeUnitPicker = useCallback(() => {
@@ -428,11 +433,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
       const nextSteps = [...prev.steps, '']
       return { ...prev, steps: nextSteps }
     })
-    requestAnimationFrame(() => {
-      const nextIndex = values.steps.length
-      stepInputRefs.current[nextIndex]?.focus()
-    })
-  }, [values.steps.length])
+  }, [])
 
   const removeStep = useCallback((index: number) => {
     setValues((prev) => {
@@ -724,7 +725,7 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
                 <View style={styles.ingredientRow}>
                   <View style={styles.ingredientFieldGroup}>
                     <TextInput value={ingredient.quantity} onChangeText={(value) => updateIngredient(index, 'quantity', value)} onFocus={() => setFocusedIngredientIndex(index)} onBlur={() => setFocusedIngredientIndex((current) => current === index ? null : current)} placeholder={t('recipes.form.quantityPlaceholder')} placeholderTextColor={styles.placeholder.color} style={[styles.ingredientGroupInput, styles.ingredientQuantity]} keyboardType="decimal-pad" editable={!isSubmitting} />
-                    <Pressable onPress={() => openUnitPicker(index)} disabled={isSubmitting} style={styles.ingredientUnitPicker} accessibilityRole="button" accessibilityLabel={t('recipes.form.unitPlaceholder')}>
+                    <Pressable ref={(node) => { unitPickerRefs.current[index] = node }} onPress={() => openUnitPicker(index)} disabled={isSubmitting} style={styles.ingredientUnitPicker} accessibilityRole="button" accessibilityLabel={t('recipes.form.unitPlaceholder')}>
                       <Text numberOfLines={1} style={[styles.ingredientUnitText, !ingredient.unit && styles.placeholder]}>{ingredient.unit ? getUnitOptionLabel(UNIT_OPTIONS.find((option) => option.value === ingredient.unit) ?? { value: ingredient.unit, group: 'other' }) : t('recipes.form.unitPlaceholder')}</Text>
                       <Feather name="chevron-down" size={18} color={styles.ingredientUnitText.color} />
                     </Pressable>
@@ -791,9 +792,6 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
                       ]}
                       editable={!isSubmitting}
                       autoCapitalize="sentences"
-                      ref={(node) => {
-                        stepInputRefs.current[index] = node
-                      }}
                     />
 
                     {showStepClear ? (

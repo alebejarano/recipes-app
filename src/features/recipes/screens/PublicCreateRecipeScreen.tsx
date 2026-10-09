@@ -48,7 +48,7 @@ import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 const PENDING_LIMIT_RETRY_PREFIX = 'recipes:create:pending-retry:'
 const FOOTER_HEIGHT = 72
 const FOOTER_EXTRA_BOTTOM_PADDING = 16
-const EMBEDDED_FOOTER_EXTRA_BOTTOM_PADDING = 8
+const EMBEDDED_FOOTER_EXTRA_BOTTOM_PADDING = 16
 const IMPORT_IMAGE_QUALITY_STEPS = [
   IMPORT_IMAGE_COMPRESS_QUALITY,
   0.74,
@@ -127,6 +127,7 @@ export default function PublicCreateRecipeScreen({
   const foldersQuery = useLocalFoldersList()
   const createFolderMutation = useCreateLocalFolder()
   const recipeFormRef = useRef<RecipeFormHandle>(null)
+  const shouldRegisterAfterSaveRef = useRef(false)
   const documentFormRef = useRef<RecipeDocumentFormHandle>(null)
 
   const screenTitle = t('recipes.create.createRecipe')
@@ -173,6 +174,11 @@ export default function PublicCreateRecipeScreen({
     async (values: RecipeFormSubmitValues) => {
       const recipe = await createMutation.mutateAsync(values)
       await clearPendingRetry()
+      if (shouldRegisterAfterSaveRef.current) {
+        shouldRegisterAfterSaveRef.current = false
+        router.replace('/(public)/register')
+        return
+      }
       if (onSaved) {
         onSaved(recipe.id)
         return
@@ -256,6 +262,7 @@ export default function PublicCreateRecipeScreen({
       try {
         await saveRecipe(values)
       } catch (e: any) {
+        shouldRegisterAfterSaveRef.current = false
         const limitType = getPlanLimitTypeFromError(e)
         if (limitType === 'recipes') {
           const nextPending: PendingLimitRetry = { kind: 'recipe', values }
@@ -401,7 +408,13 @@ export default function PublicCreateRecipeScreen({
           t('collections.folderPrompt.body'),
           [
             { text: t('collections.folderPrompt.notNow'), style: 'cancel' },
-            { text: t('collections.folderPrompt.createAccount'), onPress: () => router.push('/(public)/get-started') },
+            {
+              text: t('collections.folderPrompt.createAccount'),
+              onPress: () => {
+                shouldRegisterAfterSaveRef.current = true
+                recipeFormRef.current?.submit()
+              },
+            },
           ]
         )
       }

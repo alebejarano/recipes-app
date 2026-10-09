@@ -35,6 +35,7 @@ import type { RecipeMealTime } from '@/features/recipes/types/mealTimes'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
 
 const FOOTER_HEIGHT = 72
+const FOOTER_EXTRA_BOTTOM_PADDING = 16
 
 type RecipeFormSeed = {
   title: string
@@ -202,7 +203,7 @@ export default function EditRecipeScreen() {
             style={styles.flex1}
             contentContainerStyle={[
               styles.scrollContent,
-              { paddingBottom: insets.bottom + FOOTER_HEIGHT + 24 },
+              { paddingBottom: insets.bottom + FOOTER_HEIGHT + FOOTER_EXTRA_BOTTOM_PADDING + 24 },
             ]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
@@ -236,7 +237,7 @@ export default function EditRecipeScreen() {
             ) : null}
           </ScrollView>
 
-          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 8) + FOOTER_EXTRA_BOTTOM_PADDING }]}>
             <Button
               variant="secondary"
               size="md"
