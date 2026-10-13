@@ -58,8 +58,8 @@ export const es: TranslationSchema = {
             confirmPasswordLabel: 'Confirmar contraseña',
             toggleToRegisterPrompt: '¿No tienes cuenta? ',
             toggleToLoginPrompt: '¿Ya tienes cuenta? ',
-            legalPrefix: 'Acepto los ',
-            legalMiddle: ' y reconozco la ',
+            legalPrefix: 'Al crear una cuenta, aceptas los ',
+            legalMiddle: ' y reconoces la ',
             legalSuffix: '.',
         },
         errors: {
@@ -73,9 +73,6 @@ export const es: TranslationSchema = {
             passwordMismatchInline: 'Las contraseñas no coinciden.',
             passwordMismatchTitle: 'Las contraseñas no coinciden',
             passwordMismatchMessage: 'Vuelve a escribir las contraseñas para que coincidan.',
-            agreementRequiredTitle: 'Confirmación obligatoria',
-            agreementRequiredMessage:
-                'Acepta los Términos del servicio y reconoce la Política de privacidad antes de crear una cuenta.',
             signInFailed: 'No se pudo iniciar sesión',
             registrationFailed: 'No se pudo completar el registro',
             emailAlreadyRegisteredTitle: 'La cuenta ya existe',

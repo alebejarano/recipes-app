@@ -56,7 +56,7 @@ export const en = {
             confirmPasswordLabel: 'Confirm Password',
             toggleToRegisterPrompt: 'Don\'t have an account? ',
             toggleToLoginPrompt: 'Already have an account? ',
-            legalPrefix: 'I agree to the ',
+            legalPrefix: 'By creating an account, you agree to the ',
             legalMiddle: ' and acknowledge the ',
             legalSuffix: '.',
         },
@@ -71,9 +71,6 @@ export const en = {
             passwordMismatchInline: 'Passwords do not match.',
             passwordMismatchTitle: 'Passwords do not match',
             passwordMismatchMessage: 'Please re-enter matching passwords.',
-            agreementRequiredTitle: 'Agreement required',
-            agreementRequiredMessage:
-                'Please agree to the Terms of Service and acknowledge the Privacy Policy before creating an account.',
             signInFailed: 'Sign in failed',
             registrationFailed: 'Registration failed',
             emailAlreadyRegisteredTitle: 'Account already exists',

@@ -77,7 +77,6 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [acceptedLegalTerms, setAcceptedLegalTerms] = useState(false)
   const [confirmationCode, setConfirmationCode] = useState('')
 
   const [error, setError] = useState<SubmitError>(null)
@@ -114,10 +113,9 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
       if (!passwordMeetsPolicy) return false
       if (!confirmPassword) return false
       if (password !== confirmPassword) return false
-      if (!acceptedLegalTerms) return false
     }
     return true
-  }, [email, password, confirmPassword, isLogin, passwordMeetsPolicy, acceptedLegalTerms])
+  }, [email, password, confirmPassword, isLogin, passwordMeetsPolicy])
 
   const resetTransientState = () => {
     setError(null)
@@ -205,14 +203,6 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
 
     if (!isLogin && password !== confirmPassword) {
       setError({ title: t('auth.errors.passwordMismatchTitle'), message: t('auth.errors.passwordMismatchMessage') })
-      return
-    }
-
-    if (!isLogin && !acceptedLegalTerms) {
-      setError({
-        title: t('auth.errors.agreementRequiredTitle'),
-        message: t('auth.errors.agreementRequiredMessage'),
-      })
       return
     }
 
@@ -534,20 +524,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
           )}
 
           {!isLogin ? (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              disabled={loading}
-              onPress={() => setAcceptedLegalTerms((value) => !value)}
-              style={styles.legalConsentRow}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: acceptedLegalTerms, disabled: loading }}
-            >
-              <View style={[styles.legalCheckbox, acceptedLegalTerms && styles.legalCheckboxSelected]}>
-                {acceptedLegalTerms ? (
-                  <Feather name="check" size={14} style={styles.legalCheckboxIcon} />
-                ) : null}
-              </View>
-
+            <View style={styles.legalNotice}>
               <Text style={styles.legalConsentText}>
                 {t('auth.screen.legalPrefix')}
                 <Text
@@ -571,7 +548,7 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
                 </Text>
                 {t('auth.screen.legalSuffix')}
               </Text>
-            </TouchableOpacity>
+            </View>
           ) : null}
 
           {/* Submit button */}
@@ -811,32 +788,8 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.primary,
   },
 
-  legalConsentRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: theme.spacing.sm,
+  legalNotice: {
     marginTop: theme.spacing.xs,
-  },
-
-  legalCheckbox: {
-    width: 22,
-    height: 22,
-    borderRadius: theme.radii.sm,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.inputBackground,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 1,
-  },
-
-  legalCheckboxSelected: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.primary,
-  },
-
-  legalCheckboxIcon: {
-    color: theme.colors.primaryForeground,
   },
 
   legalConsentText: {
