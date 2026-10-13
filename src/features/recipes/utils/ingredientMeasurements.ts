@@ -10,7 +10,13 @@ export type RecipeUnit = {
     aliases: string[]
     toBaseFactor: number | null
 }
-export type ConversionIngredient = { id: string; canonicalName: string; aliases: string[]; familyId?: string | null }
+export type ConversionIngredient = {
+    id: string
+    canonicalName: string
+    aliases: string[]
+    familyId?: string | null
+    preferredMetricUnit?: 'g' | 'ml' | null
+}
 export type IngredientFamily = { id: string; aliases: string[]; defaultIngredientId: string | null }
 export type IngredientUnitWeight = { ingredientId: string; unitId: string; gramsPerUnit: number; confidence: 'high' | 'medium' | 'low' }
 export type ConversionReferenceData = { units: RecipeUnit[]; ingredients: ConversionIngredient[]; families: IngredientFamily[]; weights: IngredientUnitWeight[] }
@@ -101,6 +107,11 @@ function densityResult(quantity: number, unit: RecipeUnit, confidence: Ingredien
 export function convertMeasurement(measurement: Measurement, targetSystem: Exclude<MeasurementSystem, 'original'>, ingredient: IngredientContext | undefined, reference: ConversionReferenceData): ConversionResult {
     const source = findUnit(measurement.unitId, reference.units)
     if (!source || !Number.isFinite(measurement.quantity) || measurement.quantity <= 0 || source.dimension === 'count') return unsupported(measurement)
+    // Cups are already the customary recipe unit. Keep them and present a culinary fraction
+    // instead of changing a value such as 0.5 cup into 8 tbsp.
+    if (targetSystem === 'us' && source.id === 'cup') {
+        return { quantity: measurement.quantity, unitId: source.id, display: `${formatCulinaryQuantity(measurement.quantity)} ${source.symbol}`, confidence: 'exact', conversionType: 'unit' }
+    }
     if (source.dimension === 'temperature') {
         const celsius = source.id === 'celsius' ? measurement.quantity : (measurement.quantity - 32) * 5 / 9
         const quantity = targetSystem === 'metric' ? celsius : celsius * 9 / 5 + 32
@@ -111,6 +122,16 @@ export function convertMeasurement(measurement: Measurement, targetSystem: Exclu
     const matchedIngredient = ingredient?.ingredientId
         ? reference.ingredients.find((item) => item.id === ingredient.ingredientId)
         : ingredient?.canonicalName ? resolveIngredient(ingredient.canonicalName, reference.ingredients, reference.families) : undefined
+    // Some ingredients are conventionally measured by volume in metric recipes. Their
+    // density remains useful for a conversion in the other direction, but should not
+    // turn a cup of milk into grams merely because a density is available.
+    if (targetSystem === 'metric' && source.dimension === 'volume' && matchedIngredient?.preferredMetricUnit === 'ml') {
+        const target = targetUnit('volume', measurement.quantity * (source.toBaseFactor ?? 0), 'metric', reference.units)
+        if (target?.toBaseFactor && source.toBaseFactor) {
+            const quantity = measurement.quantity * source.toBaseFactor / target.toBaseFactor
+            return { quantity, unitId: target.id, display: `${formatCulinaryQuantity(quantity, target.id)} ${target.symbol}`, confidence: 'exact', conversionType: 'unit' }
+        }
+    }
     const cupWeight = matchedIngredient && reference.weights.find((weight) => weight.ingredientId === matchedIngredient.id && weight.unitId === 'cup')
     if (cupWeight && source.toBaseFactor) {
         if (targetSystem === 'metric' && source.dimension === 'volume') {

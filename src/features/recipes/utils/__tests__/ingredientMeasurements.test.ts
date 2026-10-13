@@ -7,9 +7,9 @@ const units = [
 ].map(([id, dimension, system, symbol, toBaseFactor]) => ({ id, dimension, system, name: id, symbol, aliases: [], toBaseFactor })) as ConversionReferenceData['units']
 const reference: ConversionReferenceData = {
     units: [...units, { id: 'celsius', dimension: 'temperature', system: 'metric', name: 'Celsius', symbol: '°C', aliases: ['C'], toBaseFactor: null }, { id: 'fahrenheit', dimension: 'temperature', system: 'us_customary', name: 'Fahrenheit', symbol: '°F', aliases: ['F'], toBaseFactor: null }, { id: 'count', dimension: 'count', system: 'neutral', name: 'count', symbol: '', aliases: ['egg', 'eggs'], toBaseFactor: 1 }],
-    ingredients: [{ id: 'flour', canonicalName: 'all-purpose flour', aliases: ['plain flour', 'AP flour'] }, { id: 'honey', canonicalName: 'honey', aliases: [] }, { id: 'sugar', canonicalName: 'granulated sugar', aliases: ['white sugar'] }, { id: 'caster', canonicalName: 'caster sugar', aliases: ['superfine sugar'] }],
+    ingredients: [{ id: 'flour', canonicalName: 'all-purpose flour', aliases: ['plain flour', 'AP flour'] }, { id: 'oat-flour', canonicalName: 'oat flour', aliases: [] }, { id: 'milk', canonicalName: 'milk, whole', aliases: ['whole milk', 'milk'], preferredMetricUnit: 'ml' }, { id: 'oats', canonicalName: 'rolled oats', aliases: ['oats'], preferredMetricUnit: 'g' }, { id: 'honey', canonicalName: 'honey', aliases: [] }, { id: 'sugar', canonicalName: 'granulated sugar', aliases: ['white sugar'] }, { id: 'caster', canonicalName: 'caster sugar', aliases: ['superfine sugar'] }],
     families: [{ id: 'flour', aliases: ['flour'], defaultIngredientId: 'flour' }, { id: 'sugar', aliases: ['sugar', 'table sugar'], defaultIngredientId: 'sugar' }],
-    weights: [{ ingredientId: 'flour', unitId: 'cup', gramsPerUnit: 125, confidence: 'high' }, { ingredientId: 'honey', unitId: 'cup', gramsPerUnit: 339, confidence: 'high' }, { ingredientId: 'sugar', unitId: 'cup', gramsPerUnit: 200, confidence: 'high' }],
+    weights: [{ ingredientId: 'flour', unitId: 'cup', gramsPerUnit: 125, confidence: 'high' }, { ingredientId: 'oat-flour', unitId: 'cup', gramsPerUnit: 90, confidence: 'medium' }, { ingredientId: 'milk', unitId: 'cup', gramsPerUnit: 244, confidence: 'high' }, { ingredientId: 'oats', unitId: 'cup', gramsPerUnit: 80, confidence: 'high' }, { ingredientId: 'honey', unitId: 'cup', gramsPerUnit: 339, confidence: 'high' }, { ingredientId: 'sugar', unitId: 'cup', gramsPerUnit: 200, confidence: 'high' }],
 }
 
 describe('ingredient measurements', () => {
@@ -31,6 +31,15 @@ describe('ingredient measurements', () => {
         expect(convertMeasurement({ quantity: 1, unitId: 'tbsp' }, 'metric', { canonicalName: 'honey' }, reference).quantity).toBeCloseTo(21.1875)
         expect(convertMeasurement({ quantity: 1, unitId: 'tsp' }, 'metric', { canonicalName: 'honey' }, reference).quantity).toBeCloseTo(7.0625)
         expect(convertMeasurement({ quantity: 1, unitId: 'cup' }, 'metric', { canonicalName: 'unknown ingredient' }, reference).display).toBe('237 ml')
+    })
+
+    it('uses recipe-friendly units for milk, oats, and US cup inputs', () => {
+        expect(convertMeasurement({ quantity: 0.5, unitId: 'cup' }, 'metric', { canonicalName: 'milk' }, reference).display).toBe('118 ml')
+        expect(convertMeasurement({ quantity: 0.25, unitId: 'cup' }, 'metric', { canonicalName: 'oats' }, reference).display).toBe('~20 g')
+        expect(convertMeasurement({ quantity: 0.25, unitId: 'cup' }, 'metric', { canonicalName: 'oat flour' }, reference).display).toBe('~23 g')
+        expect(convertMeasurement({ quantity: 0.3, unitId: 'cup' }, 'us', { canonicalName: 'flour' }, reference).display).toBe('⅓ cup')
+        expect(convertMeasurement({ quantity: 0.5, unitId: 'cup' }, 'us', { canonicalName: 'milk' }, reference).display).toBe('½ cup')
+        expect(convertMeasurement({ quantity: 0.25, unitId: 'cup' }, 'us', { canonicalName: 'oats' }, reference).display).toBe('¼ cup')
     })
 
     it('uses explicit family defaults only after exact ingredient resolution', () => {

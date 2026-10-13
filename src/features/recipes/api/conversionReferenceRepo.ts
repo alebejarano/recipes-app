@@ -3,17 +3,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '@/lib/supabase'
 import type { ConversionReferenceData, ConversionIngredient, IngredientFamily, IngredientUnitWeight, RecipeUnit } from '@/features/recipes/utils/ingredientMeasurements'
 
-const CACHE_KEY = 'recipes:conversion-reference:v3'
+const CACHE_KEY = 'recipes:conversion-reference:v4'
 
 type UnitRow = { id: string; dimension: RecipeUnit['dimension']; system: RecipeUnit['system']; name: string; symbol: string; aliases: string[]; to_base_factor: number | string | null }
-type IngredientRow = { id: string; canonical_name: string; aliases: string[]; family_id: string | null }
+type IngredientRow = { id: string; canonical_name: string; aliases: string[]; family_id: string | null; preferred_metric_unit: 'g' | 'ml' | null }
 type FamilyRow = { id: string; aliases: string[]; default_ingredient_id: string | null }
 type WeightRow = { ingredient_id: string; unit_id: string; grams_per_unit: number | string; confidence: IngredientUnitWeight['confidence'] }
 
 function mapReference(units: UnitRow[], ingredients: IngredientRow[], families: FamilyRow[], weights: WeightRow[]): ConversionReferenceData {
     return {
         units: units.map((unit) => ({ ...unit, toBaseFactor: unit.to_base_factor === null ? null : Number(unit.to_base_factor) })),
-        ingredients: ingredients.map((ingredient): ConversionIngredient => ({ id: ingredient.id, canonicalName: ingredient.canonical_name, aliases: ingredient.aliases ?? [], familyId: ingredient.family_id })),
+        ingredients: ingredients.map((ingredient): ConversionIngredient => ({ id: ingredient.id, canonicalName: ingredient.canonical_name, aliases: ingredient.aliases ?? [], familyId: ingredient.family_id, preferredMetricUnit: ingredient.preferred_metric_unit })),
         families: families.map((family): IngredientFamily => ({ id: family.id, aliases: family.aliases ?? [], defaultIngredientId: family.default_ingredient_id })),
         weights: weights.map((weight): IngredientUnitWeight => ({ ingredientId: weight.ingredient_id, unitId: weight.unit_id, gramsPerUnit: Number(weight.grams_per_unit), confidence: weight.confidence })),
     }
@@ -35,7 +35,7 @@ export async function fetchConversionReference(): Promise<ConversionReferenceDat
     try {
         const [unitsResult, ingredientsResult, familiesResult] = await Promise.all([
             supabase.from('recipe_units').select('id, dimension, system, name, symbol, aliases, to_base_factor').eq('is_active', true),
-            supabase.from('recipe_conversion_ingredients').select('id, canonical_name, aliases, family_id').eq('is_active', true),
+            supabase.from('recipe_conversion_ingredients').select('id, canonical_name, aliases, family_id, preferred_metric_unit').eq('is_active', true),
             supabase.from('ingredient_families').select('id, aliases, default_ingredient_id').eq('is_active', true),
         ])
         if (unitsResult.error) throw unitsResult.error
