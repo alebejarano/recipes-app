@@ -141,7 +141,11 @@ export function convertMeasurement(measurement: Measurement, targetSystem: Exclu
         }
         if (targetSystem === 'us' && source.dimension === 'mass') {
             const cupAmount = measurement.quantity * source.toBaseFactor / cupWeight.gramsPerUnit
-            const target = targetUnit('volume', cupAmount * US_CUP_ML, 'us', reference.units)
+            // Once a density conversion reaches a practical cup quantity, recipe
+            // notation is clearer as a fraction of a cup than as many tablespoons.
+            const target = cupAmount >= 0.25
+                ? reference.units.find((unit) => unit.id === 'cup')
+                : targetUnit('volume', cupAmount * US_CUP_ML, 'us', reference.units)
             if (target?.toBaseFactor) return densityResult(cupAmount * US_CUP_ML / target.toBaseFactor, target, cupWeight.confidence)
         }
     }
