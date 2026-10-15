@@ -63,9 +63,10 @@ function parseIngredients(raw: string) {
     const parsed = JSON.parse(raw) as unknown
     if (!Array.isArray(parsed)) return []
     return parsed.map((item) => {
-      if (typeof item === 'string') return { quantity: '', unit: '', name: item.trim(), notes: '' }
-      const value = item as { quantity?: unknown; unit?: unknown; name?: unknown; notes?: unknown }
+      if (typeof item === 'string') return { kind: 'ingredient' as const, quantity: '', unit: '', name: item.trim(), notes: '' }
+      const value = item as { kind?: unknown; quantity?: unknown; unit?: unknown; name?: unknown; notes?: unknown }
       return {
+        kind: value.kind === 'section' ? ('section' as const) : ('ingredient' as const),
         quantity: typeof value.quantity === 'string' ? value.quantity.trim() : '',
         unit: typeof value.unit === 'string' ? value.unit.trim() : '',
         name: typeof value.name === 'string' ? value.name.trim() : '',

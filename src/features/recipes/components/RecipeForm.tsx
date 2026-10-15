@@ -65,6 +65,7 @@ export type RecipeFormValues = {
 }
 
 export type RecipeFormIngredient = {
+  kind?: 'ingredient' | 'section'
   quantity: string
   unit: string
   name: string
@@ -123,6 +124,7 @@ export function buildRecipeFormSubmitValues(
 
   const normalizedIngredients = values.ingredients
     .map((ingredient) => ({
+      kind: ingredient.kind,
       quantity: ingredient.quantity.trim(),
       unit: ingredient.unit.trim(),
       name: ingredient.name.trim(),
@@ -160,7 +162,7 @@ export function createEmptyRecipeFormValues(): RecipeFormValues {
     prepTimeMinutes: '',
     cookTimeMinutes: '',
     servings: '',
-    ingredients: [{ quantity: '', unit: '', name: '', notes: '' }],
+    ingredients: [{ kind: 'ingredient', quantity: '', unit: '', name: '', notes: '' }],
     steps: [''],
     folders: [],
     mealTimes: [],
@@ -417,14 +419,21 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
   const addIngredient = useCallback(() => {
     setValues((prev) => ({
       ...prev,
-      ingredients: [...prev.ingredients, { quantity: '', unit: '', name: '', notes: '' }],
+      ingredients: [...prev.ingredients, { kind: 'ingredient', quantity: '', unit: '', name: '', notes: '' }],
+    }))
+  }, [])
+
+  const addIngredientSection = useCallback(() => {
+    setValues((prev) => ({
+      ...prev,
+      ingredients: [...prev.ingredients, { kind: 'section', quantity: '', unit: '', name: '', notes: '' }],
     }))
   }, [])
 
   const removeIngredient = useCallback((index: number) => {
     setValues((prev) => {
       const ingredients = prev.ingredients.filter((_, itemIndex) => itemIndex !== index)
-      return { ...prev, ingredients: ingredients.length ? ingredients : [{ quantity: '', unit: '', name: '', notes: '' }] }
+      return { ...prev, ingredients: ingredients.length ? ingredients : [{ kind: 'ingredient', quantity: '', unit: '', name: '', notes: '' }] }
     })
   }, [])
 
@@ -722,33 +731,41 @@ const RecipeForm = forwardRef<RecipeFormHandle, Props>(function RecipeForm(
           <View style={styles.ingredientsStack}>
             {values.ingredients.map((ingredient, index) => (
               <View key={`ingredient-${index}`} style={[styles.ingredientEditor, focusedIngredientIndex === index && styles.ingredientEditorActive]}>
-                <View style={styles.ingredientRow}>
-                  <View style={styles.ingredientFieldGroup}>
-                    <TextInput value={ingredient.quantity} onChangeText={(value) => updateIngredient(index, 'quantity', value)} onFocus={() => setFocusedIngredientIndex(index)} onBlur={() => setFocusedIngredientIndex((current) => current === index ? null : current)} placeholder={t('recipes.form.quantityPlaceholder')} placeholderTextColor={styles.placeholder.color} style={[styles.ingredientGroupInput, styles.ingredientQuantity]} keyboardType="decimal-pad" editable={!isSubmitting} />
-                    <Pressable ref={(node) => { unitPickerRefs.current[index] = node }} onPress={() => openUnitPicker(index)} disabled={isSubmitting} style={styles.ingredientUnitPicker} accessibilityRole="button" accessibilityLabel={t('recipes.form.unitPlaceholder')}>
-                      <Text numberOfLines={1} style={[styles.ingredientUnitText, !ingredient.unit && styles.placeholder]}>{ingredient.unit ? getUnitOptionLabel(UNIT_OPTIONS.find((option) => option.value === ingredient.unit) ?? { value: ingredient.unit, group: 'other' }) : t('recipes.form.unitPlaceholder')}</Text>
-                      <Feather name="chevron-down" size={18} color={styles.ingredientUnitText.color} />
-                    </Pressable>
-                    <TextInput value={ingredient.name} onChangeText={(value) => updateIngredient(index, 'name', value)} onFocus={() => setFocusedIngredientIndex(index)} onBlur={() => setFocusedIngredientIndex((current) => current === index ? null : current)} placeholder={t('recipes.form.ingredientNamePlaceholder')} placeholderTextColor={styles.placeholder.color} style={[styles.ingredientGroupInput, styles.ingredientName]} autoCapitalize="sentences" editable={!isSubmitting} />
+                {ingredient.kind === 'section' ? (
+                  <View style={styles.ingredientRow}>
+                    <TextInput value={ingredient.name} onChangeText={(value) => updateIngredient(index, 'name', value)} onFocus={() => setFocusedIngredientIndex(index)} onBlur={() => setFocusedIngredientIndex((current) => current === index ? null : current)} placeholder={t('recipes.form.ingredientSectionPlaceholder')} placeholderTextColor={styles.placeholder.color} style={[styles.ingredientGroupInput, styles.ingredientSectionName]} autoCapitalize="sentences" editable={!isSubmitting} />
                     <Pressable onPress={() => removeIngredient(index)} disabled={isSubmitting} hitSlop={8} style={styles.ingredientRemoveButton} accessibilityRole="button" accessibilityLabel={t('recipes.form.removeIngredientA11y', { ingredient: index + 1 })}>
                       <Feather name="x" size={16} color={styles.stepClearIcon.color} />
                     </Pressable>
                   </View>
-                </View>
-                <TextInput value={ingredient.notes} onChangeText={(value) => updateIngredient(index, 'notes', value)} onFocus={() => setFocusedIngredientIndex(index)} onBlur={() => setFocusedIngredientIndex((current) => current === index ? null : current)} placeholder={t('recipes.form.ingredientNotesPlaceholder')} placeholderTextColor={styles.placeholder.color} style={styles.ingredientNotesInput} autoCapitalize="sentences" editable={!isSubmitting} />
+                ) : (
+                  <>
+                    <View style={styles.ingredientRow}>
+                      <View style={styles.ingredientFieldGroup}>
+                        <TextInput value={ingredient.quantity} onChangeText={(value) => updateIngredient(index, 'quantity', value)} onFocus={() => setFocusedIngredientIndex(index)} onBlur={() => setFocusedIngredientIndex((current) => current === index ? null : current)} placeholder={t('recipes.form.quantityPlaceholder')} placeholderTextColor={styles.placeholder.color} style={[styles.ingredientGroupInput, styles.ingredientQuantity]} keyboardType="numbers-and-punctuation" editable={!isSubmitting} />
+                        <Pressable ref={(node) => { unitPickerRefs.current[index] = node }} onPress={() => openUnitPicker(index)} disabled={isSubmitting} style={styles.ingredientUnitPicker} accessibilityRole="button" accessibilityLabel={t('recipes.form.unitPlaceholder')}>
+                          <Text numberOfLines={1} style={[styles.ingredientUnitText, !ingredient.unit && styles.placeholder]}>{ingredient.unit ? getUnitOptionLabel(UNIT_OPTIONS.find((option) => option.value === ingredient.unit) ?? { value: ingredient.unit, group: 'other' }) : t('recipes.form.unitPlaceholder')}</Text>
+                          <Feather name="chevron-down" size={18} color={styles.ingredientUnitText.color} />
+                        </Pressable>
+                        <TextInput value={ingredient.name} onChangeText={(value) => updateIngredient(index, 'name', value)} onFocus={() => setFocusedIngredientIndex(index)} onBlur={() => setFocusedIngredientIndex((current) => current === index ? null : current)} placeholder={t('recipes.form.ingredientNamePlaceholder')} placeholderTextColor={styles.placeholder.color} style={[styles.ingredientGroupInput, styles.ingredientName]} autoCapitalize="sentences" editable={!isSubmitting} />
+                        <Pressable onPress={() => removeIngredient(index)} disabled={isSubmitting} hitSlop={8} style={styles.ingredientRemoveButton} accessibilityRole="button" accessibilityLabel={t('recipes.form.removeIngredientA11y', { ingredient: index + 1 })}>
+                          <Feather name="x" size={16} color={styles.stepClearIcon.color} />
+                        </Pressable>
+                      </View>
+                    </View>
+                    <TextInput value={ingredient.notes} onChangeText={(value) => updateIngredient(index, 'notes', value)} onFocus={() => setFocusedIngredientIndex(index)} onBlur={() => setFocusedIngredientIndex((current) => current === index ? null : current)} placeholder={t('recipes.form.ingredientNotesPlaceholder')} placeholderTextColor={styles.placeholder.color} style={styles.ingredientNotesInput} autoCapitalize="sentences" editable={!isSubmitting} />
+                  </>
+                )}
               </View>
             ))}
-            <Button
-              variant="ghost"
-              size="md"
-              onPress={addIngredient}
-              disabled={isSubmitting}
-              style={styles.addIngredientButton}
-              textStyle={styles.addStepText}
-              icon={<Feather name="plus" size={18} color={styles.addStepIcon.color} />}
-            >
-              {t('recipes.form.addIngredient')}
-            </Button>
+            <View style={styles.ingredientActions}>
+              <Button variant="ghost" size="md" onPress={addIngredient} disabled={isSubmitting} style={styles.addIngredientButton} textStyle={styles.addStepText} icon={<Feather name="plus" size={18} color={styles.addStepIcon.color} />}>
+                {t('recipes.form.addIngredient')}
+              </Button>
+              <Button variant="ghost" size="md" onPress={addIngredientSection} disabled={isSubmitting} style={styles.addIngredientButton} textStyle={styles.addStepText} icon={<Feather name="plus" size={18} color={styles.addStepIcon.color} />}>
+                {t('recipes.form.addIngredientSection')}
+              </Button>
+            </View>
           </View>
         </View>
 
@@ -1464,9 +1481,11 @@ const styles = createThemedStyles((theme) => ({
   ingredientUnitPicker: { width: 112, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: theme.spacing.xs, paddingHorizontal: theme.spacing.md, borderRightWidth: 1, borderRightColor: theme.colors.border },
   ingredientUnitText: { ...theme.textVariants.body, flexShrink: 1, color: theme.colors.foreground },
   ingredientName: { flex: 1 },
+  ingredientSectionName: { flex: 1, ...theme.textVariants.label },
   ingredientNotesInput: { borderTopWidth: 1, borderTopColor: theme.colors.border, ...theme.textVariants.caption, color: theme.colors.foreground, paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm },
   ingredientRemoveButton: { width: 44, alignItems: 'center', justifyContent: 'center' },
   addIngredientButton: { alignSelf: 'flex-start', paddingHorizontal: 0 },
+  ingredientActions: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.lg },
   notesInput: {
     minHeight: 112,
   },

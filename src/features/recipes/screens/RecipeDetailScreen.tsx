@@ -70,7 +70,7 @@ type FavoriteToggleRecipe = {
   prepTimeMinutes: number | null
   cookTimeMinutes: number | null
   servings: number | null
-  ingredients: { name: string; quantity: string | null; unit: string | null; notes: string | null }[]
+  ingredients: { kind?: 'ingredient' | 'section'; name: string; quantity: string | null; unit: string | null; notes: string | null }[]
   steps: string[]
   folders: { name: string }[]
   mealTimes?: RecipeMealTime[]
@@ -90,16 +90,16 @@ function buildFavoriteTogglePayload(
     prepTimeMinutes: recipe.prepTimeMinutes ?? null,
     cookTimeMinutes: recipe.cookTimeMinutes ?? null,
     servings: recipe.servings ?? null,
-    ingredients: recipe.ingredients.map((item) => ({ quantity: item.quantity ?? '', unit: item.unit ?? '', name: item.name, notes: item.notes ?? '' })).filter((item) => item.name),
+    ingredients: recipe.ingredients.map((item) => ({ kind: item.kind === 'section' ? ('section' as const) : ('ingredient' as const), quantity: item.quantity ?? '', unit: item.unit ?? '', name: item.name, notes: item.notes ?? '' })).filter((item) => item.name),
     steps: recipe.steps.filter(Boolean),
     folders: nextFolderNames.length ? nextFolderNames : null,
     mealTimes: recipe.mealTimes?.length ? recipe.mealTimes : null,
   }
 }
 
-function buildIngredientLines(ingredients: { name: string; quantity?: string | null; unit?: string | null; notes?: string | null }[] | undefined): string[] {
+function buildIngredientLines(ingredients: { kind?: 'ingredient' | 'section'; name: string; quantity?: string | null; unit?: string | null; notes?: string | null }[] | undefined): string[] {
   if (!ingredients || ingredients.length === 0) return []
-  return ingredients.map((item) => formatIngredientMeasurement({ quantity: item.quantity ?? null, unit: item.unit ?? null, name: item.name, notes: item.notes ?? null })).filter(Boolean)
+  return ingredients.filter((item) => item.kind !== 'section').map((item) => formatIngredientMeasurement({ quantity: item.quantity ?? null, unit: item.unit ?? null, name: item.name, notes: item.notes ?? null })).filter(Boolean)
 }
 
 
@@ -610,13 +610,19 @@ export default function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps
             <View style={styles.card}>
               {displayedIngredients.length > 0 ? (
                 displayedIngredients.map((ingredient, index) => (
-                  <View key={`${ingredient.quantity}-${ingredient.unit}-${ingredient.name}-${index}`} style={styles.ingredientRow}>
-                    <Text style={styles.ingredientQuantity}>{[ingredient.quantity, ingredient.unit].filter(Boolean).join(' ')}</Text>
-                    <Text style={styles.ingredientText}>
-                      {ingredient.name}
-                      {ingredient.notes ? <Text style={styles.ingredientNotes}>{` · ${ingredient.notes}`}</Text> : null}
-                    </Text>
-                  </View>
+                  ingredient.kind === 'section' ? (
+                    <View key={`section-${ingredient.name}-${index}`} style={styles.ingredientSectionRow}>
+                      <Text style={styles.ingredientSectionTitle}>{ingredient.name}</Text>
+                    </View>
+                  ) : (
+                    <View key={`${ingredient.quantity}-${ingredient.unit}-${ingredient.name}-${index}`} style={styles.ingredientRow}>
+                      <Text style={styles.ingredientQuantity}>{[ingredient.quantity, ingredient.unit].filter(Boolean).join(' ')}</Text>
+                      <Text style={styles.ingredientText}>
+                        {ingredient.name}
+                        {ingredient.notes ? <Text style={styles.ingredientNotes}>{` · ${ingredient.notes}`}</Text> : null}
+                      </Text>
+                    </View>
+                  )
                 ))
               ) : (
                 <Text style={styles.emptyText}>{t('recipes.detail.noIngredientsListed')}</Text>
@@ -939,6 +945,15 @@ const styles = createThemedStyles((theme) => ({
     paddingVertical: theme.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
+  },
+  ingredientSectionRow: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.lg,
+    paddingBottom: theme.spacing.xs,
+  },
+  ingredientSectionTitle: {
+    ...theme.textVariants.label,
+    color: theme.colors.foreground,
   },
   ingredientQuantity: {
     width: 80,

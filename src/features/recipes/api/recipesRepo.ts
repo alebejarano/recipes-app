@@ -46,6 +46,7 @@ export type Recipe = {
 
 export type RecipeIngredient = {
   id: string
+  kind: 'ingredient' | 'section'
   name: string
   quantity: string | null
   unit: string | null
@@ -81,6 +82,7 @@ type RecipeRow = {
 
 type RecipeIngredientRow = {
   id: string
+  kind?: 'ingredient' | 'section' | null
   name: string
   quantity: string | null
   unit: string | null
@@ -101,8 +103,9 @@ type RecipeFolderRow = {
 function mapIngredients(rows: RecipeIngredientRow[] | null | undefined): RecipeIngredient[] {
   if (!rows || rows.length === 0) return []
   return rows
-    .map((row) => ({
+    .map((row): RecipeIngredient => ({
       id: row.id,
+      kind: row.kind === 'section' ? 'section' : 'ingredient',
       name: row.name,
       quantity: row.quantity ?? null,
       unit: row.unit ?? null,
@@ -340,6 +343,7 @@ export async function createRecipe(input: CreateRecipeInput): Promise<Recipe> {
     const { error: ingredientError } = await supabase.from('recipe_ingredients').insert(
       input.ingredients.map((ingredient, index) => ({
         recipe_id: recipe.id,
+        kind: ingredient.kind,
         name: ingredient.name,
         quantity: ingredient.quantity || null,
         unit: ingredient.unit || null,
@@ -379,6 +383,7 @@ export async function getRecipeById(id: string): Promise<Recipe> {
         updated_at,
         recipe_ingredients:recipe_ingredients (
           id,
+          kind,
           name,
           quantity,
           unit,
@@ -438,6 +443,7 @@ export async function listRecipes(params?: {
       updated_at,
       recipe_ingredients:recipe_ingredients (
         id,
+        kind,
         name,
         quantity,
         unit,
@@ -565,6 +571,7 @@ export async function updateRecipe(id: string, input: UpdateRecipeInput): Promis
         .insert(
           input.ingredients.map((ingredient, index) => ({
             recipe_id: id,
+            kind: ingredient.kind,
             name: ingredient.name,
             quantity: ingredient.quantity || null,
             unit: ingredient.unit || null,

@@ -24,6 +24,7 @@ import {
 
 export type LocalRecipeIngredient = {
   id: string
+  kind: 'ingredient' | 'section'
   name: string
   quantity: string | null
   unit: string | null
@@ -192,7 +193,8 @@ function toRecipeView(row: LocalRecipeRow): LocalRecipe {
     emoji: row.emoji ?? null,
     imageUrl: row.image_url ?? null,
     steps: parseStepsText(row.steps_text),
-    ingredients: parseJsonArray<LocalRecipeIngredient>(row.ingredients_json),
+    ingredients: parseJsonArray<Omit<LocalRecipeIngredient, 'kind'> & { kind?: LocalRecipeIngredient['kind'] }>(row.ingredients_json)
+      .map((ingredient) => ({ ...ingredient, kind: ingredient.kind === 'section' ? 'section' : 'ingredient' })),
     folders: parseJsonArray<LocalRecipeFolder>(row.folders_json),
     mealTimes: normalizeMealTimes(parseJsonArray<string>(row.meal_times_json)),
     mealTimesInferred: false,
@@ -254,6 +256,7 @@ function buildIngredients(values: RecipeFormSubmitValues): LocalRecipeIngredient
   return list
     .map((ingredient, index) => ({
       id: makeId(),
+      kind: ingredient.kind ?? 'ingredient',
       name: ingredient.name.trim(),
       quantity: ingredient.quantity.trim() || null,
       unit: ingredient.unit.trim() || null,

@@ -441,13 +441,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (error) throw error
 
-    const { data: currentUserData } = await supabase.auth.getUser()
-    const currentUser = currentUserData.user ?? data.user
-    const pendingEmail = normalizeEmail(currentUser?.new_email ?? '')
+    const updatedUser = data.user
+    const pendingEmail = normalizeEmail(updatedUser?.new_email ?? '')
     const isRequestedEmailPending = pendingEmail === normalized
 
-    if (currentUser) {
-      setSession((prev) => (prev ? { ...prev, user: currentUser } : prev))
+    if (updatedUser) {
+      setSession((prev) => (prev ? { ...prev, user: updatedUser } : prev))
     }
 
     return {

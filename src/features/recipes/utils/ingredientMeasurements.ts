@@ -1,6 +1,6 @@
 export type MeasurementSystem = 'original' | 'metric' | 'us'
 
-export type IngredientMeasurement = { quantity: string | null; unit: string | null; name: string; notes?: string | null }
+export type IngredientMeasurement = { kind?: 'ingredient' | 'section'; quantity: string | null; unit: string | null; name: string; notes?: string | null }
 export type RecipeUnit = {
     id: string
     dimension: 'mass' | 'volume' | 'temperature' | 'count'
