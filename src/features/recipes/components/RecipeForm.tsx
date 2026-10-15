@@ -1484,8 +1484,8 @@ const styles = createThemedStyles((theme) => ({
   ingredientSectionName: { flex: 1, ...theme.textVariants.label },
   ingredientNotesInput: { borderTopWidth: 1, borderTopColor: theme.colors.border, ...theme.textVariants.caption, color: theme.colors.foreground, paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm },
   ingredientRemoveButton: { width: 44, alignItems: 'center', justifyContent: 'center' },
-  addIngredientButton: { alignSelf: 'flex-start', paddingHorizontal: 0 },
-  ingredientActions: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.lg },
+  addIngredientButton: { width: 'auto', alignSelf: 'flex-start', paddingHorizontal: 0 },
+  ingredientActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.lg },
   notesInput: {
     minHeight: 112,
   },
