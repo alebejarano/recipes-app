@@ -21,6 +21,10 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
 import {
+  createRecipeExtraction,
+  isRecipeExtractionConfigured,
+} from '@/features/recipes/api/recipeExtractionsRepo'
+import {
   useDeleteRecipeDocument,
   useRecipeDocument,
   useUpdateRecipeDocumentTitle,
@@ -63,6 +67,7 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
   const updateTitleMutation = useUpdateRecipeDocumentTitle(routeMode)
   const [isRenameVisible, setIsRenameVisible] = useState(false)
   const [renameValue, setRenameValue] = useState('')
+  const [isExtracting, setIsExtracting] = useState(false)
 
   // Computed values
   const title = useMemo(() => {
@@ -258,6 +263,30 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
     }
   }, [documentId, renameValue, t, title, updateTitleMutation])
 
+  const handleExtractRecipe = useCallback(async () => {
+    if (!document || isExtracting) return
+
+    setIsExtracting(true)
+    try {
+      const extraction = await createRecipeExtraction(document.cloudId ?? document.id)
+      if (!extraction) {
+        throw new Error(t('recipes.documentDetail.extractionUnavailableBody'))
+      }
+
+      router.push({
+        pathname: '/(auth)/recipes/extractions/[id]',
+        params: { id: extraction.id },
+      })
+    } catch (error) {
+      Alert.alert(
+        t('recipes.documentDetail.extractionFailedTitle'),
+        getUserFacingErrorMessage(error, t('recipes.documentDetail.extractionFailedBody'))
+      )
+    } finally {
+      setIsExtracting(false)
+    }
+  }, [document, isExtracting, t])
+
   // Delete handler
   const handleDeleteFile = useCallback(() => {
     if (!documentId || deleteMutation.isPending) return
@@ -364,6 +393,19 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
         >
           {t('recipes.documentDetail.openLabel', { label: fileInfo.label })}
         </Button>
+
+        {routeMode === 'auth' && isRecipeExtractionConfigured() ? (
+          <Button
+            variant="premium"
+            size="lg"
+            onPress={() => void handleExtractRecipe()}
+            loading={isExtracting}
+            loadingLabel={t('recipes.documentDetail.extracting')}
+            icon={<Feather name="zap" size={18} style={styles.extractIcon} />}
+          >
+            {t('recipes.documentDetail.extractRecipe')}
+          </Button>
+        ) : null}
 
         {/* Metadata Card */}
         <View style={styles.metadataCard}>
@@ -532,6 +574,9 @@ const styles = createThemedStyles((theme) => ({
   },
   deleteIcon: {
     color: theme.colors.destructive,
+  },
+  extractIcon: {
+    color: theme.colors.accentForeground,
   },
 
   // Metadata card

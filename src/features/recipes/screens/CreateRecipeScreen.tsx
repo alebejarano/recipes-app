@@ -28,6 +28,7 @@ import RecipeForm, {
   createEmptyRecipeFormValues,
   type RecipeFormHandle,
   type RecipeFormSubmitValues,
+  type RecipeFormValues,
 } from '@/features/recipes/components/RecipeForm'
 import { useAddRecipeDocument } from '@/features/recipes/hooks/useRecipeDocuments'
 import { useStrategyCreateRecipe } from '@/features/recipes/hooks/useStrategyRecipes'
@@ -58,6 +59,10 @@ interface CreateRecipeScreenProps {
   entry?: CreateRecipeEntry
   onSaved?: (recipeId: string) => void
   onBack?: () => void
+  initialRecipeValues?: RecipeFormValues
+  titleOverride?: string
+  subtitleOverride?: string
+  notice?: string
 }
 
 const FOOTER_HEIGHT = 72
@@ -105,6 +110,10 @@ export default function CreateRecipeScreen({
   entry,
   onSaved,
   onBack,
+  initialRecipeValues,
+  titleOverride,
+  subtitleOverride,
+  notice,
 }: CreateRecipeScreenProps) {
   const { locale, t } = useTranslation()
   const insets = useSafeAreaInsets()
@@ -146,8 +155,8 @@ export default function CreateRecipeScreen({
   const documentFormRef = useRef<RecipeDocumentFormHandle>(null)
 
   const screenTitle = useMemo(
-    () => (isOnboarding ? t('recipes.create.firstRecipe') : t('recipes.create.createRecipe')),
-    [isOnboarding, t]
+    () => titleOverride ?? (isOnboarding ? t('recipes.create.firstRecipe') : t('recipes.create.createRecipe')),
+    [isOnboarding, t, titleOverride]
   )
 
   const submitLabel = useMemo(
@@ -183,13 +192,14 @@ export default function CreateRecipeScreen({
         : null,
     [requestedFolder, t]
   )
-  const initialValues = useMemo(() => {
+  const defaultInitialValues = useMemo(() => {
     const nextValues = createEmptyRecipeFormValues()
     if (requestedFolder) {
       nextValues.folders = [requestedFolder]
     }
     return nextValues
   }, [requestedFolder])
+  const initialValues = initialRecipeValues ?? defaultInitialValues
 
   const handleBack = useCallback(() => {
     if (isSaving) return
@@ -480,11 +490,17 @@ export default function CreateRecipeScreen({
                 <View style={styles.header}>
                   <Text style={styles.title}>{screenTitle}</Text>
                   <Text style={styles.subtitle}>
-                    {entryMode === 'pdf'
+                    {subtitleOverride ?? (entryMode === 'pdf'
                       ? t('recipes.create.importSubtitle')
-                      : folderContextMessage ?? t('recipes.create.scratchSubtitle')}
+                      : folderContextMessage ?? t('recipes.create.scratchSubtitle'))}
                   </Text>
                 </View>
+
+                {notice ? (
+                  <View style={styles.notice}>
+                    <Text style={styles.noticeText}>{notice}</Text>
+                  </View>
+                ) : null}
 
                 {entryMode === 'pdf' ? (
                   <RecipeDocumentForm
@@ -663,6 +679,17 @@ const styles = createThemedStyles((theme) => ({
   subtitle: {
     ...theme.textVariants.body,
     color: theme.colors.mutedForeground,
+  },
+  notice: {
+    backgroundColor: theme.colors.card,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radii.lg,
+    borderWidth: 1,
+    padding: theme.spacing.md,
+  },
+  noticeText: {
+    ...theme.textVariants.body,
+    color: theme.colors.foreground,
   },
 
   choiceCard: {

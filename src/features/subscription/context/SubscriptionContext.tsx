@@ -308,10 +308,7 @@ export function SubscriptionProvider({
 
         if (!isMounted) return
         setIsRevenueCatConfigured(true)
-      } catch (error) {
-        if (appEnv !== 'production') {
-          console.warn('[RevenueCat] Configuration failed.', error)
-        }
+      } catch {
         if (!isMounted) return
         setCustomerInfo(null)
         setOfferings(null)
@@ -371,10 +368,7 @@ export function SubscriptionProvider({
         setCustomerInfo(nextCustomerInfo)
         setOfferings(nextOfferings)
         setCurrentOffering(nextOfferings.current ?? null)
-      } catch (error) {
-        if (appEnv !== 'production') {
-          console.warn('[RevenueCat] Customer identity sync failed.', error)
-        }
+      } catch {
         if (!isMounted || syncId !== identitySyncIdRef.current) return
         activeUserIdRef.current = null
         setCustomerInfo(null)
