@@ -9,7 +9,11 @@ export function QueryProviderComponent({ children }: { children: ReactNode }) {
         defaultOptions: {
           queries: {
             retry: 1,
-            staleTime: 30_000,
+            // Navigation between tabs should be instant. Data-changing flows
+            // explicitly invalidate their affected queries, so a longer
+            // freshness window avoids repeating the same reads on a return to
+            // Home without leaving the library stale.
+            staleTime: 5 * 60_000,
             refetchOnWindowFocus: false, // RN-safe default
           },
         },

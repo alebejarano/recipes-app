@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import Button from '@/components/Button'
 import { getRecipeExtraction } from '@/features/recipes/api/recipeExtractionsRepo'
-import RecipeForm, {
+import {
   createEmptyRecipeFormValues,
   type RecipeFormIngredient,
   type RecipeFormValues,

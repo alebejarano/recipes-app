@@ -3,7 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image as ExpoImage } from 'expo-image';
 import { router, useFocusEffect, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
 
@@ -299,7 +298,6 @@ export default function HomeScreen({
 }: HomeProps) {
   const { t } = useTranslation();
   const captureAnalyticsEvent = useAnalyticsCapture();
-  const queryClient = useQueryClient();
   const bottomPadding = useTabBarBottomPadding(theme.spacing.xl);
   const segments = useSegments();
   const { user } = useAuth();
@@ -544,19 +542,17 @@ export default function HomeScreen({
   useFocusEffect(
     useCallback(() => {
       void refreshRecipeOpenHistory();
-      // Imports can be saved from a different route (or arrive through sync)
-      // while this tab remains mounted. Revalidate the sources that compose
-      // the Home states whenever the user returns to this screen.
-      void queryClient.invalidateQueries({ queryKey: ['recipes'] });
-      void queryClient.invalidateQueries({ queryKey: ['notes'] });
-    }, [queryClient, refreshRecipeOpenHistory])
+      // Recipe, note, folder, and import mutations already invalidate their
+      // relevant queries. Avoid invalidating the entire library whenever the
+      // tab receives focus: doing so made ordinary tab switches wait on fresh
+      // SQLite/cloud reads before Home could settle.
+    }, [refreshRecipeOpenHistory])
   );
 
   const isInitialLoading =
     !isStorageModeReady ||
     recipesQuery.isLoading ||
-    notesQuery.isLoading ||
-    importsQuery.isLoading;
+    notesQuery.isLoading;
 
   const emptyStateTitle = t('home.empty.title');
   const emptyStateBody = t('home.empty.body');

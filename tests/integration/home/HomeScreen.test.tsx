@@ -128,6 +128,14 @@ describe('<HomeScreen /> state rendering', () => {
         expect(queryByText('home.empty.title')).toBeNull();
     });
 
+    it('does not hold the entire home screen for a slow imports request', async () => {
+        mockImports.mockReturnValue({ data: undefined, isLoading: true });
+
+        const { getByText, queryByLabelText } = await render(<HomeScreen mode="auth" />);
+        expect(getByText('home.empty.title')).toBeVisible();
+        expect(queryByLabelText('home.loading')).toBeNull();
+    });
+
     it('shows the empty state with no user content', async () => {
         const { getByText } = await render(<HomeScreen mode="auth" />);
         expect(getByText('home.empty.title')).toBeVisible();
