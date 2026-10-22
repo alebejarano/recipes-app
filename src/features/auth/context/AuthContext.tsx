@@ -57,9 +57,56 @@ export type PushPreferences = {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 const PENDING_GUEST_DATA_CLAIM_KEY = 'pending_guest_data_claim_user_id_v1'
+// This is intentionally only identity/profile data, never a Supabase token.
+// It lets local-only content stay in its account-scoped storage when an
+// expired session cannot be refreshed because the device is offline.
+const LAST_LOCAL_ACCOUNT_USER_KEY = 'auth:last_local_account_user_v1'
+
+function isCachedUser(value: unknown): value is User {
+  return Boolean(
+    value &&
+    typeof value === 'object' &&
+    'id' in value &&
+    typeof value.id === 'string' &&
+    value.id.trim()
+  )
+}
+
+async function getCachedLocalAccountUser(): Promise<User | null> {
+  try {
+    const raw = await AsyncStorage.getItem(LAST_LOCAL_ACCOUNT_USER_KEY)
+    if (!raw) return null
+    const parsed: unknown = JSON.parse(raw)
+    return isCachedUser(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+async function cacheLocalAccountUser(user: User) {
+  try {
+    await AsyncStorage.setItem(LAST_LOCAL_ACCOUNT_USER_KEY, JSON.stringify(user))
+  } catch {
+    // Failing to cache an offline identity must not affect a successful login.
+  }
+}
+
+async function clearCachedLocalAccountUser() {
+  try {
+    await AsyncStorage.removeItem(LAST_LOCAL_ACCOUNT_USER_KEY)
+  } catch {
+    // A later successful sign-out will still remove the Supabase session.
+  }
+}
+
+function isOfflineError(error: unknown) {
+  const category = getErrorCategory(error)
+  return category === 'network' || category === 'timeout'
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
+  const [offlineUser, setOfflineUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const pendingEmailRef = useRef<string | null>(null)
   const handledAuthUrlsRef = useRef(new Set<string>())
@@ -90,32 +137,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true
 
-    // Restore existing session (persisted via SecureStore in supabase client config)
+    // Restore an existing session (persisted via SecureStore in the Supabase
+    // client config). If its refresh needs the network, retain the last known
+    // account identity so local, account-scoped data never becomes Guest data.
     supabase.auth
       .getSession()
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (!isMounted) return
 
-        const nextSession = error ? null : (data.session ?? null)
-        setActiveLocalDataOwner(nextSession?.user.id)
+        const nextSession = data.session ?? null
+        const nextOfflineUser = !nextSession && error && isOfflineError(error)
+          ? await getCachedLocalAccountUser()
+          : null
+        if (!isMounted) return
+
+        if (nextSession?.user) {
+          void cacheLocalAccountUser(nextSession.user)
+        } else if (!nextOfflineUser) {
+          void clearCachedLocalAccountUser()
+        }
+
+        setActiveLocalDataOwner(nextSession?.user.id ?? nextOfflineUser?.id)
         useShoppingListStore.getState().resetForAccountChange()
         setSession(nextSession)
+        setOfflineUser(nextOfflineUser)
 
         setIsLoading(false)
       })
-      .catch(() => {
+      .catch(async (error) => {
         if (!isMounted) return
-        setActiveLocalDataOwner(null)
+
+        const nextOfflineUser = isOfflineError(error)
+          ? await getCachedLocalAccountUser()
+          : null
+        if (!isMounted) return
+
+        setActiveLocalDataOwner(nextOfflineUser?.id)
         useShoppingListStore.getState().resetForAccountChange()
         setSession(null)
+        setOfflineUser(nextOfflineUser)
         setIsLoading(false)
       })
 
     // Listen for auth changes (sign-in, sign-out, token refresh)
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (newSession?.user) {
+        void cacheLocalAccountUser(newSession.user)
+      } else if (event === 'SIGNED_OUT') {
+        void clearCachedLocalAccountUser()
+      }
+
       setActiveLocalDataOwner(newSession?.user.id)
       useShoppingListStore.getState().resetForAccountChange()
       setSession(newSession)
+      setOfflineUser(null)
     })
 
     return () => {
@@ -249,7 +324,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [handleIncomingAuthUrl])
 
   useEffect(() => {
-    const userId = session?.user?.id
+    const userId = session?.user?.id ?? offlineUser?.id
 
     // React Query is process-wide. Clear it before allowing a different
     // account (or a signed-out guest) to render, otherwise cached cloud
@@ -275,7 +350,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         category: getErrorCategory(error),
       })
     })
-  }, [claimPendingGuestData, queryClient, refreshClaimedLocalData, session?.user?.id])
+  }, [claimPendingGuestData, offlineUser?.id, queryClient, refreshClaimedLocalData, session?.user?.id])
 
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
@@ -317,7 +392,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           entity: 'supabase',
           category: getErrorCategory(markerError),
         })
-        return data
+        return { ...data, existingAccount: false }
       }
       if (data.session) {
         try {
@@ -492,6 +567,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error
 
     setSession(null)
+    setOfflineUser(null)
+    await clearCachedLocalAccountUser()
     await supabase.auth.signOut({ scope: 'local' })
   }, [])
 
@@ -525,8 +602,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 
   const logout = async () => {
-    const { error } = await supabase.auth.signOut()
+    // Local sign-out must work without reception and must opt out of the
+    // offline-account fallback immediately.
+    const { error } = await supabase.auth.signOut({ scope: 'local' })
     if (error) throw error
+    await clearCachedLocalAccountUser()
   }
 
   const deleteAccount = useCallback(async () => {
@@ -574,13 +654,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setSession(null)
+    setOfflineUser(null)
+    await clearCachedLocalAccountUser()
     await supabase.auth.signOut({ scope: 'local' })
   }, [])
+
+  const user = session?.user ?? offlineUser
 
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
-      user: session?.user ?? null,
+      user,
       isLoading,
       login,
       register,
@@ -601,6 +685,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }),
     [
       session,
+      user,
       isLoading,
       register,
       resendEmailConfirmation,
