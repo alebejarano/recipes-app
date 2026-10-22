@@ -119,7 +119,7 @@ describe('AuthProvider', () => {
             await result.current.logout();
         });
 
-        expect(mockSignOut).toHaveBeenCalledWith();
+        expect(mockSignOut).toHaveBeenCalledWith({ scope: 'local' });
         unmount();
     });
 

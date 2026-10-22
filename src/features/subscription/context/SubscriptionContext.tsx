@@ -25,7 +25,6 @@ import {
   REVENUECAT_MONTHLY_PACKAGE_ID,
   REVENUECAT_YEARLY_PACKAGE_ID,
 } from '@/features/subscription/constants/revenueCat'
-import { appEnv } from '@/lib/appEnv'
 
 export type Plan = 'free' | 'premium'
 export type BillingCycle = 'month' | 'year'
@@ -285,9 +284,7 @@ export function SubscriptionProvider({
 
     async function configureRevenueCat() {
       try {
-        await Purchases.setLogLevel(
-          appEnv === 'production' ? LOG_LEVEL.WARN : LOG_LEVEL.DEBUG
-        )
+        await Purchases.setLogLevel(LOG_LEVEL.WARN)
 
         if (!hasConfiguredRevenueCat) {
           Purchases.configure({

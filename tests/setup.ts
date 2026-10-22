@@ -27,7 +27,7 @@ jest.mock('react-native-purchases', () => ({
     setDisplayName: jest.fn(),
     setAttributes: jest.fn(),
   },
-  LOG_LEVEL: { DEBUG: 'DEBUG' },
+  LOG_LEVEL: { WARN: 'WARN' },
   PACKAGE_TYPE: { ANNUAL: 'ANNUAL', MONTHLY: 'MONTHLY' },
 }))
 
