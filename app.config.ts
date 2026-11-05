@@ -87,6 +87,7 @@ const config: ExpoConfig & { newArchEnabled: boolean } = {
     'expo-sharing',
     'expo-sqlite',
     'expo-status-bar',
+    './plugins/with-okhttp-version',
   ],
   experiments: {
     typedRoutes: true,
