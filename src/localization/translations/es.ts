@@ -964,6 +964,7 @@ export const es: TranslationSchema = {
             uncategorizedBody: 'Aquí aparecen las recetas sin carpeta.',
             folderBody: 'Añade esta carpeta a una receta para verla aquí.',
             addRecipe: 'Añadir receta',
+            addRecipeToFolder: 'Añadir a %{folder}',
             publicHint: 'Inicia sesión para sincronizar carpetas entre dispositivos.',
             editTitle: 'Editar carpeta',
             editSubtitle: 'Actualiza el emoji o el nombre.',

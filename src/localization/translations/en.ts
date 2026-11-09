@@ -962,6 +962,7 @@ export const en = {
             uncategorizedBody: 'Recipes without folders appear here.',
             folderBody: 'Add this folder to a recipe to see it here.',
             addRecipe: 'Add a recipe',
+            addRecipeToFolder: 'Add to %{folder}',
             publicHint: 'Sign in to sync folders across devices.',
             editTitle: 'Edit folder',
             editSubtitle: 'Update emoji or name.',

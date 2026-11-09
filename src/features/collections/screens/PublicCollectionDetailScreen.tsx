@@ -90,6 +90,13 @@ export default function PublicCollectionDetailScreen({
   const folderId = folder?.id
   const currentEmoji = folder?.emoji ?? '📁'
 
+  const handleAddRecipe = () => {
+    router.push({
+      pathname: '/(public)/recipes/create',
+      params: isUncategorized ? { entry: 'scratch' } : { folder: title, entry: 'scratch' },
+    })
+  }
+
   const openEdit = () => {
     if (isUncategorized) return
     setEditName(folder?.name ?? title)
@@ -224,12 +231,7 @@ export default function PublicCollectionDetailScreen({
           <View style={styles.emptyCta}>
             <Button
               size="lg"
-              onPress={() =>
-                router.push({
-                  pathname: '/(public)/recipes/create',
-                  params: !isUncategorized ? { folder: title, entry: 'scratch' } : undefined,
-                })
-              }
+              onPress={handleAddRecipe}
             >
               {t('collections.detail.addRecipe')}
             </Button>
@@ -242,6 +244,25 @@ export default function PublicCollectionDetailScreen({
           data={recipes}
           keyExtractor={(item) => item.id}
           contentContainerStyle={[styles.list, { paddingBottom: listBottomPadding }]}
+          ListHeaderComponent={!isUncategorized ? (
+            <Pressable
+              onPress={handleAddRecipe}
+              accessibilityRole="button"
+              accessibilityLabel={t('collections.detail.addRecipe')}
+              style={styles.addRecipeCard}
+            >
+              <View style={styles.addRecipeIcon}>
+                <Feather name="plus" size={20} style={styles.addRecipeIconGlyph} />
+              </View>
+              <View style={styles.addRecipeCopy}>
+                <Text style={styles.addRecipeTitle}>{t('collections.detail.addRecipe')}</Text>
+                <Text style={styles.addRecipeSubtitle}>
+                  {t('collections.detail.addRecipeToFolder', { folder: title })}
+                </Text>
+              </View>
+              <Feather name="chevron-right" size={20} style={styles.addRecipeChevron} />
+            </Pressable>
+          ) : null}
           renderItem={({ item }) => (
             <RecipeRow
               title={item.title}
@@ -402,6 +423,43 @@ const styles = createThemedStyles((theme) => ({
   list: {
     paddingBottom: theme.spacing.xl,
     gap: theme.spacing.sm,
+  },
+  addRecipeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    padding: theme.spacing.md,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: theme.colors.border,
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.card,
+  },
+  addRecipeIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: theme.radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.muted,
+  },
+  addRecipeIconGlyph: {
+    color: theme.colors.primary,
+  },
+  addRecipeCopy: {
+    flex: 1,
+    gap: theme.spacing.xs,
+  },
+  addRecipeTitle: {
+    ...theme.textVariants.label,
+    color: theme.colors.foreground,
+  },
+  addRecipeSubtitle: {
+    ...theme.textVariants.caption,
+    color: theme.colors.mutedForeground,
+  },
+  addRecipeChevron: {
+    color: theme.colors.mutedForeground,
   },
 
   emptyState: {
