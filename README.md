@@ -80,6 +80,7 @@ Minimal mapping:
   `EXPO_PUBLIC_APP_ENV=production`
   `EXPO_PUBLIC_SUPABASE_URL=https://<prod-project>.supabase.co`
   `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<prod-publishable-key>`
+  `EXPO_PUBLIC_LARAVEL_API_URL=https://<production-laravel-api-host>`
   `EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY=appl_<production-public-sdk-key>`
   `EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY=goog_<production-public-sdk-key>`
 
@@ -105,6 +106,12 @@ Do not commit:
 - any service-role key
 
 This repo already ignores local env files via `.gitignore`.
+
+### Production database
+
+Before the first production deploy, export the current development `public`
+schema into a reviewed migration and then provision production solely from the
+committed migrations. Follow the [production schema runbook](docs/production-schema-runbook.md).
 
 In the output, you'll find options to open the app in a
 
