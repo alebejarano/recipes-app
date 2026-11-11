@@ -1392,6 +1392,10 @@ export const en = {
             reviewSubtitle: 'Check the extracted details, make any changes you need, then save your recipe.',
             reviewNotice: 'Review the draft before saving it to your recipes.',
             partialNotice: 'We found a partial recipe. Please complete: %{fields}.',
+            failureRecipeNotFound: 'We couldn’t find a usable recipe in this file.',
+            failurePremiumRequired: 'Dropsauce Pro is required to import recipes.',
+            failureMonthlyCreditLimit: 'You’ve reached this month’s recipe import limit.',
+            failureProvider: 'We couldn’t complete the recipe import. Please try again.',
             fields: {
                 title: 'title',
                 ingredients: 'ingredients',

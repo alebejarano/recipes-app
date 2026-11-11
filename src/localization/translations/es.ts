@@ -1394,6 +1394,10 @@ export const es: TranslationSchema = {
             reviewSubtitle: 'Revisa los datos extraídos, haz los cambios que necesites y guarda la receta.',
             reviewNotice: 'Revisa el borrador antes de guardarlo en tus recetas.',
             partialNotice: 'Encontramos una receta parcial. Completa: %{fields}.',
+            failureRecipeNotFound: 'No pudimos encontrar una receta utilizable en este archivo.',
+            failurePremiumRequired: 'Necesitas Dropsauce Pro para importar recetas.',
+            failureMonthlyCreditLimit: 'Has alcanzado el límite de importaciones de recetas de este mes.',
+            failureProvider: 'No pudimos completar la importación de la receta. Vuelve a intentarlo.',
             fields: {
                 title: 'título',
                 ingredients: 'ingredientes',

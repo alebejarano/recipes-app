@@ -20,6 +20,21 @@ type RecipeExtractionReviewScreenProps = {
   extractionId: string
 }
 
+function failureMessage(t: (scope: string) => string, code?: string) {
+  switch (code) {
+    case 'recipe_not_found':
+      return t('recipes.extraction.failureRecipeNotFound')
+    case 'premium_required':
+      return t('recipes.extraction.failurePremiumRequired')
+    case 'monthly_credit_limit_reached':
+      return t('recipes.extraction.failureMonthlyCreditLimit')
+    case 'provider_error':
+      return t('recipes.extraction.failureProvider')
+    default:
+      return t('recipes.extraction.reviewFailedBody')
+  }
+}
+
 function text(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
 }
@@ -99,7 +114,7 @@ export default function RecipeExtractionReviewScreen({ extractionId }: RecipeExt
         <View style={styles.centered}>
           <Feather name="alert-circle" size={44} style={styles.icon} />
           <Text style={styles.title}>{t('recipes.extraction.reviewFailedTitle')}</Text>
-          <Text style={styles.body}>{extraction?.failure?.message ?? t('recipes.extraction.reviewFailedBody')}</Text>
+          <Text style={styles.body}>{failureMessage(t, extraction?.failure?.code)}</Text>
           <Button variant="secondary" size="md" onPress={() => router.back()}>
             {t('recipes.documentDetail.goBack')}
           </Button>
