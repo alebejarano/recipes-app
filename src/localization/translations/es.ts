@@ -1,6 +1,14 @@
 import type { TranslationSchema } from './schema'
 
 export const es: TranslationSchema = {
+    appUpdate: {
+        title: 'Actualización obligatoria',
+        checkingTitle: 'Preparándolo todo…',
+        checkingBody: 'Comprobando si hay una actualización…',
+        requiredBody: 'Necesitas una versión más reciente de Dropsauce para continuar. Actualízala ahora para obtener las últimas funciones y correcciones.',
+        updateNow: 'Actualizar ahora',
+        openingStore: 'Abriendo la tienda…',
+    },
     tabs: {
         home: 'Inicio',
         collections: 'Colecciones',
@@ -1368,6 +1376,7 @@ export const es: TranslationSchema = {
             editNameA11y: 'Editar nombre de la importación',
             openLabel: 'Abrir %{label}',
             extractRecipe: 'Extraer receta',
+            unlockRecipeExtraction: 'Desbloquear la extracción de recetas',
             extracting: 'Extrayendo receta...',
             extractionStartedTitle: 'Extracción de receta iniciada',
             extractionStartedBody: 'Estamos extrayendo la receta de este archivo. Puede tardar un momento.',

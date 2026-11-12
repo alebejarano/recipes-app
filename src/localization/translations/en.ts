@@ -1,4 +1,12 @@
 export const en = {
+    appUpdate: {
+        title: 'Update required',
+        checkingTitle: 'Getting everything ready…',
+        checkingBody: 'Checking for an app update…',
+        requiredBody: 'A newer version of Dropsauce is required to continue. Update now to get the latest features and fixes.',
+        updateNow: 'Update now',
+        openingStore: 'Opening store…',
+    },
     tabs: {
         home: 'Home',
         collections: 'Collections',
@@ -1366,6 +1374,7 @@ export const en = {
             editNameA11y: 'Edit import name',
             openLabel: 'Open %{label}',
             extractRecipe: 'Extract recipe',
+            unlockRecipeExtraction: 'Unlock recipe extraction',
             extracting: 'Extracting recipe...',
             extractionStartedTitle: 'Recipe extraction started',
             extractionStartedBody: 'We’re extracting the recipe from this file. It may take a moment.',

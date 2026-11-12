@@ -143,7 +143,7 @@ export function useRecipeDocument(id: string, mode: StorageScreenMode = 'auth') 
   const activeCloudImportIds = new Set(
     (activeImportsQuery.data ?? []).filter((item) => item.isActive).map((item) => item.id)
   )
-  return useQuery<RecipeDocument | null>({
+  const documentQuery = useQuery<RecipeDocument | null>({
     queryKey: [...DOCS_KEY, shouldUseLocalData ? 'local' : 'cloud', user?.id ?? 'guest', id, shouldRestrictCloudCache ? 'active-library' : 'all'],
     queryFn: async () => {
       // A server id in a Premium list is not the SQLite primary key. Prefer
@@ -183,6 +183,17 @@ export function useRecipeDocument(id: string, mode: StorageScreenMode = 'auth') 
     },
     enabled: Boolean(id) && isStorageModeReady && (!shouldRestrictCloudCache || !activeImportsQuery.isLoading),
   })
+
+  // While the storage strategy is being restored, the document query is
+  // deliberately disabled. React Query then reports neither loading nor an
+  // error, which used to make the detail page briefly show its failure state.
+  return {
+    ...documentQuery,
+    isLoading:
+      !isStorageModeReady ||
+      (shouldRestrictCloudCache && activeImportsQuery.isLoading) ||
+      documentQuery.isLoading,
+  }
 }
 
 export function useRecipeDocumentUsageSummary(options?: {

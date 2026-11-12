@@ -7,6 +7,7 @@ import { router, useLocalSearchParams, useSegments } from 'expo-router'
 import React, { useCallback, useMemo, useState } from 'react'
 import {
   Alert,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -23,6 +24,7 @@ import Button from '@/components/Button'
 import {
   createRecipeExtraction,
   isRecipeExtractionConfigured,
+  RecipeExtractionRequestError,
 } from '@/features/recipes/api/recipeExtractionsRepo'
 import {
   useDeleteRecipeDocument,
@@ -31,6 +33,7 @@ import {
 } from '@/features/recipes/hooks/useRecipeDocuments'
 import { getSafeReturnTo } from '@/lib/navigation'
 import { getUserFacingErrorMessage } from '@/lib/userFacingError'
+import { useFeatureAccess } from '@/features/subscription/hooks/useFeatureAccess'
 import { useTranslation } from '@/localization'
 import { createThemedStyles } from '@/styles/createStyles'
 import { layout } from '@/styles/layout'
@@ -65,6 +68,7 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
   const { data: document, isLoading, isError } = useRecipeDocument(documentId, routeMode)
   const deleteMutation = useDeleteRecipeDocument(routeMode)
   const updateTitleMutation = useUpdateRecipeDocumentTitle(routeMode)
+  const { isPremium } = useFeatureAccess()
   const [isRenameVisible, setIsRenameVisible] = useState(false)
   const [renameValue, setRenameValue] = useState('')
   const [isExtracting, setIsExtracting] = useState(false)
@@ -266,6 +270,14 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
   const handleExtractRecipe = useCallback(async () => {
     if (!document || isExtracting) return
 
+    if (!isPremium) {
+      router.push({
+        pathname: '/(auth)/premium',
+        params: { returnTo: `/(auth)/recipes/documents/${documentId}` },
+      } as never)
+      return
+    }
+
     setIsExtracting(true)
     try {
       const extraction = await createRecipeExtraction(document.cloudId ?? document.id)
@@ -278,6 +290,14 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
         params: { id: extraction.id },
       })
     } catch (error) {
+      if (error instanceof RecipeExtractionRequestError && error.status === 403) {
+        router.push({
+          pathname: '/(auth)/premium',
+          params: { returnTo: `/(auth)/recipes/documents/${documentId}` },
+        } as never)
+        return
+      }
+
       Alert.alert(
         t('recipes.documentDetail.extractionFailedTitle'),
         getUserFacingErrorMessage(error, t('recipes.documentDetail.extractionFailedBody'))
@@ -285,7 +305,7 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
     } finally {
       setIsExtracting(false)
     }
-  }, [document, isExtracting, t])
+  }, [document, documentId, isExtracting, isPremium, t])
 
   // Delete handler
   const handleDeleteFile = useCallback(() => {
@@ -329,6 +349,7 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.centeredContainer}>
+          <ActivityIndicator size="large" color={styles.loadingSpinner.color} />
           <Text style={styles.statusText}>{t('recipes.documentDetail.loading')}</Text>
         </View>
       </SafeAreaView>
@@ -401,9 +422,11 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
             onPress={() => void handleExtractRecipe()}
             loading={isExtracting}
             loadingLabel={t('recipes.documentDetail.extracting')}
-            icon={<Feather name="zap" size={18} style={styles.extractIcon} />}
+            icon={<Feather name={isPremium ? 'zap' : 'lock'} size={18} style={styles.extractIcon} />}
           >
-            {t('recipes.documentDetail.extractRecipe')}
+            {isPremium
+              ? t('recipes.documentDetail.extractRecipe')
+              : t('recipes.documentDetail.unlockRecipeExtraction')}
           </Button>
         ) : null}
 
@@ -626,6 +649,9 @@ const styles = createThemedStyles((theme) => ({
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.lg,
     color: theme.colors.mutedForeground,
+  },
+  loadingSpinner: {
+    color: theme.colors.primary,
   },
   errorIcon: {
     color: theme.colors.destructive,

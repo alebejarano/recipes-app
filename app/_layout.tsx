@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import { AnalyticsConsentProvider, useAnalyticsConsent } from '@/features/analytics/context/AnalyticsConsentContext'
 import { AnalyticsCaptureProvider } from '@/features/analytics/events'
+import AppUpdateGate from '@/features/app-update/components/AppUpdateGate'
 import { AuthProvider, useAuth } from '@/features/auth/context/AuthContext'
 import GlobalSnackbar from '@/features/feedback/components/GlobalSnackbar'
 import { OnboardingProvider } from '@/features/onboarding/context/OnboardingContext'
@@ -63,9 +64,11 @@ export default function RootLayout() {
           <StorageStrategyProvider>
             <RecipeSyncBootstrap />
             <OnboardingProvider>
-              <DowngradeGate />
-              <Slot />
-              <GlobalSnackbar />
+              <AppUpdateGate>
+                <DowngradeGate />
+                <Slot />
+                <GlobalSnackbar />
+              </AppUpdateGate>
             </OnboardingProvider>
           </StorageStrategyProvider>
         </SubscriptionProvider>

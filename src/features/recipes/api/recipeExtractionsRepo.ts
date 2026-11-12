@@ -18,6 +18,13 @@ type RecipeExtractionResponse = Omit<RecipeExtraction, 'missingFields'> & {
   missing_fields?: unknown
 }
 
+export class RecipeExtractionRequestError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message)
+    this.name = 'RecipeExtractionRequestError'
+  }
+}
+
 function parseRecipeExtraction(payload: unknown): RecipeExtraction {
   if (!payload || typeof payload !== 'object') {
     throw new Error('Invalid recipe extraction response.')
@@ -93,7 +100,10 @@ export async function createRecipeExtraction(recipeDocumentImportId: string) {
 
   const payload = await readJson(response)
   if (!response.ok) {
-    throw new Error(extractErrorMessage(payload, 'Unable to start recipe extraction.'))
+    throw new RecipeExtractionRequestError(
+      extractErrorMessage(payload, 'Unable to start recipe extraction.'),
+      response.status
+    )
   }
 
   return parseRecipeExtraction(payload)
@@ -116,7 +126,10 @@ export async function getRecipeExtraction(recipeExtractionId: string) {
 
   const payload = await readJson(response)
   if (!response.ok) {
-    throw new Error(extractErrorMessage(payload, 'Unable to get recipe extraction.'))
+    throw new RecipeExtractionRequestError(
+      extractErrorMessage(payload, 'Unable to get recipe extraction.'),
+      response.status
+    )
   }
 
   return parseRecipeExtraction(payload)
