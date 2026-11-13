@@ -578,6 +578,7 @@ export const es: TranslationSchema = {
             yourUsage: 'Tu uso',
             recipesSaved: 'Recetas guardadas',
             storageUsed: 'Almacenamiento usado',
+            aiCredits: 'Créditos de recetas con IA',
             comparePlans: 'Comparar planes',
             free: 'Free',
             premium: 'Premium',

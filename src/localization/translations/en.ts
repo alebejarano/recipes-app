@@ -576,6 +576,7 @@ export const en = {
             yourUsage: 'Your usage',
             recipesSaved: 'Recipes saved',
             storageUsed: 'Storage used',
+            aiCredits: 'AI recipe credits',
             comparePlans: 'Compare plans',
             free: 'Free',
             premium: 'Premium',

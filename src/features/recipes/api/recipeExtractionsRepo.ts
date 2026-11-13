@@ -79,6 +79,22 @@ export function isRecipeExtractionConfigured() {
   return Boolean(getApiUrl())
 }
 
+export async function getRecipeExtractionUsage() {
+  const apiUrl = getApiUrl()
+  if (!apiUrl) throw new Error('Recipe extraction is not configured.')
+  const accessToken = await getAccessToken()
+  const response = await fetchWithTimeout(`${apiUrl}/api/recipe-extractions/usage`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    timeoutMs: RECIPE_EXTRACTION_TIMEOUT_MS,
+    timeoutMessage: 'Recipe extraction usage request timed out',
+    logOperation: 'get_recipe_extraction_usage',
+  })
+  const payload = await readJson(response)
+  if (!response.ok) throw new RecipeExtractionRequestError(extractErrorMessage(payload, 'Unable to load recipe extraction usage.'), response.status)
+  const usage = payload as { used?: unknown; limit?: unknown }
+  return { used: typeof usage.used === 'number' ? usage.used : 0, limit: typeof usage.limit === 'number' ? usage.limit : 10 }
+}
+
 export async function createRecipeExtraction(recipeDocumentImportId: string) {
   const apiUrl = getApiUrl()
   if (!apiUrl) return null

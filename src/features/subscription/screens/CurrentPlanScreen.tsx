@@ -1,10 +1,12 @@
 import { Feather } from '@expo/vector-icons'
+import { useQuery } from '@tanstack/react-query'
 import React from 'react'
 import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native'
 
 import Button from '@/components/Button'
 import Screen from '@/components/Screen'
 import { useRecipeDocumentUsageSummary } from '@/features/recipes/hooks/useRecipeDocuments'
+import { getRecipeExtractionUsage } from '@/features/recipes/api/recipeExtractionsRepo'
 import { useStrategyRecipesList } from '@/features/recipes/hooks/useStrategyRecipes'
 import type { StorageScreenMode } from '@/features/storage/hooks/useStorageDataMode'
 import {
@@ -181,12 +183,15 @@ export default function CurrentPlanScreen({
 }: CurrentPlanScreenProps) {
   const recipesQuery = useStrategyRecipesList({ limit: 2000 }, mode)
   const storageUsageQuery = useRecipeDocumentUsageSummary()
-  const usageIsLoading = recipesQuery.isLoading || storageUsageQuery.isLoading
-  const usageIsError = recipesQuery.isError || storageUsageQuery.isError
-  const usageError = recipesQuery.error ?? storageUsageQuery.error
+  const creditUsageQuery = useQuery({ queryKey: ['recipe-extraction-usage'], queryFn: getRecipeExtractionUsage, enabled: accountType === 'premium' })
+  const usageIsLoading = recipesQuery.isLoading || storageUsageQuery.isLoading || (accountType === 'premium' && creditUsageQuery.isLoading)
+  const usageIsError = recipesQuery.isError || storageUsageQuery.isError || (accountType === 'premium' && creditUsageQuery.isError)
+  const usageError = recipesQuery.error ?? storageUsageQuery.error ?? creditUsageQuery.error
 
   const recipesSaved = recipesQuery.data?.length ?? 0
   const storageBytesUsed = storageUsageQuery.data?.totalBytes ?? 0
+  const creditsUsed = creditUsageQuery.data?.used ?? 0
+  const creditLimit = creditUsageQuery.data?.limit ?? 10
   const freeFeatures: FeatureItem[] = [
     { icon: 'book-open', label: i18n.t('subscription.currentPlan.freeFeatures.recipes') },
     { icon: 'cloud', label: i18n.t('subscription.currentPlan.freeFeatures.storage') },
@@ -235,6 +240,11 @@ export default function CurrentPlanScreen({
               label={i18n.t('subscription.currentPlan.cloudStorage')}
               value={`${formatStorageGigabytes(storageBytesUsed)} / 5GB`}
               percent={storagePercent}
+            />
+            <UsageProgressRow
+              label={i18n.t('subscription.currentPlan.aiCredits')}
+              value={`${creditsUsed} / ${creditLimit}`}
+              percent={(creditsUsed / creditLimit) * 100}
             />
           </View>
         )}
