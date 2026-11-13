@@ -51,6 +51,7 @@ export default function PremiumScreen({
     { title: t('subscription.premium.checklist.restore'), description: t('subscription.premium.benefitDescriptions.restore'), icon: 'download-cloud' },
     { title: t('subscription.premium.checklist.syncDevices'), description: t('subscription.premium.benefitDescriptions.syncDevices'), icon: 'refresh-cw' },
     { title: t('subscription.premium.checklist.unlimited'), description: t('subscription.premium.benefitDescriptions.unlimited'), icon: 'repeat' },
+    { title: t('subscription.premium.checklist.scans'), description: t('subscription.premium.benefitDescriptions.scans'), icon: 'zap' },
     { title: t('subscription.premium.benefitDescriptions.organizedTitle'), description: t('subscription.premium.benefitDescriptions.organized'), icon: 'folder' },
     { title: t('subscription.premium.benefitDescriptions.storageTitle'), description: t('subscription.premium.benefitDescriptions.storage'), icon: 'database' },
   ]

@@ -28,6 +28,10 @@ function failureMessage(t: (scope: string) => string, code?: string) {
       return t('recipes.extraction.failurePremiumRequired')
     case 'monthly_credit_limit_reached':
       return t('recipes.extraction.failureMonthlyCreditLimit')
+    case 'pdf_page_limit_exceeded':
+      return t('recipes.extraction.failurePdfPageLimit')
+    case 'pdf_page_count_unavailable':
+      return t('recipes.extraction.failurePdfPageCountUnavailable')
     case 'provider_error':
       return t('recipes.extraction.failureProvider')
     default:

@@ -416,18 +416,22 @@ export default function RecipeDocumentDetailScreen({ documentId }: RecipeDocumen
         </Button>
 
         {routeMode === 'auth' && isRecipeExtractionConfigured() ? (
-          <Button
-            variant="premium"
-            size="lg"
-            onPress={() => void handleExtractRecipe()}
-            loading={isExtracting}
-            loadingLabel={t('recipes.documentDetail.extracting')}
-            icon={<Feather name={isPremium ? 'zap' : 'lock'} size={18} style={styles.extractIcon} />}
-          >
-            {isPremium
-              ? t('recipes.documentDetail.extractRecipe')
-              : t('recipes.documentDetail.unlockRecipeExtraction')}
-          </Button>
+          <View style={styles.extractionSection}>
+            <Button
+              variant="premium"
+              size="lg"
+              onPress={() => void handleExtractRecipe()}
+              loading={isExtracting}
+              loadingLabel={t('recipes.documentDetail.extracting')}
+              icon={<Feather name={isPremium ? 'zap' : 'lock'} size={18} style={styles.extractIcon} />}
+            >
+              {isPremium
+                ? t('recipes.documentDetail.extractRecipe')
+                : t('recipes.documentDetail.unlockRecipeExtraction')}
+            </Button>
+            <Text style={styles.extractionLimit}>{t('recipes.documentDetail.extractionLimit')}</Text>
+            <Text style={styles.extractionLimitDetail}>{t('recipes.documentDetail.extractionLimitDetail')}</Text>
+          </View>
         ) : null}
 
         {/* Metadata Card */}
@@ -600,6 +604,17 @@ const styles = createThemedStyles((theme) => ({
   },
   extractIcon: {
     color: theme.colors.accentForeground,
+  },
+  extractionSection: {
+    gap: theme.spacing.xs,
+  },
+  extractionLimit: {
+    ...theme.textVariants.labelSmall,
+    color: theme.colors.foreground,
+  },
+  extractionLimitDetail: {
+    ...theme.textVariants.bodySmall,
+    color: theme.colors.mutedForeground,
   },
 
   // Metadata card

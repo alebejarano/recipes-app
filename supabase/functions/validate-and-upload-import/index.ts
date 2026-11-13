@@ -5,6 +5,16 @@ const MAX_FILE_BYTES = 6 * 1024 * 1024
 const IMPORTS_BUCKET = Deno.env.get('IMPORTS_BUCKET') ?? 'recipe-imports'
 const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png'])
 
+function getPdfPageCount(bytes: Uint8Array) {
+  const contents = new TextDecoder('latin1').decode(bytes)
+  const pageObjects = contents.match(/\/Type\s*\/Page\b/g)?.length ?? 0
+  const declaredPageCounts = Array.from(contents.matchAll(/\/Count\s+(\d+)\b/g), (match) => Number(match[1]))
+  const declaredPageCount = Math.max(0, ...declaredPageCounts.filter(Number.isFinite))
+  const pageCount = Math.max(pageObjects, declaredPageCount)
+
+  return pageCount > 0 ? pageCount : null
+}
+
 function bytesToHex(buffer: ArrayBuffer) {
   return Array.from(new Uint8Array(buffer))
     .map((value) => value.toString(16).padStart(2, '0'))
@@ -127,6 +137,10 @@ serve(async (req) => {
   if (mimeType === 'application/pdf' && isEncryptedPdf(bytes)) {
     return json({ error: 'Password-protected or encrypted PDFs are not supported.' }, 400, origin)
   }
+
+  const extractedMetadata = mimeType === 'application/pdf'
+    ? { pdf_page_count: getPdfPageCount(bytes) }
+    : null
 
   const originalName = (file.name || 'import').trim() || 'import'
   const safeName = sanitizeName(originalName)
@@ -263,7 +277,7 @@ serve(async (req) => {
     {
       p_user_id: user.id,
       p_document_id: documentId,
-      p_extracted_metadata: null,
+      p_extracted_metadata: extractedMetadata,
     }
   )
 

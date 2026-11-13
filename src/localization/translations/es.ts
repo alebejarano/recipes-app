@@ -468,6 +468,7 @@ export const es: TranslationSchema = {
                 syncDevices: 'Sincroniza todos tus dispositivos',
                 unlimited: 'Recetas ilimitadas',
                 backup: 'Haz copia de seguridad de tu cocina',
+                scans: '10 créditos de recetas con IA cada mes',
             },
             benefitDescriptions: {
                 neverLose: 'Tus recetas están protegidas con una copia de seguridad en la nube.',
@@ -479,6 +480,7 @@ export const es: TranslationSchema = {
                 organized: 'Tus recetas, notas, imágenes y listas, organizadas en un solo lugar.',
                 storageTitle: '5 GB de almacenamiento para importaciones',
                 storage: 'Mucho espacio para todas tus importaciones de recetas.',
+                scans: 'Usa un crédito para convertir un archivo de receta en un borrador editable.',
             },
             supporting: {
                 backup: 'Copia de seguridad en la nube.',
@@ -603,6 +605,7 @@ export const es: TranslationSchema = {
                 storage: '5 GB de almacenamiento seguro en la nube',
                 sync: 'Sincroniza todos tus dispositivos',
                 backup: 'Acceso sin conexión + copia automática',
+                scans: '10 créditos de recetas con IA cada mes',
             },
             messages: {
                 fullBoth: 'Tu cocina Free está llena para recetas y almacenamiento.',
@@ -1377,6 +1380,8 @@ export const es: TranslationSchema = {
             openLabel: 'Abrir %{label}',
             extractRecipe: 'Extraer receta',
             unlockRecipeExtraction: 'Desbloquear la extracción de recetas',
+            extractionLimit: 'Una receta por escaneo · 10 escaneos al mes',
+            extractionLimitDetail: 'Escanea un archivo con una sola receta. Si un PDF contiene varias recetas, escanea cada una por separado. El escaneo crea un borrador de receta editable.',
             extracting: 'Extrayendo receta...',
             extractionStartedTitle: 'Extracción de receta iniciada',
             extractionStartedBody: 'Estamos extrayendo la receta de este archivo. Puede tardar un momento.',
@@ -1406,6 +1411,8 @@ export const es: TranslationSchema = {
             failureRecipeNotFound: 'No pudimos encontrar una receta utilizable en este archivo.',
             failurePremiumRequired: 'Necesitas Dropsauce Pro para importar recetas.',
             failureMonthlyCreditLimit: 'Has alcanzado el límite de importaciones de recetas de este mes.',
+            failurePdfPageLimit: 'Los PDF admiten hasta 5 páginas. Sube solo las páginas de una receta.',
+            failurePdfPageCountUnavailable: 'Hay que volver a subir este PDF antes de poder escanearlo.',
             failureProvider: 'No pudimos completar la importación de la receta. Vuelve a intentarlo.',
             fields: {
                 title: 'título',

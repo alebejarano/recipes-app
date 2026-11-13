@@ -466,6 +466,7 @@ export const en = {
                 syncDevices: 'Sync across your devices',
                 unlimited: 'Unlimited recipes',
                 backup: 'Backup your kitchen',
+                scans: '10 AI recipe credits every month',
             },
             benefitDescriptions: {
                 neverLose: 'Your recipes are safely backed up in the cloud.',
@@ -477,6 +478,7 @@ export const en = {
                 organized: 'All your recipes, notes, images and lists, organized in one place.',
                 storageTitle: '5GB storage for imports',
                 storage: 'Plenty of space for all your recipe imports.',
+                scans: 'Use one credit to turn a recipe file into one editable recipe draft.',
             },
             supporting: {
                 backup: 'Cloud backup.',
@@ -601,6 +603,7 @@ export const en = {
                 storage: '5GB secure cloud storage',
                 sync: 'Sync across all your devices',
                 backup: 'Offline access + Automatic backup',
+                scans: '10 AI recipe credits every month',
             },
             messages: {
                 fullBoth: 'Your Free kitchen is full for recipes and storage.',
@@ -1375,6 +1378,8 @@ export const en = {
             openLabel: 'Open %{label}',
             extractRecipe: 'Extract recipe',
             unlockRecipeExtraction: 'Unlock recipe extraction',
+            extractionLimit: 'One recipe per scan · 10 scans each month',
+            extractionLimitDetail: 'Scan a file with one recipe. If a PDF contains several recipes, scan each recipe separately. Your scan creates one editable recipe draft.',
             extracting: 'Extracting recipe...',
             extractionStartedTitle: 'Recipe extraction started',
             extractionStartedBody: 'We’re extracting the recipe from this file. It may take a moment.',
@@ -1404,6 +1409,8 @@ export const en = {
             failureRecipeNotFound: 'We couldn’t find a usable recipe in this file.',
             failurePremiumRequired: 'Dropsauce Pro is required to import recipes.',
             failureMonthlyCreditLimit: 'You’ve reached this month’s recipe import limit.',
+            failurePdfPageLimit: 'PDF scans support up to 5 pages. Upload only the pages for one recipe.',
+            failurePdfPageCountUnavailable: 'This PDF needs to be uploaded again before it can be scanned.',
             failureProvider: 'We couldn’t complete the recipe import. Please try again.',
             fields: {
                 title: 'title',

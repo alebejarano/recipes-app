@@ -199,6 +199,7 @@ export default function CurrentPlanScreen({
     { icon: 'cloud', label: i18n.t('subscription.currentPlan.premiumFeatures.storage') },
     { icon: 'smartphone', label: i18n.t('subscription.currentPlan.premiumFeatures.sync') },
     { icon: 'wifi', label: i18n.t('subscription.currentPlan.premiumFeatures.backup') },
+    { icon: 'zap', label: i18n.t('subscription.currentPlan.premiumFeatures.scans') },
   ]
 
   if (accountType === 'premium') {
