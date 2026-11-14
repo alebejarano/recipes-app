@@ -160,7 +160,11 @@ const RecipeDocumentForm = forwardRef<RecipeDocumentFormHandle, Props>(function 
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: [...IMPORT_ALLOWED_MIME_TYPES],
-        copyToCacheDirectory: false,
+        // Let DocumentPicker copy provider-backed content URIs into the app
+        // cache before this flow reads or stages the file. On Android, trying
+        // to copy a provider URI ourselves after the picker activity closes
+        // can terminate the release activity rather than reject the promise.
+        copyToCacheDirectory: true,
         multiple: false,
       })
       if (result.canceled) return
