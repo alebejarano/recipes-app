@@ -353,8 +353,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [claimPendingGuestData, offlineUser?.id, queryClient, refreshClaimedLocalData, session?.user?.id])
 
   const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
+    if (!data.session) throw new Error('Unable to start a signed-in session.')
+
+    // The auth subscription also receives SIGNED_IN, but it can run after the
+    // login screen navigates to the protected route. Set the returned session
+    // first so the route guard never briefly treats a valid sign-in as Guest.
+    setActiveLocalDataOwner(data.session.user.id)
+    setSession(data.session)
+    setOfflineUser(null)
   }
 
   /**
