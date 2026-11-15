@@ -420,6 +420,9 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"
+                autoComplete="email"
+                textContentType="username"
+                importantForAutofill="yes"
                 style={styles.input}
                 value={email}
                 onChangeText={setEmail}
@@ -440,6 +443,9 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
                 placeholder={t('auth.shared.passwordPlaceholder')}
                 placeholderTextColor={theme.colors.warmGray}
                 secureTextEntry={!showPassword}
+                autoComplete={isLogin ? 'current-password' : 'new-password'}
+                textContentType={isLogin ? 'password' : 'newPassword'}
+                importantForAutofill="yes"
                 style={styles.input}
                 value={password}
                 onChangeText={setPassword}
@@ -496,6 +502,9 @@ export default function AuthScreen({ initialMode }: AuthScreenProps) {
                   placeholder={t('auth.shared.passwordPlaceholder')}
                   placeholderTextColor={theme.colors.warmGray}
                   secureTextEntry={!showConfirmPassword}
+                  autoComplete="off"
+                  textContentType="none"
+                  importantForAutofill="no"
                   style={styles.input}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}

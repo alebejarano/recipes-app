@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons'
 import * as Application from 'expo-application'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, AppState, Linking, Text, View } from 'react-native'
+import { AppState, Linking, Text, View } from 'react-native'
 
 import Button from '@/components/Button'
 import Screen from '@/components/Screen'
@@ -36,20 +36,21 @@ function requiresUpdate(requirement: AppUpdateRequirement | null) {
 export default function AppUpdateGate({ children }: AppUpdateGateProps) {
     const { t } = useTranslation()
     const [requirement, setRequirement] = useState<AppUpdateRequirement | null>(null)
-    const [isReady, setIsReady] = useState(!shouldCheckForMandatoryAppUpdate())
     const [isOpeningStore, setIsOpeningStore] = useState(false)
     const requestIdRef = useRef(0)
 
     const checkForUpdate = useCallback(async () => {
         if (!shouldCheckForMandatoryAppUpdate()) {
             setRequirement(null)
-            setIsReady(true)
             return
         }
 
         const requestId = ++requestIdRef.current
-        setIsReady(false)
 
+        // This check deliberately runs without replacing children with a
+        // loading screen. Android returns the activity to `active` when an
+        // autofill provider closes, and unmounting here would discard the
+        // active route and any values being entered.
         const cachedRequirement = await getCachedAppUpdateRequirement()
         if (requestId !== requestIdRef.current) return
 
@@ -69,8 +70,6 @@ export default function AppUpdateGate({ children }: AppUpdateGateProps) {
         } catch {
             // If the check cannot reach Supabase, the cached rule (if any) still
             // protects users. A first-time offline user can continue safely.
-        } finally {
-            if (requestId === requestIdRef.current) setIsReady(true)
         }
     }, [])
 
@@ -102,18 +101,7 @@ export default function AppUpdateGate({ children }: AppUpdateGateProps) {
         }
     }, [requirement])
 
-    if (isReady && !requirement) return <>{children}</>
-
-    if (!requirement) {
-        return (
-            <Screen scroll={false} contentStyle={styles.screenContent}>
-                <View style={styles.loadingState}>
-                    <ActivityIndicator size="large" color={styles.icon.color} />
-                    <Text style={styles.loadingTitle}>{t('appUpdate.checkingTitle')}</Text>
-                </View>
-            </Screen>
-        )
-    }
+    if (!requirement) return <>{children}</>
 
     return (
         <Screen scroll={false} contentStyle={styles.screenContent}>
@@ -153,10 +141,6 @@ const styles = createThemedStyles((theme) => ({
         borderWidth: 1,
         borderColor: theme.colors.border,
     },
-    loadingState: {
-        alignItems: 'center',
-        gap: theme.spacing.md,
-    },
     iconWrap: {
         alignItems: 'center',
         justifyContent: 'center',
@@ -167,11 +151,6 @@ const styles = createThemedStyles((theme) => ({
     title: {
         ...theme.textVariants.title,
         color: theme.colors.foreground,
-        textAlign: 'center',
-    },
-    loadingTitle: {
-        ...theme.textVariants.body,
-        color: theme.colors.mutedForeground,
         textAlign: 'center',
     },
     body: {
