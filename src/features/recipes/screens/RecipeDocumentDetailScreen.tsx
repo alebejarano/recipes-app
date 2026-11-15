@@ -613,7 +613,7 @@ const styles = createThemedStyles((theme) => ({
     color: theme.colors.foreground,
   },
   extractionLimitDetail: {
-    ...theme.textVariants.bodySmall,
+    ...theme.textVariants.caption,
     color: theme.colors.mutedForeground,
   },
 

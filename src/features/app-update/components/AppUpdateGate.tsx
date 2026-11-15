@@ -56,7 +56,6 @@ export default function AppUpdateGate({ children }: AppUpdateGateProps) {
 
         if (requiresUpdate(cachedRequirement)) {
             setRequirement(cachedRequirement)
-            setIsReady(true)
         }
 
         try {

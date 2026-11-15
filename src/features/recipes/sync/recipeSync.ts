@@ -27,6 +27,7 @@ import {
   markLocalRecipeDocumentSynced,
   recordLocalRecipeDocumentSyncFailure,
   restoreCloudRecipeDocument,
+  updateRecipeDocumentTitle,
 } from '@/features/recipes/storage/recipeDocumentStorage'
 import { normalizeMealTimes } from '@/features/recipes/types/mealTimes'
 import { supabase } from '@/lib/supabase'
@@ -249,7 +250,14 @@ async function cacheCloudRecipeDocuments(userId: string) {
 
     for (const document of page.items) {
       if (!(await hasPremiumSyncAccess(userId))) return
-      if (await getRecipeDocumentByCloudId(document.id)) continue
+      const existingDocument = await getRecipeDocumentByCloudId(document.id)
+      if (existingDocument) {
+        const remoteTitle = document.title?.trim()
+        if (remoteTitle && remoteTitle !== existingDocument.title?.trim()) {
+          await updateRecipeDocumentTitle({ id: existingDocument.id, title: remoteTitle })
+        }
+        continue
+      }
 
       try {
         await restoreCloudRecipeDocument({

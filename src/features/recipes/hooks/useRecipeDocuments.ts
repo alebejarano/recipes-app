@@ -33,6 +33,32 @@ const DOCS_KEY = ['recipes', 'documents']
 const USAGE_KEY = ['recipes', 'documents', 'usage']
 const MANAGED_IMPORTS_KEY = ['recipes', 'imports', 'managed']
 
+function updateCachedDocumentTitle<T>(
+  value: T,
+  ids: ReadonlySet<string>,
+  title: string
+): T {
+  if (!value || typeof value !== 'object') return value
+
+  if ('pages' in value && Array.isArray(value.pages)) {
+    return {
+      ...value,
+      pages: value.pages.map((page) => ({
+        ...page,
+        items: page.items.map((document: RecipeDocument) =>
+          ids.has(document.id) ? { ...document, title } : document
+        ),
+      })),
+    } as T
+  }
+
+  if ('id' in value && typeof value.id === 'string' && ids.has(value.id)) {
+    return { ...value, title } as T
+  }
+
+  return value
+}
+
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message
   if (typeof error === 'object' && error !== null && 'message' in error) {
@@ -297,12 +323,46 @@ export function useUpdateRecipeDocumentTitle(mode: StorageScreenMode = 'auth') {
 
   return useMutation({
     mutationFn: async (input: { id: string; title: string }) => {
-      if (shouldUseLocalData || await getRecipeDocument(input.id)) {
-        return updateRecipeDocumentTitle(input)
+      const localDocument =
+        await getRecipeDocument(input.id) ??
+        await getRecipeDocumentByCloudId(input.id)
+
+      // A Premium import has a local mirror for offline viewing, but its
+      // canonical title is the cloud record used by Collections. Updating
+      // only the mirror made the detail screen show the new title while the
+      // list kept the old cloud title.
+      if (shouldUseLocalData || (localDocument && !localDocument.cloudId)) {
+        if (localDocument && localDocument.id !== input.id) {
+          await updateRecipeDocumentTitle({ ...input, id: localDocument.id })
+          return { localId: localDocument.id, cloudId: localDocument.cloudId }
+        }
+        await updateRecipeDocumentTitle(input)
+        return { localId: input.id, cloudId: localDocument?.cloudId ?? null }
       }
-      return updateCloudRecipeDocumentTitle(input)
+
+      await updateCloudRecipeDocumentTitle({
+        ...input,
+        id: localDocument?.cloudId ?? input.id,
+      })
+
+      if (!localDocument) return { localId: null, cloudId: input.id }
+
+      // Keep the on-device mirror consistent for offline detail views. The
+      // cloud update above has already succeeded, so a cache-write failure
+      // must not incorrectly report that the rename failed.
+      try {
+        await updateRecipeDocumentTitle({ ...input, id: localDocument.id })
+      } catch {
+        // The next document sync will refresh a stale local mirror.
+      }
+
+      return { localId: localDocument.id, cloudId: localDocument.cloudId }
     },
-    onSuccess: (_, input) => {
+    onSuccess: (result, input) => {
+      const ids = new Set([input.id, result.localId, result.cloudId].filter((id): id is string => Boolean(id)))
+      qc.setQueriesData({ queryKey: DOCS_KEY }, (current) =>
+        updateCachedDocumentTitle(current, ids, input.title.trim())
+      )
       qc.invalidateQueries({ queryKey: DOCS_KEY })
       qc.invalidateQueries({ queryKey: MANAGED_IMPORTS_KEY })
       qc.invalidateQueries({ queryKey: [...DOCS_KEY, shouldUseLocalData ? 'local' : 'cloud', input.id] })
