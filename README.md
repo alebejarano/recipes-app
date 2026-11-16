@@ -109,6 +109,10 @@ This repo already ignores local env files via `.gitignore`.
 
 ### Production database
 
+Premium upgrade sync also requires a server-only RevenueCat secret and the
+verified-access migration. Follow the [Premium upgrade authorization guide](docs/premium-upgrade-authorization.md)
+for configuration, deployment order, and isolated regression checks.
+
 Before the first production deploy, export the current development `public`
 schema into a reviewed migration and then provision production solely from the
 committed migrations. Follow the [production schema runbook](docs/production-schema-runbook.md).

@@ -15,6 +15,7 @@
     "security:edge-auth": "bash scripts/security-edge-functions-auth.sh",
     "test": "jest --watch --no-watchman",
     "test:ci": "jest --ci --runInBand --no-watchman",
+    "test:edge": "jest --selectProjects edge --ci --runInBand --no-watchman",
     "test:unit": "jest --selectProjects unit --watch --no-watchman",
     "test:integration": "jest --selectProjects integration --watch --no-watchman"
   },

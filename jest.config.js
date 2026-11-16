@@ -14,6 +14,14 @@ const sharedConfig = {
 module.exports = {
     projects: [
         {
+            displayName: 'edge',
+            testEnvironment: 'node',
+            testMatch: ['<rootDir>/supabase/functions/**/*.test.ts'],
+            transform: {
+                '^.+\\.[jt]sx?$': ['babel-jest', { configFile: false, presets: ['babel-preset-expo'] }],
+            },
+        },
+        {
             ...sharedConfig,
             displayName: 'unit',
             testMatch: [

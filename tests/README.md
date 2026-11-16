@@ -15,5 +15,11 @@ Commands:
 - `npm run test:unit` — watch unit tests only.
 - `npm run test:integration` — watch integration tests only.
 - `npm run test:ci` — run all Jest tests once, suitable for CI.
+- `npm run test:edge` — run backend handler tests with mocked services in Node, without native setup or external requests.
+
+Backend handler tests live beside their Edge Function under `supabase/functions/`
+and run in the `edge` Jest project. SQL authorization tests live in `supabase/tests/`
+and must run only against an isolated/local database; see the
+[Premium upgrade authorization guide](../docs/premium-upgrade-authorization.md).
 
 Write UI tests using accessible roles, labels, and visible text rather than implementation details or snapshots. Use `testID` only where an accessible query cannot describe the user-facing element; the same stable identifiers can later support Maestro flows.
