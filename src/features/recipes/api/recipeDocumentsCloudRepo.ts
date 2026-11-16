@@ -234,6 +234,24 @@ export async function getActiveImportDownloadUrl(documentId: string): Promise<st
   return signedUrl
 }
 
+export async function listDeletedCloudRecipeDocumentIds(ids: string[]): Promise<string[]> {
+  if (ids.length === 0) return []
+  const userId = await requireUserId()
+  const deleted: string[] = []
+  // Query explicit tombstones only. Missing rows in a page are never evidence
+  // of deletion, and batching keeps requests below URL/Data API row limits.
+  for (let start = 0; start < ids.length; start += 100) {
+    const { data, error } = await supabase.from('recipe_document_imports')
+      .select('id')
+      .eq('user_id', userId)
+      .not('deleted_at', 'is', null)
+      .in('id', ids.slice(start, start + 100))
+    if (error) throw error
+    deleted.push(...(data ?? []).map((row) => row.id))
+  }
+  return deleted
+}
+
 export async function getCloudRecipeDocumentUsageSummary(): Promise<RecipeDocumentUsageSummary> {
   const { data, error } = await supabase.rpc('get_recipe_document_import_usage')
   if (error) throw error
@@ -261,18 +279,24 @@ export async function updateCloudRecipeDocumentTitle(input: {
 }
 
 export async function deleteCloudRecipeDocument(id: string): Promise<void> {
-  const row = await fetchCloudRecipeDocumentDirect(id)
-  if (!row) return
+  // Include tombstones so a retry can finish Storage cleanup after a partial
+  // failure. A missing row is not evidence that a local/registry ID was deleted.
+  const userId = await requireUserId()
+  const { data: row, error: readError } = await supabase.from('recipe_document_imports')
+    .select('id,storage_bucket,storage_path')
+    .eq('user_id', userId)
+    .eq('id', id)
+    .maybeSingle()
+  if (readError) throw readError
+  if (!row) throw new Error('Import not found.')
 
-  const { error: storageError } = await supabase.storage
-    .from(row.storage_bucket)
-    .remove([row.storage_path])
-
-  if (storageError) throw storageError
-
-  const { error } = await supabase.rpc('delete_recipe_document_import', {
+  // Hide the document first. Keep the tombstone available for idempotent
+  // retries, rather than leaving a live record pointing at a removed file.
+  const { error: deleteError } = await supabase.rpc('delete_recipe_document_import', {
     p_document_id: id,
   })
+  if (deleteError) throw deleteError
 
-  if (error) throw error
+  const { error: storageError } = await supabase.storage.from(row.storage_bucket).remove([row.storage_path])
+  if (storageError) throw storageError
 }

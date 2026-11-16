@@ -12,6 +12,7 @@ import {
   CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
   getActiveImportDownloadUrl,
   listCloudRecipeDocumentsPage,
+  listDeletedCloudRecipeDocumentIds,
 } from '@/features/recipes/api/recipeDocumentsCloudRepo'
 import {
   listDirtyLocalRecipeRowsForSync,
@@ -23,12 +24,16 @@ import {
 } from '@/features/recipes/storage/localRecipesStorage'
 import {
   getRecipeDocumentByCloudId,
+  getRecipeDocument,
+  deleteRecipeDocument,
+  listRecipeDocuments,
   listDirtyLocalRecipeDocumentRowsForSync,
   markLocalRecipeDocumentSynced,
   recordLocalRecipeDocumentSyncFailure,
   restoreCloudRecipeDocument,
   updateRecipeDocumentTitle,
 } from '@/features/recipes/storage/recipeDocumentStorage'
+import { runRecipeDocumentOperation } from '@/features/recipes/services/recipeDocumentOperations'
 import { normalizeMealTimes } from '@/features/recipes/types/mealTimes'
 import { supabase } from '@/lib/supabase'
 import { getErrorCategory, logOperationalEvent } from '@/lib/productionLogger'
@@ -167,44 +172,39 @@ export async function syncPendingRecipeDocuments(
     })
   }
 
-  for (const document of dirtyDocuments) {
-    try {
-      const result = await uploadPremiumImport({
-        uri: document.fileUri,
-        fileName: document.fileName,
-        mimeType: inferImportMimeType(document.fileName),
-        title: document.title,
-      })
-      if (!result.document?.id) throw new Error('Import upload completed without a cloud document id.')
-
-      await markLocalRecipeDocumentSynced({
-        localId: document.id,
-        ownerUserId: userId,
-        cloudId: result.document.id,
-      })
-      syncedCount += 1
-    } catch (error) {
-      const duplicate = error as Error & {
-        code?: string
-        duplicate?: { id: string | null } | null
-      }
-      if (duplicate.code === 'duplicate_import' && duplicate.duplicate?.id) {
-        await markLocalRecipeDocumentSynced({
-          localId: document.id,
-          ownerUserId: userId,
-          cloudId: duplicate.duplicate.id,
+  for (const queued of dirtyDocuments) {
+    let connectivityFailure = false
+    await runRecipeDocumentOperation(userId, async () => {
+      // Re-read after obtaining the operation lock: a queued upload may have
+      // been deleted or completed while another operation was in flight.
+      const document = await getRecipeDocument(queued.id)
+      if (!document || document.cloudId) return
+      try {
+        const result = await uploadPremiumImport({
+          uri: document.fileUri,
+          fileName: document.fileName,
+          mimeType: inferImportMimeType(document.fileName),
+          title: document.title,
         })
+        if (!result.document?.id) throw new Error('Import upload completed without a cloud document id.')
+        await markLocalRecipeDocumentSynced({ localId: document.id, ownerUserId: userId, cloudId: result.document.id })
         syncedCount += 1
-        continue
+      } catch (error) {
+        const duplicate = error as Error & { code?: string; duplicate?: { id: string | null } | null }
+        if (duplicate.code === 'duplicate_import' && duplicate.duplicate?.id) {
+          await markLocalRecipeDocumentSynced({ localId: document.id, ownerUserId: userId, cloudId: duplicate.duplicate.id })
+          syncedCount += 1
+          return
+        }
+        failedCount += 1
+        await recordLocalRecipeDocumentSyncFailure({
+          localId: document.id,
+          message: getErrorMessage(error) || 'Import upload failed. Keep this file on this device and retry.',
+        })
+        connectivityFailure = isConnectivityError(error)
       }
-
-      failedCount += 1
-      await recordLocalRecipeDocumentSyncFailure({
-        localId: document.id,
-        message: getErrorMessage(error) || 'Import upload failed. Keep this file on this device and retry.',
-      })
-      if (isConnectivityError(error)) break
-    }
+    })
+    if (connectivityFailure) break
   }
 
   const result = { pendingCount: dirtyDocuments.length, syncedCount, failedCount }
@@ -250,38 +250,47 @@ async function cacheCloudRecipeDocuments(userId: string) {
 
     for (const document of page.items) {
       if (!(await hasPremiumSyncAccess(userId))) return
-      const existingDocument = await getRecipeDocumentByCloudId(document.id)
-      if (existingDocument) {
-        const remoteTitle = document.title?.trim()
-        if (remoteTitle && remoteTitle !== existingDocument.title?.trim()) {
-          await updateRecipeDocumentTitle({ id: existingDocument.id, title: remoteTitle })
+      await runRecipeDocumentOperation(userId, async () => {
+        const existingDocument = await getRecipeDocumentByCloudId(document.id)
+        if (existingDocument) {
+          const remoteTitle = document.title?.trim()
+          if (remoteTitle && remoteTitle !== existingDocument.title?.trim()) {
+            await updateRecipeDocumentTitle({ id: existingDocument.id, title: remoteTitle })
+          }
+          return
         }
-        continue
-      }
-
-      try {
-        await restoreCloudRecipeDocument({
-          cloudId: document.id,
-          title: document.title,
-          fileName: document.fileName,
-          bytes: document.fileSize,
-          createdAt: document.createdAt,
-          signedUrl: await getActiveImportDownloadUrl(document.id),
-          plan: 'premium',
-        })
-      } catch (error) {
-        // Keep successfully cached files; retry uncacheable files next sync.
-        if (isConnectivityError(error)) throw error
-        logOperationalEvent('sync_retry_failed', {
-          operation: 'cache_import',
-          entity: 'import',
-          category: getErrorCategory(error),
-        })
-      }
+        try {
+          await restoreCloudRecipeDocument({
+            cloudId: document.id,
+            title: document.title,
+            fileName: document.fileName,
+            bytes: document.fileSize,
+            createdAt: document.createdAt,
+            // Resolve access inside the lock. A stale list page must not
+            // restore an import deleted while it was waiting in the queue.
+            signedUrl: await getActiveImportDownloadUrl(document.id),
+            plan: 'premium',
+            ownerUserId: userId,
+          })
+        } catch (error) {
+          if (isConnectivityError(error)) throw error
+          logOperationalEvent('sync_retry_failed', { operation: 'cache_import', entity: 'import', category: getErrorCategory(error) })
+        }
+      })
     }
 
     cursor = page.nextCursor
   } while (cursor)
+
+  const mirrors = (await listRecipeDocuments()).filter((document) => document.cloudId)
+  const deletedIds = new Set(await listDeletedCloudRecipeDocumentIds(
+    [...new Set(mirrors.map((document) => document.cloudId!))]
+  ))
+  for (const document of mirrors) {
+    if (document.cloudId && deletedIds.has(document.cloudId)) {
+      await runRecipeDocumentOperation(userId, () => deleteRecipeDocument(document.id))
+    }
+  }
 }
 
 async function runRecipeSync() {

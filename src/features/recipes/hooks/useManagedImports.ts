@@ -1,27 +1,23 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery, type InfiniteData } from '@tanstack/react-query'
 
 import {
-  deleteManagedImport,
   type ManagedImport,
   listManagedImports,
 } from '@/features/recipes/storage/importsStorage'
 import {
   CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
-  deleteCloudRecipeDocument,
   listCloudManagedImportsPage,
   type CloudRecipeDocumentsCursor,
   type CloudRecipeDocumentsPage,
 } from '@/features/recipes/api/recipeDocumentsCloudRepo'
 import { listFreeImportLibraryMetadata } from '@/features/recipes/api/freeArchiveRepo'
 import { listPendingLocalRecipeDocuments } from '@/features/recipes/storage/recipeDocumentStorage'
-import { triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
+import { useImportDeletion } from '@/features/recipes/hooks/useImportDeletion'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { useStorageDataMode, type StorageScreenMode } from '@/features/storage/hooks/useStorageDataMode'
 import { useStorageStrategy } from '@/features/storage/context/StorageStrategyContext'
 
 const IMPORTS_KEY = ['recipes', 'imports', 'managed']
-const DOCS_KEY = ['recipes', 'documents']
-const DOCS_USAGE_KEY = ['recipes', 'documents', 'usage']
 
 export function useManagedImports(mode: StorageScreenMode = 'auth') {
   const { isStorageModeReady, shouldUseLocalData } = useStorageDataMode(mode)
@@ -102,19 +98,5 @@ export function useManagedImports(mode: StorageScreenMode = 'auth') {
 }
 
 export function useDeleteManagedImport(mode: StorageScreenMode = 'auth') {
-  const qc = useQueryClient()
-  const { shouldUseLocalData } = useStorageDataMode(mode)
-  return useMutation({
-    mutationFn: (importId: string) =>
-      shouldUseLocalData ? deleteManagedImport(importId) : deleteCloudRecipeDocument(importId),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: IMPORTS_KEY })
-      qc.invalidateQueries({ queryKey: DOCS_KEY })
-      qc.invalidateQueries({ queryKey: DOCS_USAGE_KEY })
-      qc.invalidateQueries({ queryKey: ['recipes'] })
-      if (shouldUseLocalData) {
-        void triggerRecipeSync()
-      }
-    },
-  })
+  return useImportDeletion('managed', mode)
 }

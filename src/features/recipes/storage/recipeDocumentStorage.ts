@@ -452,16 +452,21 @@ export async function restoreCloudRecipeDocument(input: {
   createdAt: string
   signedUrl: string
   plan?: ImportPlan
+  ownerUserId?: string
 }): Promise<RecipeDocument> {
   if (Platform.OS === 'web') {
     throw new Error('Cloud Archive imports must be restored from the mobile app.')
   }
 
+  const ownerUserId = input.ownerUserId ?? getActiveLocalDataOwner()
+  if (!ownerUserId || ownerUserId !== getActiveLocalDataOwner()) {
+    throw new Error('The active account changed. Please try again.')
+  }
   await ensureRecipeDocumentStorageReady()
   await ensureLocalRecipeDocumentCleanup()
   await ensureDocumentImportsBackfilled()
 
-  const ownerFilter = getLocalDataOwnerFilter()
+  const ownerFilter = { sql: 'owner_user_id = ?', params: [ownerUserId] }
   const existing = await getFirstAsync<{
     id: string
     title: string | null
@@ -499,8 +504,10 @@ export async function restoreCloudRecipeDocument(input: {
   }
 
   const id = makeId()
-  const ownerUserId = getActiveLocalDataOwner()
   try {
+    if (getActiveLocalDataOwner() !== ownerUserId) {
+      throw new Error('The active account changed. Please try again.')
+    }
     await runSqlAsync(
       `INSERT INTO recipe_documents
         (id, title, file_name, file_uri, file_size, created_at, owner_user_id, cloud_id, dirty, last_synced_at)

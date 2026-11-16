@@ -3,7 +3,6 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type InfiniteD
 import {
   CLOUD_RECIPE_DOCUMENTS_PAGE_SIZE,
   listCloudRecipeDocumentsPage,
-  deleteCloudRecipeDocument,
   getCloudRecipeDocumentUsageSummary,
   getCloudRecipeDocument,
   updateCloudRecipeDocumentTitle,
@@ -14,7 +13,6 @@ import { listFreeImportLibraryMetadata } from '@/features/recipes/api/freeArchiv
 import type { ImportPlan } from '@/features/recipes/storage/importsStorage'
 import {
   addRecipeDocument,
-  deleteRecipeDocument,
   getRecipeDocument,
   getRecipeDocumentByCloudId,
   getRecipeDocumentUsageSummary,
@@ -28,6 +26,7 @@ import { useStorageStrategy } from '@/features/storage/context/StorageStrategyCo
 import { useStorageDataMode, type StorageScreenMode } from '@/features/storage/hooks/useStorageDataMode'
 import { triggerRecipeSync } from '@/features/recipes/sync/recipeSync'
 import { useAuth } from '@/features/auth/context/AuthContext'
+import { useImportDeletion } from '@/features/recipes/hooks/useImportDeletion'
 
 const DOCS_KEY = ['recipes', 'documents']
 const USAGE_KEY = ['recipes', 'documents', 'usage']
@@ -301,20 +300,7 @@ export function useAddRecipeDocument() {
 }
 
 export function useDeleteRecipeDocument(mode: StorageScreenMode = 'auth') {
-  const qc = useQueryClient()
-  const { shouldUseLocalData } = useStorageDataMode(mode)
-  return useMutation({
-    mutationFn: async (id: string) => {
-      if (shouldUseLocalData || await getRecipeDocument(id)) {
-        return deleteRecipeDocument(id)
-      }
-      return deleteCloudRecipeDocument(id)
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: DOCS_KEY })
-      qc.invalidateQueries({ queryKey: USAGE_KEY })
-    },
-  })
+  return useImportDeletion('document', mode)
 }
 
 export function useUpdateRecipeDocumentTitle(mode: StorageScreenMode = 'auth') {
