@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image as ExpoImage } from 'expo-image';
 import { router, useFocusEffect, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
 
 import Screen from '@/components/Screen';
@@ -493,6 +493,7 @@ export default function HomeScreen({
   const [isRecipeOpenHistoryReady, setRecipeOpenHistoryReady] = useState(false);
   const [dailyIdeaRecipeIds, setDailyIdeaRecipeIds] = useState<string[] | null>(null);
   const [dailyIdeaCacheKeyLoaded, setDailyIdeaCacheKeyLoaded] = useState<string | null>(null);
+  const dailyIdeaSelectionInFlight = useRef<string | null>(null);
   const storageInfoBannerDismissKey = useMemo(
     () => `${STORAGE_INFO_BANNER_DISMISSED_KEY}:${user?.id ?? 'guest'}`,
     [user?.id]
@@ -516,6 +517,7 @@ export default function HomeScreen({
 
   useEffect(() => {
     let isMounted = true;
+    dailyIdeaSelectionInFlight.current = null;
 
     const loadDailyIdeaCache = async () => {
       try {
@@ -733,24 +735,37 @@ export default function HomeScreen({
       return;
     }
 
-    // A cached selection deliberately stays fixed for the day, even if a
-    // transient storage read does not yet contain every cached recipe. That
-    // prevents an incomplete read from replacing a card with another recipe.
-    if ((dailyIdeaRecipeIds?.length ?? 0) > 0) return;
+    const cachedRecipeCount = (dailyIdeaRecipeIds ?? []).filter((recipeId) =>
+      visibleRecipes.some((recipe) => recipe.id === recipeId)
+    ).length;
+
+    // A valid cached selection stays fixed for the day, even if a transient
+    // storage read does not yet contain every cached recipe. If none of the
+    // IDs exist, however, it belongs to an obsolete local library and must be
+    // rebuilt instead of leaving the section empty.
+    if (cachedRecipeCount > 0) return;
 
     const selection = buildWeeklyIdeaRecipes(visibleRecipes, recipeOpenHistory, new Date());
     const selectionIds = selection.map((recipe) => recipe.id);
 
     if (selectionIds.join('|') === (dailyIdeaRecipeIds ?? []).join('|')) return;
 
-    const timeout = setTimeout(() => {
-      setDailyIdeaRecipeIds(selectionIds);
-      AsyncStorage.setItem(dailyIdeaCacheKey, JSON.stringify(selectionIds)).catch(() => {
-        // Keeping the current session's selection is still enough to prevent a visual swap.
-      });
-    }, 0);
+    if (dailyIdeaSelectionInFlight.current === dailyIdeaCacheKey) return;
+    dailyIdeaSelectionInFlight.current = dailyIdeaCacheKey;
 
-    return () => clearTimeout(timeout);
+    const saveSelection = async () => {
+      try {
+        await AsyncStorage.setItem(dailyIdeaCacheKey, JSON.stringify(selectionIds));
+      } catch {
+        // Keeping the current session's selection is still enough to prevent a visual swap.
+      } finally {
+        if (dailyIdeaSelectionInFlight.current !== dailyIdeaCacheKey) return;
+        setDailyIdeaRecipeIds(selectionIds);
+        dailyIdeaSelectionInFlight.current = null;
+      }
+    };
+
+    void saveSelection();
   }, [
     dailyIdeaCacheKey,
     dailyIdeaRecipeIds,
