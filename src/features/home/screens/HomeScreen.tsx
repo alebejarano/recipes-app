@@ -3,10 +3,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image as ExpoImage } from 'expo-image';
 import { router, useFocusEffect, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
 
 import Screen from '@/components/Screen';
+import { useDailyHomeRecipes } from '@/features/home/hooks/useDailyHomeRecipes';
 import Button from '@/components/Button'
 import { useTabBarBottomPadding } from '@/hooks/useTabBarBottomPadding';
 import { i18n } from '@/localization/i18n';
@@ -70,6 +71,8 @@ type HomeProps = {
 
 type HomeRecipe = {
   id: string;
+  cloudId?: string | null;
+  clientId?: string | null;
   title: string;
   subtitle?: string | null;
   emoji?: string | null;
@@ -95,7 +98,6 @@ const STORAGE_RISK_BANNER_DISMISSED_EVENT_KEY = 'storage_risk_banner_dismissed_e
 const STORAGE_CONVERSION_BANNER_SEEN_TRIGGERS_KEY = 'storage_conversion_banner_seen_triggers';
 const STORAGE_DEVICE_MARKER_CACHE_KEY = 'storage_device_marker_cache';
 const SECURE_DEVICE_MARKER_KEY = 'storage_device_marker_secure';
-const DAILY_IDEA_RECIPES_CACHE_KEY = 'home_daily_idea_recipes_v1';
 const FREE_PLAN_SAFETY_PROMPT_ITEM_COUNT = 20;
 const FREE_PLAN_SAFETY_PROMPT_STORAGE_RATIO = 0.2;
 type ConversionBannerTrigger = {
@@ -172,25 +174,6 @@ function getWeekKey(date: Date) {
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
-}
-
-function getDayKey(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function parseRecipeIds(raw: string | null) {
-  if (!raw) return [];
-
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((item): item is string => typeof item === 'string').slice(0, 5);
-  } catch {
-    return [];
-  }
 }
 
 function hashSeed(seed: string) {
@@ -327,7 +310,7 @@ export default function HomeScreen({
     (segments[0] === '(public)' ? 'public' : 'auth');
   const isPublic = resolvedMode === 'public';
   const isAuthenticated = Boolean(user);
-  const { isStorageModeReady } = useStorageDataMode(resolvedMode);
+  const { isStorageModeReady, shouldUseLocalData } = useStorageDataMode(resolvedMode);
 
   const { width: screenWidth } = useWindowDimensions();
 
@@ -369,6 +352,8 @@ export default function HomeScreen({
       const source = recipesQuery.data ?? [];
       return source.map(({ recipe }) => ({
         id: recipe.id,
+        cloudId: (recipe as HomeRecipe).cloudId ?? null,
+        clientId: recipe.clientId ?? null,
         title: recipe.title,
         subtitle: recipe.subtitle ?? null,
         emoji: recipe.emoji ?? null,
@@ -384,7 +369,23 @@ export default function HomeScreen({
     [recipesQuery.data]
   );
 
-  const visibleRecipes = recipes;
+  const [recipeOpenHistory, setRecipeOpenHistory] = useState<RecipeOpenHistory>({});
+  const [isRecipeOpenHistoryReady, setRecipeOpenHistoryReady] = useState(false);
+  const buildIdeas = useCallback((items: HomeRecipe[], now: Date) =>
+    buildWeeklyIdeaRecipes(items, recipeOpenHistory, now), [recipeOpenHistory]);
+  const buildRecent = useCallback((items: HomeRecipe[]) =>
+    [...items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      || a.id.localeCompare(b.id)).slice(0, items.length <= 5 ? 5 : 6), []);
+  const recipesSettled = isStorageModeReady && !recipesQuery.isLoading && !recipesQuery.isFetching && !recipesQuery.isError;
+  const dailyRecipes = useDailyHomeRecipes({
+    scope: `${resolvedMode}:${user?.id ?? 'guest'}:${shouldUseLocalData ? 'local' : 'cloud'}`,
+    recipes,
+    ready: isStorageModeReady && isRecipeOpenHistoryReady,
+    settled: recipesSettled,
+    buildIdeas,
+    buildRecent,
+  });
+  const visibleRecipes = !recipesSettled && dailyRecipes.ready ? dailyRecipes.cachedLibrary : recipes;
 
   useEffect(() => {
     const imageUrls = recipes
@@ -489,21 +490,10 @@ export default function HomeScreen({
   const [seenConversionTriggerIds, setSeenConversionTriggerIds] = useState<string[] | null>(null);
   const [activeConversionTriggerId, setActiveConversionTriggerId] = useState<string | null>(null);
   const [storageBannerStateReady, setStorageBannerStateReady] = useState(false);
-  const [recipeOpenHistory, setRecipeOpenHistory] = useState<RecipeOpenHistory>({});
-  const [isRecipeOpenHistoryReady, setRecipeOpenHistoryReady] = useState(false);
-  const [dailyIdeaRecipeIds, setDailyIdeaRecipeIds] = useState<string[] | null>(null);
-  const [dailyIdeaCacheKeyLoaded, setDailyIdeaCacheKeyLoaded] = useState<string | null>(null);
-  const dailyIdeaSelectionInFlight = useRef<string | null>(null);
   const storageInfoBannerDismissKey = useMemo(
     () => `${STORAGE_INFO_BANNER_DISMISSED_KEY}:${user?.id ?? 'guest'}`,
     [user?.id]
   );
-  const dailyIdeaCacheKey = useMemo(
-    () => `${DAILY_IDEA_RECIPES_CACHE_KEY}:${resolvedMode}:${user?.id ?? 'guest'}:${getDayKey(new Date())}`,
-    [resolvedMode, user?.id]
-  );
-  const isDailyIdeaCacheLoaded = dailyIdeaCacheKeyLoaded === dailyIdeaCacheKey;
-
   const refreshRecipeOpenHistory = useCallback(async () => {
     try {
       const next = await loadRecipeOpenHistory();
@@ -514,28 +504,6 @@ export default function HomeScreen({
       setRecipeOpenHistoryReady(true);
     }
   }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-    dailyIdeaSelectionInFlight.current = null;
-
-    const loadDailyIdeaCache = async () => {
-      try {
-        const raw = await AsyncStorage.getItem(dailyIdeaCacheKey);
-        if (isMounted) setDailyIdeaRecipeIds(parseRecipeIds(raw));
-      } catch {
-        if (isMounted) setDailyIdeaRecipeIds([]);
-      } finally {
-        if (isMounted) setDailyIdeaCacheKeyLoaded(dailyIdeaCacheKey);
-      }
-    };
-
-    void loadDailyIdeaCache();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [dailyIdeaCacheKey]);
 
   useEffect(() => {
     let isMounted = true;
@@ -604,8 +572,8 @@ export default function HomeScreen({
 
   const isInitialLoading =
     !isStorageModeReady ||
-    recipesQuery.isLoading ||
-    notesQuery.isLoading;
+    (!dailyRecipes.ready && !recipesQuery.isError) ||
+    (notesQuery.isLoading && dailyRecipes.cachedLibrary.length === 0);
 
   const emptyStateTitle = t('home.empty.title');
   const emptyStateBody = t('home.empty.body');
@@ -725,72 +693,7 @@ export default function HomeScreen({
   const isMediumRecipeLibrary = homeCapabilities.stage === 'established';
   const isLargeRecipeLibrary = homeCapabilities.stage === 'large';
 
-  useEffect(() => {
-    if (
-      !isLargeRecipeLibrary ||
-      !isDailyIdeaCacheLoaded ||
-      !isRecipeOpenHistoryReady ||
-      recipesQuery.isLoading
-    ) {
-      return;
-    }
-
-    const cachedRecipeCount = (dailyIdeaRecipeIds ?? []).filter((recipeId) =>
-      visibleRecipes.some((recipe) => recipe.id === recipeId)
-    ).length;
-
-    // A valid cached selection stays fixed for the day, even if a transient
-    // storage read does not yet contain every cached recipe. If none of the
-    // IDs exist, however, it belongs to an obsolete local library and must be
-    // rebuilt instead of leaving the section empty.
-    if (cachedRecipeCount > 0) return;
-
-    const selection = buildWeeklyIdeaRecipes(visibleRecipes, recipeOpenHistory, new Date());
-    const selectionIds = selection.map((recipe) => recipe.id);
-
-    if (selectionIds.join('|') === (dailyIdeaRecipeIds ?? []).join('|')) return;
-
-    if (dailyIdeaSelectionInFlight.current === dailyIdeaCacheKey) return;
-    dailyIdeaSelectionInFlight.current = dailyIdeaCacheKey;
-
-    const saveSelection = async () => {
-      try {
-        await AsyncStorage.setItem(dailyIdeaCacheKey, JSON.stringify(selectionIds));
-      } catch {
-        // Keeping the current session's selection is still enough to prevent a visual swap.
-      } finally {
-        if (dailyIdeaSelectionInFlight.current !== dailyIdeaCacheKey) return;
-        setDailyIdeaRecipeIds(selectionIds);
-        dailyIdeaSelectionInFlight.current = null;
-      }
-    };
-
-    void saveSelection();
-  }, [
-    dailyIdeaCacheKey,
-    dailyIdeaRecipeIds,
-    isDailyIdeaCacheLoaded,
-    isLargeRecipeLibrary,
-    isRecipeOpenHistoryReady,
-    recipeOpenHistory,
-    recipesQuery.isLoading,
-    visibleRecipes,
-  ]);
-
-  const weeklyIdeaRecipes = useMemo(() => {
-    if (!isLargeRecipeLibrary || !isDailyIdeaCacheLoaded || !isRecipeOpenHistoryReady) return [];
-
-    const recipesById = new Map(visibleRecipes.map((recipe) => [recipe.id, recipe]));
-    return (dailyIdeaRecipeIds ?? [])
-      .map((recipeId) => recipesById.get(recipeId))
-      .filter((recipe): recipe is HomeRecipe => Boolean(recipe));
-  }, [
-    dailyIdeaRecipeIds,
-    isDailyIdeaCacheLoaded,
-    isLargeRecipeLibrary,
-    isRecipeOpenHistoryReady,
-    visibleRecipes,
-  ]);
+  const weeklyIdeaRecipes = dailyRecipes.ideas;
 
   const greeting = useMemo(() => {
     const meal = getMealTime(new Date());
@@ -812,10 +715,7 @@ export default function HomeScreen({
     return getRecommendedPick(visibleRecipes, new Date())?.recipe ?? null;
   }, [isMediumRecipeLibrary, visibleRecipes]);
 
-  const recentRecipes = useMemo(() => {
-    const sliceCount = isStarterLibrary ? 5 : 6;
-    return sortMostRecent(visibleRecipes).slice(0, sliceCount);
-  }, [isStarterLibrary, visibleRecipes]);
+  const recentRecipes = dailyRecipes.recent;
 
   const recentRecipeCards = useMemo<RecipePreview[]>(
     () =>
@@ -1250,7 +1150,7 @@ export default function HomeScreen({
               }}
               showMeta={false}
             />
-          ) : isDailyIdeaCacheLoaded && isRecipeOpenHistoryReady && !recipesQuery.isLoading ? (
+          ) : dailyRecipes.ready ? (
             <View style={styles.mutedRow}>
               <Text style={styles.mutedRowText}>{t('home.emptyState.noSuggestions')}</Text>
             </View>

@@ -54,7 +54,9 @@ export function useStrategyRecipesList(params?: RecipesListParams, mode: Storage
     enabled: isStorageModeReady && (shouldReadLocal || cloudSyncEnabled),
   })
   if (!shouldUseLocalData && cloudSyncEnabled && !cloudQuery.data && (localQuery.data?.length ?? 0) > 0) {
-    return localQuery
+    // Consumers must know that this local result can still be replaced by
+    // the cloud response before persisting a long-lived selection.
+    return { ...localQuery, isFetching: localQuery.isFetching || cloudQuery.isFetching }
   }
   return shouldReadLocal ? localQuery : cloudQuery
 }

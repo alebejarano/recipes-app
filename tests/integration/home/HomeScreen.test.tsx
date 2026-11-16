@@ -24,7 +24,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }));
 jest.mock('expo-router', () => ({
     router: { push: jest.fn() },
-    useFocusEffect: jest.fn(),
+    useFocusEffect: (callback: () => void) => require('react').useEffect(callback, [callback]),
     useSegments: () => ['(auth)'],
 }));
 jest.mock('@/components/Screen', () => ({ __esModule: true, default: ({ children }: { children: ReactNode }) => <>{children}</> }));

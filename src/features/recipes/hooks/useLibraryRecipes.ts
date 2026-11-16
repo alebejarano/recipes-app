@@ -37,7 +37,7 @@ function normalizeActiveRecipe(recipe: Recipe | LocalRecipe): Recipe {
     return {
         ...recipe,
         userId: 'local',
-        clientId: null,
+        clientId: 'clientId' in recipe ? recipe.clientId : null,
     } as Recipe
 }
 
