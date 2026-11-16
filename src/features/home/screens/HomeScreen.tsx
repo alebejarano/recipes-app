@@ -95,6 +95,7 @@ const STORAGE_RISK_BANNER_DISMISSED_EVENT_KEY = 'storage_risk_banner_dismissed_e
 const STORAGE_CONVERSION_BANNER_SEEN_TRIGGERS_KEY = 'storage_conversion_banner_seen_triggers';
 const STORAGE_DEVICE_MARKER_CACHE_KEY = 'storage_device_marker_cache';
 const SECURE_DEVICE_MARKER_KEY = 'storage_device_marker_secure';
+const DAILY_IDEA_RECIPES_CACHE_KEY = 'home_daily_idea_recipes_v1';
 const FREE_PLAN_SAFETY_PROMPT_ITEM_COUNT = 20;
 const FREE_PLAN_SAFETY_PROMPT_STORAGE_RATIO = 0.2;
 type ConversionBannerTrigger = {
@@ -171,6 +172,25 @@ function getWeekKey(date: Date) {
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
+function getDayKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function parseRecipeIds(raw: string | null) {
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item): item is string => typeof item === 'string').slice(0, 5);
+  } catch {
+    return [];
+  }
 }
 
 function hashSeed(seed: string) {
@@ -470,10 +490,18 @@ export default function HomeScreen({
   const [activeConversionTriggerId, setActiveConversionTriggerId] = useState<string | null>(null);
   const [storageBannerStateReady, setStorageBannerStateReady] = useState(false);
   const [recipeOpenHistory, setRecipeOpenHistory] = useState<RecipeOpenHistory>({});
+  const [isRecipeOpenHistoryReady, setRecipeOpenHistoryReady] = useState(false);
+  const [dailyIdeaRecipeIds, setDailyIdeaRecipeIds] = useState<string[] | null>(null);
+  const [dailyIdeaCacheKeyLoaded, setDailyIdeaCacheKeyLoaded] = useState<string | null>(null);
   const storageInfoBannerDismissKey = useMemo(
     () => `${STORAGE_INFO_BANNER_DISMISSED_KEY}:${user?.id ?? 'guest'}`,
     [user?.id]
   );
+  const dailyIdeaCacheKey = useMemo(
+    () => `${DAILY_IDEA_RECIPES_CACHE_KEY}:${resolvedMode}:${user?.id ?? 'guest'}:${getDayKey(new Date())}`,
+    [resolvedMode, user?.id]
+  );
+  const isDailyIdeaCacheLoaded = dailyIdeaCacheKeyLoaded === dailyIdeaCacheKey;
 
   const refreshRecipeOpenHistory = useCallback(async () => {
     try {
@@ -481,8 +509,31 @@ export default function HomeScreen({
       setRecipeOpenHistory(next);
     } catch {
       setRecipeOpenHistory({});
+    } finally {
+      setRecipeOpenHistoryReady(true);
     }
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadDailyIdeaCache = async () => {
+      try {
+        const raw = await AsyncStorage.getItem(dailyIdeaCacheKey);
+        if (isMounted) setDailyIdeaRecipeIds(parseRecipeIds(raw));
+      } catch {
+        if (isMounted) setDailyIdeaRecipeIds([]);
+      } finally {
+        if (isMounted) setDailyIdeaCacheKeyLoaded(dailyIdeaCacheKey);
+      }
+    };
+
+    void loadDailyIdeaCache();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [dailyIdeaCacheKey]);
 
   useEffect(() => {
     let isMounted = true;
@@ -672,10 +723,59 @@ export default function HomeScreen({
   const isMediumRecipeLibrary = homeCapabilities.stage === 'established';
   const isLargeRecipeLibrary = homeCapabilities.stage === 'large';
 
+  useEffect(() => {
+    if (
+      !isLargeRecipeLibrary ||
+      !isDailyIdeaCacheLoaded ||
+      !isRecipeOpenHistoryReady ||
+      recipesQuery.isLoading
+    ) {
+      return;
+    }
+
+    // A cached selection deliberately stays fixed for the day, even if a
+    // transient storage read does not yet contain every cached recipe. That
+    // prevents an incomplete read from replacing a card with another recipe.
+    if ((dailyIdeaRecipeIds?.length ?? 0) > 0) return;
+
+    const selection = buildWeeklyIdeaRecipes(visibleRecipes, recipeOpenHistory, new Date());
+    const selectionIds = selection.map((recipe) => recipe.id);
+
+    if (selectionIds.join('|') === (dailyIdeaRecipeIds ?? []).join('|')) return;
+
+    const timeout = setTimeout(() => {
+      setDailyIdeaRecipeIds(selectionIds);
+      AsyncStorage.setItem(dailyIdeaCacheKey, JSON.stringify(selectionIds)).catch(() => {
+        // Keeping the current session's selection is still enough to prevent a visual swap.
+      });
+    }, 0);
+
+    return () => clearTimeout(timeout);
+  }, [
+    dailyIdeaCacheKey,
+    dailyIdeaRecipeIds,
+    isDailyIdeaCacheLoaded,
+    isLargeRecipeLibrary,
+    isRecipeOpenHistoryReady,
+    recipeOpenHistory,
+    recipesQuery.isLoading,
+    visibleRecipes,
+  ]);
+
   const weeklyIdeaRecipes = useMemo(() => {
-    if (!isLargeRecipeLibrary) return [];
-    return buildWeeklyIdeaRecipes(visibleRecipes, recipeOpenHistory, new Date());
-  }, [isLargeRecipeLibrary, recipeOpenHistory, visibleRecipes]);
+    if (!isLargeRecipeLibrary || !isDailyIdeaCacheLoaded || !isRecipeOpenHistoryReady) return [];
+
+    const recipesById = new Map(visibleRecipes.map((recipe) => [recipe.id, recipe]));
+    return (dailyIdeaRecipeIds ?? [])
+      .map((recipeId) => recipesById.get(recipeId))
+      .filter((recipe): recipe is HomeRecipe => Boolean(recipe));
+  }, [
+    dailyIdeaRecipeIds,
+    isDailyIdeaCacheLoaded,
+    isLargeRecipeLibrary,
+    isRecipeOpenHistoryReady,
+    visibleRecipes,
+  ]);
 
   const greeting = useMemo(() => {
     const meal = getMealTime(new Date());
@@ -1135,11 +1235,11 @@ export default function HomeScreen({
               }}
               showMeta={false}
             />
-          ) : (
+          ) : isDailyIdeaCacheLoaded && isRecipeOpenHistoryReady && !recipesQuery.isLoading ? (
             <View style={styles.mutedRow}>
               <Text style={styles.mutedRowText}>{t('home.emptyState.noSuggestions')}</Text>
             </View>
-          )}
+          ) : null}
 
           {featuredCollection && folderSpotlightRecipes.length > 0 ? (
             <FolderSpotlightCard
